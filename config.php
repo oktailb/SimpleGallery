@@ -82,5 +82,46 @@ $media_types = [
     'archive' => ['zip', 'tar', 'gz', 'bz2', 'rar', '7z']
 ];
 
+// Admin Authentication Configuration
+// Password hash generated using PHP password_hash().
+// Set to empty string '' to disable admin authentication until configured.
+// To change/set hash via CLI: `php set_admin_password.php <your_password>`
+$admin_password_hash = '$2y$12$p0xr31miEkE7scX2PUjCnuXofgiy1hW3uvBKPg014.EshI/q0fo/e';
+
+/**
+ * Checks whether current web session is authenticated as admin
+ */
+function is_admin_logged_in(): bool {
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+    return !empty($_SESSION['is_admin']);
+}
+
+/**
+ * Dynamically updates $admin_password_hash in config.php
+ */
+function update_admin_password_in_config(string $new_password): bool {
+    $hash = password_hash($new_password, PASSWORD_DEFAULT);
+    $config_file = __DIR__ . '/config.php';
+
+    if (!file_exists($config_file) || !is_writable($config_file)) {
+        return false;
+    }
+
+    $config_content = file_get_contents($config_file);
+    $pattern = '/\$admin_password_hash\s*=\s*[\'"][^\'"]*[\'"];/';
+    $replacement = "\$admin_password_hash = '" . addcslashes($hash, "'\\") . "';";
+
+    if (preg_match($pattern, $config_content)) {
+        $safe_replacement = str_replace('$', '\$', $replacement);
+        $new_content = preg_replace($pattern, $safe_replacement, $config_content, 1);
+    } else {
+        $new_content = rtrim($config_content) . "\n\n" . $replacement . "\n";
+    }
+
+    return file_put_contents($config_file, $new_content) !== false;
+}
+
 // Files and folders to ignore in indexing
-$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', 'index.php', 'api.php', 'thumb.php', 'config.php', 'css', 'js', 'LICENSE', 'README.md'];
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', 'index.php', 'api.php', 'thumb.php', 'config.php', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php'];

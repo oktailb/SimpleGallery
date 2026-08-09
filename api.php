@@ -8,6 +8,92 @@ header('Cache-Control: no-cache, must-revalidate');
 
 require_once __DIR__ . '/config.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// -------------------------------------------------------------
+// Admin Authentication & Action Handlers
+// -------------------------------------------------------------
+$raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
+$action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
+
+if ($action === 'login') {
+    $password = $raw_body['password'] ?? $_POST['password'] ?? '';
+
+    if (empty($admin_password_hash)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Admin password is not configured in config.php. Run `php set_admin_password.php <password>` via CLI first.'
+        ]);
+        exit;
+    }
+
+    if (password_verify($password, $admin_password_hash)) {
+        $_SESSION['is_admin'] = true;
+        echo json_encode([
+            'success'  => true,
+            'is_admin' => true,
+            'message'  => 'Admin authentication successful'
+        ]);
+        exit;
+    } else {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Incorrect admin password'
+        ]);
+        exit;
+    }
+}
+
+if ($action === 'logout') {
+    unset($_SESSION['is_admin']);
+    echo json_encode([
+        'success'  => true,
+        'is_admin' => false,
+        'message'  => 'Logged out of admin mode'
+    ]);
+    exit;
+}
+
+if ($action === 'change_password') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Admin privileges required'
+        ]);
+        exit;
+    }
+
+    $new_password = $raw_body['new_password'] ?? $_POST['new_password'] ?? '';
+    if (strlen($new_password) < 4) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Password must be at least 4 characters long'
+        ]);
+        exit;
+    }
+
+    if (update_admin_password_in_config($new_password)) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Admin password updated successfully in config.php'
+        ]);
+        exit;
+    } else {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Failed to update config.php'
+        ]);
+        exit;
+    }
+}
+
 function sanitize_path(?string $requested_dir, string $base_dir): ?string {
     if (empty($requested_dir) || $requested_dir === '.') {
         return $base_dir;
@@ -273,15 +359,17 @@ usort($directories, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
 usort($files, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
 
 echo json_encode([
-    'success'      => true,
-    'title'        => $folder_overrides['title'] ?? $gallery_title,
-    'current_path' => $current_relative,
-    'parent_path'  => $parent_path,
-    'breadcrumbs'  => $breadcrumbs,
-    'overrides'    => $folder_overrides,
-    'directories'  => $directories,
-    'files'        => $files,
-    'stats'        => [
+    'success'       => true,
+    'title'         => $folder_overrides['title'] ?? $gallery_title,
+    'current_path'  => $current_relative,
+    'parent_path'   => $parent_path,
+    'breadcrumbs'   => $breadcrumbs,
+    'overrides'     => $folder_overrides,
+    'directories'   => $directories,
+    'files'         => $files,
+    'is_admin'      => is_admin_logged_in(),
+    'admin_enabled' => !empty($admin_password_hash),
+    'stats'         => [
         'directory_count' => count($directories),
         'file_count'      => count($files)
     ]

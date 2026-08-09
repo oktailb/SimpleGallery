@@ -27,7 +27,8 @@ Le principe fondamental du projet d'origine (2005) est conservé : **pour publie
 - 📁 **Surcharge de Configuration par Fichiers Cachés (*Dotfiles Unix*)** : Personnalisez les commentaires, fonds d'écran, titres et thèmes par dossier via `.comment`, `.bg`, `.title`, `.desc`, `.theme`.
 - 🎨 **Thèmes & Couleurs Configurables** : Sélection de thèmes (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`) ou couleurs sur mesure dans `config.php`.
 - 🔍 **Recherche & Filtres en Temps Réel** : Filtrage instantané par type de média et barre de recherche.
-- 🔒 **Sécurité Renforcée** : Protection stricte contre le *Directory Traversal* (`../`).
+- 🔐 **Mode Administrateur & Authentification** : Authentification sécurisée par mot de passe haché (BCRYPT) enregistré dans `config.php` via le script CLI `set_admin_password.php` ou l'interface web.
+- 🔒 **Sécurité Renforcement** : Protection stricte contre le *Directory Traversal* (`../`).
 
 ---
 
@@ -36,13 +37,43 @@ Le principe fondamental du projet d'origine (2005) est conservé : **pour publie
 | Raccourci | Action |
 |---|---|
 | `<Flèche Gauche>` / `<Flèche Droite>` | Élément précédent / suivant |
+| `Swipe Gauche / Droite` (Mobile) | Navigation tactile fluide |
 | `+` ou `=` | Zoom avant |
 | `-` ou `_` | Zoom arrière |
 | `Glisser Souris` | Déplacer l'image (*Pan / Drag*) |
 | `Double Clic` | Basculer entre zoom 1x et 2.5x |
 | `0` | Réinitialiser le zoom (100%) |
 | `R` | Rotation de l'image de 90° |
+| `F` | Basculer en mode Plein Écran (*Fullscreen*) |
 | `Échap` | Fermer la visionneuse Lightbox |
+
+---
+
+## 🔐 Configuration du Mode Administration (`set_admin_password.php`)
+
+SimpleGallery intègre un **mode administration** sécurisé pour déverrouiller des fonctionnalités de gestion.
+
+### 1. Initialiser ou Modifier le Mot de Passe Admin via CLI
+
+Exécutez la commande suivante dans votre terminal à la racine du projet pour générer et enregistrer le hash BCRYPT dans [config.php](file:///home/oktail/Documents/GitHub/SimpleGallery/config.php) :
+
+```bash
+php set_admin_password.php "VotreMotDePasseSecret"
+```
+
+### 2. Se Connecter et Modifier le Mot de Passe via l'Interface Web
+
+- Cliquez sur le bouton **🔑 Admin** dans la barre d'outils de l'application.
+- Saisissez votre mot de passe pour activer le mode **🛡️ Admin Active**.
+- Vous pouvez ensuite modifier votre mot de passe directement depuis le formulaire du modal administration.
+
+### 3. Désactiver le Mode Admin
+
+Pour désactiver temporairement le mode administration, définissez la variable `$admin_password_hash` sur une chaîne vide dans `config.php` :
+
+```php
+$admin_password_hash = '';
+```
 
 ---
 
@@ -82,15 +113,16 @@ $thumb_height = 360;
 
 ```text
 SimpleGallery/
-├── config.php        # Configuration générale (thèmes, titre, extensions)
-├── api.php           # API REST JSON PHP (scan des répertoires, dotfiles & métadonnées)
-├── thumb.php         # Moteur de vignettes (GD, FFmpeg, cache .thumbnails & stream direct)
-├── index.php         # Application Web HTML5 SPA (interface principale & contrôles d'exploration)
+├── config.php            # Configuration générale (thèmes, titre, hash admin)
+├── api.php               # API REST JSON PHP (scan des répertoires, dotfiles & auth admin)
+├── thumb.php             # Moteur de vignettes (GD, FFmpeg, cache .thumbnails & stream direct)
+├── set_admin_password.php # Script CLI pour générer/mettre à jour le mot de passe admin
+├── index.php             # Application Web HTML5 SPA (interface principale & modal admin)
 ├── css/
-│   └── gallery.css   # Style CSS3, effet Polaroid réaliste, grille & explorateur d'images
+│   └── gallery.css       # Style CSS3, effet Polaroid réaliste, grille & modal admin
 ├── js/
-│   └── gallery.js    # Logique client (moteur de zoom/déplacement, AJAX, Lightbox, filtres)
-└── .thumbnails/      # Dossier de cache des vignettes (créé automatiquement)
+│   └── gallery.js        # Logique client (moteur de zoom/déplacement, AJAX, Lightbox, auth admin)
+└── .thumbnails/          # Dossier de cache des vignettes (créé automatiquement)
 ```
 
 ---
@@ -99,8 +131,9 @@ SimpleGallery/
 
 1. Copiez les fichiers de **SimpleGallery** sur votre serveur web PHP (compatible Apache, Nginx, LiteSpeed, Caddy avec PHP 7.4+ ou PHP 8+).
 2. Optionnel : activez l'extension PHP `gd` pour le redimensionnement d'images et installez `ffmpeg` pour l'extraction de vignettes vidéo.
-3. Glissez vos dossiers de photos et médias directement dans le répertoire.
-4. Ouvrez `index.php` dans votre navigateur web !
+3. Définissez le mot de passe d'administration via la commande : `php set_admin_password.php "VotreMotDePasse"`
+4. Glissez vos dossiers de photos et médias directement dans le répertoire.
+5. Ouvrez `index.php` dans votre navigateur web !
 
 ---
 

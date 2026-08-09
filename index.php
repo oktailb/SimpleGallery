@@ -68,6 +68,10 @@ require_once __DIR__ . '/config.php';
             <span>🔲</span> Grid
           </button>
         </div>
+
+        <button id="adminBtn" class="btn-toggle" title="Admin Mode">
+          <span id="adminBtnIcon">🔑</span> <span id="adminBtnText">Admin</span>
+        </button>
       </div>
     </div>
   </header>
@@ -159,6 +163,46 @@ require_once __DIR__ . '/config.php';
     <div class="lightbox-footer">
       <div>
         Navigation: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> / Swipe | Zoom: <kbd>+</kbd> <kbd>-</kbd> | Drag/Pan: <kbd>Mouse drag</kbd> | Reset: <kbd>0</kbd> / <kbd>R</kbd> | Fullscreen: <kbd>F</kbd> | Exit: <kbd>Esc</kbd>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Modal -->
+  <div id="adminModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3>🔐 Admin Mode</h3>
+        <button id="adminModalCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <div id="adminLoginState">
+          <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+            Enter your admin password to unlock management features.
+          </p>
+          <form id="adminLoginForm">
+            <input type="password" id="adminPasswordInput" class="admin-input" placeholder="Admin password..." required />
+            <div id="adminLoginError" class="admin-error-msg" style="display: none;"></div>
+            <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
+              Log In
+            </button>
+          </form>
+        </div>
+        <div id="adminActiveState" style="display: none;">
+          <p style="margin-bottom: 1rem; color: var(--text-main); font-weight: 500;">
+            🛡️ Admin mode is currently active!
+          </p>
+          <form id="changePasswordForm" style="margin-bottom: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main);">Change Admin Password</h4>
+            <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="New password..." required minlength="4" />
+            <button type="submit" class="pill-btn" style="width: 100%; margin-top: 0.5rem; justify-content: center;">
+              Update Password
+            </button>
+            <div id="adminChangePassMsg" class="admin-success-msg" style="display: none; margin-top: 0.5rem;"></div>
+          </form>
+          <button id="adminLogoutBtn" class="pill-btn" style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">
+            Log Out Admin Mode
+          </button>
+        </div>
       </div>
     </div>
   </div>

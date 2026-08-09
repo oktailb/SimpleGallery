@@ -15,7 +15,9 @@ class SimpleGallery {
       files: [],
       filteredFiles: [],
       lightboxIndex: null,
-      overrides: null
+      overrides: null,
+      isAdmin: false,
+      adminEnabled: false
     };
 
     // Zoom, Pan & Rotate Explorer State
@@ -75,7 +77,23 @@ class SimpleGallery {
       lightboxZoomOutBtn: document.getElementById('lightboxZoomOutBtn'),
       lightboxResetZoomBtn: document.getElementById('lightboxResetZoomBtn'),
       lightboxRotateBtn: document.getElementById('lightboxRotateBtn'),
-      zoomBadge: document.getElementById('zoomBadge')
+      zoomBadge: document.getElementById('zoomBadge'),
+
+      // Admin Modal & Controls
+      adminBtn: document.getElementById('adminBtn'),
+      adminBtnIcon: document.getElementById('adminBtnIcon'),
+      adminBtnText: document.getElementById('adminBtnText'),
+      adminModal: document.getElementById('adminModal'),
+      adminModalCloseBtn: document.getElementById('adminModalCloseBtn'),
+      adminLoginState: document.getElementById('adminLoginState'),
+      adminActiveState: document.getElementById('adminActiveState'),
+      adminLoginForm: document.getElementById('adminLoginForm'),
+      adminPasswordInput: document.getElementById('adminPasswordInput'),
+      adminLoginError: document.getElementById('adminLoginError'),
+      changePasswordForm: document.getElementById('changePasswordForm'),
+      newAdminPasswordInput: document.getElementById('newAdminPasswordInput'),
+      adminChangePassMsg: document.getElementById('adminChangePassMsg'),
+      adminLogoutBtn: document.getElementById('adminLogoutBtn')
     };
   }
 
@@ -104,6 +122,34 @@ class SimpleGallery {
         this.applyFilterAndRender();
       }
     });
+
+    // Admin Controls
+    if (this.el.adminBtn) {
+      this.el.adminBtn.addEventListener('click', () => this.openAdminModal());
+    }
+    if (this.el.adminModalCloseBtn) {
+      this.el.adminModalCloseBtn.addEventListener('click', () => this.closeAdminModal());
+    }
+    if (this.el.adminModal) {
+      this.el.adminModal.addEventListener('click', (e) => {
+        if (e.target === this.el.adminModal) this.closeAdminModal();
+      });
+    }
+    if (this.el.adminLoginForm) {
+      this.el.adminLoginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.loginAdmin();
+      });
+    }
+    if (this.el.adminLogoutBtn) {
+      this.el.adminLogoutBtn.addEventListener('click', () => this.logoutAdmin());
+    }
+    if (this.el.changePasswordForm) {
+      this.el.changePasswordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.changeAdminPassword();
+      });
+    }
 
     // Lightbox Modal Controls
     this.el.lightboxCloseBtn.addEventListener('click', () => this.closeLightbox());
@@ -207,7 +253,10 @@ class SimpleGallery {
       this.state.directories = json.directories;
       this.state.files = json.files;
       this.state.overrides = json.overrides || {};
+      this.state.isAdmin = !!json.is_admin;
+      this.state.adminEnabled = !!json.admin_enabled;
 
+      this.updateAdminUI();
       this.applyDotfileOverrides(this.state.overrides);
       this.renderBreadcrumbs(json.breadcrumbs);
       this.renderFolders(json.directories);
@@ -636,6 +685,123 @@ class SimpleGallery {
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
       }
+    }
+  }
+
+  // =============================================================
+  // ADMIN AUTHENTICATION & UI MANAGEMENT
+  // =============================================================
+
+  updateAdminUI() {
+    if (!this.el.adminBtn) return;
+
+    if (this.state.isAdmin) {
+      this.el.adminBtn.classList.add('admin-active');
+      if (this.el.adminBtnIcon) this.el.adminBtnIcon.textContent = '🛡️';
+      if (this.el.adminBtnText) this.el.adminBtnText.textContent = 'Admin Active';
+      if (this.el.adminLoginState) this.el.adminLoginState.style.display = 'none';
+      if (this.el.adminActiveState) this.el.adminActiveState.style.display = 'block';
+    } else {
+      this.el.adminBtn.classList.remove('admin-active');
+      if (this.el.adminBtnIcon) this.el.adminBtnIcon.textContent = '🔑';
+      if (this.el.adminBtnText) this.el.adminBtnText.textContent = 'Admin';
+      if (this.el.adminLoginState) this.el.adminLoginState.style.display = 'block';
+      if (this.el.adminActiveState) this.el.adminActiveState.style.display = 'none';
+    }
+  }
+
+  openAdminModal() {
+    if (!this.el.adminModal) return;
+    this.updateAdminUI();
+    this.el.adminModal.style.display = 'flex';
+    setTimeout(() => this.el.adminModal.classList.add('open'), 10);
+    if (!this.state.isAdmin && this.el.adminPasswordInput) {
+      this.el.adminPasswordInput.focus();
+    }
+  }
+
+  closeAdminModal() {
+    if (!this.el.adminModal) return;
+    this.el.adminModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.adminModal.style.display = 'none';
+    }, 250);
+    if (this.el.adminLoginError) this.el.adminLoginError.style.display = 'none';
+    if (this.el.adminChangePassMsg) this.el.adminChangePassMsg.style.display = 'none';
+  }
+
+  async loginAdmin() {
+    const password = this.el.adminPasswordInput.value;
+    if (!password) return;
+
+    try {
+      const res = await fetch('api.php?action=login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', password })
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        this.state.isAdmin = true;
+        this.el.adminPasswordInput.value = '';
+        if (this.el.adminLoginError) this.el.adminLoginError.style.display = 'none';
+        this.updateAdminUI();
+        this.closeAdminModal();
+        this.loadDirectory(this.state.currentPath);
+      } else {
+        if (this.el.adminLoginError) {
+          this.el.adminLoginError.textContent = json.error || 'Login failed';
+          this.el.adminLoginError.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      console.error('Login request failed:', err);
+    }
+  }
+
+  async logoutAdmin() {
+    try {
+      const res = await fetch('api.php?action=logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'logout' })
+      });
+      const json = await res.json();
+      if (json.success) {
+        this.state.isAdmin = false;
+        this.updateAdminUI();
+        this.closeAdminModal();
+        this.loadDirectory(this.state.currentPath);
+      }
+    } catch (err) {
+      console.error('Logout request failed:', err);
+    }
+  }
+
+  async changeAdminPassword() {
+    const new_password = this.el.newAdminPasswordInput.value;
+    if (!new_password) return;
+
+    try {
+      const res = await fetch('api.php?action=change_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'change_password', new_password })
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        this.el.newAdminPasswordInput.value = '';
+        if (this.el.adminChangePassMsg) {
+          this.el.adminChangePassMsg.textContent = '✅ ' + json.message;
+          this.el.adminChangePassMsg.style.display = 'block';
+        }
+      } else {
+        alert(json.error || 'Failed to change password');
+      }
+    } catch (err) {
+      console.error('Change password failed:', err);
     }
   }
 
