@@ -8,19 +8,41 @@ Le principe fondamental du projet d'origine (2005) est conservé : **pour publie
 
 ## ✨ Fonctionnalités Principales
 
+- 🔄 **Orientation Automatique des Photos (EXIF)** :
+  - Détection et orientation automatique à 100% des photos smartphone / appareils numériques (verticales / horizontales) via `image-orientation: from-image` en CSS3 et `exif_read_data` / `imagerotate` en PHP.
+- 🔎 **Explorateur d'Images Interactif (Zoom & Déplacement)** :
+  - **Zoom Avant / Arrière** : Via les boutons `➕` / `➖`, la molette de la souris, ou les touches clavier `+` / `-`.
+  - **Déplacement à la souris (*Pan / Drag*)** : Glissez-déposez l'image à la souris ou au doigt pour explorer les détails.
+  - **Double-Clic** : Alterne rapidement entre le zoom 1x et 2.5x centré.
+  - **Rotation 90°** : Bouton `⟳` ou touche `R` pour pivoter les photos à la volée.
+  - **Bouton Réinitialiser** : Recommencez le zoom à 100% via le bouton `🔄` ou la touche `0`.
 - 📸 **Rendu Polaroid Ultra-Réaliste & Mode Grille** :
   - **Mode Polaroid** : Cartes style tirage argentique Polaroid 600 (marges authentiques, papier coquille d'œuf texturé, effet de reflet brillant, ruban adhésif *Washi Tape* translucide, inclinaisons naturelles et police d'encre manuscrite *Caveat*).
   - **Mode Grille** : Grille responsive épurée avec zoom au survol.
 - ⚡ **Génération & Cache de Vignettes Intelligent** ([thumb.php](file:///home/oktail/Documents/GitHub/SimpleGallery/thumb.php)) :
-  - **Photos** : Découpage et redimensionnement automatique via l'extension **PHP GD** avec gestion de la rotation EXIF des smartphones. *Bascule automatique en stream direct si l'extension GD n'est pas installée*, garantissant que les vignettes d'images ne sont **jamais vides ou cassées**.
+  - **Photos** : Redimensionnement automatique via l'extension **PHP GD** avec gestion de la rotation EXIF. *Bascule automatique en stream direct si GD n'est pas installé*.
   - **Vidéos** : Extraction automatique d'une image poster (à 1.0s) via **FFmpeg** pour les fichiers `.mp4`, `.webm`, `.mov`, `.mkv`, etc.
   - Mise en cache automatique dans le dossier `.thumbnails/` au format WebP / JPEG optimisé.
-- 🎬 **Support Média HTML5 Natif** : Plus aucun plugin Flash (`.swf`). Lecture directe des vidéos et musiques dans le navigateur.
-- 📁 **Surcharge de Configuration par Fichiers Cachés (*Dotfiles Unix*)** : Personnalisez facilement l'apparence, les commentaires ou le titre de n'importe quel dossier à l'aide de fichiers cachés (`.comment`, `.bg`, `.title`, `.desc`, `.theme`).
-- 🎨 **Thèmes & Couleurs Configurables** : Sélectionnez un thème préconfiguré (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`) ou personnalisez vos propres couleurs dans `config.php`.
-- 🔍 **Recherche & Filtres en Temps Réel** : Filtrage instantané par type de média (Photos, Vidéos, Musique, Documents, Archives) et barre de recherche.
-- 🔎 **Lightbox Fullscreen** : Visionneuse intégrée avec navigation au clavier (`←` / `→` / `Échap`), affichage des métadonnées/commentaires et bouton de téléchargement direct.
+- 🎬 **Support Média HTML5 Natif** : Lecture directe des vidéos et musiques dans le navigateur (zéro Flash).
+- 📁 **Surcharge de Configuration par Fichiers Cachés (*Dotfiles Unix*)** : Personnalisez les commentaires, fonds d'écran, titres et thèmes par dossier via `.comment`, `.bg`, `.title`, `.desc`, `.theme`.
+- 🎨 **Thèmes & Couleurs Configurables** : Sélection de thèmes (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`) ou couleurs sur mesure dans `config.php`.
+- 🔍 **Recherche & Filtres en Temps Réel** : Filtrage instantané par type de média et barre de recherche.
 - 🔒 **Sécurité Renforcée** : Protection stricte contre le *Directory Traversal* (`../`).
+
+---
+
+## ⌨️ Raccourcis Clavier dans la Lightbox
+
+| Raccourci | Action |
+|---|---|
+| `<Flèche Gauche>` / `<Flèche Droite>` | Élément précédent / suivant |
+| `+` ou `=` | Zoom avant |
+| `-` ou `_` | Zoom arrière |
+| `Glisser Souris` | Déplacer l'image (*Pan / Drag*) |
+| `Double Clic` | Basculer entre zoom 1x et 2.5x |
+| `0` | Réinitialiser le zoom (100%) |
+| `R` | Rotation de l'image de 90° |
+| `Échap` | Fermer la visionneuse Lightbox |
 
 ---
 
@@ -60,14 +82,14 @@ $thumb_height = 360;
 
 ```text
 SimpleGallery/
-├── config.php        # Configuration générale (thème, titre, extensions autorisées)
+├── config.php        # Configuration générale (thèmes, titre, extensions)
 ├── api.php           # API REST JSON PHP (scan des répertoires, dotfiles & métadonnées)
 ├── thumb.php         # Moteur de vignettes (GD, FFmpeg, cache .thumbnails & stream direct)
-├── index.php         # Application Web HTML5 SPA (interface principale)
+├── index.php         # Application Web HTML5 SPA (interface principale & contrôles d'exploration)
 ├── css/
-│   └── gallery.css   # Style CSS3, effet Polaroid réaliste & grille responsive
+│   └── gallery.css   # Style CSS3, effet Polaroid réaliste, grille & explorateur d'images
 ├── js/
-│   └── gallery.js    # Logique client Vanilla ES6+ (AJAX, Lightbox, filtres, dotfiles)
+│   └── gallery.js    # Logique client (moteur de zoom/déplacement, AJAX, Lightbox, filtres)
 └── .thumbnails/      # Dossier de cache des vignettes (créé automatiquement)
 ```
 
@@ -76,7 +98,7 @@ SimpleGallery/
 ## 💻 Installation
 
 1. Copiez les fichiers de **SimpleGallery** sur votre serveur web PHP (compatible Apache, Nginx, LiteSpeed, Caddy avec PHP 7.4+ ou PHP 8+).
-2. Optionnel : activez l'extension PHP `gd` pour le redimensionnement d'images et installez `ffmpeg` pour l'extraction de vignettes vidéo (si non présents, la galerie utilisera automatiquement les fallbacks en direct sans erreur).
+2. Optionnel : activez l'extension PHP `gd` pour le redimensionnement d'images et installez `ffmpeg` pour l'extraction de vignettes vidéo.
 3. Glissez vos dossiers de photos et médias directement dans le répertoire.
 4. Ouvrez `index.php` dans votre navigateur web !
 

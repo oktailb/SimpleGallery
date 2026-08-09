@@ -9,7 +9,7 @@ require_once __DIR__ . '/config.php';
   <meta name="description" content="SimpleGallery 2026 - Ultra-fast zero-dependency modern PHP web gallery">
   <title><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></title>
 
-  <!-- Google Fonts: Inter, Outfit, and Permanent Marker for Polaroid handwriting -->
+  <!-- Google Fonts: Inter, Outfit, and Caveat for Polaroid handwriting -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -119,9 +119,19 @@ require_once __DIR__ . '/config.php';
       <div>
         <div id="lightboxTitle" class="lightbox-title">Media Preview</div>
         <div id="lightboxMeta" style="font-size:0.8rem;color:var(--text-muted);"></div>
+        <div id="lightboxComment" class="lightbox-comment" style="display:none;"></div>
       </div>
 
+      <!-- Image Explorer Controls (Zoom, Rotate, Download, Close) -->
       <div class="lightbox-actions">
+        <div id="imageExplorerControls" class="image-explorer-controls" style="display: flex; gap: 0.4rem;">
+          <button id="lightboxZoomInBtn" class="lightbox-btn" title="Zoom In (+)">➕</button>
+          <button id="lightboxZoomOutBtn" class="lightbox-btn" title="Zoom Out (-)">➖</button>
+          <button id="lightboxResetZoomBtn" class="lightbox-btn" title="Reset Zoom (0)">🔄</button>
+          <button id="lightboxRotateBtn" class="lightbox-btn" title="Rotate 90° (R)">⟳</button>
+          <span id="zoomBadge" class="zoom-badge">100%</span>
+        </div>
+
         <a id="lightboxDownloadBtn" href="#" class="lightbox-btn" title="Download Media" download>
           ⬇️
         </a>
@@ -144,7 +154,9 @@ require_once __DIR__ . '/config.php';
     </div>
 
     <div class="lightbox-footer">
-      <div>Press <kbd>Esc</kbd> to exit, <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to navigate</div>
+      <div>
+        Navigation: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> | Zoom: <kbd>+</kbd> <kbd>-</kbd> | Drag/Pan: <kbd>Mouse drag</kbd> | Reset: <kbd>0</kbd> / <kbd>R</kbd> | Exit: <kbd>Esc</kbd>
+      </div>
     </div>
   </div>
 

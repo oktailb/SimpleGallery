@@ -35,6 +35,11 @@
   padding: 0;
 }
 
+/* Enforce automatic EXIF orientation reading for all image elements */
+img {
+  image-orientation: from-image;
+}
+
 body {
   background-color: var(--bg-main);
   background-image: 
@@ -68,7 +73,8 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
   font-style: italic;
-  margin-top: 4px;
+  text-align: center;
+  margin-top: 2px;
 }
 
 /* App Header & Navigation Bar */
@@ -304,10 +310,13 @@ body {
   gap: 0.5rem;
 }
 
+/* =============================================================
+   ENLARGED & CENTERED FOLDER CARDS DESIGN
+   ============================================================= */
 .folders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.25rem;
+  gap: 1.5rem;
   margin-bottom: 2.5rem;
 }
 
@@ -315,12 +324,14 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1.5rem 1.25rem;
   text-decoration: none;
   color: var(--text-main);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  text-align: center;
+  gap: 0.85rem;
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -328,43 +339,61 @@ body {
 }
 
 .folder-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
   border-color: var(--border-color-hover);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), var(--shadow-glow);
 }
 
 .folder-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  background: rgba(99, 102, 241, 0.15);
-  border-radius: var(--radius-md);
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(236, 72, 153, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 2.6rem;
   color: var(--accent-primary);
-  transition: transform 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .folder-card:hover .folder-icon-wrapper {
-  transform: scale(1.1) rotate(-5deg);
+  transform: scale(1.12) rotate(-4deg);
+}
+
+.folder-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  image-orientation: from-image;
 }
 
 .folder-name {
+  font-family: var(--font-title);
   font-weight: 600;
-  font-size: 1rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .folder-meta {
-  font-size: 0.8rem;
+  font-size: 0.825rem;
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
 }
 
 /* =============================================================
@@ -453,6 +482,7 @@ body {
   object-fit: cover;
   display: block;
   transition: transform 0.5s ease;
+  image-orientation: from-image;
 }
 
 .polaroid-card:hover .polaroid-img-wrapper img {
@@ -536,6 +566,7 @@ body {
   height: 100%;
   object-fit: cover;
   transition: transform 0.4s ease;
+  image-orientation: from-image;
 }
 
 .grid-card:hover .grid-img-wrapper img {
@@ -627,6 +658,43 @@ body {
   background: var(--accent-primary);
 }
 
+.zoom-badge {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-muted);
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.zoom-badge.zoomed {
+  background: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.explorer-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+  cursor: zoom-in;
+  user-select: none;
+  touch-action: none;
+  transform-origin: center center;
+  will-change: transform;
+  image-orientation: from-image;
+}
+
+.explorer-img.dragging {
+  cursor: grabbing !important;
+}
+
 .lightbox-body {
   flex: 1;
   display: flex;
@@ -670,14 +738,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.lightbox-content-wrapper img {
-  max-width: 100%;
-  max-height: 80vh;
-  object-fit: contain;
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  position: relative;
 }
 
 .lightbox-content-wrapper video {
@@ -714,6 +776,15 @@ body {
   justify-content: space-between;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+kbd {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  color: #fff;
 }
 
 /* Empty State / Loading State */
