@@ -31,6 +31,14 @@ function get_relative_path(string $full_path, string $base_dir): string {
     return ltrim(str_replace('\\', '/', $rel), '/');
 }
 
+/**
+ * Safely encodes URL path segments preserving directory slashes '/'
+ */
+function encode_url_path(string $path): string {
+    $parts = explode('/', $path);
+    return implode('/', array_map('rawurlencode', $parts));
+}
+
 function format_bytes(int $bytes, int $precision = 2): string {
     $units = ['B', 'KB', 'MB', 'GB', 'TB'];
     $bytes = max($bytes, 0);
@@ -50,11 +58,6 @@ function get_media_category(string $ext, array $media_types): string {
     return 'other';
 }
 
-/**
- * Parses hidden Unix .comment file
- * Supports legacy 2-line format (line 1 = filename, line 2 = comment)
- * and key=value / key: value format.
- */
 function load_dir_comments(string $dir_path): array {
     $comments = [];
     $comment_file = $dir_path . '/.comment';
@@ -72,7 +75,6 @@ function load_dir_comments(string $dir_path): array {
                     list($fname, $cmt) = explode(':', $line, 2);
                     $comments[trim($fname)] = trim($cmt);
                 } else {
-                    // Legacy 2-line format
                     $fname = $line;
                     $cmt = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
                     $comments[$fname] = $cmt;
@@ -84,9 +86,6 @@ function load_dir_comments(string $dir_path): array {
     return $comments;
 }
 
-/**
- * Parses folder dotfile configuration overrides (.bg, .title, .desc, .theme)
- */
 function load_folder_overrides(string $dir_path, string $base_dir): array {
     $overrides = [
         'title'       => null,
@@ -95,19 +94,16 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
         'theme'       => null
     ];
 
-    // .title override
     $title_file = $dir_path . '/.title';
     if (file_exists($title_file) && is_readable($title_file)) {
         $overrides['title'] = trim(file_get_contents($title_file));
     }
 
-    // .desc or .description override
     $desc_file = file_exists($dir_path . '/.desc') ? $dir_path . '/.desc' : (file_exists($dir_path . '/.description') ? $dir_path . '/.description' : null);
     if ($desc_file && is_readable($desc_file)) {
         $overrides['description'] = trim(file_get_contents($desc_file));
     }
 
-    // .bg override (background image or CSS color)
     $bg_file = $dir_path . '/.bg';
     if (file_exists($bg_file) && is_readable($bg_file)) {
         $bg_val = trim(file_get_contents($bg_file));
@@ -122,7 +118,6 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
         }
     }
 
-    // .theme override (preset name or key=value overrides)
     $theme_file = $dir_path . '/.theme';
     if (file_exists($theme_file) && is_readable($theme_file)) {
         $theme_val = trim(file_get_contents($theme_file));
@@ -190,7 +185,6 @@ if ($current_relative !== '') {
         $part_dir = sanitize_path($accumulated, $real_base_dir);
         $part_title = $part;
 
-        // Check if ancestor folder has a .title override
         if ($part_dir && file_exists($part_dir . '/.title')) {
             $custom_t = trim(@file_get_contents($part_dir . '/.title'));
             if ($custom_t !== '') $part_title = $custom_t;
@@ -234,7 +228,6 @@ if ($scan_items !== false) {
                 }
             }
 
-            // Check if folder has .title override
             $dir_display_name = $item;
             if (file_exists($full_item_path . '/.title')) {
                 $custom_title = trim(@file_get_contents($full_item_path . '/.title'));
@@ -269,7 +262,7 @@ if ($scan_items !== false) {
                 'size_formatted' => format_bytes($size),
                 'mtime'          => $mtime,
                 'thumb_url'      => 'thumb.php?file=' . rawurlencode($item_relative),
-                'file_url'       => rawurlencode($item_relative),
+                'file_url'       => encode_url_path($item_relative),
                 'comment'        => $comments[$item] ?? ''
             ];
         }
