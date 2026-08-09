@@ -29,6 +29,13 @@ class SimpleGallery {
       startY: 0
     };
 
+    // Touch Swipe State for Mobile
+    this.touchState = {
+      startX: 0,
+      startY: 0,
+      startTime: 0
+    };
+
     this.initElements();
     this.bindEvents();
     this.handleUrlChange();
@@ -57,6 +64,7 @@ class SimpleGallery {
       lightboxComment: document.getElementById('lightboxComment'),
       lightboxContent: document.getElementById('lightboxContent'),
       lightboxCloseBtn: document.getElementById('lightboxCloseBtn'),
+      lightboxFullscreenBtn: document.getElementById('lightboxFullscreenBtn'),
       lightboxPrevBtn: document.getElementById('lightboxPrevBtn'),
       lightboxNextBtn: document.getElementById('lightboxNextBtn'),
       lightboxDownloadBtn: document.getElementById('lightboxDownloadBtn'),
@@ -99,6 +107,9 @@ class SimpleGallery {
 
     // Lightbox Modal Controls
     this.el.lightboxCloseBtn.addEventListener('click', () => this.closeLightbox());
+    if (this.el.lightboxFullscreenBtn) {
+      this.el.lightboxFullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+    }
     this.el.lightboxPrevBtn.addEventListener('click', () => this.navigateLightbox(-1));
     this.el.lightboxNextBtn.addEventListener('click', () => this.navigateLightbox(1));
 
@@ -119,12 +130,12 @@ class SimpleGallery {
     // Mouse Drag / Pan Events
     this.el.lightboxContent.addEventListener('mousedown', (e) => this.startDrag(e));
     window.addEventListener('mousemove', (e) => this.doDrag(e));
-    window.addEventListener('mouseup', () => this.endDrag());
+    window.addEventListener('mouseup', (e) => this.endDrag(e));
 
-    // Touch Drag Events for Mobile
+    // Touch Drag & Swipe Events for Mobile
     this.el.lightboxContent.addEventListener('touchstart', (e) => this.startTouchDrag(e), { passive: true });
     window.addEventListener('touchmove', (e) => this.doTouchDrag(e), { passive: false });
-    window.addEventListener('touchend', () => this.endDrag());
+    window.addEventListener('touchend', (e) => this.endDrag(e));
 
     // Double Click to Toggle Zoom (1x <-> 2.5x)
     this.el.lightboxContent.addEventListener('dblclick', (e) => {
@@ -144,6 +155,7 @@ class SimpleGallery {
       if (e.key === 'Escape') this.closeLightbox();
       if (e.key === 'ArrowLeft') this.navigateLightbox(-1);
       if (e.key === 'ArrowRight') this.navigateLightbox(1);
+      if (e.key === 'f' || e.key === 'F') { e.preventDefault(); this.toggleFullscreen(); }
 
       if (this.isCurrentMediaImage()) {
         if (e.key === '+' || e.key === '=') { e.preventDefault(); this.adjustZoom(0.3); }
@@ -287,7 +299,7 @@ class SimpleGallery {
     this.el.foldersGrid.innerHTML = folders.map(folder => `
       <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card" data-path="${folder.path}">
         <div class="folder-icon-wrapper">
-          ${folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" />` : '📁'}
+          ${folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" />` : '📁'}
         </div>
         <div class="folder-name">${this.escapeHtml(folder.name)}</div>
         <div class="folder-meta">
@@ -502,11 +514,17 @@ class SimpleGallery {
   }
 
   startTouchDrag(e) {
-    if (!this.isCurrentMediaImage() || e.touches.length !== 1) return;
+    if (e.touches.length !== 1) return;
     const touch = e.touches[0];
-    this.zoomState.isDragging = true;
-    this.zoomState.startX = touch.clientX - this.zoomState.translateX;
-    this.zoomState.startY = touch.clientY - this.zoomState.translateY;
+    this.touchState.startX = touch.clientX;
+    this.touchState.startY = touch.clientY;
+    this.touchState.startTime = Date.now();
+
+    if (this.isCurrentMediaImage() && this.zoomState.scale > 1) {
+      this.zoomState.isDragging = true;
+      this.zoomState.startX = touch.clientX - this.zoomState.translateX;
+      this.zoomState.startY = touch.clientY - this.zoomState.translateY;
+    }
   }
 
   doDrag(e) {
@@ -518,14 +536,43 @@ class SimpleGallery {
   }
 
   doTouchDrag(e) {
-    if (!this.zoomState.isDragging || !this.isCurrentMediaImage() || e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    this.zoomState.translateX = touch.clientX - this.zoomState.startX;
-    this.zoomState.translateY = touch.clientY - this.zoomState.startY;
-    this.updateExplorerTransform(false);
+    if (this.isCurrentMediaImage() && this.zoomState.scale > 1 && this.zoomState.isDragging && e.touches.length === 1) {
+      const touch = e.touches[0];
+      this.zoomState.translateX = touch.clientX - this.zoomState.startX;
+      this.zoomState.translateY = touch.clientY - this.zoomState.startY;
+      this.updateExplorerTransform(false);
+    }
   }
 
-  endDrag() {
+  endDrag(e) {
+    // Check horizontal touch swipe gesture for Lightbox navigation
+    if (this.touchState.startTime > 0) {
+      const elapsed = Date.now() - this.touchState.startTime;
+      this.touchState.startTime = 0;
+
+      if (!this.isCurrentMediaImage() || this.zoomState.scale === 1) {
+        let endX = null;
+        let endY = null;
+        if (e && e.changedTouches && e.changedTouches.length > 0) {
+          endX = e.changedTouches[0].clientX;
+          endY = e.changedTouches[0].clientY;
+        }
+
+        if (endX !== null && endY !== null) {
+          const deltaX = endX - this.touchState.startX;
+          const deltaY = endY - this.touchState.startY;
+
+          if (elapsed < 500 && Math.abs(deltaX) > 50 && Math.abs(deltaY) < 70) {
+            if (deltaX < -50) {
+              this.navigateLightbox(1);  // Swipe left -> Next
+            } else if (deltaX > 50) {
+              this.navigateLightbox(-1); // Swipe right -> Previous
+            }
+          }
+        }
+      }
+    }
+
     this.zoomState.isDragging = false;
     const img = document.getElementById('lightboxExplorerImg');
     if (img) img.classList.remove('dragging');
@@ -573,6 +620,23 @@ class SimpleGallery {
 
   showLoading(show) {
     this.el.loadingState.style.display = show ? 'flex' : 'none';
+  }
+
+  toggleFullscreen() {
+    const target = this.el.lightbox;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (target.requestFullscreen) {
+        target.requestFullscreen();
+      } else if (target.webkitRequestFullscreen) {
+        target.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
   }
 
   escapeHtml(str) {

@@ -132,6 +132,9 @@ require_once __DIR__ . '/config.php';
           <span id="zoomBadge" class="zoom-badge">100%</span>
         </div>
 
+        <button id="lightboxFullscreenBtn" class="lightbox-btn" title="Toggle Fullscreen (F)">
+          ⛶
+        </button>
         <a id="lightboxDownloadBtn" href="#" class="lightbox-btn" title="Download Media" download>
           ⬇️
         </a>
@@ -155,7 +158,7 @@ require_once __DIR__ . '/config.php';
 
     <div class="lightbox-footer">
       <div>
-        Navigation: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> | Zoom: <kbd>+</kbd> <kbd>-</kbd> | Drag/Pan: <kbd>Mouse drag</kbd> | Reset: <kbd>0</kbd> / <kbd>R</kbd> | Exit: <kbd>Esc</kbd>
+        Navigation: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> / Swipe | Zoom: <kbd>+</kbd> <kbd>-</kbd> | Drag/Pan: <kbd>Mouse drag</kbd> | Reset: <kbd>0</kbd> / <kbd>R</kbd> | Fullscreen: <kbd>F</kbd> | Exit: <kbd>Esc</kbd>
       </div>
     </div>
   </div>
