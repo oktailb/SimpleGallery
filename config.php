@@ -1,17 +1,86 @@
 <?php
+/**
+ * SimpleGallery 2026 Configuration
+ */
 
-$real_base_dir = '/var/www/html/gallery';
-$web_base_dir = 'gallery';
-$icon_dir = 'img';
-$thumbnail_dir = '.thumbails';
-$front_office = 'auto_gallery2.php';
-$back_office = 'gallery_it.php';
-$render = 'auto_gallery.js';
-$send_file = 'send_file.php';
-$flv_player = 'https://' . $_SERVER["SERVER_NAME"] . '/' . $web_base_dir . '/player_flv_maxi.swf';
-$mp3_player = 'https://' . $_SERVER["SERVER_NAME"] . '/' . $web_base_dir . '/dewplayer.swf';
-$author = 'oktail';
-$title = 'La gallerie de ' . $_SERVER["SERVER_NAME"];
-$background = $_SERVER["SERVER_NAME"] . '/' . $icon_dir . '/bg.jpg';
+// Title of the gallery
+$gallery_title = "SimpleGallery";
 
-?>
+// Gallery root folder path (defaults to current folder)
+$real_base_dir = realpath(__DIR__);
+
+// Thumbnail storage directory relative to current folder or path
+$thumbnail_dir = '.thumbnails';
+
+// Thumbnail dimensions & quality
+$thumb_width = 360;
+$thumb_height = 360;
+$thumb_quality = 85;
+
+/**
+ * Theme & Color Configuration
+ * Preset choices: 'polaroid-classic', 'dark-glass', 'light-minimal', 'cyberpunk', 'custom'
+ */
+$theme_preset = 'polaroid-classic';
+
+$theme_colors = [
+    // Polaroid Classic Theme
+    'polaroid-classic' => [
+        'bg_main'         => '#0f141c',
+        'polaroid_bg'     => '#fcfaf5',
+        'polaroid_text'   => '#1e293b',
+        'polaroid_sub'    => '#64748b',
+        'accent'          => '#6366f1',
+        'card_bg'         => 'rgba(255, 255, 255, 0.05)',
+        'text_main'       => '#f8fafc',
+        'text_muted'      => '#94a3b8'
+    ],
+    // Dark Glassmorphism Theme
+    'dark-glass' => [
+        'bg_main'         => '#090d16',
+        'polaroid_bg'     => '#182032',
+        'polaroid_text'   => '#f1f5f9',
+        'polaroid_sub'    => '#94a3b8',
+        'accent'          => '#8b5cf6',
+        'card_bg'         => 'rgba(255, 255, 255, 0.04)',
+        'text_main'       => '#f8fafc',
+        'text_muted'      => '#94a3b8'
+    ],
+    // Light Minimal Theme
+    'light-minimal' => [
+        'bg_main'         => '#f1f5f9',
+        'polaroid_bg'     => '#ffffff',
+        'polaroid_text'   => '#0f172a',
+        'polaroid_sub'    => '#64748b',
+        'accent'          => '#2563eb',
+        'card_bg'         => '#ffffff',
+        'text_main'       => '#0f172a',
+        'text_muted'      => '#475569'
+    ],
+    // Cyberpunk Theme
+    'cyberpunk' => [
+        'bg_main'         => '#0d0221',
+        'polaroid_bg'     => '#1d1135',
+        'polaroid_text'   => '#00f5d4',
+        'polaroid_sub'    => '#7b2cbf',
+        'accent'          => '#ff007f',
+        'card_bg'         => 'rgba(255, 0, 127, 0.1)',
+        'text_main'       => '#00f5d4',
+        'text_muted'      => '#b5179e'
+    ]
+];
+
+// Active theme palette selection
+$active_theme = $theme_colors[$theme_preset] ?? $theme_colors['polaroid-classic'];
+
+// Supported file extensions categorized
+$media_types = [
+    'image'   => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'svg'],
+    'video'   => ['mp4', 'webm', 'ogv', 'mov', 'mkv', 'avi'],
+    'audio'   => ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'],
+    'doc'     => ['pdf', 'txt', 'md', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
+    'archive' => ['zip', 'tar', 'gz', 'bz2', 'rar', '7z']
+];
+
+// Files and folders to ignore in indexing
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', 'index.php', 'api.php', 'thumb.php', 'config.php', 'css', 'js', 'LICENSE', 'README.md'];
