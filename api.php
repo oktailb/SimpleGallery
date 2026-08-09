@@ -144,6 +144,130 @@ function get_media_category(string $ext, array $media_types): string {
     return 'other';
 }
 
+if ($action === 'update_dotfile') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Admin privileges required'
+        ]);
+        exit;
+    }
+
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $type = $raw_body['type'] ?? $_POST['type'] ?? '';
+    $value = trim((string)($raw_body['value'] ?? $_POST['value'] ?? ''));
+    $filename = trim((string)($raw_body['filename'] ?? $_POST['filename'] ?? ''));
+
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Directory not found or access denied'
+        ]);
+        exit;
+    }
+
+    $allowed_types = ['title', 'description', 'comment', 'bg', 'theme'];
+    if (!in_array($type, $allowed_types, true)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Invalid dotfile type specified'
+        ]);
+        exit;
+    }
+
+    // Check directory write permissions
+    if (!is_writable($target_dir)) {
+        $folder_name = ($current_relative === '') ? 'root gallery' : basename($target_dir);
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => "Permission denied: Web server process (e.g. www-data/http) lacks write permissions on directory '{$folder_name}'. Please grant write access (e.g., `chmod 775 {$folder_name}` or `chown -R www-data:www-data {$folder_name}`)."
+        ]);
+        exit;
+    }
+
+    $success = true;
+    switch ($type) {
+        case 'title':
+            $file = $target_dir . '/.title';
+            if ($value === '') {
+                if (file_exists($file)) $success = @unlink($file);
+            } else {
+                $success = (@file_put_contents($file, $value . "\n") !== false);
+            }
+            break;
+
+        case 'description':
+            $file1 = $target_dir . '/.desc';
+            $file2 = $target_dir . '/.description';
+            if ($value === '') {
+                if (file_exists($file1)) @unlink($file1);
+                if (file_exists($file2)) @unlink($file2);
+            } else {
+                if (file_exists($file2)) @unlink($file2);
+                $success = (@file_put_contents($file1, $value . "\n") !== false);
+            }
+            break;
+
+        case 'bg':
+            $file = $target_dir . '/.bg';
+            if ($value === '') {
+                if (file_exists($file)) $success = @unlink($file);
+            } else {
+                $success = (@file_put_contents($file, $value . "\n") !== false);
+            }
+            break;
+
+        case 'theme':
+            $file = $target_dir . '/.theme';
+            if ($value === '') {
+                if (file_exists($file)) $success = @unlink($file);
+            } else {
+                $success = (@file_put_contents($file, $value . "\n") !== false);
+            }
+            break;
+
+        case 'comment':
+            if ($filename === '') {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error'   => 'Filename required for comment update'
+                ]);
+                exit;
+            }
+            $filename = basename($filename);
+            $comments = load_dir_comments($target_dir);
+            if ($value === '') {
+                unset($comments[$filename]);
+            } else {
+                $comments[$filename] = $value;
+            }
+            $success = save_dir_comments($target_dir, $comments);
+            break;
+    }
+
+    if (!$success) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error'   => "Failed to write file. Please check folder write permissions."
+        ]);
+        exit;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Dotfile updated successfully',
+        'type'    => $type
+    ]);
+    exit;
+}
+
 function load_dir_comments(string $dir_path): array {
     $comments = [];
     $comment_file = $dir_path . '/.comment';
@@ -170,6 +294,28 @@ function load_dir_comments(string $dir_path): array {
         }
     }
     return $comments;
+}
+
+function save_dir_comments(string $dir_path, array $comments): bool {
+    $comment_file = $dir_path . '/.comment';
+    $clean_comments = [];
+    foreach ($comments as $fname => $cmt) {
+        $cmt_clean = trim(str_replace(["\r", "\n"], [' ', ' '], $cmt));
+        if ($cmt_clean !== '') {
+            $clean_comments[basename($fname)] = $cmt_clean;
+        }
+    }
+
+    if (empty($clean_comments)) {
+        if (file_exists($comment_file)) return @unlink($comment_file);
+        return true;
+    }
+
+    $lines = [];
+    foreach ($clean_comments as $fname => $cmt) {
+        $lines[] = $fname . ' = ' . $cmt;
+    }
+    return (@file_put_contents($comment_file, implode("\n", $lines) . "\n") !== false);
 }
 
 function load_folder_overrides(string $dir_path, string $base_dir): array {

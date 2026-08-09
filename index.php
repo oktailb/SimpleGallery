@@ -69,6 +69,10 @@ require_once __DIR__ . '/config.php';
           </button>
         </div>
 
+        <button id="folderSettingsBtn" class="btn-toggle" title="Customize Folder (.title, .desc, .bg, .theme)" style="display: none;">
+          <span>🎨</span> Folder Settings
+        </button>
+
         <button id="adminBtn" class="btn-toggle" title="Admin Mode">
           <span id="adminBtnIcon">🔑</span> <span id="adminBtnText">Admin</span>
         </button>
@@ -136,6 +140,9 @@ require_once __DIR__ . '/config.php';
           <span id="zoomBadge" class="zoom-badge">100%</span>
         </div>
 
+        <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Edit Legend (.comment)" style="display: none;">
+          ✏️
+        </button>
         <button id="lightboxFullscreenBtn" class="lightbox-btn" title="Toggle Fullscreen (F)">
           ⛶
         </button>
@@ -167,7 +174,7 @@ require_once __DIR__ . '/config.php';
     </div>
   </div>
 
-  <!-- Admin Modal -->
+  <!-- Admin Authentication Modal -->
   <div id="adminModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content">
       <div class="admin-modal-header">
@@ -203,6 +210,71 @@ require_once __DIR__ . '/config.php';
             Log Out Admin Mode
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Folder Settings Modal (Admin Only) -->
+  <div id="folderSettingsModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3>📁 Customize Folder Dotfiles</h3>
+        <button id="folderSettingsCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <form id="folderSettingsForm">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Display Title (.title)</label>
+            <input type="text" id="dotfileTitleInput" class="admin-input" placeholder="Custom folder name..." />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Description Banner (.desc)</label>
+            <textarea id="dotfileDescInput" class="admin-input" rows="3" placeholder="Folder description or banner text..." style="resize: vertical;"></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Background (.bg - color/gradient or image path)</label>
+            <input type="text" id="dotfileBgInput" class="admin-input" placeholder="e.g. #0f172a or bg.jpg" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Theme Preset (.theme)</label>
+            <select id="dotfileThemeSelect" class="sort-select" style="width: 100%;">
+              <option value="">(Use Global Default Theme)</option>
+              <option value="polaroid-classic">Polaroid Classic</option>
+              <option value="dark-glass">Dark Glassmorphism</option>
+              <option value="light-minimal">Light Minimal</option>
+              <option value="cyberpunk">Cyberpunk</option>
+            </select>
+          </div>
+
+          <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;">
+            Save Folder Dotfiles
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Media Legend Modal (Admin Only) -->
+  <div id="mediaCommentModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3 id="mediaCommentModalTitle">💬 Edit Media Legend</h3>
+        <button id="mediaCommentCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <form id="mediaCommentForm">
+          <input type="hidden" id="mediaCommentFilename" />
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label id="mediaCommentFilenameLabel" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;"></label>
+            <input type="text" id="mediaCommentInput" class="admin-input" placeholder="Legend / comment text for this media..." />
+          </div>
+          <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;">
+            Save Legend (.comment)
+          </button>
+        </form>
       </div>
     </div>
   </div>

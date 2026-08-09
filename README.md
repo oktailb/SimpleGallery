@@ -75,19 +75,115 @@ Pour désactiver temporairement le mode administration, définissez la variable 
 $admin_password_hash = '';
 ```
 
+### 4. Édition des Métadonnées & Dotfiles en Mode Admin
+
+Lorsque le mode administration est actif (**🛡️ Admin Active**), l'édition se fait directement depuis l'interface web :
+
+- **Titre du dossier (`.title`)** : Personnalisez le nom affiché du répertoire via le bouton **🎨 Folder Settings**.
+- **Description du dossier (`.desc`)** : Éditez ou ajoutez une bannière descriptive en un clic (**✏️ Edit Banner**).
+- **Fond (`.bg`) & Thème du dossier (`.theme`)** : Configurez la couleur/image de fond et le thème du dossier courant.
+- **Légende des médias (`.comment`)** : Cliquez sur l'icône **✏️** au survol des cartes Polaroid/Grille ou dans la visionneuse Lightbox pour ajouter/modifier une légende (`fichier.jpg = Ma légende`).
+
+> ℹ️ **Remarque** : Les noms réels des fichiers et répertoires physiques restent 100% inchangés sur le disque. Seuls les fichiers cachés (*Dotfiles*) `.title`, `.desc`, `.comment`, `.bg` et `.theme` du répertoire sont modifiés.
+
 ---
 
 ## 📂 Configuration par Fichiers Cachés (*Dotfiles Unix*)
 
-Chaque dossier de la galerie peut être personnalisé individuellement en y déposant simplement des fichiers cachés Unix :
+SimpleGallery permet de personnaliser individuellement chaque dossier de la galerie en y créant de simples **fichiers texte cachés Unix** (*Dotfiles*, commençant par un point `.`). 
 
-| Fichier | Rôle & Usage | Exemple / Syntaxe |
+Ces fichiers peuvent être créés **manuellement avec n'importe quel éditeur de texte** ou enregistrés **automatiquement depuis l'interface web via le Mode Admin**.
+
+---
+
+### 📋 Tableau Synthétique des Dotfiles
+
+| Fichier | Rôle & Fonctionnalité | Exemple Rapide |
 |---|---|---|
-| **`.comment`** | Associe des commentaires ou légendes aux fichiers du dossier. | **Format legacy 2005** :<br>```text<br>photo1.jpg<br>Souvenir de vacances à la plage<br>video2.mp4<br>Saut en parachute<br>```<br><br>**Format Clé-Valeur** :<br>```text<br>photo1.jpg = Souvenir de vacances à la plage<br>``` |
-| **`.bg`** | Définit une image de fond spécifique ou une couleur CSS pour le dossier. | **Image locale** : `fond.jpg`<br>**Couleur / Dégradé CSS** : `#0f172a` ou `linear-gradient(to right, #0f172a, #1e1b4b)` |
-| **`.title`** | Surcharge le nom affiché du dossier dans l'en-tête et le fil d'Ariane (*breadcrumbs*). | `Vacances d'Été 2025` |
-| **`.desc`** ou **`.description`** | Affiche une bannière descriptive en haut de la galerie pour ce dossier. | `Collection de photos et vidéos prises lors de notre voyage en Espagne.` |
-| **`.theme`** | Applique un thème de couleur spécifique uniquement pour ce dossier. | **Nom de thème** : `cyberpunk`<br>ou **Couleurs personnalisées** :<br>```text<br>accent = #ec4899<br>polaroid_bg = #fef08a<br>``` |
+| **`.title`** | Surcharge le nom d'affichage du dossier (en-tête, grille, fil d'Ariane). | `Vacances d'Été 2026` |
+| **`.desc`** ou **`.description`** | Affiche une bannière descriptive élégante en haut de la galerie pour ce dossier. | `Album photo et vidéo de notre voyage en Espagne.` |
+| **`.comment`** | Associe des commentaires ou légendes spécifiques aux fichiers du dossier. | `photo1.jpg = Souvenir à la plage` |
+| **`.bg`** | Applique une image locale ou une couleur/dégradé CSS en fond d'écran. | `#0f172a` ou `fond.jpg` |
+| **`.theme`** | Applique un thème de couleurs spécifique à ce répertoire. | `cyberpunk` |
+
+---
+
+### 📝 Syntaxe et Exemples par Fichier
+
+#### 1. Titre de Dossier Personnalisé (`.title`)
+Permet de remplacer le nom réel du répertoire sur le disque par un titre d'affichage lisible avec espaces et accents.
+- **Chemin** : `mon_dossier/.title`
+- **Contenu** :
+  ```text
+  Vacances à la Montagne 🏔️
+  ```
+
+#### 2. Bannière Descriptive (`.desc` ou `.description`)
+Affiche une bannière d'information au-dessus de la grille de médias.
+- **Chemin** : `mon_dossier/.desc`
+- **Contenu** :
+  ```text
+  Retrouvez ici toutes les photos et vidéos prises lors de notre séjour au ski en février 2026.
+  ```
+
+#### 3. Commentaires et Légendes Médias (`.comment`)
+Associe une légende personnalisée sous les Polaroids, les cartes de la grille et dans la visionneuse Lightbox.
+
+- **Chemin** : `mon_dossier/.comment`
+- **Format Recommandé (Clé = Valeur)** :
+  ```text
+  photo1.jpg = Souvenir de la randonnée en altitude
+  video_ski.mp4 = Descent en snowboard à toute vitesse !
+  IMG_2026.JPG = Soirée raclette au chalet
+  ```
+- **Format Legacy 2005 (Nom de fichier suivi du texte sur la ligne suivante)** :
+  ```text
+  photo1.jpg
+  Souvenir de la randonnée en altitude
+  video_ski.mp4
+  Descent en snowboard à toute vitesse !
+  ```
+
+#### 4. Fond d'Écran Personnalisé (`.bg`)
+Permet de définir un fond d'écran unique pour le dossier (image locale ou style CSS).
+- **Chemin** : `mon_dossier/.bg`
+- **Exemple 1 (Image locale dans le dossier)** :
+  ```text
+  fond_montagne.jpg
+  ```
+- **Exemple 2 (Couleur Unie CSS)** :
+  ```text
+  #0f172a
+  ```
+- **Exemple 3 (Dégradé CSS)** :
+  ```text
+  linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)
+  ```
+
+#### 5. Thème de Couleur Dédié (`.theme`)
+Permet d'appliquer un thème visuel spécifique uniquement pour ce dossier.
+- **Chemin** : `mon_dossier/.theme`
+- **Option A (Nom d'un thème prédéfini)** :
+  ```text
+  cyberpunk
+  ```
+  *(Thèmes disponibles : `polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`)*
+
+- **Option B (Surcharge de couleurs sur mesure en clé=valeur)** :
+  ```text
+  accent = #ec4899
+  polaroid_bg = #fef08a
+  bg_main = #0d0221
+  ```
+
+---
+
+### 🛡️ Édition Automatique depuis le Mode Admin
+
+Lorsque le **Mode Admin** est déverrouillé (**🛡️ Admin Active**) :
+- Les fichiers `.title`, `.desc`, `.bg` et `.theme` s'éditent via le bouton **🎨 Folder Settings**.
+- Le fichier `.comment` s'édite en cliquant sur l'icône **✏️ Edit Legend** sur chaque carte ou dans la visionneuse Lightbox.
+- Le serveur met à jour les fichiers cachés automatiquement **sans jamais renommer ni altérer vos fichiers et dossiers originaux**.
 
 ---
 
@@ -127,13 +223,23 @@ SimpleGallery/
 
 ---
 
-## 💻 Installation
+## 💻 Installation & Permissions
 
 1. Copiez les fichiers de **SimpleGallery** sur votre serveur web PHP (compatible Apache, Nginx, LiteSpeed, Caddy avec PHP 7.4+ ou PHP 8+).
 2. Optionnel : activez l'extension PHP `gd` pour le redimensionnement d'images et installez `ffmpeg` pour l'extraction de vignettes vidéo.
-3. Définissez le mot de passe d'administration via la commande : `php set_admin_password.php "VotreMotDePasse"`
-4. Glissez vos dossiers de photos et médias directement dans le répertoire.
-5. Ouvrez `index.php` dans votre navigateur web !
+3. Définissez le mot de passe d'administration via la commande CLI :
+   ```bash
+   php set_admin_password.php "VotreMotDePasse"
+   ```
+4. **Permissions d'écriture** (Nécessaire pour que le mode Admin puisse enregistrer les Dotfiles `.title`, `.desc`, `.comment`, `.bg`, `.theme`) :
+   Accordez les droits d'écriture à l'utilisateur du serveur web (`http`, `www-data` ou `nginx`) sur les dossiers de la galerie :
+   ```bash
+   # Exemple de commande sous Linux / Apache / Nginx :
+   chown -R www-data:www-data /path/to/SimpleGallery
+   chmod -R 775 /path/to/SimpleGallery
+   ```
+5. Glissez vos dossiers de photos et médias directement dans le répertoire.
+6. Ouvrez `index.php` dans votre navigateur web !
 
 ---
 
