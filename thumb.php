@@ -29,6 +29,33 @@ function sanitize_file_path(?string $requested_file, string $base_dir): ?string 
     return $target_path;
 }
 
+function send_cached_file(string $file_path, string $content_type, int $max_age = 31536000): void {
+    if (!file_exists($file_path)) {
+        return;
+    }
+    $mtime = filemtime($file_path);
+    $size = filesize($file_path);
+    $etag = '"' . md5($file_path . '-' . $mtime . '-' . $size) . '"';
+
+    header('Content-Type: ' . $content_type);
+    header('Cache-Control: public, max-age=' . $max_age);
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
+
+    $if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : null;
+    $if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : null;
+
+    if (($if_none_match !== null && $if_none_match === $etag) || 
+        ($if_modified_since !== null && $if_modified_since >= $mtime)) {
+        http_response_code(304);
+        exit;
+    }
+
+    header('Content-Length: ' . $size);
+    readfile($file_path);
+    exit;
+}
+
 function serve_direct_file(string $file_path, string $ext): void {
     $mime_types = [
         'jpg'  => 'image/jpeg',
@@ -42,12 +69,7 @@ function serve_direct_file(string $file_path, string $ext): void {
     ];
 
     $content_type = $mime_types[$ext] ?? 'application/octet-stream';
-
-    header('Content-Type: ' . $content_type);
-    header('Cache-Control: public, max-age=86400');
-    header('Content-Length: ' . filesize($file_path));
-    readfile($file_path);
-    exit;
+    send_cached_file($file_path, $content_type, 86400);
 }
 
 function render_svg_placeholder(string $category, string $ext, string $filename): void {
@@ -127,11 +149,7 @@ if ($is_video) {
 
     // Serve cached video poster if present
     if (file_exists($video_cache_file) && filesize($video_cache_file) > 0 && filemtime($video_cache_file) >= filemtime($file_path)) {
-        header('Content-Type: image/jpeg');
-        header('Cache-Control: public, max-age=31536000');
-        header('Content-Length: ' . filesize($video_cache_file));
-        readfile($video_cache_file);
-        exit;
+        send_cached_file($video_cache_file, 'image/jpeg', 31536000);
     }
 
     // Try FFmpeg frame extraction
@@ -146,11 +164,7 @@ if ($is_video) {
         @exec($cmd);
 
         if (file_exists($video_cache_file) && filesize($video_cache_file) > 0) {
-            header('Content-Type: image/jpeg');
-            header('Cache-Control: public, max-age=31536000');
-            header('Content-Length: ' . filesize($video_cache_file));
-            readfile($video_cache_file);
-            exit;
+            send_cached_file($video_cache_file, 'image/jpeg', 31536000);
         }
     }
 
@@ -180,19 +194,11 @@ if ($is_image) {
     $cache_file_jpg  = $cache_dir . '/' . $cache_key . '.jpg';
 
     if (file_exists($cache_file_webp) && filemtime($cache_file_webp) >= filemtime($file_path)) {
-        header('Content-Type: image/webp');
-        header('Cache-Control: public, max-age=31536000');
-        header('Content-Length: ' . filesize($cache_file_webp));
-        readfile($cache_file_webp);
-        exit;
+        send_cached_file($cache_file_webp, 'image/webp', 31536000);
     }
 
     if (file_exists($cache_file_jpg) && filemtime($cache_file_jpg) >= filemtime($file_path)) {
-        header('Content-Type: image/jpeg');
-        header('Cache-Control: public, max-age=31536000');
-        header('Content-Length: ' . filesize($cache_file_jpg));
-        readfile($cache_file_jpg);
-        exit;
+        send_cached_file($cache_file_jpg, 'image/jpeg', 31536000);
     }
 
     // Attempt GD image loading
@@ -254,11 +260,7 @@ if ($is_image) {
         imagedestroy($thumb_img);
 
         if (file_exists($cache_file_webp)) {
-            header('Content-Type: image/webp');
-            header('Cache-Control: public, max-age=31536000');
-            header('Content-Length: ' . filesize($cache_file_webp));
-            readfile($cache_file_webp);
-            exit;
+            send_cached_file($cache_file_webp, 'image/webp', 31536000);
         }
     } else {
         @imagejpeg($thumb_img, $cache_file_jpg, $thumb_quality);
@@ -266,11 +268,7 @@ if ($is_image) {
         imagedestroy($thumb_img);
 
         if (file_exists($cache_file_jpg)) {
-            header('Content-Type: image/jpeg');
-            header('Cache-Control: public, max-age=31536000');
-            header('Content-Length: ' . filesize($cache_file_jpg));
-            readfile($cache_file_jpg);
-            exit;
+            send_cached_file($cache_file_jpg, 'image/jpeg', 31536000);
         }
     }
 
