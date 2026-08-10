@@ -111,11 +111,20 @@ SVG;
 }
 
 function find_ffmpeg_binary(): ?string {
-    if (file_exists('/usr/bin/ffmpeg') && is_executable('/usr/bin/ffmpeg')) {
-        return '/usr/bin/ffmpeg';
+    $common_paths = [
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        '/bin/ffmpeg',
+        '/opt/homebrew/bin/ffmpeg',
+        '/snap/bin/ffmpeg'
+    ];
+    foreach ($common_paths as $path) {
+        if (file_exists($path) && is_executable($path)) {
+            return $path;
+        }
     }
-    $which = @exec('which ffmpeg 2>/dev/null');
-    if (!empty($which) && file_exists($which)) {
+    $which = @trim((string)@exec('which ffmpeg 2>/dev/null'));
+    if (!empty($which) && file_exists($which) && is_executable($which)) {
         return $which;
     }
     return null;
@@ -233,10 +242,16 @@ if (!is_dir_accessible(dirname($file_path), $real_base_dir)) {
 
 $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
 
-// Setup thumbnail cache directory
+// Setup thumbnail cache directory with fallback to sys_get_temp_dir()
 $cache_dir = $real_base_dir . '/' . $thumbnail_dir;
 if (!is_dir($cache_dir)) {
     @mkdir($cache_dir, 0755, true);
+}
+if (!is_dir($cache_dir) || !is_writable($cache_dir)) {
+    $cache_dir = sys_get_temp_dir() . '/simplegallery_thumbs';
+    if (!is_dir($cache_dir)) {
+        @mkdir($cache_dir, 0755, true);
+    }
 }
 
 // -------------------------------------------------------------
@@ -256,13 +271,36 @@ if ($is_video) {
     // Try FFmpeg frame extraction
     $ffmpeg = find_ffmpeg_binary();
     if ($ffmpeg) {
-        $cmd = sprintf(
-            '%s -ss 00:00:01 -i %s -vframes 1 -q:v 3 -vf "scale=360:-1" %s 2>&1',
+        // Attempt 1: Fast seek to 1 second
+        $cmd1 = sprintf(
+            '%s -y -ss 00:00:01 -i %s -vframes 1 -q:v 3 -vf "scale=360:-2" %s 2>&1',
             escapeshellarg($ffmpeg),
             escapeshellarg($file_path),
             escapeshellarg($video_cache_file)
         );
-        @exec($cmd);
+        @exec($cmd1);
+
+        // Attempt 2: Fallback to accurate seek at 0.5s if attempt 1 produced no output
+        if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
+            $cmd2 = sprintf(
+                '%s -y -i %s -ss 00:00:00.5 -vframes 1 -q:v 3 -vf "scale=360:-2" %s 2>&1',
+                escapeshellarg($ffmpeg),
+                escapeshellarg($file_path),
+                escapeshellarg($video_cache_file)
+            );
+            @exec($cmd2);
+        }
+
+        // Attempt 3: Fallback to start of stream (00:00:00)
+        if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
+            $cmd3 = sprintf(
+                '%s -y -i %s -vframes 1 -q:v 3 -vf "scale=360:-2" %s 2>&1',
+                escapeshellarg($ffmpeg),
+                escapeshellarg($file_path),
+                escapeshellarg($video_cache_file)
+            );
+            @exec($cmd3);
+        }
 
         if (file_exists($video_cache_file) && filesize($video_cache_file) > 0) {
             send_cached_file($video_cache_file, 'image/jpeg', 31536000);

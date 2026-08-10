@@ -37,45 +37,50 @@ require_once __DIR__ . '/config.php';
   <!-- App Header -->
   <header class="app-header">
     <div class="header-container">
-      <div class="brand-section">
-        <div class="brand-logo">📸</div>
-        <h1 class="brand-title"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></h1>
+      <!-- Top Row: Brand & Toolbar Controls -->
+      <div class="header-top-row">
+        <div class="brand-section">
+          <div class="brand-logo">📸</div>
+          <h1 class="brand-title"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></h1>
+        </div>
+
+        <!-- Toolbar Controls -->
+        <div class="toolbar-controls">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search media..." aria-label="Search media">
+          </div>
+
+          <select id="sortSelect" class="sort-select" aria-label="Sort options">
+            <option value="name">Sort by Name</option>
+            <option value="date">Sort by Date</option>
+            <option value="size">Sort by Size</option>
+          </select>
+
+          <div class="control-btn-group">
+            <button id="viewPolaroidBtn" class="btn-toggle active" title="Polaroid View">
+              <span>🖼️</span> Polaroid
+            </button>
+            <button id="viewGridBtn" class="btn-toggle" title="Grid View">
+              <span>🔲</span> Grid
+            </button>
+          </div>
+
+          <button id="folderSettingsBtn" class="btn-toggle" title="Customize Folder (.title, .desc, .bg, .theme)" style="display: none;">
+            <span>🎨</span> Folder Settings
+          </button>
+
+          <button id="adminBtn" class="btn-toggle" title="Admin Mode">
+            <span id="adminBtnIcon">🔑</span> <span id="adminBtnText">Admin</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Breadcrumbs -->
-      <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb Navigation">
-        <span class="crumb-item crumb-active"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></span>
-      </nav>
-
-      <!-- Toolbar Controls -->
-      <div class="toolbar-controls">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" class="search-input" placeholder="Search media..." aria-label="Search media">
-        </div>
-
-        <select id="sortSelect" class="sort-select" aria-label="Sort options">
-          <option value="name">Sort by Name</option>
-          <option value="date">Sort by Date</option>
-          <option value="size">Sort by Size</option>
-        </select>
-
-        <div class="control-btn-group">
-          <button id="viewPolaroidBtn" class="btn-toggle active" title="Polaroid View">
-            <span>🖼️</span> Polaroid
-          </button>
-          <button id="viewGridBtn" class="btn-toggle" title="Grid View">
-            <span>🔲</span> Grid
-          </button>
-        </div>
-
-        <button id="folderSettingsBtn" class="btn-toggle" title="Customize Folder (.title, .desc, .bg, .theme)" style="display: none;">
-          <span>🎨</span> Folder Settings
-        </button>
-
-        <button id="adminBtn" class="btn-toggle" title="Admin Mode">
-          <span id="adminBtnIcon">🔑</span> <span id="adminBtnText">Admin</span>
-        </button>
+      <!-- Bottom Row: Dedicated Breadcrumbs Navigation Bar -->
+      <div class="header-bottom-row">
+        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb Navigation">
+          <span class="crumb-item crumb-active"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></span>
+        </nav>
       </div>
     </div>
   </header>

@@ -629,6 +629,7 @@ class SimpleGallery {
         <div class="polaroid-card" data-index="${idx}">
           <div class="polaroid-img-wrapper">
             <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+            ${file.category === 'video' ? '<div class="video-play-overlay">▶</div>' : ''}
             <span class="polaroid-badge">${file.extension.toUpperCase()}</span>
           </div>
           <div class="polaroid-caption">
@@ -644,6 +645,7 @@ class SimpleGallery {
         <div class="grid-card" data-index="${idx}">
           <div class="grid-img-wrapper">
             <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+            ${file.category === 'video' ? '<div class="video-play-overlay">▶</div>' : ''}
           </div>
           <div class="grid-info">
             <div class="grid-title">

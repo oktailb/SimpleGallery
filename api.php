@@ -703,7 +703,8 @@ if ($scan_items !== false) {
 
             $cover_thumb = null;
             if ($sub_access['is_unlocked'] || is_admin_logged_in()) {
-                $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $media_types['image']);
+                $cover_exts = array_merge($media_types['image'], $media_types['video']);
+                $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $cover_exts);
             }
 
             $directories[] = [
