@@ -625,40 +625,81 @@ class SimpleGallery {
 
     if (this.state.viewMode === 'polaroid') {
       this.el.mediaGrid.className = 'polaroid-grid';
-      this.el.mediaGrid.innerHTML = list.map((file, idx) => `
-        <div class="polaroid-card" data-index="${idx}">
-          <div class="polaroid-img-wrapper">
-            <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
-            ${file.category === 'video' ? '<div class="video-play-overlay">▶</div>' : ''}
-            <span class="polaroid-badge">${file.extension.toUpperCase()}</span>
-          </div>
-          <div class="polaroid-caption">
-            <span>${this.escapeHtml(file.comment || file.name)}</span>
-            ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
-          </div>
-          <div class="polaroid-subcaption">${file.name} • ${file.size_formatted}</div>
-        </div>
-      `).join('');
-    } else {
-      this.el.mediaGrid.className = 'modern-grid';
-      this.el.mediaGrid.innerHTML = list.map((file, idx) => `
-        <div class="grid-card" data-index="${idx}">
-          <div class="grid-img-wrapper">
-            <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
-            ${file.category === 'video' ? '<div class="video-play-overlay">▶</div>' : ''}
-          </div>
-          <div class="grid-info">
-            <div class="grid-title">
+      this.el.mediaGrid.innerHTML = list.map((file, idx) => {
+        let frameClass = 'polaroid-card';
+        if (file.category === 'video') frameClass += ' film-strip-card';
+        if (file.category === 'audio') frameClass += ' audio-cassette-card';
+        if (['doc', 'archive', 'other'].includes(file.category)) frameClass += ' doc-file-card';
+
+        let overlayHtml = '';
+        if (file.category === 'video') {
+          overlayHtml = '<div class="video-play-overlay">▶</div>';
+        } else if (file.category === 'audio') {
+          overlayHtml = '<div class="audio-play-overlay">🎵</div>';
+        }
+
+        let badgeHtml = '';
+        if (['doc', 'archive', 'other'].includes(file.category)) {
+          badgeHtml = `<span class="doc-extension-badge badge-${file.category}">${file.extension.toUpperCase()}</span>`;
+        } else {
+          badgeHtml = `<span class="polaroid-badge">${file.extension.toUpperCase()}</span>`;
+        }
+
+        return `
+          <div class="${frameClass}" data-index="${idx}">
+            <div class="polaroid-img-wrapper">
+              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+              ${overlayHtml}
+              ${badgeHtml}
+            </div>
+            <div class="polaroid-caption">
               <span>${this.escapeHtml(file.comment || file.name)}</span>
               ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
             </div>
-            <div class="grid-subinfo">
-              <span>${file.extension.toUpperCase()}</span>
-              <span>${file.size_formatted}</span>
+            <div class="polaroid-subcaption">${file.name} • ${file.size_formatted}</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      this.el.mediaGrid.className = 'modern-grid';
+      this.el.mediaGrid.innerHTML = list.map((file, idx) => {
+        let gridFrameClass = 'grid-card';
+        if (file.category === 'video') gridFrameClass += ' film-strip-grid-card';
+        if (file.category === 'audio') gridFrameClass += ' audio-cassette-grid-card';
+        if (['doc', 'archive', 'other'].includes(file.category)) gridFrameClass += ' doc-file-grid-card';
+
+        let overlayHtml = '';
+        if (file.category === 'video') {
+          overlayHtml = '<div class="video-play-overlay">▶</div>';
+        } else if (file.category === 'audio') {
+          overlayHtml = '<div class="audio-play-overlay">🎵</div>';
+        }
+
+        let badgeHtml = '';
+        if (['doc', 'archive', 'other'].includes(file.category)) {
+          badgeHtml = `<span class="doc-extension-badge badge-${file.category}">${file.extension.toUpperCase()}</span>`;
+        }
+
+        return `
+          <div class="${gridFrameClass}" data-index="${idx}">
+            <div class="grid-img-wrapper">
+              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+              ${overlayHtml}
+              ${badgeHtml}
+            </div>
+            <div class="grid-info">
+              <div class="grid-title">
+                <span>${this.escapeHtml(file.comment || file.name)}</span>
+                ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
+              </div>
+              <div class="grid-subinfo">
+                <span>${file.extension.toUpperCase()}</span>
+                <span>${file.size_formatted}</span>
+              </div>
             </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     this.el.mediaGrid.querySelectorAll('.edit-media-comment-btn').forEach(btn => {

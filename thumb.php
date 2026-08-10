@@ -75,36 +75,115 @@ function serve_direct_file(string $file_path, string $ext): void {
 function render_svg_placeholder(string $category, string $ext, string $filename): void {
     header('Content-Type: image/svg+xml');
     header('Cache-Control: public, max-age=86400');
+
+    $ext_lower = strtolower($ext);
     
-    $colors = [
-        'video'   => ['#E53E3E', '#9B2C2C', '▶'],
-        'audio'   => ['#805AD5', '#553C9A', '🎵'],
-        'doc'     => ['#3182CE', '#2B6CB0', '📄'],
-        'archive' => ['#DD6B20', '#C05621', '📦'],
-        'other'   => ['#718096', '#4A5568', '📁']
+    // Extension specific color mapping (Matching classic OS file icons!)
+    $color_map = [
+        'pdf'   => ['#e11d48', '#be123c'],
+        'doc'   => ['#2563eb', '#1d4ed8'],
+        'docx'  => ['#2563eb', '#1d4ed8'],
+        'xls'   => ['#16a34a', '#15803d'],
+        'xlsx'  => ['#16a34a', '#15803d'],
+        'ppt'   => ['#ea580c', '#c2410c'],
+        'pptx'  => ['#ea580c', '#c2410c'],
+        'zip'   => ['#d97706', '#b45309'],
+        'rar'   => ['#d97706', '#b45309'],
+        '7z'    => ['#d97706', '#b45309'],
+        'tar'   => ['#d97706', '#b45309'],
+        'gz'    => ['#d97706', '#b45309'],
+        'mp3'   => ['#9333ea', '#7e22ce'],
+        'wav'   => ['#9333ea', '#7e22ce'],
+        'flac'  => ['#9333ea', '#7e22ce'],
+        'aac'   => ['#9333ea', '#7e22ce'],
+        'ogg'   => ['#9333ea', '#7e22ce'],
+        'txt'   => ['#0284c7', '#0369a1'],
+        'md'    => ['#0284c7', '#0369a1'],
+        'json'  => ['#0891b2', '#0e7490'],
+        'xml'   => ['#0891b2', '#0e7490'],
+        'html'  => ['#ea580c', '#c2410c'],
+        'css'   => ['#2563eb', '#1d4ed8'],
+        'js'    => ['#ca8a04', '#a16207'],
+        'php'   => ['#6366f1', '#4f46e5'],
+        'py'    => ['#0284c7', '#0369a1'],
+        'psd'   => ['#0284c7', '#0369a1'],
+        'ai'    => ['#ea580c', '#c2410c'],
     ];
 
-    $info = $colors[$category] ?? $colors['other'];
-    $bg1 = $info[0];
-    $bg2 = $info[1];
-    $icon = $info[2];
+    $category_defaults = [
+        'video'   => ['#dc2626', '#b91c1c'],
+        'audio'   => ['#9333ea', '#7e22ce'],
+        'doc'     => ['#2563eb', '#1d4ed8'],
+        'archive' => ['#d97706', '#b45309'],
+        'other'   => ['#475569', '#334155']
+    ];
+
+    $colors = $color_map[$ext_lower] ?? ($category_defaults[$category] ?? $category_defaults['other']);
+    $primary_color = $colors[0];
+    $dark_color    = $colors[1];
+
     $ext_label = strtoupper($ext);
-    $short_name = htmlspecialchars(mb_strimwidth(basename($filename), 0, 18, '...'), ENT_QUOTES, 'UTF-8');
+    if (strlen($ext_label) > 5) {
+        $ext_label = substr($ext_label, 0, 5);
+    }
+
+    // Category icon symbol
+    $icon_svg = '<path d="M135 125 h90 M135 150 h90 M135 175 h60" stroke="#64748b" stroke-width="7" stroke-linecap="round" />';
+    if ($category === 'audio') {
+        $icon_svg = '<path d="M170 175 a22 22 0 1 0 0 -44 a22 22 0 0 0 0 44 z M192 153 V 105 h 25" fill="none" stroke="#64748b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />';
+    } elseif ($category === 'video') {
+        $icon_svg = '<path d="M130 120 h70 a10 10 0 0 1 10 10 v40 a10 10 0 0 1 -10 10 h-70 a10 10 0 0 1 -10 -10 v-40 a10 10 0 0 1 10 -10 z M210 140 l35 -20 v60 l-35 -20 z" fill="#64748b" />';
+    } elseif ($category === 'archive') {
+        $icon_svg = '<path d="M135 115 h90 v70 h-90 z M180 115 v70 M165 145 h30" fill="none" stroke="#64748b" stroke-width="7" stroke-linecap="round" />';
+    }
 
     echo <<<SVG
 <svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="{$bg1}" />
-      <stop offset="100%" stop-color="{$bg2}" />
+    <!-- Paper Sheet Shadow -->
+    <filter id="page-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+    <!-- Fold Flap Shadow -->
+    <filter id="fold-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="-3" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    <linearGradient id="banner-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="{$primary_color}" />
+      <stop offset="100%" stop-color="{$dark_color}" />
     </linearGradient>
+    <linearGradient id="page-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <linearGradient id="flap-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </linearGradient>
+    <clipPath id="sheet-clip">
+      <path d="M 95,30 L 220,30 L 280,90 L 280,315 C 280,323 273,330 265,330 L 95,330 C 87,330 80,323 80,315 L 80,45 C 80,37 87,30 95,30 Z" />
+    </clipPath>
   </defs>
-  <rect width="360" height="360" rx="16" fill="url(#grad)" />
-  <circle cx="180" cy="150" r="54" fill="rgba(255,255,255,0.15)" />
-  <text x="180" y="166" font-size="50" text-anchor="middle" dominant-baseline="middle" fill="#FFFFFF">{$icon}</text>
-  <rect x="50" y="240" width="260" height="40" rx="8" fill="rgba(0,0,0,0.3)" />
-  <text x="180" y="265" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="bold" letter-spacing="1" text-anchor="middle" fill="#FFFFFF">{$ext_label}</text>
-  <text x="180" y="310" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" text-anchor="middle" fill="rgba(255,255,255,0.85)">{$short_name}</text>
+
+  <!-- Background -->
+  <rect width="360" height="360" fill="#0f172a" rx="16" />
+
+  <!-- Document Sheet Body -->
+  <path d="M 95,30 L 220,30 L 280,90 L 280,315 C 280,323 273,330 265,330 L 95,330 C 87,330 80,323 80,315 L 80,45 C 80,37 87,30 95,30 Z" fill="url(#page-grad)" filter="url(#page-shadow)" />
+
+  <!-- Folded Corner Triangle Flap -->
+  <path d="M 220,30 L 220,82 C 220,86 224,90 228,90 L 280,90 Z" fill="url(#flap-grad)" filter="url(#fold-shadow)" />
+
+  <!-- Icon inside page -->
+  <g transform="translate(0, 10)">
+    {$icon_svg}
+  </g>
+
+  <!-- Extension Colored Bottom Banner -->
+  <g clip-path="url(#sheet-clip)">
+    <rect x="70" y="240" width="220" height="95" fill="url(#banner-grad)" />
+    <text x="180" y="292" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="34" font-weight="900" letter-spacing="1.5" text-anchor="middle" fill="#FFFFFF">{$ext_label}</text>
+  </g>
 </svg>
 SVG;
     exit;
@@ -273,17 +352,17 @@ if ($is_video) {
     if ($ffmpeg) {
         // Attempt 1: Fast seek to 1 second
         $cmd1 = sprintf(
-            '%s -y -ss 00:00:01 -i %s -vframes 1 -q:v 3 -vf "scale=360:-2" %s 2>&1',
+            '%s -y -ss 00:00:01 -i %s -vframes 1 -f image2 -pix_fmt yuv420p -q:v 3 -vf "scale=360:-2" %s 2>&1',
             escapeshellarg($ffmpeg),
             escapeshellarg($file_path),
             escapeshellarg($video_cache_file)
         );
         @exec($cmd1);
 
-        // Attempt 2: Fallback to accurate seek at 0.5s if attempt 1 produced no output
+        // Attempt 2: Fallback to accurate seek at 0.5s (essential for cueless WebMs)
         if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
             $cmd2 = sprintf(
-                '%s -y -i %s -ss 00:00:00.5 -vframes 1 -q:v 3 -vf "scale=360:-2" %s 2>&1',
+                '%s -y -i %s -ss 00:00:00.5 -vframes 1 -f image2 -pix_fmt yuv420p -q:v 3 -vf "scale=360:-2" %s 2>&1',
                 escapeshellarg($ffmpeg),
                 escapeshellarg($file_path),
                 escapeshellarg($video_cache_file)
@@ -294,7 +373,7 @@ if ($is_video) {
         // Attempt 3: Fallback to start of stream (00:00:00)
         if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
             $cmd3 = sprintf(
-                '%s -y -i %s -vframes 1 -q:v 3 -vf "scale=360:-2" %s 2>&1',
+                '%s -y -i %s -vframes 1 -f image2 -pix_fmt yuv420p -q:v 3 -vf "scale=360:-2" %s 2>&1',
                 escapeshellarg($ffmpeg),
                 escapeshellarg($file_path),
                 escapeshellarg($video_cache_file)

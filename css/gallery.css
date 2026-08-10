@@ -86,12 +86,13 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
-  padding: 1rem 2rem;
+  padding: 1rem 1.25rem;
 }
 
 .header-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -263,9 +264,10 @@ body {
 
 /* Category Filters Bar */
 .filter-bar {
-  max-width: 1400px;
-  margin: 1.5rem auto 0 auto;
-  padding: 0 2rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.25rem 0 0 0;
+  padding: 0 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -307,9 +309,10 @@ body {
 
 /* Main Workspace Gallery Container */
 .gallery-container {
-  max-width: 1400px;
-  margin: 1.5rem auto 4rem auto;
-  padding: 0 2rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.25rem 0 4rem 0;
+  padding: 0 1.25rem;
 }
 
 /* Subfolders Section */
@@ -1063,4 +1066,128 @@ kbd {
   transform: translate(-50%, -50%) scale(1.15);
   background: var(--accent-primary);
   border-color: #ffffff;
+}
+
+/* =============================================================
+   CATEGORY-SPECIFIC CARD FRAMES (Film 9mm, Cassette, Doc)
+   ============================================================= */
+
+/* =============================================================
+   CATEGORY-SPECIFIC CARD FRAMES (Film 9mm, Cassette, Doc)
+   ============================================================= */
+
+/* Disable Polaroid Scotch Tape on custom non-photo cards */
+.film-strip-card::before,
+.audio-cassette-card::before,
+.doc-file-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* 1. Video 9mm Film Strip Frame (Vertical Perforations) */
+.film-strip-card,
+.film-strip-grid-card {
+  background-color: #0d0f14 !important;
+  background-image: 
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 6px,
+      rgba(255, 255, 255, 0.28) 6px,
+      rgba(255, 255, 255, 0.28) 14px,
+      transparent 14px,
+      transparent 20px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 6px,
+      rgba(255, 255, 255, 0.28) 6px,
+      rgba(255, 255, 255, 0.28) 14px,
+      transparent 14px,
+      transparent 20px
+    ) !important;
+  background-position: left 6px top 0px, right 6px top 0px !important;
+  background-size: 9px 100%, 9px 100% !important;
+  background-repeat: repeat-y, repeat-y !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  position: relative;
+  padding: 0.85rem 1.35rem 0.85rem 1.35rem !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden !important;
+}
+
+.film-strip-card .polaroid-caption span {
+  color: #f1f5f9 !important;
+  font-family: var(--font-body) !important;
+  font-size: 0.875rem !important;
+}
+
+.film-strip-card .polaroid-subcaption {
+  color: #94a3b8 !important;
+}
+
+/* 2. Audio Cassette / Vinyl Card */
+.audio-cassette-card,
+.audio-cassette-grid-card {
+  background: linear-gradient(145deg, #181028, #0f0a1c) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.18) !important;
+  position: relative;
+  border-radius: var(--radius-md) !important;
+}
+
+.audio-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  background: rgba(124, 58, 237, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+  transition: all 0.25s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.audio-cassette-card:hover .audio-play-overlay,
+.audio-cassette-grid-card:hover .audio-play-overlay {
+  transform: translate(-50%, -50%) scale(1.15);
+  background: #8b5cf6;
+}
+
+.audio-cassette-card .polaroid-caption span {
+  color: #ede9fe !important;
+}
+
+.audio-cassette-card .polaroid-subcaption {
+  color: #a78bfa !important;
+}
+
+/* 3. Document & Archive File Cards */
+.doc-file-card,
+.doc-file-grid-card {
+  background: #0d111a !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md) !important;
+}
+
+.doc-file-card .polaroid-caption span {
+  color: #f1f5f9 !important;
+}
+
+.doc-file-card .polaroid-subcaption {
+  color: #94a3b8 !important;
 }
