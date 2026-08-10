@@ -656,7 +656,7 @@ class SimpleGallery {
               <span>${this.escapeHtml(file.comment || file.name)}</span>
               ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
             </div>
-            <div class="polaroid-subcaption">${file.name} • ${file.size_formatted}</div>
+            <div class="polaroid-subcaption">${file.size_formatted}</div>
           </div>
         `;
       }).join('');
