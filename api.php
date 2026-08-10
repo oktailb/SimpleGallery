@@ -557,6 +557,7 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
     if (file_exists($theme_file) && is_readable($theme_file)) {
         $theme_val = trim(file_get_contents($theme_file));
         if ($theme_val !== '') {
+            global $theme_colors;
             if (strpos($theme_val, '=') !== false) {
                 $custom_theme = [];
                 $lines = explode("\n", $theme_val);
@@ -567,8 +568,14 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
                     }
                 }
                 $overrides['theme'] = $custom_theme;
+                $overrides['theme_name'] = 'custom';
             } else {
-                $overrides['theme'] = $theme_val;
+                $overrides['theme_name'] = $theme_val;
+                if (!empty($theme_colors[$theme_val])) {
+                    $overrides['theme'] = $theme_colors[$theme_val];
+                } else {
+                    $overrides['theme'] = $theme_val;
+                }
             }
         }
     }

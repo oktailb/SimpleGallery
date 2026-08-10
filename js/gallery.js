@@ -461,10 +461,27 @@ class SimpleGallery {
       this.el.folderDescBanner.style.display = 'none';
     }
 
+    // Reset directory-level theme CSS variables to allow clean folder navigation
+    const themeCssVars = [
+      '--bg-main', '--polaroid-bg', '--polaroid-text', '--polaroid-sub',
+      '--accent-primary', '--bg-card', '--text-main', '--text-muted'
+    ];
+    themeCssVars.forEach(varName => document.documentElement.style.removeProperty(varName));
+
     if (overrides.theme) {
       if (typeof overrides.theme === 'object') {
+        const keyMap = {
+          'bg_main': '--bg-main',
+          'polaroid_bg': '--polaroid-bg',
+          'polaroid_text': '--polaroid-text',
+          'polaroid_sub': '--polaroid-sub',
+          'accent': '--accent-primary',
+          'card_bg': '--bg-card',
+          'text_main': '--text-main',
+          'text_muted': '--text-muted'
+        };
         Object.entries(overrides.theme).forEach(([key, val]) => {
-          const cssVar = key.startsWith('--') ? key : `--${key.replace('_', '-')}`;
+          const cssVar = keyMap[key] || (key.startsWith('--') ? key : `--${key.replace('_', '-')}`);
           document.documentElement.style.setProperty(cssVar, val);
         });
       }
@@ -1112,7 +1129,7 @@ class SimpleGallery {
     if (this.el.dotfileDescInput) this.el.dotfileDescInput.value = overrides.description || '';
     if (this.el.dotfileBgInput) this.el.dotfileBgInput.value = overrides.background || '';
     if (this.el.dotfileThemeSelect) {
-      this.el.dotfileThemeSelect.value = typeof overrides.theme === 'string' ? overrides.theme : '';
+      this.el.dotfileThemeSelect.value = overrides.theme_name || (typeof overrides.theme === 'string' ? overrides.theme : '');
     }
     if (this.el.dotfileAccessModeSelect) {
       this.el.dotfileAccessModeSelect.value = overrides.access_mode || 'public';
