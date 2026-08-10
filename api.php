@@ -144,6 +144,168 @@ function get_media_category(string $ext, array $media_types): string {
     return 'other';
 }
 
+if ($action === 'unlock_folder') {
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $password = $raw_body['password'] ?? $_POST['password'] ?? '';
+
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Dossier introuvable ou accès refusé'
+        ]);
+        exit;
+    }
+
+    $rel_path = get_relative_path($target_dir, $real_base_dir);
+    $pass_file = $target_dir . '/.password';
+
+    if (!file_exists($pass_file)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Ce dossier n\'est pas protégé par mot de passe'
+        ]);
+        exit;
+    }
+
+    $hash = trim((string)@file_get_contents($pass_file));
+    if (password_verify($password, $hash)) {
+        if (!isset($_SESSION['unlocked_dirs'])) {
+            $_SESSION['unlocked_dirs'] = [];
+        }
+        $_SESSION['unlocked_dirs'][$rel_path] = true;
+        echo json_encode([
+            'success' => true,
+            'message' => 'Dossier déverrouillé avec succès',
+            'path'    => $rel_path
+        ]);
+        exit;
+    } else {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Mot de passe du dossier incorrect'
+        ]);
+        exit;
+    }
+}
+
+if ($action === 'lock_folder') {
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Dossier introuvable'
+        ]);
+        exit;
+    }
+
+    $rel_path = get_relative_path($target_dir, $real_base_dir);
+    if (isset($_SESSION['unlocked_dirs'])) {
+        unset($_SESSION['unlocked_dirs'][$rel_path]);
+        $prefix = ($rel_path === '') ? '' : $rel_path . '/';
+        foreach (array_keys($_SESSION['unlocked_dirs']) as $k) {
+            if ($prefix !== '' && strpos($k, $prefix) === 0) {
+                unset($_SESSION['unlocked_dirs'][$k]);
+            }
+        }
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Dossier verrouillé à nouveau',
+        'path'    => $rel_path
+    ]);
+    exit;
+}
+
+function is_dir_accessible(string $dir_path, string $base_dir): bool {
+    if (is_admin_logged_in()) {
+        return true;
+    }
+
+    $rel = get_relative_path($dir_path, $base_dir);
+    if ($rel === '') {
+        return true;
+    }
+
+    $parts = explode('/', $rel);
+    $accumulated = '';
+    foreach ($parts as $part) {
+        $accumulated = ($accumulated === '') ? $part : $accumulated . '/' . $part;
+        $current_check_dir = $base_dir . '/' . $accumulated;
+
+        $access_info = get_dir_access_info($current_check_dir, $base_dir);
+
+        if ($access_info['is_private']) {
+            return false;
+        }
+
+        if ($access_info['is_protected'] && !$access_info['is_unlocked']) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function get_dir_access_info(string $dir_path, string $base_dir): array {
+    $rel = get_relative_path($dir_path, $base_dir);
+
+    $has_password = file_exists($dir_path . '/.password');
+    $has_public   = file_exists($dir_path . '/.public');
+    $has_private  = file_exists($dir_path . '/.private');
+
+    $is_private = false;
+    $is_protected = false;
+
+    if ($has_password) {
+        $is_protected = true;
+    } elseif ($has_public) {
+        $is_private = false;
+        $is_protected = false;
+    } elseif ($has_private) {
+        $is_private = true;
+    } elseif (basename($dir_path) === 'private') {
+        $is_private = true;
+    }
+
+    $is_unlocked = is_admin_logged_in();
+    if (!$is_unlocked && $rel !== '') {
+        if (!empty($_SESSION['unlocked_dirs'][$rel])) {
+            $is_unlocked = true;
+        } else {
+            $parts = explode('/', $rel);
+            $accum = '';
+            foreach ($parts as $p) {
+                $accum = ($accum === '') ? $p : $accum . '/' . $p;
+                if (!empty($_SESSION['unlocked_dirs'][$accum])) {
+                    $is_unlocked = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    $access_mode = 'public';
+    if ($is_private) {
+        $access_mode = 'private';
+    } elseif ($is_protected) {
+        $access_mode = 'password';
+    }
+
+    return [
+        'access_mode'  => $access_mode,
+        'is_private'   => $is_private,
+        'is_protected' => $is_protected,
+        'is_unlocked'  => $is_unlocked
+    ];
+}
+
 if ($action === 'update_dotfile') {
     if (!is_admin_logged_in()) {
         http_response_code(403);
@@ -169,7 +331,7 @@ if ($action === 'update_dotfile') {
         exit;
     }
 
-    $allowed_types = ['title', 'description', 'comment', 'bg', 'theme'];
+    $allowed_types = ['title', 'description', 'comment', 'bg', 'theme', 'access_mode'];
     if (!in_array($type, $allowed_types, true)) {
         http_response_code(400);
         echo json_encode([
@@ -181,7 +343,7 @@ if ($action === 'update_dotfile') {
 
     // Check directory write permissions
     if (!is_writable($target_dir)) {
-        $folder_name = ($current_relative === '') ? 'root gallery' : basename($target_dir);
+        $folder_name = (get_relative_path($target_dir, $real_base_dir) === '') ? 'root gallery' : basename($target_dir);
         http_response_code(403);
         echo json_encode([
             'success' => false,
@@ -192,6 +354,41 @@ if ($action === 'update_dotfile') {
 
     $success = true;
     switch ($type) {
+        case 'access_mode':
+            $private_file  = $target_dir . '/.private';
+            $password_file = $target_dir . '/.password';
+            $public_file   = $target_dir . '/.public';
+
+            if ($value === 'public') {
+                if (file_exists($private_file)) @unlink($private_file);
+                if (file_exists($password_file)) @unlink($password_file);
+                if (basename($target_dir) === 'private') {
+                    $success = (@file_put_contents($public_file, "1\n") !== false);
+                } else {
+                    if (file_exists($public_file)) @unlink($public_file);
+                }
+            } elseif ($value === 'private') {
+                if (file_exists($password_file)) @unlink($password_file);
+                if (file_exists($public_file)) @unlink($public_file);
+                $success = (@file_put_contents($private_file, "1\n") !== false);
+            } elseif ($value === 'password') {
+                if (file_exists($private_file)) @unlink($private_file);
+                if (file_exists($public_file)) @unlink($public_file);
+                $folder_pass = trim((string)($raw_body['folder_password'] ?? $_POST['folder_password'] ?? ''));
+                if ($folder_pass !== '') {
+                    $hash = password_hash($folder_pass, PASSWORD_BCRYPT);
+                    $success = (@file_put_contents($password_file, $hash . "\n") !== false);
+                } elseif (!file_exists($password_file)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'error'   => 'Un mot de passe est requis pour protéger ce dossier.'
+                    ]);
+                    exit;
+                }
+            }
+            break;
+
         case 'title':
             $file = $target_dir . '/.title';
             if ($value === '') {
@@ -319,11 +516,17 @@ function save_dir_comments(string $dir_path, array $comments): bool {
 }
 
 function load_folder_overrides(string $dir_path, string $base_dir): array {
+    $access_info = get_dir_access_info($dir_path, $base_dir);
+
     $overrides = [
-        'title'       => null,
-        'description' => null,
-        'background'  => null,
-        'theme'       => null
+        'title'        => null,
+        'description'  => null,
+        'background'   => null,
+        'theme'        => null,
+        'access_mode'  => $access_info['access_mode'],
+        'is_private'   => $access_info['is_private'],
+        'is_protected' => $access_info['is_protected'],
+        'is_unlocked'  => $access_info['is_unlocked']
     ];
 
     $title_file = $dir_path . '/.title';
@@ -404,6 +607,29 @@ if ($target_dir === null || !is_dir($target_dir)) {
 }
 
 $current_relative = get_relative_path($target_dir, $real_base_dir);
+
+// Access check for target directory
+if (!is_dir_accessible($target_dir, $real_base_dir)) {
+    $access_info = get_dir_access_info($target_dir, $real_base_dir);
+    if ($access_info['is_protected']) {
+        http_response_code(401);
+        echo json_encode([
+            'success'      => false,
+            'error'        => 'Ce dossier est protégé par un mot de passe.',
+            'is_protected' => true,
+            'path'         => $current_relative
+        ]);
+        exit;
+    } else {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Accès refusé.'
+        ]);
+        exit;
+    }
+}
+
 $comments = load_dir_comments($target_dir);
 $folder_overrides = load_folder_overrides($target_dir, $real_base_dir);
 
@@ -452,6 +678,13 @@ if ($scan_items !== false) {
         $item_relative = get_relative_path($full_item_path, $real_base_dir);
 
         if (is_dir($full_item_path)) {
+            $sub_access = get_dir_access_info($full_item_path, $real_base_dir);
+
+            // Hide private folders completely from non-admins
+            if ($sub_access['is_private'] && !is_admin_logged_in()) {
+                continue;
+            }
+
             $sub_items = @scandir($full_item_path) ?: [];
             $item_count = 0;
             foreach ($sub_items as $sub) {
@@ -468,7 +701,10 @@ if ($scan_items !== false) {
                 }
             }
 
-            $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $media_types['image']);
+            $cover_thumb = null;
+            if ($sub_access['is_unlocked'] || is_admin_logged_in()) {
+                $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $media_types['image']);
+            }
 
             $directories[] = [
                 'name'         => $dir_display_name,
@@ -477,7 +713,11 @@ if ($scan_items !== false) {
                 'mtime'        => filemtime($full_item_path),
                 'item_count'   => $item_count,
                 'cover'        => $cover_thumb,
-                'comment'      => $comments[$item] ?? ''
+                'comment'      => $comments[$item] ?? '',
+                'access_mode'  => $sub_access['access_mode'],
+                'is_private'   => $sub_access['is_private'],
+                'is_protected' => $sub_access['is_protected'],
+                'is_unlocked'  => $sub_access['is_unlocked']
             ];
         } elseif (is_file($full_item_path)) {
             $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));

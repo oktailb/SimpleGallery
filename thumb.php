@@ -121,12 +121,113 @@ function find_ffmpeg_binary(): ?string {
     return null;
 }
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+function get_relative_path(string $full_path, string $base_dir): string {
+    if ($full_path === $base_dir) {
+        return '';
+    }
+    $rel = substr($full_path, strlen($base_dir));
+    return ltrim(str_replace('\\', '/', $rel), '/');
+}
+
+function is_dir_accessible(string $dir_path, string $base_dir): bool {
+    if (is_admin_logged_in()) {
+        return true;
+    }
+
+    $rel = get_relative_path($dir_path, $base_dir);
+    if ($rel === '') {
+        return true;
+    }
+
+    $parts = explode('/', $rel);
+    $accumulated = '';
+    foreach ($parts as $part) {
+        $accumulated = ($accumulated === '') ? $part : $accumulated . '/' . $part;
+        $current_check_dir = $base_dir . '/' . $accumulated;
+
+        $access_info = get_dir_access_info($current_check_dir, $base_dir);
+
+        if ($access_info['is_private']) {
+            return false;
+        }
+
+        if ($access_info['is_protected'] && !$access_info['is_unlocked']) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function get_dir_access_info(string $dir_path, string $base_dir): array {
+    $rel = get_relative_path($dir_path, $base_dir);
+
+    $has_password = file_exists($dir_path . '/.password');
+    $has_public   = file_exists($dir_path . '/.public');
+    $has_private  = file_exists($dir_path . '/.private');
+
+    $is_private = false;
+    $is_protected = false;
+
+    if ($has_password) {
+        $is_protected = true;
+    } elseif ($has_public) {
+        $is_private = false;
+        $is_protected = false;
+    } elseif ($has_private) {
+        $is_private = true;
+    } elseif (basename($dir_path) === 'private') {
+        $is_private = true;
+    }
+
+    $is_unlocked = is_admin_logged_in();
+    if (!$is_unlocked && $rel !== '') {
+        if (!empty($_SESSION['unlocked_dirs'][$rel])) {
+            $is_unlocked = true;
+        } else {
+            $parts = explode('/', $rel);
+            $accum = '';
+            foreach ($parts as $p) {
+                $accum = ($accum === '') ? $p : $accum . '/' . $p;
+                if (!empty($_SESSION['unlocked_dirs'][$accum])) {
+                    $is_unlocked = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    $access_mode = 'public';
+    if ($is_private) {
+        $access_mode = 'private';
+    } elseif ($is_protected) {
+        $access_mode = 'password';
+    }
+
+    return [
+        'access_mode'  => $access_mode,
+        'is_private'   => $is_private,
+        'is_protected' => $is_protected,
+        'is_unlocked'  => $is_unlocked
+    ];
+}
+
 $requested_file = $_GET['file'] ?? '';
 $file_path = sanitize_file_path($requested_file, $real_base_dir);
 
 if (!$file_path) {
     http_response_code(404);
     echo "File not found.";
+    exit;
+}
+
+if (!is_dir_accessible(dirname($file_path), $real_base_dir)) {
+    http_response_code(403);
+    echo "403 Forbidden: Access denied.";
     exit;
 }
 

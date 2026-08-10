@@ -104,6 +104,9 @@ class SimpleGallery {
       dotfileDescInput: document.getElementById('dotfileDescInput'),
       dotfileBgInput: document.getElementById('dotfileBgInput'),
       dotfileThemeSelect: document.getElementById('dotfileThemeSelect'),
+      dotfileAccessModeSelect: document.getElementById('dotfileAccessModeSelect'),
+      folderPasswordGroup: document.getElementById('folderPasswordGroup'),
+      dotfileFolderPasswordInput: document.getElementById('dotfileFolderPasswordInput'),
 
       // Media Comment Modal
       lightboxEditCommentBtn: document.getElementById('lightboxEditCommentBtn'),
@@ -112,7 +115,15 @@ class SimpleGallery {
       mediaCommentForm: document.getElementById('mediaCommentForm'),
       mediaCommentFilename: document.getElementById('mediaCommentFilename'),
       mediaCommentFilenameLabel: document.getElementById('mediaCommentFilenameLabel'),
-      mediaCommentInput: document.getElementById('mediaCommentInput')
+      mediaCommentInput: document.getElementById('mediaCommentInput'),
+
+      // Visitor Folder Unlock Modal
+      folderUnlockModal: document.getElementById('folderUnlockModal'),
+      folderUnlockCloseBtn: document.getElementById('folderUnlockCloseBtn'),
+      folderUnlockForm: document.getElementById('folderUnlockForm'),
+      folderUnlockPath: document.getElementById('folderUnlockPath'),
+      folderUnlockPasswordInput: document.getElementById('folderUnlockPasswordInput'),
+      folderUnlockError: document.getElementById('folderUnlockError')
     };
   }
 
@@ -182,10 +193,33 @@ class SimpleGallery {
         if (e.target === this.el.folderSettingsModal) this.closeFolderSettingsModal();
       });
     }
+    if (this.el.dotfileAccessModeSelect) {
+      this.el.dotfileAccessModeSelect.addEventListener('change', (e) => {
+        if (this.el.folderPasswordGroup) {
+          this.el.folderPasswordGroup.style.display = (e.target.value === 'password') ? 'block' : 'none';
+        }
+      });
+    }
     if (this.el.folderSettingsForm) {
       this.el.folderSettingsForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.saveFolderSettings();
+      });
+    }
+
+    // Visitor Folder Unlock Modal
+    if (this.el.folderUnlockCloseBtn) {
+      this.el.folderUnlockCloseBtn.addEventListener('click', () => this.closeFolderUnlockModal());
+    }
+    if (this.el.folderUnlockModal) {
+      this.el.folderUnlockModal.addEventListener('click', (e) => {
+        if (e.target === this.el.folderUnlockModal) this.closeFolderUnlockModal();
+      });
+    }
+    if (this.el.folderUnlockForm) {
+      this.el.folderUnlockForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.unlockFolder();
       });
     }
 
@@ -261,7 +295,8 @@ class SimpleGallery {
       const isInputFocused = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
       const isModalOpen = (this.el.mediaCommentModal && this.el.mediaCommentModal.classList.contains('open')) ||
                           (this.el.folderSettingsModal && this.el.folderSettingsModal.classList.contains('open')) ||
-                          (this.el.adminModal && this.el.adminModal.classList.contains('open'));
+                          (this.el.adminModal && this.el.adminModal.classList.contains('open')) ||
+                          (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open'));
 
       if (isInputFocused || isModalOpen) {
         if (e.key === 'Escape') {
@@ -271,6 +306,8 @@ class SimpleGallery {
             this.closeFolderSettingsModal();
           } else if (this.el.adminModal && this.el.adminModal.classList.contains('open')) {
             this.closeAdminModal();
+          } else if (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open')) {
+            this.closeFolderUnlockModal();
           }
         }
         return;
@@ -325,7 +362,18 @@ class SimpleGallery {
       const json = await res.json();
 
       if (!json.success) {
-        alert(json.error || 'Failed to load directory');
+        this.state.directories = [];
+        this.state.files = [];
+        this.state.filteredFiles = [];
+        this.renderFolders([]);
+        this.updateStats();
+
+        if (json.is_protected) {
+          this.openFolderUnlockModal(dirPath);
+          this.renderProtectedState(dirPath);
+        } else {
+          this.renderRestrictedState(json.error || 'Accès refusé');
+        }
         this.showLoading(false);
         return;
       }
@@ -364,7 +412,9 @@ class SimpleGallery {
       document.body.style.background = '';
     }
 
-    if (overrides.description || this.state.isAdmin) {
+    const isProtectedUnlocked = overrides.is_protected && overrides.is_unlocked && !this.state.isAdmin;
+
+    if (overrides.description || this.state.isAdmin || isProtectedUnlocked) {
       if (!this.el.folderDescBanner) {
         this.el.folderDescBanner = document.createElement('div');
         this.el.folderDescBanner.id = 'folderDescBanner';
@@ -372,25 +422,39 @@ class SimpleGallery {
         const container = document.querySelector('.gallery-container');
         if (container) container.insertBefore(this.el.folderDescBanner, container.firstChild);
       }
+
+      let bannerHtml = '';
       if (overrides.description) {
-        this.el.folderDescBanner.innerHTML = `
-          💬 <span style="flex:1;">${this.escapeHtml(overrides.description)}</span>
-          ${this.state.isAdmin ? `<button class="edit-dotfile-btn" title="Edit description (.desc)">✏️ Edit Banner</button>` : ''}
-        `;
-        this.el.folderDescBanner.style.display = 'flex';
+        bannerHtml = `💬 <span style="flex:1;">${this.escapeHtml(overrides.description)}</span>`;
       } else if (this.state.isAdmin) {
-        this.el.folderDescBanner.innerHTML = `
-          💬 <span style="flex:1;color:var(--text-muted);font-style:italic;">No description banner set (.desc)</span>
-          <button class="edit-dotfile-btn" title="Add description (.desc)">➕ Add Description</button>
-        `;
-        this.el.folderDescBanner.style.display = 'flex';
+        bannerHtml = `💬 <span style="flex:1;color:var(--text-muted);font-style:italic;">No description banner set (.desc)</span>`;
+      } else if (isProtectedUnlocked) {
+        bannerHtml = `🔓 <span style="flex:1;color:var(--text-muted);">Session ouverte (Dossier protégé)</span>`;
       }
 
-      const editBtn = this.el.folderDescBanner.querySelector('.edit-dotfile-btn');
+      if (this.state.isAdmin) {
+        bannerHtml += ` <button class="edit-dotfile-btn edit-banner-btn" title="Edit description (.desc)">✏️ Edit Banner</button>`;
+      }
+      if (isProtectedUnlocked) {
+        bannerHtml += ` <button class="edit-dotfile-btn relock-btn" title="Re-lock this folder for the session">🔒 Lock Folder</button>`;
+      }
+
+      this.el.folderDescBanner.innerHTML = bannerHtml;
+      this.el.folderDescBanner.style.display = 'flex';
+
+      const editBtn = this.el.folderDescBanner.querySelector('.edit-banner-btn');
       if (editBtn) {
         editBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this.openFolderSettingsModal();
+        });
+      }
+
+      const relockBtn = this.el.folderDescBanner.querySelector('.relock-btn');
+      if (relockBtn) {
+        relockBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.lockFolder(this.state.currentPath);
         });
       }
     } else if (this.el.folderDescBanner) {
@@ -444,23 +508,43 @@ class SimpleGallery {
     }
 
     this.el.folderSection.style.display = 'block';
-    this.el.foldersGrid.innerHTML = folders.map(folder => `
-      <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card" data-path="${folder.path}">
-        <div class="folder-icon-wrapper">
-          ${folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" />` : '📁'}
-        </div>
-        <div class="folder-name">${this.escapeHtml(folder.name)}</div>
-        <div class="folder-meta">
-          <span>${folder.item_count} ${folder.item_count === 1 ? 'item' : 'items'}</span>
-        </div>
-        ${folder.comment ? `<div class="folder-comment">💬 ${this.escapeHtml(folder.comment)}</div>` : ''}
-      </a>
-    `).join('');
+    this.el.foldersGrid.innerHTML = folders.map(folder => {
+      let badge = '';
+      if (folder.is_private) {
+        badge = '<span class="folder-badge private-badge" title="Folder is hidden from public (.private)">👁️‍🗨️ Private</span>';
+      } else if (folder.is_protected) {
+        badge = folder.is_unlocked
+          ? '<span class="folder-badge unlocked-badge" title="Password protection unlocked">🔓 Unlocked</span>'
+          : '<span class="folder-badge protected-badge" title="Password protected folder (.password)">🔒 Protected</span>';
+      }
+
+      return `
+        <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}">
+          ${badge}
+          <div class="folder-icon-wrapper">
+            ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? '<div class="folder-lock-icon">🔒</div>' : (folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" />` : '📁')}
+          </div>
+          <div class="folder-name">${this.escapeHtml(folder.name)}</div>
+          <div class="folder-meta">
+            <span>${folder.item_count} ${folder.item_count === 1 ? 'item' : 'items'}</span>
+          </div>
+          ${folder.comment ? `<div class="folder-comment">💬 ${this.escapeHtml(folder.comment)}</div>` : ''}
+        </a>
+      `;
+    }).join('');
 
     this.el.foldersGrid.querySelectorAll('.folder-card').forEach(card => {
       card.addEventListener('click', (e) => {
         e.preventDefault();
-        this.navigateTo(card.dataset.path);
+        const isProtected = card.dataset.protected === '1';
+        const isUnlocked = card.dataset.unlocked === '1';
+        const path = card.dataset.path;
+
+        if (isProtected && !isUnlocked && !this.state.isAdmin) {
+          this.openFolderUnlockModal(path);
+        } else {
+          this.navigateTo(path);
+        }
       });
     });
   }
@@ -497,12 +581,42 @@ class SimpleGallery {
     this.el.galleryStats.textContent = `${folderCount} folders, ${fileCount} files`;
   }
 
+  renderProtectedState(dirPath) {
+    if (!this.el.emptyState) return;
+    this.el.emptyState.style.display = 'block';
+    this.el.mediaGrid.style.display = 'none';
+    this.el.emptyState.innerHTML = `
+      <div class="empty-state-icon">🔒</div>
+      <h3>Dossier Protégé par Mot de Passe</h3>
+      <p>Saisissez le mot de passe du dossier pour afficher son contenu.</p>
+      <button class="pill-btn active" style="margin-top: 1rem;" onclick="galleryApp.openFolderUnlockModal('${this.escapeHtml(dirPath)}')">
+        🔑 Déverrouiller le Dossier
+      </button>
+    `;
+  }
+
+  renderRestrictedState(msg) {
+    if (!this.el.emptyState) return;
+    this.el.emptyState.style.display = 'block';
+    this.el.mediaGrid.style.display = 'none';
+    this.el.emptyState.innerHTML = `
+      <div class="empty-state-icon">👁️‍🗨️</div>
+      <h3>Dossier Privé</h3>
+      <p>${this.escapeHtml(msg || 'Ce dossier est masqué et réservé à l\'administrateur.')}</p>
+    `;
+  }
+
   renderMedia() {
     const list = this.state.filteredFiles;
 
     if (list.length === 0 && this.state.directories.length === 0) {
       this.el.emptyState.style.display = 'block';
       this.el.mediaGrid.style.display = 'none';
+      this.el.emptyState.innerHTML = `
+        <div class="empty-state-icon">📂</div>
+        <h3>No media files found</h3>
+        <p>Copy photos, videos, or audio into this folder to get started!</p>
+      `;
       return;
     }
 
@@ -927,7 +1041,7 @@ class SimpleGallery {
   // DOTFILE CUSTOMIZATION & EDITING (ADMIN MODE)
   // =============================================================
 
-  async updateDotfile(type, value, filename = '') {
+  async updateDotfile(type, value, filename = '', folderPassword = '') {
     try {
       const res = await fetch('api.php?action=update_dotfile', {
         method: 'POST',
@@ -937,7 +1051,8 @@ class SimpleGallery {
           dir: this.state.currentPath,
           type,
           value,
-          filename
+          filename,
+          folder_password: folderPassword
         })
       });
       return await res.json();
@@ -956,6 +1071,15 @@ class SimpleGallery {
     if (this.el.dotfileThemeSelect) {
       this.el.dotfileThemeSelect.value = typeof overrides.theme === 'string' ? overrides.theme : '';
     }
+    if (this.el.dotfileAccessModeSelect) {
+      this.el.dotfileAccessModeSelect.value = overrides.access_mode || 'public';
+    }
+    if (this.el.folderPasswordGroup) {
+      this.el.folderPasswordGroup.style.display = (overrides.access_mode === 'password') ? 'block' : 'none';
+    }
+    if (this.el.dotfileFolderPasswordInput) {
+      this.el.dotfileFolderPasswordInput.value = '';
+    }
     this.el.folderSettingsModal.style.display = 'flex';
     setTimeout(() => this.el.folderSettingsModal.classList.add('open'), 10);
   }
@@ -973,13 +1097,16 @@ class SimpleGallery {
     const descVal = this.el.dotfileDescInput ? this.el.dotfileDescInput.value.trim() : '';
     const bgVal = this.el.dotfileBgInput ? this.el.dotfileBgInput.value.trim() : '';
     const themeVal = this.el.dotfileThemeSelect ? this.el.dotfileThemeSelect.value : '';
+    const accessModeVal = this.el.dotfileAccessModeSelect ? this.el.dotfileAccessModeSelect.value : 'public';
+    const folderPasswordVal = this.el.dotfileFolderPasswordInput ? this.el.dotfileFolderPasswordInput.value.trim() : '';
 
     this.showLoading(true);
     const results = await Promise.all([
       this.updateDotfile('title', titleVal),
       this.updateDotfile('description', descVal),
       this.updateDotfile('bg', bgVal),
-      this.updateDotfile('theme', themeVal)
+      this.updateDotfile('theme', themeVal),
+      this.updateDotfile('access_mode', accessModeVal, '', folderPasswordVal)
     ]);
 
     const failed = results.find(r => r && !r.success);
@@ -991,6 +1118,71 @@ class SimpleGallery {
 
     this.closeFolderSettingsModal();
     await this.loadDirectory(this.state.currentPath);
+  }
+
+  async lockFolder(dirPath) {
+    this.showLoading(true);
+    try {
+      const res = await fetch('api.php?action=lock_folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'lock_folder', dir: dirPath })
+      });
+      const json = await res.json();
+      if (json.success) {
+        await this.loadDirectory(dirPath);
+      }
+    } catch (err) {
+      console.error('Lock folder failed:', err);
+    } finally {
+      this.showLoading(false);
+    }
+  }
+
+  openFolderUnlockModal(dirPath) {
+    if (!this.el.folderUnlockModal) return;
+    if (this.el.folderUnlockPath) this.el.folderUnlockPath.value = dirPath;
+    if (this.el.folderUnlockPasswordInput) this.el.folderUnlockPasswordInput.value = '';
+    if (this.el.folderUnlockError) this.el.folderUnlockError.style.display = 'none';
+    this.el.folderUnlockModal.style.display = 'flex';
+    setTimeout(() => this.el.folderUnlockModal.classList.add('open'), 10);
+    if (this.el.folderUnlockPasswordInput) this.el.folderUnlockPasswordInput.focus();
+  }
+
+  closeFolderUnlockModal() {
+    if (!this.el.folderUnlockModal) return;
+    this.el.folderUnlockModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.folderUnlockModal.style.display = 'none';
+    }, 250);
+  }
+
+  async unlockFolder() {
+    const dirPath = this.el.folderUnlockPath ? this.el.folderUnlockPath.value : '';
+    const password = this.el.folderUnlockPasswordInput ? this.el.folderUnlockPasswordInput.value : '';
+
+    if (!dirPath || !password) return;
+
+    try {
+      const res = await fetch('api.php?action=unlock_folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unlock_folder', dir: dirPath, password })
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        this.closeFolderUnlockModal();
+        this.navigateTo(dirPath);
+      } else {
+        if (this.el.folderUnlockError) {
+          this.el.folderUnlockError.textContent = json.error || 'Mot de passe incorrect';
+          this.el.folderUnlockError.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      console.error('Folder unlock failed:', err);
+    }
   }
 
   openMediaCommentModal(filename, currentComment) {

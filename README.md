@@ -105,6 +105,8 @@ Ces fichiers peuvent être créés **manuellement avec n'importe quel éditeur d
 | **`.comment`** | Associe des commentaires ou légendes spécifiques aux fichiers du dossier. | `photo1.jpg = Souvenir à la plage` |
 | **`.bg`** | Applique une image locale ou une couleur/dégradé CSS en fond d'écran. | `#0f172a` ou `fond.jpg` |
 | **`.theme`** | Applique un thème de couleurs spécifique à ce répertoire. | `cyberpunk` |
+| **`.private`** | Masque le dossier aux utilisateurs publics (visible uniquement par l'Admin). | *Fichier vide ou "private"* |
+| **`.password`** | Protège le dossier par mot de passe (affiche un badge 🔒 et un formulaire). | *Hash BCRYPT* |
 
 ---
 
@@ -176,12 +178,23 @@ Permet d'appliquer un thème visuel spécifique uniquement pour ce dossier.
   bg_main = #0d0221
   ```
 
+#### 6. Dossier Masqué / Privé (`.private` ou nom de dossier `private`)
+Masque automatiquement le dossier aux visiteurs publics. Il reste visible et accessible **uniquement en Mode Admin**.
+- **Chemin** : `mon_dossier/.private`
+- **Fonctionnement** : Par défaut, tout dossier nommé `private` ou contenant un fichier `.private` est exclu des résultats API et masqué de l'interface pour les utilisateurs non authentifiés.
+
+#### 7. Dossier Protégé par Mot de Passe (`.password`)
+Affiche le dossier publiquement avec un badge **🔒 Protégé** mais exige la saisie d'un mot de passe pour ouvrir le dossier et afficher ses photos/vidéos.
+- **Chemin** : `mon_dossier/.password`
+- **Contenu** : Contient un hash BCRYPT du mot de passe du dossier (généré automatiquement via l'interface Admin).
+- **Re-verrouillage (`🔒 Lock Folder`)** : Lorsqu'un visiteur déverrouille un dossier pour sa session, un bouton **🔒 Lock Folder** apparaît dans la bannière supérieure, lui permettant de fermer/re-verrouiller la session à tout moment.
+
 ---
 
 ### 🛡️ Édition Automatique depuis le Mode Admin
 
 Lorsque le **Mode Admin** est déverrouillé (**🛡️ Admin Active**) :
-- Les fichiers `.title`, `.desc`, `.bg` et `.theme` s'éditent via le bouton **🎨 Folder Settings**.
+- Les paramètres d'accès (**🌐 Public**, **👁️‍🗨️ Masqué/Admin**, **🔒 Protégé par mot de passe**), le titre (`.title`), la description (`.desc`), le fond (`.bg`) et le thème (`.theme`) s'éditent facilement depuis le modal **🎨 Folder Settings**.
 - Le fichier `.comment` s'édite en cliquant sur l'icône **✏️ Edit Legend** sur chaque carte ou dans la visionneuse Lightbox.
 - Le serveur met à jour les fichiers cachés automatiquement **sans jamais renommer ni altérer vos fichiers et dossiers originaux**.
 

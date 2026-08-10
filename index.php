@@ -234,6 +234,20 @@ require_once __DIR__ . '/config.php';
           </div>
 
           <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Access Control (.private / .password)</label>
+            <select id="dotfileAccessModeSelect" class="sort-select" style="width: 100%;">
+              <option value="public">🌐 Public (Visible to everyone)</option>
+              <option value="private">👁️‍🗨️ Hidden / Admin Only (.private)</option>
+              <option value="password">🔒 Password Protected (.password)</option>
+            </select>
+          </div>
+
+          <div id="folderPasswordGroup" class="form-group" style="margin-bottom: 1rem; display: none;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Password (.password)</label>
+            <input type="password" id="dotfileFolderPasswordInput" class="admin-input" placeholder="Set or update folder password..." />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
             <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Background (.bg - color/gradient or image path)</label>
             <input type="text" id="dotfileBgInput" class="admin-input" placeholder="e.g. #0f172a or bg.jpg" />
           </div>
@@ -273,6 +287,29 @@ require_once __DIR__ . '/config.php';
           </div>
           <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;">
             Save Legend (.comment)
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visitor Folder Password Unlock Modal -->
+  <div id="folderUnlockModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3>🔒 Protected Folder</h3>
+        <button id="folderUnlockCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+          This folder is password protected. Please enter the password to view its contents.
+        </p>
+        <form id="folderUnlockForm">
+          <input type="hidden" id="folderUnlockPath" />
+          <input type="password" id="folderUnlockPasswordInput" class="admin-input" placeholder="Folder password..." required />
+          <div id="folderUnlockError" class="admin-error-msg" style="display: none;"></div>
+          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
+            Unlock Folder
           </button>
         </form>
       </div>
