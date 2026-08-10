@@ -1084,38 +1084,46 @@ kbd {
   display: none !important;
 }
 
-/* 1. Video 9mm Film Strip Frame (Vertical Perforations) */
+/* 1. Video 9mm Film Strip Frame (Perforations limited to Video Image Wrapper) */
 .film-strip-card,
 .film-strip-grid-card {
+  background: #0d0f14 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  position: relative;
+  padding: 0.85rem 0.75rem 0.85rem 0.75rem !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden !important;
+}
+
+.film-strip-card .polaroid-img-wrapper,
+.film-strip-grid-card .grid-img-wrapper {
+  position: relative !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
   background-color: #0d0f14 !important;
   background-image: 
     repeating-linear-gradient(
       180deg,
       transparent 0px,
-      transparent 6px,
-      rgba(255, 255, 255, 0.28) 6px,
-      rgba(255, 255, 255, 0.28) 14px,
-      transparent 14px,
-      transparent 20px
+      transparent 5px,
+      rgba(255, 255, 255, 0.32) 5px,
+      rgba(255, 255, 255, 0.32) 13px,
+      transparent 13px,
+      transparent 18px
     ),
     repeating-linear-gradient(
       180deg,
       transparent 0px,
-      transparent 6px,
-      rgba(255, 255, 255, 0.28) 6px,
-      rgba(255, 255, 255, 0.28) 14px,
-      transparent 14px,
-      transparent 20px
+      transparent 5px,
+      rgba(255, 255, 255, 0.32) 5px,
+      rgba(255, 255, 255, 0.32) 13px,
+      transparent 13px,
+      transparent 18px
     ) !important;
-  background-position: left 6px top 0px, right 6px top 0px !important;
-  background-size: 9px 100%, 9px 100% !important;
+  background-position: left 2px top 0px, right 2px top 0px !important;
+  background-size: 8px 100%, 8px 100% !important;
   background-repeat: repeat-y, repeat-y !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-  position: relative;
-  padding: 0.85rem 1.35rem 0.85rem 1.35rem !important;
-  border-radius: var(--radius-sm) !important;
-  overflow: hidden !important;
 }
 
 .film-strip-card .polaroid-caption span {
