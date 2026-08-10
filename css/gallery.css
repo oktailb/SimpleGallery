@@ -850,18 +850,139 @@ kbd {
 }
 
 /* Responsive adjustments */
+/* Responsive Mobile Scaling Optimization (768px and smaller) */
 @media (max-width: 768px) {
-  .app-header { padding: 1rem; }
-  .header-container { flex-direction: column; align-items: stretch; }
-  .toolbar-controls { flex-direction: column; align-items: stretch; }
-  .search-box { width: 100%; }
-  .filter-bar { padding: 0 1rem; }
-  .gallery-container { padding: 0 1rem; }
-  .polaroid-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1.25rem; }
-  .modern-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
-  .lightbox-nav-btn { width: 42px; height: 42px; font-size: 1.1rem; }
-  .lightbox-nav-prev { left: 0.5rem; }
-  .lightbox-nav-next { right: 0.5rem; }
+  .app-header {
+    padding: 0.6rem 0.85rem !important;
+  }
+  
+  .header-top-row {
+    gap: 0.5rem;
+  }
+
+  .brand-title {
+    font-size: 1.1rem !important;
+  }
+
+  .brand-logo {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .toolbar-controls {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    gap: 0.35rem !important;
+  }
+
+  .btn-toggle,
+  .view-btn,
+  .search-box,
+  .search-input {
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.775rem !important;
+    height: auto !important;
+  }
+
+  .search-box {
+    width: 100% !important;
+    margin-top: 0.25rem !important;
+  }
+
+  .filter-bar {
+    padding: 0 0.85rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .filter-btn {
+    padding: 0.25rem 0.55rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .breadcrumbs {
+    font-size: 0.8rem !important;
+    padding: 0.2rem 0 !important;
+  }
+
+  .gallery-container {
+    padding: 0 0.75rem !important;
+  }
+
+  .folders-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 0.85rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .folder-card {
+    padding: 0.85rem 0.65rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .folder-icon-wrapper {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 1.75rem !important;
+  }
+
+  .folder-title {
+    font-size: 0.85rem !important;
+  }
+
+  .polaroid-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)) !important;
+    gap: 0.85rem !important;
+    padding: 0.75rem 0 !important;
+  }
+
+  .polaroid-card {
+    padding: 8px 8px 12px 8px !important;
+    border-radius: 2px !important;
+  }
+
+  .polaroid-card::before {
+    width: 48px !important;
+    height: 14px !important;
+    top: -8px !important;
+  }
+
+  .polaroid-caption {
+    padding-top: 6px !important;
+  }
+
+  .polaroid-caption span {
+    font-size: 0.85rem !important;
+  }
+
+  .polaroid-subcaption {
+    font-size: 0.675rem !important;
+  }
+
+  .modern-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+    gap: 0.65rem !important;
+  }
+
+  .lightbox-nav-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .lightbox-nav-prev { left: 0.35rem !important; }
+  .lightbox-nav-next { right: 0.35rem !important; }
+}
+
+@media (max-width: 480px) {
+  .polaroid-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.65rem !important;
+  }
+  .modern-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
 }
 
 /* Admin Modal & Badge Styles */
