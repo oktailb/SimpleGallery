@@ -819,6 +819,42 @@ class SimpleGallery {
     this.updateExplorerTransform(true);
   }
 
+  clampTranslate() {
+    const img = document.getElementById('lightboxExplorerImg');
+    if (!img) return;
+
+    const { scale, rotation } = this.zoomState;
+    if (scale <= 1) {
+      this.zoomState.translateX = 0;
+      this.zoomState.translateY = 0;
+      return;
+    }
+
+    const container = this.el.lightboxContent || img.parentElement;
+    if (!container) return;
+
+    const containerWidth = container.clientWidth || window.innerWidth;
+    const containerHeight = container.clientHeight || window.innerHeight;
+
+    const currentScale = scale || 1;
+    const rect = img.getBoundingClientRect();
+    const unscaledW = (rect.width > 0) ? (rect.width / currentScale) : (img.offsetWidth || containerWidth);
+    const unscaledH = (rect.height > 0) ? (rect.height / currentScale) : (img.offsetHeight || containerHeight);
+
+    const isRotated = (rotation % 180 !== 0);
+    const effUnscaledW = isRotated ? unscaledH : unscaledW;
+    const effUnscaledH = isRotated ? unscaledW : unscaledH;
+
+    const scaledW = effUnscaledW * scale;
+    const scaledH = effUnscaledH * scale;
+
+    const maxPanX = Math.max(0, (scaledW - containerWidth) / 2);
+    const maxPanY = Math.max(0, (scaledH - containerHeight) / 2);
+
+    this.zoomState.translateX = Math.min(maxPanX, Math.max(-maxPanX, this.zoomState.translateX));
+    this.zoomState.translateY = Math.min(maxPanY, Math.max(-maxPanY, this.zoomState.translateY));
+  }
+
   adjustZoom(delta) {
     if (!this.isCurrentMediaImage()) return;
     let newScale = Math.min(Math.max(1, this.zoomState.scale + delta), 5);
@@ -830,17 +866,19 @@ class SimpleGallery {
     }
 
     this.zoomState.scale = newScale;
+    this.clampTranslate();
     this.updateExplorerTransform(true);
   }
 
   rotateImage() {
     if (!this.isCurrentMediaImage()) return;
     this.zoomState.rotation = (this.zoomState.rotation + 90) % 360;
+    this.clampTranslate();
     this.updateExplorerTransform(true);
   }
 
   startDrag(e) {
-    if (!this.isCurrentMediaImage()) return;
+    if (!this.isCurrentMediaImage() || this.zoomState.scale <= 1) return;
     e.preventDefault();
     this.zoomState.isDragging = true;
     this.zoomState.startX = e.clientX - this.zoomState.translateX;
@@ -865,10 +903,11 @@ class SimpleGallery {
   }
 
   doDrag(e) {
-    if (!this.zoomState.isDragging || !this.isCurrentMediaImage()) return;
+    if (!this.zoomState.isDragging || !this.isCurrentMediaImage() || this.zoomState.scale <= 1) return;
     e.preventDefault();
     this.zoomState.translateX = e.clientX - this.zoomState.startX;
     this.zoomState.translateY = e.clientY - this.zoomState.startY;
+    this.clampTranslate();
     this.updateExplorerTransform(false);
   }
 
@@ -877,6 +916,7 @@ class SimpleGallery {
       const touch = e.touches[0];
       this.zoomState.translateX = touch.clientX - this.zoomState.startX;
       this.zoomState.translateY = touch.clientY - this.zoomState.startY;
+      this.clampTranslate();
       this.updateExplorerTransform(false);
     }
   }
@@ -918,6 +958,8 @@ class SimpleGallery {
   updateExplorerTransform(withTransition = true) {
     const img = document.getElementById('lightboxExplorerImg');
     if (!img) return;
+
+    this.clampTranslate();
 
     if (withTransition) {
       img.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0.2, 1)';
