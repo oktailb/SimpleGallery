@@ -67,12 +67,17 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             <input type="text" id="searchInput" class="search-input" placeholder="Search media..." aria-label="Search media">
           </div>
 
-          <select id="sortSelect" class="sort-select" aria-label="Sort options">
-            <option value="name">Sort by Name</option>
-            <option value="exif_date">Sort by Date EXIF 📷</option>
-            <option value="date">Sort by File Date</option>
-            <option value="size">Sort by Size</option>
-          </select>
+          <div class="sort-group" style="display: flex; align-items: center; gap: 0.35rem;">
+            <select id="sortSelect" class="sort-select" aria-label="Sort options">
+              <option value="name">Sort by Name</option>
+              <option value="exif_date">Sort by Date EXIF 📷</option>
+              <option value="date">Sort by File Date</option>
+              <option value="size">Sort by Size</option>
+            </select>
+            <button id="sortOrderBtn" class="btn-toggle" title="Toggle Ascending / Descending Order">
+              <span id="sortOrderIcon" style="font-size: 1.1rem; font-weight: bold;">⇩</span>
+            </button>
+          </div>
 
           <div class="control-btn-group">
             <button id="viewPolaroidBtn" class="btn-toggle active" title="Polaroid View">

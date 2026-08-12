@@ -252,7 +252,7 @@ body {
 }
 
 .sort-select {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-color);
   color: var(--text-main);
   padding: 0.45rem 0.8rem;
@@ -260,6 +260,18 @@ body {
   font-size: 0.85rem;
   outline: none;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-select:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent-primary);
+}
+
+.sort-select option {
+  background-color: #1e293b;
+  color: #f8fafc;
+  padding: 0.5rem;
 }
 
 /* Category Filters Bar */

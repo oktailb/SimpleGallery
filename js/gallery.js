@@ -11,6 +11,7 @@ class SimpleGallery {
       viewMode: localStorage.getItem('gallery_view_mode') || 'polaroid',
       filterCategory: 'all',
       sortBy: 'name',
+      sortOrder: 'asc',
       searchQuery: '',
       directories: [],
       files: [],
@@ -53,6 +54,8 @@ class SimpleGallery {
       mediaGrid: document.getElementById('mediaGrid'),
       searchInput: document.getElementById('searchInput'),
       sortSelect: document.getElementById('sortSelect'),
+      sortOrderBtn: document.getElementById('sortOrderBtn'),
+      sortOrderIcon: document.getElementById('sortOrderIcon'),
       viewPolaroidBtn: document.getElementById('viewPolaroidBtn'),
       viewGridBtn: document.getElementById('viewGridBtn'),
       filterPills: document.getElementById('filterPills'),
@@ -146,8 +149,18 @@ class SimpleGallery {
 
     this.el.sortSelect.addEventListener('change', (e) => {
       this.state.sortBy = e.target.value;
+      if (['date', 'exif_date', 'size'].includes(e.target.value)) {
+        this.state.sortOrder = 'desc';
+      } else {
+        this.state.sortOrder = 'asc';
+      }
+      this.updateSortOrderUI();
       this.applyFilterAndRender();
     });
+
+    if (this.el.sortOrderBtn) {
+      this.el.sortOrderBtn.addEventListener('click', () => this.toggleSortOrder());
+    }
 
     this.el.viewPolaroidBtn.addEventListener('click', () => this.setViewMode('polaroid'));
     this.el.viewGridBtn.addEventListener('click', () => this.setViewMode('grid'));
@@ -402,6 +415,7 @@ class SimpleGallery {
       if (json.csrf_token) this.state.csrfToken = json.csrf_token;
 
       this.updateAdminUI();
+      this.updateSortOrderUI();
       this.applyDotfileOverrides(this.state.overrides);
       this.renderBreadcrumbs(json.breadcrumbs);
       this.renderFolders(json.directories);
@@ -513,6 +527,25 @@ class SimpleGallery {
     this.renderMedia();
   }
 
+  toggleSortOrder() {
+    this.state.sortOrder = (this.state.sortOrder === 'asc') ? 'desc' : 'asc';
+    this.updateSortOrderUI();
+    this.applyFilterAndRender();
+  }
+
+  updateSortOrderUI() {
+    if (!this.el.sortOrderBtn || !this.el.sortOrderIcon) return;
+    if (this.state.sortOrder === 'asc') {
+      this.el.sortOrderIcon.textContent = '⇧';
+      this.el.sortOrderBtn.title = 'Ordre : Croissant (A-Z, Plus ancien d\'abord, Plus petit d\'abord)';
+      this.el.sortOrderBtn.classList.add('active');
+    } else {
+      this.el.sortOrderIcon.textContent = '⇩';
+      this.el.sortOrderBtn.title = 'Ordre : Décroissant (Z-A, Plus récent d\'abord, Plus grand d\'abord)';
+      this.el.sortOrderBtn.classList.remove('active');
+    }
+  }
+
   renderBreadcrumbs(crumbs) {
     this.el.breadcrumbs.innerHTML = crumbs.map((crumb, idx) => {
       const isLast = idx === crumbs.length - 1;
@@ -598,11 +631,17 @@ class SimpleGallery {
     }
 
     list.sort((a, b) => {
-      if (this.state.sortBy === 'name') return a.name.localeCompare(b.name, undefined, { numeric: true });
-      if (this.state.sortBy === 'exif_date') return (b.effective_mtime || b.mtime) - (a.effective_mtime || a.mtime);
-      if (this.state.sortBy === 'date') return b.mtime - a.mtime;
-      if (this.state.sortBy === 'size') return b.size - a.size;
-      return 0;
+      let res = 0;
+      if (this.state.sortBy === 'name') {
+        res = a.name.localeCompare(b.name, undefined, { numeric: true });
+      } else if (this.state.sortBy === 'exif_date') {
+        res = (a.effective_mtime || a.mtime) - (b.effective_mtime || b.mtime);
+      } else if (this.state.sortBy === 'date') {
+        res = a.mtime - b.mtime;
+      } else if (this.state.sortBy === 'size') {
+        res = a.size - b.size;
+      }
+      return (this.state.sortOrder === 'asc') ? res : -res;
     });
 
     this.state.filteredFiles = list;
