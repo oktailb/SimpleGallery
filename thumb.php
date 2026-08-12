@@ -48,6 +48,11 @@ function send_cached_file(string $file_path, string $content_type, int $max_age 
     header('ETag: ' . $etag);
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
 
+    if (strtolower($content_type) === 'image/svg+xml') {
+        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'none';");
+        header("X-Content-Type-Options: nosniff");
+    }
+
     $if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : null;
     $if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : null;
 
@@ -81,6 +86,8 @@ function serve_direct_file(string $file_path, string $ext): void {
 function render_svg_placeholder(string $category, string $ext, string $filename): void {
     header('Content-Type: image/svg+xml');
     header('Cache-Control: public, max-age=86400');
+    header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'none';");
+    header("X-Content-Type-Options: nosniff");
 
     $ext_lower = strtolower($ext);
     

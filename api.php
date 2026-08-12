@@ -13,31 +13,57 @@ require_once __DIR__ . '/config.php';
 
 ensure_session_started();
 
-// Rate limiting helper function
+// Rate limiting helper function based on client IP
+function get_client_ip(): string {
+    return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+}
+
+function get_rate_limit_file(string $key): string {
+    $ip = get_client_ip();
+    $hash = md5($ip . '_' . $key);
+    return sys_get_temp_dir() . '/sg_limit_' . $hash . '.json';
+}
+
 function check_rate_limit(string $key, int $max_attempts = 5, int $decay_seconds = 900): bool {
-    ensure_session_started();
+    $file = get_rate_limit_file($key);
+    if (!file_exists($file)) {
+        return true;
+    }
+    $content = @file_get_contents($file);
+    if (!$content) return true;
+    $data = @json_decode($content, true);
+    if (!is_array($data)) return true;
+    
     $now = time();
-    if (!isset($_SESSION['rate_limits'][$key])) {
-        $_SESSION['rate_limits'][$key] = ['attempts' => 0, 'first_attempt' => $now];
+    if ($now - ($data['first_attempt'] ?? 0) > $decay_seconds) {
+        @unlink($file);
+        return true;
     }
-    $limit = &$_SESSION['rate_limits'][$key];
-    if ($now - $limit['first_attempt'] > $decay_seconds) {
-        $limit['attempts'] = 0;
-        $limit['first_attempt'] = $now;
-    }
-    return $limit['attempts'] < $max_attempts;
+    return ($data['attempts'] ?? 0) < $max_attempts;
 }
 
 function increment_rate_limit(string $key): void {
-    ensure_session_started();
-    if (isset($_SESSION['rate_limits'][$key])) {
-        $_SESSION['rate_limits'][$key]['attempts']++;
+    $file = get_rate_limit_file($key);
+    $now = time();
+    $data = ['attempts' => 1, 'first_attempt' => $now];
+    if (file_exists($file)) {
+        $content = @file_get_contents($file);
+        if ($content) {
+            $existing = @json_decode($content, true);
+            if (is_array($existing)) {
+                $data['attempts'] = ($existing['attempts'] ?? 0) + 1;
+                $data['first_attempt'] = $existing['first_attempt'] ?? $now;
+            }
+        }
     }
+    @file_put_contents($file, json_encode($data), LOCK_EX);
 }
 
 function reset_rate_limit(string $key): void {
-    ensure_session_started();
-    unset($_SESSION['rate_limits'][$key]);
+    $file = get_rate_limit_file($key);
+    if (file_exists($file)) {
+        @unlink($file);
+    }
 }
 
 // -------------------------------------------------------------
@@ -49,7 +75,7 @@ $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 // Validate CSRF token for all state-changing actions
 $mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item'];
 if (in_array($action, $mutating_actions, true)) {
-    $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
+    $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
         http_response_code(403);
         echo json_encode([
@@ -810,6 +836,11 @@ if ($action === 'upload_file') {
             continue;
         }
 
+        if (preg_match('/\.(php|phtml|php3|php4|php5|phps|phar|inc|pl|py|cgi|sh|exe|bat|cmd)\./i', $safe_filename)) {
+            $errors[] = "Sécurité : Double extension d'exécution suspecte détectée sur '{$raw_name}'.";
+            continue;
+        }
+
         $ext = strtolower(pathinfo($safe_filename, PATHINFO_EXTENSION));
         if ($ext === '' || in_array($ext, $forbidden_exts, true) || !in_array($ext, $allowed_exts, true)) {
             $errors[] = "Sécurité : L'extension '.{$ext}' du fichier '{$raw_name}' n'est pas autorisée.";
@@ -959,11 +990,21 @@ if ($action === 'move_item') {
         exit;
     }
 
-    if (stripos($source_full, $real_base) !== 0 || strtolower($source_full) === strtolower($real_base)) {
+    $real_base_slash = rtrim($real_base, '/') . '/';
+    if ($source_full !== $real_base && strpos($source_full . '/', $real_base_slash) !== 0) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
             'error'   => 'Accès refusé au fichier source.'
+        ]);
+        exit;
+    }
+
+    if (strtolower($source_full) === strtolower($real_base)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Sécurité : Impossible de déplacer la racine de la galerie.'
         ]);
         exit;
     }
@@ -1090,7 +1131,17 @@ if ($action === 'delete_item') {
         exit;
     }
 
-    if (stripos($target_full, $real_base) !== 0 || strtolower($target_full) === strtolower($real_base)) {
+    $real_base_slash = rtrim($real_base, '/') . '/';
+    if ($target_full !== $real_base && strpos($target_full . '/', $real_base_slash) !== 0) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Accès refusé.'
+        ]);
+        exit;
+    }
+
+    if (strtolower($target_full) === strtolower($real_base)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
