@@ -47,7 +47,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -1034,6 +1034,99 @@ if ($action === 'move_item') {
         echo json_encode([
             'success' => false,
             'error'   => 'Échec du déplacement : ' . $detail
+        ]);
+    }
+    exit;
+}
+
+function recursive_delete_dir(string $dir): bool {
+    if (!is_dir($dir)) return false;
+    $items = @scandir($dir);
+    if ($items === false) return false;
+
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') continue;
+        $path = $dir . '/' . $item;
+        if (is_dir($path)) {
+            recursive_delete_dir($path);
+        } else {
+            @unlink($path);
+        }
+    }
+    return @rmdir($dir);
+}
+
+if ($action === 'delete_item') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Accès refusé. Mode administrateur requis pour supprimer un élément.'
+        ]);
+        exit;
+    }
+
+    $target_param = $raw_body['target_path'] ?? $_POST['target_path'] ?? $_GET['target_path'] ?? '';
+    if (empty($target_param)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Chemin de l\'élément à supprimer non spécifié.'
+        ]);
+        exit;
+    }
+
+    $real_base = str_replace('\\', '/', realpath($real_base_dir) ?: $real_base_dir);
+    $target_rel = str_replace(['\\', '..'], ['/', ''], $target_param);
+    $target_full = $real_base . '/' . ltrim($target_rel, '/');
+    $target_full = str_replace('\\', '/', realpath($target_full) ?: $target_full);
+
+    if (!file_exists($target_full)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'L\'élément à supprimer n\'existe pas.'
+        ]);
+        exit;
+    }
+
+    if (stripos($target_full, $real_base) !== 0 || strtolower($target_full) === strtolower($real_base)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Sécurité : Impossible de supprimer le dossier racine de la galerie.'
+        ]);
+        exit;
+    }
+
+    $parent_dir = str_replace('\\', '/', dirname($target_full));
+    $item_name = basename($target_full);
+
+    error_clear_last();
+    $delete_success = false;
+    if (is_dir($target_full)) {
+        $delete_success = recursive_delete_dir($target_full);
+    } else {
+        $delete_success = @unlink($target_full);
+        $thumb_cache_file = $thumbnail_dir . '/' . md5(get_relative_path($target_full, $real_base_dir)) . '.jpg';
+        if (file_exists($thumb_cache_file)) {
+            @unlink($thumb_cache_file);
+        }
+    }
+
+    if ($delete_success) {
+        invalidate_dir_cache($parent_dir, $real_base_dir, $thumbnail_dir);
+        echo json_encode([
+            'success' => true,
+            'message' => "L'élément '{$item_name}' a été supprimé avec succès."
+        ]);
+    } else {
+        $last_err = error_get_last();
+        $detail = $last_err ? $last_err['message'] : 'Vérifiez les permissions de fichier sur le serveur.';
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Échec de la suppression : ' . $detail
         ]);
     }
     exit;

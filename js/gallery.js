@@ -21,7 +21,8 @@ class SimpleGallery {
       isAdmin: false,
       adminEnabled: false,
       csrfToken: csrfMeta ? csrfMeta.content : '',
-      draggingItemPath: null
+      draggingItemPath: null,
+      targetItemToDelete: null
     };
 
     // Zoom, Pan & Rotate Explorer State
@@ -153,7 +154,15 @@ class SimpleGallery {
       createFolderCloseBtn: document.getElementById('createFolderCloseBtn'),
       createFolderForm: document.getElementById('createFolderForm'),
       createFolderNameInput: document.getElementById('createFolderNameInput'),
-      createFolderError: document.getElementById('createFolderError')
+      createFolderError: document.getElementById('createFolderError'),
+
+      // Delete Confirm Elements
+      lightboxDeleteBtn: document.getElementById('lightboxDeleteBtn'),
+      deleteConfirmModal: document.getElementById('deleteConfirmModal'),
+      deleteConfirmCloseBtn: document.getElementById('deleteConfirmCloseBtn'),
+      deleteCancelBtn: document.getElementById('deleteCancelBtn'),
+      deleteConfirmActionBtn: document.getElementById('deleteConfirmActionBtn'),
+      deleteConfirmMessage: document.getElementById('deleteConfirmMessage')
     };
   }
 
@@ -255,6 +264,30 @@ class SimpleGallery {
       this.el.createFolderForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.createFolder();
+      });
+    }
+
+    // Admin Delete Confirm Controls
+    if (this.el.deleteConfirmCloseBtn) {
+      this.el.deleteConfirmCloseBtn.addEventListener('click', () => this.closeDeleteConfirmModal());
+    }
+    if (this.el.deleteCancelBtn) {
+      this.el.deleteCancelBtn.addEventListener('click', () => this.closeDeleteConfirmModal());
+    }
+    if (this.el.deleteConfirmModal) {
+      this.el.deleteConfirmModal.addEventListener('click', (e) => {
+        if (e.target === this.el.deleteConfirmModal) this.closeDeleteConfirmModal();
+      });
+    }
+    if (this.el.deleteConfirmActionBtn) {
+      this.el.deleteConfirmActionBtn.addEventListener('click', () => this.confirmDeleteItem());
+    }
+    if (this.el.lightboxDeleteBtn) {
+      this.el.lightboxDeleteBtn.addEventListener('click', () => {
+        if (this.state.lightboxIndex !== null && this.state.filteredFiles[this.state.lightboxIndex]) {
+          const file = this.state.filteredFiles[this.state.lightboxIndex];
+          this.openDeleteConfirmModal(file.path, file.name, 'file', true);
+        }
       });
     }
 
@@ -696,9 +729,11 @@ class SimpleGallery {
 
       const isDraggable = this.state.isAdmin ? 'true' : 'false';
       const handleClass = this.state.isAdmin ? 'drag-handle' : '';
+      const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="Supprimer le dossier">🗑️</button>` : '';
 
       return `
         <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="${isDraggable}">
+          ${deleteBtnHtml}
           ${badge}
           <div class="folder-icon-wrapper">
             ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? '<div class="folder-lock-icon">🔒</div>' : (folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" draggable="false" />` : '📁')}
@@ -747,6 +782,14 @@ class SimpleGallery {
           this.moveItem(sourcePath, folderPath);
         });
       }
+
+      card.querySelectorAll('.delete-item-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openDeleteConfirmModal(btn.dataset.path, btn.dataset.name, 'folder');
+        });
+      });
 
       card.addEventListener('click', (e) => {
         e.preventDefault();
@@ -949,8 +992,11 @@ class SimpleGallery {
           gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
         }
 
+        const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
+
         return `
           <div class="${frameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
+            ${deleteBtnHtml}
             <div class="polaroid-img-wrapper">
               <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />
               ${overlayHtml}
@@ -989,9 +1035,12 @@ class SimpleGallery {
         if (file.exif && file.exif.gps) {
           gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
         }
+        
+        const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
 
         return `
           <div class="${gridFrameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
+            ${deleteBtnHtml}
             <div class="grid-img-wrapper">
               <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />
               ${overlayHtml}
@@ -1012,6 +1061,13 @@ class SimpleGallery {
         `;
       }).join('');
     }
+
+    this.el.mediaGrid.querySelectorAll('.delete-item-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openDeleteConfirmModal(btn.dataset.path, btn.dataset.name, 'file');
+      });
+    });
 
     this.el.mediaGrid.querySelectorAll('.edit-media-comment-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1054,6 +1110,10 @@ class SimpleGallery {
     this.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
     this.el.lightboxDownloadBtn.href = file.file_url;
     this.el.lightboxDownloadBtn.setAttribute('download', file.name);
+
+    if (this.el.lightboxDeleteBtn) {
+      this.el.lightboxDeleteBtn.style.display = this.state.isAdmin ? 'inline-flex' : 'none';
+    }
 
     if (this.el.lightboxComment) {
       if (file.comment) {
@@ -1417,6 +1477,7 @@ class SimpleGallery {
       if (this.el.createFolderBtn) this.el.createFolderBtn.style.display = 'inline-flex';
       if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = 'inline-flex';
       if (this.el.lightboxEditCommentBtn) this.el.lightboxEditCommentBtn.style.display = 'inline-flex';
+      if (this.el.lightboxDeleteBtn) this.el.lightboxDeleteBtn.style.display = 'inline-flex';
     } else {
       this.el.adminBtn.classList.remove('admin-active');
       if (this.el.adminBtnIcon) this.el.adminBtnIcon.textContent = '🔑';
@@ -1427,6 +1488,7 @@ class SimpleGallery {
       if (this.el.createFolderBtn) this.el.createFolderBtn.style.display = 'none';
       if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = 'none';
       if (this.el.lightboxEditCommentBtn) this.el.lightboxEditCommentBtn.style.display = 'none';
+      if (this.el.lightboxDeleteBtn) this.el.lightboxDeleteBtn.style.display = 'none';
     }
   }
 
@@ -1686,6 +1748,62 @@ class SimpleGallery {
         this.el.createFolderError.textContent = 'Erreur réseau lors de la création du dossier.';
         this.el.createFolderError.style.display = 'block';
       }
+    }
+  }
+
+  openDeleteConfirmModal(targetPath, itemName, itemType, isFromLightbox = false) {
+    if (!this.state.isAdmin || !this.el.deleteConfirmModal) return;
+    this.state.targetItemToDelete = { path: targetPath, name: itemName, type: itemType, isFromLightbox };
+
+    if (this.el.deleteConfirmMessage) {
+      if (itemType === 'folder') {
+        this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer le dossier <strong>"${this.escapeHtml(itemName)}"</strong> ?<br/><br/><span style="color:#ef4444;font-weight:600;">⚠️ Attention : Ce dossier et tout son contenu seront définitivement supprimés !</span>`;
+      } else {
+        this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer définitivement le fichier <strong>"${this.escapeHtml(itemName)}"</strong> ?`;
+      }
+    }
+
+    this.el.deleteConfirmModal.style.display = 'block';
+    this.el.deleteConfirmModal.classList.add('open');
+  }
+
+  closeDeleteConfirmModal() {
+    if (!this.el.deleteConfirmModal) return;
+    this.el.deleteConfirmModal.style.display = 'none';
+    this.el.deleteConfirmModal.classList.remove('open');
+    this.state.targetItemToDelete = null;
+  }
+
+  async confirmDeleteItem() {
+    if (!this.state.isAdmin || !this.state.targetItemToDelete) return;
+    const { path: targetPath, isFromLightbox } = this.state.targetItemToDelete;
+
+    try {
+      const res = await fetch('api.php?action=delete_item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({
+          action: 'delete_item',
+          target_path: targetPath,
+          csrf_token: this.state.csrfToken
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        this.closeDeleteConfirmModal();
+        if (isFromLightbox) {
+          this.closeLightbox();
+        }
+        this.loadDirectory(this.state.currentPath);
+      } else {
+        alert(json.error || 'Échec de la suppression.');
+      }
+    } catch (err) {
+      console.error('Delete request failed:', err);
+      alert('Erreur réseau lors de la suppression.');
     }
   }
 

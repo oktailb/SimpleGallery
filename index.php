@@ -185,6 +185,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Edit Legend (.comment)" style="display: none;">
           ✏️
         </button>
+        <button id="lightboxDeleteBtn" class="lightbox-btn" title="Delete Media (Admin Only)" style="display: none; color: #f87171;">
+          🗑️
+        </button>
         <button id="lightboxFullscreenBtn" class="lightbox-btn" title="Toggle Fullscreen (F)">
           ⛶
         </button>
@@ -408,6 +411,25 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             Créer le dossier
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteConfirmModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content" style="max-width: 440px; text-align: center;">
+      <div class="admin-modal-header">
+        <h3 style="color: #ef4444; width: 100%;">🗑️ Confirmation de suppression</h3>
+        <button id="deleteConfirmCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <p id="deleteConfirmMessage" style="font-size: 0.95rem; margin: 1rem 0; color: var(--text-main); line-height: 1.5;"></p>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
+          <button id="deleteCancelBtn" class="btn-toggle" style="flex: 1;">Annuler</button>
+          <button id="deleteConfirmActionBtn" class="pill-btn active" style="flex: 1; background: #ef4444; color: white; justify-content: center; font-weight: 700;">
+            🗑️ Supprimer
+          </button>
+        </div>
       </div>
     </div>
   </div>
