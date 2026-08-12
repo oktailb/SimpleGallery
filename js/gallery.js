@@ -72,6 +72,10 @@ class SimpleGallery {
       lightboxPrevBtn: document.getElementById('lightboxPrevBtn'),
       lightboxNextBtn: document.getElementById('lightboxNextBtn'),
       lightboxDownloadBtn: document.getElementById('lightboxDownloadBtn'),
+      lightboxExifBtn: document.getElementById('lightboxExifBtn'),
+      lightboxExifPanel: document.getElementById('lightboxExifPanel'),
+      closeExifPanelBtn: document.getElementById('closeExifPanelBtn'),
+      exifPanelBody: document.getElementById('exifPanelBody'),
 
       // Image Explorer Controls
       imageExplorerControls: document.getElementById('imageExplorerControls'),
@@ -125,7 +129,10 @@ class SimpleGallery {
       folderUnlockForm: document.getElementById('folderUnlockForm'),
       folderUnlockPath: document.getElementById('folderUnlockPath'),
       folderUnlockPasswordInput: document.getElementById('folderUnlockPasswordInput'),
-      folderUnlockError: document.getElementById('folderUnlockError')
+      folderUnlockError: document.getElementById('folderUnlockError'),
+
+      // Folder GPS Route Map Button
+      folderMapBtn: document.getElementById('folderMapBtn')
     };
   }
 
@@ -254,6 +261,12 @@ class SimpleGallery {
     if (this.el.lightboxFullscreenBtn) {
       this.el.lightboxFullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
     }
+    if (this.el.lightboxExifBtn) {
+      this.el.lightboxExifBtn.addEventListener('click', () => this.toggleExifPanel());
+    }
+    if (this.el.closeExifPanelBtn) {
+      this.el.closeExifPanelBtn.addEventListener('click', () => this.toggleExifPanel(false));
+    }
     this.el.lightboxPrevBtn.addEventListener('click', () => this.navigateLightbox(-1));
     this.el.lightboxNextBtn.addEventListener('click', () => this.navigateLightbox(1));
 
@@ -321,6 +334,7 @@ class SimpleGallery {
       if (e.key === 'ArrowLeft') this.navigateLightbox(-1);
       if (e.key === 'ArrowRight') this.navigateLightbox(1);
       if (e.key === 'f' || e.key === 'F') { e.preventDefault(); this.toggleFullscreen(); }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); this.toggleExifPanel(); }
 
       if (this.isCurrentMediaImage()) {
         if (e.key === '+' || e.key === '=') { e.preventDefault(); this.adjustZoom(0.3); }
@@ -585,6 +599,7 @@ class SimpleGallery {
 
     list.sort((a, b) => {
       if (this.state.sortBy === 'name') return a.name.localeCompare(b.name, undefined, { numeric: true });
+      if (this.state.sortBy === 'exif_date') return (b.effective_mtime || b.mtime) - (a.effective_mtime || a.mtime);
       if (this.state.sortBy === 'date') return b.mtime - a.mtime;
       if (this.state.sortBy === 'size') return b.size - a.size;
       return 0;
@@ -592,6 +607,7 @@ class SimpleGallery {
 
     this.state.filteredFiles = list;
     this.updateStats();
+    this.updateFolderMapButton();
     this.renderMedia();
   }
 
@@ -599,6 +615,67 @@ class SimpleGallery {
     const fileCount = this.state.filteredFiles.length;
     const folderCount = this.state.directories.length;
     this.el.galleryStats.textContent = `${folderCount} folders, ${fileCount} files`;
+  }
+
+  updateFolderMapButton() {
+    if (!this.el.folderMapBtn) return;
+
+    const gpsFiles = this.state.files.filter(f => f.exif && f.exif.gps && f.exif.gps.lat && f.exif.gps.lng);
+
+    if (gpsFiles.length === 0) {
+      this.el.folderMapBtn.style.display = 'none';
+      return;
+    }
+
+    // Sort chronologically by EXIF timestamp or file mtime
+    gpsFiles.sort((a, b) => (a.effective_mtime || a.mtime) - (b.effective_mtime || b.mtime));
+
+    // Deduplicate close GPS coordinates (same lat/lng to 4 decimal places)
+    const uniquePoints = [];
+    const seen = new Set();
+    for (const f of gpsFiles) {
+      const key = `${f.exif.gps.lat.toFixed(4)},${f.exif.gps.lng.toFixed(4)}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniquePoints.push(f.exif.gps);
+      }
+    }
+
+    let mapUrl = '';
+    let btnText = '';
+
+    if (uniquePoints.length === 1) {
+      const pt = uniquePoints[0];
+      mapUrl = `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}`;
+      btnText = `📍 Localisation (1 point GPS)`;
+    } else if (uniquePoints.length === 2) {
+      const p1 = uniquePoints[0];
+      const p2 = uniquePoints[1];
+      mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${p1.lat},${p1.lng}&destination=${p2.lat},${p2.lng}`;
+      btnText = `🗺️ Trajet GPS (2 étapes)`;
+    } else {
+      const first = uniquePoints[0];
+      const last = uniquePoints[uniquePoints.length - 1];
+
+      const intermediates = uniquePoints.slice(1, uniquePoints.length - 1);
+      let selectedWaypoints = intermediates;
+      if (intermediates.length > 8) {
+        selectedWaypoints = [];
+        const step = (intermediates.length - 1) / 7;
+        for (let i = 0; i < 8; i++) {
+          const idx = Math.min(Math.round(i * step), intermediates.length - 1);
+          selectedWaypoints.push(intermediates[idx]);
+        }
+      }
+
+      const waypointsStr = selectedWaypoints.map(pt => `${pt.lat},${pt.lng}`).join('|');
+      mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${first.lat},${first.lng}&destination=${last.lat},${last.lng}&waypoints=${encodeURIComponent(waypointsStr)}`;
+      btnText = `🗺️ Trajet GPS (${uniquePoints.length} étapes)`;
+    }
+
+    this.el.folderMapBtn.href = mapUrl;
+    this.el.folderMapBtn.textContent = btnText;
+    this.el.folderMapBtn.style.display = 'inline-flex';
   }
 
   renderProtectedState(dirPath) {
@@ -665,12 +742,18 @@ class SimpleGallery {
           badgeHtml = `<span class="polaroid-badge">${file.extension.toUpperCase()}</span>`;
         }
 
+        let gpsBadge = '';
+        if (file.exif && file.exif.gps) {
+          gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
+        }
+
         return `
           <div class="${frameClass}" data-index="${idx}">
             <div class="polaroid-img-wrapper">
               <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
               ${overlayHtml}
               ${badgeHtml}
+              ${gpsBadge}
             </div>
             <div class="polaroid-caption">
               <span>${this.escapeHtml(file.comment || file.name)}</span>
@@ -700,12 +783,18 @@ class SimpleGallery {
           badgeHtml = `<span class="doc-extension-badge badge-${file.category}">${file.extension.toUpperCase()}</span>`;
         }
 
+        let gpsBadge = '';
+        if (file.exif && file.exif.gps) {
+          gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
+        }
+
         return `
           <div class="${gridFrameClass}" data-index="${idx}">
             <div class="grid-img-wrapper">
               <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
               ${overlayHtml}
               ${badgeHtml}
+              ${gpsBadge}
             </div>
             <div class="grid-info">
               <div class="grid-title">
@@ -760,6 +849,14 @@ class SimpleGallery {
 
     this.resetZoom();
 
+    if (file.exif) {
+      if (this.el.lightboxExifBtn) this.el.lightboxExifBtn.style.display = 'inline-flex';
+      this.renderExifData(file.exif);
+    } else {
+      if (this.el.lightboxExifBtn) this.el.lightboxExifBtn.style.display = 'none';
+      this.toggleExifPanel(false);
+    }
+
     if (file.category === 'image') {
       this.el.imageExplorerControls.style.display = 'flex';
     } else {
@@ -797,6 +894,71 @@ class SimpleGallery {
 
     this.el.lightboxContent.innerHTML = html;
     this.el.lightbox.classList.add('open');
+  }
+
+  toggleExifPanel(show) {
+    if (!this.el.lightboxExifPanel) return;
+    const isVisible = this.el.lightboxExifPanel.style.display === 'block';
+    const targetState = show !== undefined ? show : !isVisible;
+    this.el.lightboxExifPanel.style.display = targetState ? 'block' : 'none';
+  }
+
+  renderExifData(exif) {
+    if (!this.el.exifPanelBody) return;
+    if (!exif) {
+      this.el.exifPanelBody.innerHTML = '<p style="color:var(--text-muted);font-style:italic;">Aucune métadonnée EXIF trouvée.</p>';
+      return;
+    }
+
+    let html = '';
+
+    if (exif.camera) {
+      html += `
+        <div class="exif-group">
+          <div class="exif-label">Appareil Photo</div>
+          <div class="exif-camera-box">📷 ${this.escapeHtml(exif.camera)}</div>
+        </div>
+      `;
+    }
+
+    if (exif.datetime) {
+      html += `
+        <div class="exif-group">
+          <div class="exif-label">Date & Heure de Prise de Vue</div>
+          <div class="exif-value">📅 ${this.escapeHtml(exif.datetime)}</div>
+        </div>
+      `;
+    }
+
+    if (exif.fnumber || exif.shutter_speed || exif.iso || exif.focal) {
+      html += `
+        <div class="exif-group">
+          <div class="exif-label">Paramètres d'Exposition</div>
+          <div class="exif-grid">
+            ${exif.fnumber ? `<div><span class="exif-label">Ouverture</span><div class="exif-value">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
+            ${exif.shutter_speed ? `<div><span class="exif-label">Vitesse</span><div class="exif-value">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
+            ${exif.iso ? `<div><span class="exif-label">ISO</span><div class="exif-value">${this.escapeHtml(exif.iso)}</div></div>` : ''}
+            ${exif.focal ? `<div><span class="exif-label">Focale</span><div class="exif-value">${this.escapeHtml(exif.focal)}</div></div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    if (exif.gps) {
+      html += `
+        <div class="exif-group" style="margin-top:0.5rem;">
+          <div class="exif-label">Géolocalisation GPS</div>
+          <div class="exif-value" style="font-size:0.85rem;color:var(--text-muted);">
+            Lat: ${exif.gps.lat}°, Lng: ${exif.gps.lng}°
+          </div>
+          <a href="${exif.gps.maps_url}" target="_blank" class="exif-maps-btn">
+            📍 Ouvrir dans Google Maps
+          </a>
+        </div>
+      `;
+    }
+
+    this.el.exifPanelBody.innerHTML = html || '<p style="color:var(--text-muted);font-style:italic;">Aucune métadonnée EXIF disponible.</p>';
   }
 
   // =============================================================

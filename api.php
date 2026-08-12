@@ -214,6 +214,125 @@ function get_media_category(string $ext, array $media_types): string {
     return 'other';
 }
 
+function parse_exif_rational(string $ratio): float {
+    $parts = explode('/', $ratio);
+    if (count($parts) === 2 && (float)$parts[1] !== 0.0) {
+        return (float)$parts[0] / (float)$parts[1];
+    }
+    return (float)$ratio;
+}
+
+function parse_exif_gps_coordinate(?array $coordinate, ?string $ref): ?float {
+    if (empty($coordinate) || count($coordinate) < 3 || empty($ref)) {
+        return null;
+    }
+    $degrees = parse_exif_rational((string)$coordinate[0]);
+    $minutes = parse_exif_rational((string)$coordinate[1]);
+    $seconds = parse_exif_rational((string)$coordinate[2]);
+
+    $decimal = $degrees + ($minutes / 60.0) + ($seconds / 3600.0);
+    $ref = strtoupper(trim($ref));
+    if ($ref === 'S' || $ref === 'W') {
+        $decimal *= -1.0;
+    }
+    return round($decimal, 6);
+}
+
+function extract_exif_data(string $file_path): ?array {
+    if (!function_exists('exif_read_data')) {
+        return null;
+    }
+    $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['jpg', 'jpeg', 'tif', 'tiff'], true)) {
+        return null;
+    }
+
+    $exif_raw = @exif_read_data($file_path, 'EXIF,IFD0,GPS');
+    if (!$exif_raw || !is_array($exif_raw)) {
+        return null;
+    }
+
+    $make  = trim((string)($exif_raw['Make'] ?? ''));
+    $model = trim((string)($exif_raw['Model'] ?? ''));
+    $camera = '';
+    if ($make !== '' && $model !== '') {
+        $camera = (strpos(strtolower($model), strtolower($make)) !== false) ? $model : $make . ' ' . $model;
+    } else {
+        $camera = ($model !== '') ? $model : $make;
+    }
+
+    $date_str = $exif_raw['DateTimeOriginal'] ?? $exif_raw['DateTimeDigitized'] ?? $exif_raw['DateTime'] ?? null;
+    $date_ts = null;
+    $date_formatted = null;
+    if ($date_str) {
+        $dt = DateTime::createFromFormat('Y:m:d H:i:s', trim((string)$date_str));
+        if ($dt !== false) {
+            $date_ts = $dt->getTimestamp();
+            $date_formatted = $dt->format('Y-m-d H:i:s');
+        }
+    }
+
+    $fnumber = null;
+    if (!empty($exif_raw['FNumber'])) {
+        $fval = parse_exif_rational((string)$exif_raw['FNumber']);
+        if ($fval > 0) $fnumber = 'f/' . round($fval, 1);
+    } elseif (!empty($exif_raw['ApertureValue'])) {
+        $apval = parse_exif_rational((string)$exif_raw['ApertureValue']);
+        if ($apval > 0) $fnumber = 'f/' . round(pow(2, $apval / 2.0), 1);
+    }
+
+    $shutter_speed = null;
+    if (!empty($exif_raw['ExposureTime'])) {
+        $exp = parse_exif_rational((string)$exif_raw['ExposureTime']);
+        if ($exp > 0) {
+            if ($exp < 1) {
+                $shutter_speed = '1/' . round(1.0 / $exp) . 's';
+            } else {
+                $shutter_speed = round($exp, 1) . 's';
+            }
+        }
+    }
+
+    $iso = null;
+    if (!empty($exif_raw['ISOSpeedRatings'])) {
+        $iso_val = is_array($exif_raw['ISOSpeedRatings']) ? $exif_raw['ISOSpeedRatings'][0] : $exif_raw['ISOSpeedRatings'];
+        $iso = 'ISO ' . $iso_val;
+    }
+
+    $focal = null;
+    if (!empty($exif_raw['FocalLength'])) {
+        $focal_val = parse_exif_rational((string)$exif_raw['FocalLength']);
+        if ($focal_val > 0) $focal = round($focal_val) . 'mm';
+    }
+
+    $gps_data = null;
+    $lat = parse_exif_gps_coordinate($exif_raw['GPSLatitude'] ?? null, $exif_raw['GPSLatitudeRef'] ?? null);
+    $lng = parse_exif_gps_coordinate($exif_raw['GPSLongitude'] ?? null, $exif_raw['GPSLongitudeRef'] ?? null);
+
+    if ($lat !== null && $lng !== null) {
+        $gps_data = [
+            'lat'      => $lat,
+            'lng'      => $lng,
+            'maps_url' => 'https://www.google.com/maps/search/?api=1&query=' . $lat . ',' . $lng
+        ];
+    }
+
+    if (!$camera && !$date_ts && !$fnumber && !$shutter_speed && !$iso && !$focal && !$gps_data) {
+        return null;
+    }
+
+    return [
+        'camera'        => $camera ?: null,
+        'datetime'      => $date_formatted,
+        'date_ts'       => $date_ts,
+        'fnumber'       => $fnumber,
+        'shutter_speed' => $shutter_speed,
+        'iso'           => $iso,
+        'focal'         => $focal,
+        'gps'           => $gps_data
+    ];
+}
+
 if ($action === 'unlock_folder') {
     if (!check_rate_limit('unlock_folder')) {
         http_response_code(429);
@@ -814,6 +933,9 @@ if ($scan_items !== false) {
             $size = filesize($full_item_path);
             $mtime = filemtime($full_item_path);
 
+            $exif = ($category === 'image') ? extract_exif_data($full_item_path) : null;
+            $effective_mtime = ($exif && !empty($exif['date_ts'])) ? $exif['date_ts'] : $mtime;
+
             $files[] = [
                 'name'           => $item,
                 'path'           => $item_relative,
@@ -822,6 +944,8 @@ if ($scan_items !== false) {
                 'size'           => $size,
                 'size_formatted' => format_bytes($size),
                 'mtime'          => $mtime,
+                'effective_mtime'=> $effective_mtime,
+                'exif'           => $exif,
                 'thumb_url'      => 'thumb.php?file=' . rawurlencode($item_relative),
                 'file_url'       => encode_url_path($item_relative),
                 'comment'        => $comments[$item] ?? ''

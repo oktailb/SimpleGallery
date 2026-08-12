@@ -69,7 +69,8 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
           <select id="sortSelect" class="sort-select" aria-label="Sort options">
             <option value="name">Sort by Name</option>
-            <option value="date">Sort by Date</option>
+            <option value="exif_date">Sort by Date EXIF 📷</option>
+            <option value="date">Sort by File Date</option>
             <option value="size">Sort by Size</option>
           </select>
 
@@ -113,6 +114,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     </div>
 
     <div id="galleryStats" class="gallery-stats">Loading...</div>
+    <a id="folderMapBtn" href="#" target="_blank" class="folder-map-btn" style="display: none;" title="Ouvrir le trajet/parcours GPS complet du dossier dans Google Maps">
+      🗺️ Trajet GPS
+    </a>
   </div>
 
   <!-- Main Workspace -->
@@ -161,6 +165,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <span id="zoomBadge" class="zoom-badge">100%</span>
         </div>
 
+        <button id="lightboxExifBtn" class="lightbox-btn" title="Toggle EXIF Details (I)" style="display: none;">
+          ℹ️ EXIF
+        </button>
         <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Edit Legend (.comment)" style="display: none;">
           ✏️
         </button>
@@ -186,6 +193,15 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
       <button id="lightboxNextBtn" class="lightbox-nav-btn lightbox-nav-next" title="Next (&rarr;)">
         &rsaquo;
       </button>
+    </div>
+
+    <!-- Lightbox EXIF Drawer Panel -->
+    <div id="lightboxExifPanel" class="lightbox-exif-panel" style="display: none;">
+      <div class="exif-panel-header">
+        <h4>📷 EXIF Metadata</h4>
+        <button id="closeExifPanelBtn" class="lightbox-btn" style="padding:0.2rem 0.5rem;">✕</button>
+      </div>
+      <div id="exifPanelBody" class="exif-panel-body"></div>
     </div>
 
     <div class="lightbox-footer">
