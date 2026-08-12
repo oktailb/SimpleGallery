@@ -15,14 +15,20 @@ function sanitize_file_path(?string $requested_file, string $base_dir): ?string 
         return null;
     }
     
-    $requested_file = str_replace(['\\', '..'], ['/', ''], $requested_file);
-    $target_path = realpath($base_dir . '/' . ltrim($requested_file, '/'));
+    $base_dir = str_replace('\\', '/', $base_dir);
+    $real_base = realpath($base_dir) ?: $base_dir;
+    $real_base = str_replace('\\', '/', $real_base);
 
-    if ($target_path === false || !is_file($target_path)) {
+    $requested_file = str_replace(['\\', '..'], ['/', ''], $requested_file);
+    $target = $real_base . '/' . ltrim($requested_file, '/');
+    $target_path = realpath($target) ?: $target;
+    $target_path = str_replace('\\', '/', $target_path);
+
+    if (!is_file($target_path)) {
         return null;
     }
 
-    if (strpos($target_path, $base_dir) !== 0) {
+    if (strpos($target_path, $real_base . '/') !== 0) {
         return null;
     }
 
@@ -214,11 +220,16 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 function get_relative_path(string $full_path, string $base_dir): string {
+    $full_path = str_replace('\\', '/', $full_path);
+    $base_dir  = str_replace('\\', '/', $base_dir);
     if ($full_path === $base_dir) {
         return '';
     }
-    $rel = substr($full_path, strlen($base_dir));
-    return ltrim(str_replace('\\', '/', $rel), '/');
+    if (strpos($full_path, $base_dir) === 0) {
+        $rel = substr($full_path, strlen($base_dir));
+        return ltrim($rel, '/');
+    }
+    return ltrim($full_path, '/');
 }
 
 function is_dir_accessible(string $dir_path, string $base_dir): bool {

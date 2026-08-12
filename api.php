@@ -5,11 +5,39 @@
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
 
 require_once __DIR__ . '/config.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+ensure_session_started();
+
+// Rate limiting helper function
+function check_rate_limit(string $key, int $max_attempts = 5, int $decay_seconds = 900): bool {
+    ensure_session_started();
+    $now = time();
+    if (!isset($_SESSION['rate_limits'][$key])) {
+        $_SESSION['rate_limits'][$key] = ['attempts' => 0, 'first_attempt' => $now];
+    }
+    $limit = &$_SESSION['rate_limits'][$key];
+    if ($now - $limit['first_attempt'] > $decay_seconds) {
+        $limit['attempts'] = 0;
+        $limit['first_attempt'] = $now;
+    }
+    return $limit['attempts'] < $max_attempts;
+}
+
+function increment_rate_limit(string $key): void {
+    ensure_session_started();
+    if (isset($_SESSION['rate_limits'][$key])) {
+        $_SESSION['rate_limits'][$key]['attempts']++;
+    }
+}
+
+function reset_rate_limit(string $key): void {
+    ensure_session_started();
+    unset($_SESSION['rate_limits'][$key]);
 }
 
 // -------------------------------------------------------------
@@ -18,7 +46,30 @@ if (session_status() === PHP_SESSION_NONE) {
 $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
+// Validate CSRF token for all state-changing actions
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login'];
+if (in_array($action, $mutating_actions, true)) {
+    $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
+    if (!verify_csrf_token($submitted_csrf)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Jeton de sécurité CSRF invalide ou manquant. Veuillez rafraîchir la page.'
+        ]);
+        exit;
+    }
+}
+
 if ($action === 'login') {
+    if (!check_rate_limit('admin_login')) {
+        http_response_code(429);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Trop de tentatives de connexion échouées. Veuillez patienter 15 minutes.'
+        ]);
+        exit;
+    }
+
     $password = $raw_body['password'] ?? $_POST['password'] ?? '';
 
     if (empty($admin_password_hash)) {
@@ -31,14 +82,18 @@ if ($action === 'login') {
     }
 
     if (password_verify($password, $admin_password_hash)) {
+        reset_rate_limit('admin_login');
+        session_regenerate_id(true);
         $_SESSION['is_admin'] = true;
         echo json_encode([
-            'success'  => true,
-            'is_admin' => true,
-            'message'  => 'Admin authentication successful'
+            'success'    => true,
+            'is_admin'   => true,
+            'csrf_token' => get_csrf_token(),
+            'message'    => 'Admin authentication successful'
         ]);
         exit;
     } else {
+        increment_rate_limit('admin_login');
         http_response_code(401);
         echo json_encode([
             'success' => false,
@@ -69,11 +124,11 @@ if ($action === 'change_password') {
     }
 
     $new_password = $raw_body['new_password'] ?? $_POST['new_password'] ?? '';
-    if (strlen($new_password) < 4) {
+    if (strlen($new_password) < 8) {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'error'   => 'Password must be at least 4 characters long'
+            'error'   => 'Le mot de passe doit contenir au moins 8 caractères'
         ]);
         exit;
     }
@@ -95,14 +150,24 @@ if ($action === 'change_password') {
 }
 
 function sanitize_path(?string $requested_dir, string $base_dir): ?string {
+    $base_dir = str_replace('\\', '/', $base_dir);
+    $real_base = realpath($base_dir) ?: $base_dir;
+    $real_base = str_replace('\\', '/', $real_base);
+
     if (empty($requested_dir) || $requested_dir === '.') {
-        return $base_dir;
+        return $real_base;
     }
     
     $requested_dir = str_replace(['\\', '..'], ['/', ''], $requested_dir);
-    $target_path = realpath($base_dir . '/' . ltrim($requested_dir, '/'));
+    $target = $real_base . '/' . ltrim($requested_dir, '/');
+    $target_path = realpath($target) ?: $target;
+    $target_path = str_replace('\\', '/', $target_path);
 
-    if ($target_path === false || strpos($target_path, $base_dir) !== 0) {
+    if (!is_dir($target_path)) {
+        return null;
+    }
+
+    if ($target_path !== $real_base && strpos($target_path, $real_base . '/') !== 0) {
         return null;
     }
 
@@ -110,11 +175,16 @@ function sanitize_path(?string $requested_dir, string $base_dir): ?string {
 }
 
 function get_relative_path(string $full_path, string $base_dir): string {
+    $full_path = str_replace('\\', '/', $full_path);
+    $base_dir  = str_replace('\\', '/', $base_dir);
     if ($full_path === $base_dir) {
         return '';
     }
-    $rel = substr($full_path, strlen($base_dir));
-    return ltrim(str_replace('\\', '/', $rel), '/');
+    if (strpos($full_path, $base_dir) === 0) {
+        $rel = substr($full_path, strlen($base_dir));
+        return ltrim($rel, '/');
+    }
+    return ltrim($full_path, '/');
 }
 
 /**
@@ -145,6 +215,15 @@ function get_media_category(string $ext, array $media_types): string {
 }
 
 if ($action === 'unlock_folder') {
+    if (!check_rate_limit('unlock_folder')) {
+        http_response_code(429);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Trop de tentatives de déverrouillage échouées. Veuillez patienter 15 minutes.'
+        ]);
+        exit;
+    }
+
     $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
     $password = $raw_body['password'] ?? $_POST['password'] ?? '';
 
@@ -172,6 +251,7 @@ if ($action === 'unlock_folder') {
 
     $hash = trim((string)@file_get_contents($pass_file));
     if (password_verify($password, $hash)) {
+        reset_rate_limit('unlock_folder');
         if (!isset($_SESSION['unlocked_dirs'])) {
             $_SESSION['unlocked_dirs'] = [];
         }
@@ -183,6 +263,7 @@ if ($action === 'unlock_folder') {
         ]);
         exit;
     } else {
+        increment_rate_limit('unlock_folder');
         http_response_code(401);
         echo json_encode([
             'success' => false,
@@ -749,11 +830,16 @@ if ($scan_items !== false) {
     }
 }
 
-usort($directories, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
-usort($files, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
+usort($directories, function($a, $b) {
+    return strnatcasecmp($a['name'], $b['name']);
+});
+usort($files, function($a, $b) {
+    return strnatcasecmp($a['name'], $b['name']);
+});
 
-echo json_encode([
+$output_data = [
     'success'       => true,
+    'csrf_token'    => get_csrf_token(),
     'title'         => $folder_overrides['title'] ?? $gallery_title,
     'current_path'  => $current_relative,
     'parent_path'   => $parent_path,
@@ -767,4 +853,13 @@ echo json_encode([
         'directory_count' => count($directories),
         'file_count'      => count($files)
     ]
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+];
+
+$json_string = json_encode($output_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+if ($json_string === false) {
+    $json_string = json_encode([
+        'success' => false,
+        'error'   => 'JSON encoding error: ' . json_last_error_msg()
+    ]);
+}
+echo $json_string;

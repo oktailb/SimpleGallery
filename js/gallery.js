@@ -5,6 +5,7 @@
 
 class SimpleGallery {
   constructor() {
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     this.state = {
       currentPath: '',
       viewMode: localStorage.getItem('gallery_view_mode') || 'polaroid',
@@ -17,7 +18,8 @@ class SimpleGallery {
       lightboxIndex: null,
       overrides: null,
       isAdmin: false,
-      adminEnabled: false
+      adminEnabled: false,
+      csrfToken: csrfMeta ? csrfMeta.content : ''
     };
 
     // Zoom, Pan & Rotate Explorer State
@@ -383,6 +385,7 @@ class SimpleGallery {
       this.state.overrides = json.overrides || {};
       this.state.isAdmin = !!json.is_admin;
       this.state.adminEnabled = !!json.admin_enabled;
+      if (json.csrf_token) this.state.csrfToken = json.csrf_token;
 
       this.updateAdminUI();
       this.applyDotfileOverrides(this.state.overrides);
@@ -500,11 +503,11 @@ class SimpleGallery {
     this.el.breadcrumbs.innerHTML = crumbs.map((crumb, idx) => {
       const isLast = idx === crumbs.length - 1;
       if (isLast) {
-        return `<span class="crumb-item crumb-active">${crumb.name}</span>`;
+        return `<span class="crumb-item crumb-active">${this.escapeHtml(crumb.name)}</span>`;
       }
       return `
         <a href="?dir=${encodeURIComponent(crumb.path)}" class="crumb-item" data-path="${crumb.path}">
-          ${crumb.name}
+          ${this.escapeHtml(crumb.name)}
         </a>
         <span class="crumb-separator">/</span>
       `;
@@ -1071,10 +1074,14 @@ class SimpleGallery {
     try {
       const res = await fetch('api.php?action=login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', password })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({ action: 'login', password, csrf_token: this.state.csrfToken })
       });
       const json = await res.json();
+      if (json.csrf_token) this.state.csrfToken = json.csrf_token;
 
       if (json.success) {
         this.state.isAdmin = true;
@@ -1098,8 +1105,11 @@ class SimpleGallery {
     try {
       const res = await fetch('api.php?action=logout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'logout' })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({ action: 'logout', csrf_token: this.state.csrfToken })
       });
       const json = await res.json();
       if (json.success) {
@@ -1120,8 +1130,11 @@ class SimpleGallery {
     try {
       const res = await fetch('api.php?action=change_password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'change_password', new_password })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({ action: 'change_password', new_password, csrf_token: this.state.csrfToken })
       });
       const json = await res.json();
 
@@ -1147,14 +1160,18 @@ class SimpleGallery {
     try {
       const res = await fetch('api.php?action=update_dotfile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
         body: JSON.stringify({
           action: 'update_dotfile',
           dir: this.state.currentPath,
           type,
           value,
           filename,
-          folder_password: folderPassword
+          folder_password: folderPassword,
+          csrf_token: this.state.csrfToken
         })
       });
       return await res.json();
@@ -1227,8 +1244,11 @@ class SimpleGallery {
     try {
       const res = await fetch('api.php?action=lock_folder', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'lock_folder', dir: dirPath })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({ action: 'lock_folder', dir: dirPath, csrf_token: this.state.csrfToken })
       });
       const json = await res.json();
       if (json.success) {
@@ -1268,8 +1288,11 @@ class SimpleGallery {
     try {
       const res = await fetch('api.php?action=unlock_folder', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'unlock_folder', dir: dirPath, password })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({ action: 'unlock_folder', dir: dirPath, password, csrf_token: this.state.csrfToken })
       });
       const json = await res.json();
 

@@ -1,0 +1,26 @@
+# SimpleGallery 2026 - Apache Web Server Security Rules
+
+# Disable Directory Browsing
+Options -Indexes
+
+# Protect Sensitive Dotfiles (.password, .private, .desc, .comment, .title, .theme, .bg, .git, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Protect PHP Configuration & Password Setup Utilities from Direct External Web Access
+<FilesMatch "^(config\.php|set_admin_password\.php)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

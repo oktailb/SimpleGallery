@@ -1,11 +1,27 @@
 <?php
 require_once __DIR__ . '/config.php';
+
+// Set HTTP Security Headers
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+
+// Automatically enforce trailing slash for directory access to prevent relative fetch 404 errors
+$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+$path = parse_url($request_uri, PHP_URL_PATH);
+if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) {
+    $query = parse_url($request_uri, PHP_URL_QUERY);
+    $redirect = $path . '/' . ($query ? '?' . $query : '');
+    header('Location: ' . $redirect, true, 301);
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
   <meta name="description" content="SimpleGallery 2026 - Ultra-fast zero-dependency modern PHP web gallery">
   <title><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></title>
 

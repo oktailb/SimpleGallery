@@ -7,7 +7,8 @@
 $gallery_title = "SimpleGallery";
 
 // Gallery root folder path (defaults to current folder)
-$real_base_dir = realpath(__DIR__);
+$real_base_dir = realpath(__DIR__) ?: __DIR__;
+$real_base_dir = str_replace('\\', '/', $real_base_dir);
 
 // Thumbnail storage directory relative to current folder or path
 $thumbnail_dir = '.thumbnails';
@@ -86,15 +87,61 @@ $media_types = [
 // Password hash generated using PHP password_hash().
 // Set to empty string '' to disable admin authentication until configured.
 // To change/set hash via CLI: `php set_admin_password.php <your_password>`
-$admin_password_hash = '$2y$12$p0xr31miEkE7scX2PUjCnuXofgiy1hW3uvBKPg014.EshI/q0fo/e';
+$admin_password_hash = '';
+
+/**
+ * Safely starts PHP session with secure cookie options
+ */
+function ensure_session_started(): void {
+    if (session_status() === PHP_SESSION_NONE) {
+        if (!headers_sent()) {
+            if (PHP_VERSION_ID >= 70300) {
+                session_set_cookie_params([
+                    'lifetime' => 0,
+                    'path'     => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
+            } else {
+                session_set_cookie_params(0, '/; samesite=Lax', '', false, true);
+            }
+        }
+        @session_start();
+    }
+}
+
+/**
+ * Generates or retrieves the session CSRF token
+ */
+function get_csrf_token(): string {
+    ensure_session_started();
+    if (empty($_SESSION['csrf_token'])) {
+        if (function_exists('random_bytes')) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        } else {
+            $_SESSION['csrf_token'] = md5(uniqid((string)mt_rand(), true));
+        }
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Verifies submitted CSRF token using constant-time comparison
+ */
+function verify_csrf_token(?string $token): bool {
+    ensure_session_started();
+    $session_token = $_SESSION['csrf_token'] ?? '';
+    if (empty($session_token) || empty($token)) {
+        return false;
+    }
+    return hash_equals($session_token, $token);
+}
 
 /**
  * Checks whether current web session is authenticated as admin
  */
 function is_admin_logged_in(): bool {
-    if (session_status() === PHP_SESSION_NONE) {
-        @session_start();
-    }
+    ensure_session_started();
     return !empty($_SESSION['is_admin']);
 }
 
@@ -120,8 +167,8 @@ function update_admin_password_in_config(string $new_password): bool {
         $new_content = rtrim($config_content) . "\n\n" . $replacement . "\n";
     }
 
-    return file_put_contents($config_file, $new_content) !== false;
+    return file_put_contents($config_file, $new_content, LOCK_EX) !== false;
 }
 
 // Files and folders to ignore in indexing
-$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', 'index.php', 'api.php', 'thumb.php', 'config.php', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php'];
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', 'index.php', 'api.php', 'thumb.php', 'config.php', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess'];

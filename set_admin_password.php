@@ -18,8 +18,8 @@ if (empty($password)) {
     exit(1);
 }
 
-if (strlen($password) < 4) {
-    echo "Error: Password must be at least 4 characters long.\n";
+if (strlen($password) < 8) {
+    echo "Error: Password must be at least 8 characters long.\n";
     exit(1);
 }
 
