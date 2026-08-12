@@ -20,7 +20,8 @@ class SimpleGallery {
       overrides: null,
       isAdmin: false,
       adminEnabled: false,
-      csrfToken: csrfMeta ? csrfMeta.content : ''
+      csrfToken: csrfMeta ? csrfMeta.content : '',
+      draggingItemPath: null
     };
 
     // Zoom, Pan & Rotate Explorer State
@@ -205,19 +206,20 @@ class SimpleGallery {
       });
     }
 
+    // Global Desktop File Drag & Drop (Admin Only)
     let dragCounter = 0;
     window.addEventListener('dragenter', (e) => {
-      if (!this.state.isAdmin) return;
+      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       e.preventDefault();
       dragCounter++;
       if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'flex';
     });
     window.addEventListener('dragover', (e) => {
-      if (!this.state.isAdmin) return;
+      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       e.preventDefault();
     });
     window.addEventListener('dragleave', (e) => {
-      if (!this.state.isAdmin) return;
+      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       e.preventDefault();
       dragCounter--;
       if (dragCounter <= 0) {
@@ -227,10 +229,12 @@ class SimpleGallery {
     });
     window.addEventListener('drop', (e) => {
       if (!this.state.isAdmin) return;
-      e.preventDefault();
       dragCounter = 0;
       if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'none';
+      if (this.state.draggingItemPath) return;
+
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        e.preventDefault();
         this.handleUploadFiles(e.dataTransfer.files);
       }
     });
@@ -645,6 +649,32 @@ class SimpleGallery {
         this.navigateTo(a.dataset.path);
       });
     });
+
+    if (this.state.isAdmin) {
+      this.el.breadcrumbs.querySelectorAll('.crumb-item[data-path]').forEach(crumb => {
+        const crumbPath = crumb.dataset.path;
+
+        crumb.addEventListener('dragover', (e) => {
+          if (!this.state.draggingItemPath || this.state.draggingItemPath === crumbPath) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          crumb.classList.add('drop-hover');
+        });
+
+        crumb.addEventListener('dragleave', () => {
+          crumb.classList.remove('drop-hover');
+        });
+
+        crumb.addEventListener('drop', (e) => {
+          if (!this.state.draggingItemPath || this.state.draggingItemPath === crumbPath) return;
+          e.preventDefault();
+          e.stopPropagation();
+          crumb.classList.remove('drop-hover');
+          const sourcePath = this.state.draggingItemPath;
+          this.moveItem(sourcePath, crumbPath);
+        });
+      });
+    }
   }
 
   renderFolders(folders) {
@@ -664,11 +694,14 @@ class SimpleGallery {
           : '<span class="folder-badge protected-badge" title="Password protected folder (.password)">🔒 Protected</span>';
       }
 
+      const isDraggable = this.state.isAdmin ? 'true' : 'false';
+      const handleClass = this.state.isAdmin ? 'drag-handle' : '';
+
       return `
-        <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}">
+        <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="${isDraggable}">
           ${badge}
           <div class="folder-icon-wrapper">
-            ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? '<div class="folder-lock-icon">🔒</div>' : (folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" />` : '📁')}
+            ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? '<div class="folder-lock-icon">🔒</div>' : (folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" draggable="false" />` : '📁')}
           </div>
           <div class="folder-name">${this.escapeHtml(folder.name)}</div>
           <div class="folder-meta">
@@ -678,6 +711,54 @@ class SimpleGallery {
         </a>
       `;
     }).join('');
+
+    this.el.foldersGrid.querySelectorAll('.folder-card').forEach(card => {
+      const folderPath = card.dataset.path;
+
+      if (this.state.isAdmin) {
+        card.addEventListener('dragstart', (e) => {
+          this.state.draggingItemPath = folderPath;
+          card.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: folderPath }));
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          this.state.draggingItemPath = null;
+        });
+
+        card.addEventListener('dragover', (e) => {
+          if (!this.state.draggingItemPath || this.state.draggingItemPath === folderPath) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          card.classList.add('drop-hover');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drop-hover');
+        });
+
+        card.addEventListener('drop', (e) => {
+          if (!this.state.draggingItemPath || this.state.draggingItemPath === folderPath) return;
+          e.preventDefault();
+          e.stopPropagation();
+          card.classList.remove('drop-hover');
+          const sourcePath = this.state.draggingItemPath;
+          this.moveItem(sourcePath, folderPath);
+        });
+      }
+
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isProtected = card.dataset.protected === '1';
+        const isUnlocked = card.dataset.unlocked === '1';
+        if (isProtected && !isUnlocked && !this.state.isAdmin) {
+          this.openFolderUnlockModal(folderPath);
+        } else {
+          this.navigateTo(folderPath);
+        }
+      });
+    });
 
     this.el.foldersGrid.querySelectorAll('.folder-card').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -838,6 +919,9 @@ class SimpleGallery {
     this.el.emptyState.style.display = 'none';
     this.el.mediaGrid.style.display = 'grid';
 
+    const isDraggable = this.state.isAdmin ? 'true' : 'false';
+    const handleClass = this.state.isAdmin ? 'drag-handle' : '';
+
     if (this.state.viewMode === 'polaroid') {
       this.el.mediaGrid.className = 'polaroid-grid';
       this.el.mediaGrid.innerHTML = list.map((file, idx) => {
@@ -866,9 +950,9 @@ class SimpleGallery {
         }
 
         return `
-          <div class="${frameClass}" data-index="${idx}">
+          <div class="${frameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
             <div class="polaroid-img-wrapper">
-              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />
               ${overlayHtml}
               ${badgeHtml}
               ${gpsBadge}
@@ -907,9 +991,9 @@ class SimpleGallery {
         }
 
         return `
-          <div class="${gridFrameClass}" data-index="${idx}">
+          <div class="${gridFrameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
             <div class="grid-img-wrapper">
-              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />
               ${overlayHtml}
               ${badgeHtml}
               ${gpsBadge}
@@ -939,8 +1023,23 @@ class SimpleGallery {
     });
 
     this.el.mediaGrid.querySelectorAll('[data-index]').forEach(card => {
+      const index = parseInt(card.dataset.index, 10);
+      const file = this.state.filteredFiles[index];
+
+      if (this.state.isAdmin && file) {
+        card.addEventListener('dragstart', (e) => {
+          this.state.draggingItemPath = file.path;
+          card.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: file.path }));
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          this.state.draggingItemPath = null;
+        });
+      }
+
       card.addEventListener('click', () => {
-        const index = parseInt(card.dataset.index, 10);
         this.openLightbox(index);
       });
     });
@@ -1506,6 +1605,34 @@ class SimpleGallery {
     };
 
     xhr.send(formData);
+  }
+
+  async moveItem(sourcePath, targetDir) {
+    if (!this.state.isAdmin || !sourcePath) return;
+
+    try {
+      const res = await fetch('api.php?action=move_item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({
+          action: 'move_item',
+          source_path: sourcePath,
+          target_dir: targetDir,
+          csrf_token: this.state.csrfToken
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        this.loadDirectory(this.state.currentPath);
+      } else {
+        alert(json.error || 'Échec du déplacement de l\'élément.');
+      }
+    } catch (err) {
+      console.error('Move item request failed:', err);
+    }
   }
 
   openCreateFolderModal() {

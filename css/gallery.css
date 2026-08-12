@@ -1561,3 +1561,32 @@ kbd {
   transition: width 0.2s ease;
   border-radius: 12px;
 }
+
+/* Drag & Drop Internal Item Moving Styles */
+.drag-handle {
+  cursor: grab !important;
+}
+
+.drag-handle:active {
+  cursor: grabbing !important;
+}
+
+.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+.drop-hover {
+  outline: 3px dashed #38bdf8 !important;
+  outline-offset: -3px;
+  background: rgba(56, 189, 248, 0.2) !important;
+  transform: scale(1.03) !important;
+  transition: all 0.15s ease !important;
+}
+
+.crumb-item.drop-hover {
+  background: #38bdf8 !important;
+  color: #0f172a !important;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
