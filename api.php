@@ -333,6 +333,56 @@ function extract_exif_data(string $file_path): ?array {
     ];
 }
 
+function get_cache_storage_dir(string $base_dir, string $thumb_dir): string {
+    $cache_dir = $base_dir . '/' . $thumb_dir;
+    if (!is_dir($cache_dir)) {
+        @mkdir($cache_dir, 0755, true);
+    }
+    if (!is_dir($cache_dir) || !is_writable($cache_dir)) {
+        $cache_dir = sys_get_temp_dir() . '/simplegallery_thumbs';
+        if (!is_dir($cache_dir)) {
+            @mkdir($cache_dir, 0755, true);
+        }
+    }
+    return $cache_dir;
+}
+
+function get_dir_cache_file_path(string $dir_path, string $base_dir, string $thumb_dir): string {
+    $storage = get_cache_storage_dir($base_dir, $thumb_dir);
+    $rel = get_relative_path($dir_path, $base_dir);
+    $key = md5('dir_index_' . $rel);
+    return $storage . '/cache_' . $key . '.json';
+}
+
+function is_dir_cache_valid(string $cache_file, string $dir_path): bool {
+    if (!file_exists($cache_file) || filesize($cache_file) === 0) {
+        return false;
+    }
+    $cache_mtime = filemtime($cache_file);
+    $dir_mtime = filemtime($dir_path);
+
+    if ($cache_mtime < $dir_mtime) {
+        return false;
+    }
+
+    $dotfiles = ['.title', '.desc', '.description', '.comment', '.theme', '.bg', '.private', '.password', '.public'];
+    foreach ($dotfiles as $df) {
+        $df_path = $dir_path . '/' . $df;
+        if (file_exists($df_path) && filemtime($df_path) > $cache_mtime) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function invalidate_dir_cache(string $dir_path, string $base_dir, string $thumb_dir): void {
+    $cache_file = get_dir_cache_file_path($dir_path, $base_dir, $thumb_dir);
+    if (file_exists($cache_file)) {
+        @unlink($cache_file);
+    }
+}
+
 if ($action === 'unlock_folder') {
     if (!check_rate_limit('unlock_folder')) {
         http_response_code(429);
@@ -657,6 +707,8 @@ if ($action === 'update_dotfile') {
         exit;
     }
 
+    invalidate_dir_cache($target_dir, $real_base_dir, $thumbnail_dir);
+
     echo json_encode([
         'success' => true,
         'message' => 'Dotfile updated successfully',
@@ -874,84 +926,164 @@ if ($current_relative !== '') {
 $directories = [];
 $files = [];
 
-$scan_items = @scandir($target_dir);
-if ($scan_items !== false) {
-    foreach ($scan_items as $item) {
-        if (in_array($item, $ignore_list, true) || $item[0] === '.') {
+$cache_file_path = get_dir_cache_file_path($target_dir, $real_base_dir, $thumbnail_dir);
+$cached_raw = null;
+
+if (is_dir_cache_valid($cache_file_path, $target_dir)) {
+    $json_content = @file_get_contents($cache_file_path);
+    if ($json_content) {
+        $decoded = @json_decode($json_content, true);
+        if (is_array($decoded) && isset($decoded['raw_items'])) {
+            $cached_raw = $decoded['raw_items'];
+        }
+    }
+}
+
+if ($cached_raw !== null) {
+    // CACHE HIT: Process pre-computed raw items with dynamic access controls
+    foreach ($cached_raw['directories'] as $dir_item) {
+        $full_item_path = $target_dir . '/' . $dir_item['raw_name'];
+        $sub_access = get_dir_access_info($full_item_path, $real_base_dir);
+
+        if ($sub_access['is_private'] && !is_admin_logged_in()) {
             continue;
         }
 
-        $full_item_path = $target_dir . '/' . $item;
-        $item_relative = get_relative_path($full_item_path, $real_base_dir);
+        $dir_display_name = $dir_item['raw_name'];
+        if (file_exists($full_item_path . '/.title')) {
+            $custom_title = trim(@file_get_contents($full_item_path . '/.title'));
+            if ($custom_title !== '') {
+                $dir_display_name = $custom_title;
+            }
+        }
 
-        if (is_dir($full_item_path)) {
-            $sub_access = get_dir_access_info($full_item_path, $real_base_dir);
+        $cover_thumb = null;
+        if ($sub_access['is_unlocked'] || is_admin_logged_in()) {
+            $cover_exts = array_merge($media_types['image'], $media_types['video']);
+            $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $cover_exts);
+        }
 
-            // Hide private folders completely from non-admins
-            if ($sub_access['is_private'] && !is_admin_logged_in()) {
+        $directories[] = [
+            'name'         => $dir_display_name,
+            'raw_name'     => $dir_item['raw_name'],
+            'path'         => $dir_item['path'],
+            'mtime'        => $dir_item['mtime'],
+            'item_count'   => $dir_item['item_count'],
+            'cover'        => $cover_thumb,
+            'comment'      => $comments[$dir_item['raw_name']] ?? '',
+            'access_mode'  => $sub_access['access_mode'],
+            'is_private'   => $sub_access['is_private'],
+            'is_protected' => $sub_access['is_protected'],
+            'is_unlocked'  => $sub_access['is_unlocked']
+        ];
+    }
+
+    foreach ($cached_raw['files'] as $file_item) {
+        $file_item['comment'] = $comments[$file_item['name']] ?? '';
+        $files[] = $file_item;
+    }
+} else {
+    // CACHE MISS: Full disk scan & EXIF extraction
+    $raw_directories = [];
+    $raw_files = [];
+
+    $scan_items = @scandir($target_dir);
+    if ($scan_items !== false) {
+        foreach ($scan_items as $item) {
+            if (in_array($item, $ignore_list, true) || $item[0] === '.') {
                 continue;
             }
 
-            $sub_items = @scandir($full_item_path) ?: [];
-            $item_count = 0;
-            foreach ($sub_items as $sub) {
-                if ($sub[0] !== '.' && !in_array($sub, $ignore_list, true)) {
-                    $item_count++;
+            $full_item_path = $target_dir . '/' . $item;
+            $item_relative = get_relative_path($full_item_path, $real_base_dir);
+
+            if (is_dir($full_item_path)) {
+                $sub_access = get_dir_access_info($full_item_path, $real_base_dir);
+
+                $sub_items = @scandir($full_item_path) ?: [];
+                $item_count = 0;
+                foreach ($sub_items as $sub) {
+                    if ($sub[0] !== '.' && !in_array($sub, $ignore_list, true)) {
+                        $item_count++;
+                    }
                 }
-            }
 
-            $dir_display_name = $item;
-            if (file_exists($full_item_path . '/.title')) {
-                $custom_title = trim(@file_get_contents($full_item_path . '/.title'));
-                if ($custom_title !== '') {
-                    $dir_display_name = $custom_title;
+                $raw_directories[] = [
+                    'raw_name'   => $item,
+                    'path'       => $item_relative,
+                    'mtime'      => filemtime($full_item_path),
+                    'item_count' => $item_count
+                ];
+
+                if ($sub_access['is_private'] && !is_admin_logged_in()) {
+                    continue;
                 }
+
+                $dir_display_name = $item;
+                if (file_exists($full_item_path . '/.title')) {
+                    $custom_title = trim(@file_get_contents($full_item_path . '/.title'));
+                    if ($custom_title !== '') {
+                        $dir_display_name = $custom_title;
+                    }
+                }
+
+                $cover_thumb = null;
+                if ($sub_access['is_unlocked'] || is_admin_logged_in()) {
+                    $cover_exts = array_merge($media_types['image'], $media_types['video']);
+                    $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $cover_exts);
+                }
+
+                $directories[] = [
+                    'name'         => $dir_display_name,
+                    'raw_name'     => $item,
+                    'path'         => $item_relative,
+                    'mtime'        => filemtime($full_item_path),
+                    'item_count'   => $item_count,
+                    'cover'        => $cover_thumb,
+                    'comment'      => $comments[$item] ?? '',
+                    'access_mode'  => $sub_access['access_mode'],
+                    'is_private'   => $sub_access['is_private'],
+                    'is_protected' => $sub_access['is_protected'],
+                    'is_unlocked'  => $sub_access['is_unlocked']
+                ];
+            } elseif (is_file($full_item_path)) {
+                $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                $category = get_media_category($ext, $media_types);
+                $size = filesize($full_item_path);
+                $mtime = filemtime($full_item_path);
+
+                $exif = ($category === 'image') ? extract_exif_data($full_item_path) : null;
+                $effective_mtime = ($exif && !empty($exif['date_ts'])) ? $exif['date_ts'] : $mtime;
+
+                $file_entry = [
+                    'name'           => $item,
+                    'path'           => $item_relative,
+                    'extension'      => $ext,
+                    'category'       => $category,
+                    'size'           => $size,
+                    'size_formatted' => format_bytes($size),
+                    'mtime'          => $mtime,
+                    'effective_mtime'=> $effective_mtime,
+                    'exif'           => $exif,
+                    'thumb_url'      => 'thumb.php?file=' . rawurlencode($item_relative),
+                    'file_url'       => encode_url_path($item_relative),
+                    'comment'        => $comments[$item] ?? ''
+                ];
+
+                $raw_files[] = $file_entry;
+                $files[]     = $file_entry;
             }
-
-            $cover_thumb = null;
-            if ($sub_access['is_unlocked'] || is_admin_logged_in()) {
-                $cover_exts = array_merge($media_types['image'], $media_types['video']);
-                $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $cover_exts);
-            }
-
-            $directories[] = [
-                'name'         => $dir_display_name,
-                'raw_name'     => $item,
-                'path'         => $item_relative,
-                'mtime'        => filemtime($full_item_path),
-                'item_count'   => $item_count,
-                'cover'        => $cover_thumb,
-                'comment'      => $comments[$item] ?? '',
-                'access_mode'  => $sub_access['access_mode'],
-                'is_private'   => $sub_access['is_private'],
-                'is_protected' => $sub_access['is_protected'],
-                'is_unlocked'  => $sub_access['is_unlocked']
-            ];
-        } elseif (is_file($full_item_path)) {
-            $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
-            $category = get_media_category($ext, $media_types);
-            $size = filesize($full_item_path);
-            $mtime = filemtime($full_item_path);
-
-            $exif = ($category === 'image') ? extract_exif_data($full_item_path) : null;
-            $effective_mtime = ($exif && !empty($exif['date_ts'])) ? $exif['date_ts'] : $mtime;
-
-            $files[] = [
-                'name'           => $item,
-                'path'           => $item_relative,
-                'extension'      => $ext,
-                'category'       => $category,
-                'size'           => $size,
-                'size_formatted' => format_bytes($size),
-                'mtime'          => $mtime,
-                'effective_mtime'=> $effective_mtime,
-                'exif'           => $exif,
-                'thumb_url'      => 'thumb.php?file=' . rawurlencode($item_relative),
-                'file_url'       => encode_url_path($item_relative),
-                'comment'        => $comments[$item] ?? ''
-            ];
         }
     }
+
+    $cache_payload = [
+        'created_at' => time(),
+        'raw_items'  => [
+            'directories' => $raw_directories,
+            'files'       => $raw_files
+        ]
+    ];
+    @file_put_contents($cache_file_path, json_encode($cache_payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
 usort($directories, function($a, $b) {
