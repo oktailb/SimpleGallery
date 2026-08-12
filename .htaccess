@@ -15,7 +15,7 @@ Options -Indexes
 </FilesMatch>
 
 # Protect PHP Configuration & Password Setup Utilities from Direct External Web Access
-<FilesMatch "^(config\.php|set_admin_password\.php)$">
+<FilesMatch "^(config\.php|set_admin_password\.php|\.user\.ini)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -24,3 +24,23 @@ Options -Indexes
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# Increase PHP upload limits for Apache mod_php environments
+<IfModule mod_php.c>
+    php_value upload_max_filesize 4095M
+    php_value post_max_size 4095M
+    php_value max_file_uploads 1000
+    php_value memory_limit 256M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 4095M
+    php_value post_max_size 4095M
+    php_value max_file_uploads 1000
+    php_value memory_limit 256M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+

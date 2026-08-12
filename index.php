@@ -30,7 +30,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="css/gallery.css">
+  <link rel="stylesheet" href="css/gallery.css?v=<?php echo filemtime(__DIR__ . '/css/gallery.css'); ?>">
 
   <!-- Dynamic Theme Injection from config.php -->
   <style id="dynamic-theme-vars">
@@ -46,7 +46,8 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     }
   </style>
 
-  <script src="js/gallery.js" defer></script>
+  <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>
+
 </head>
 <body>
 

@@ -25,6 +25,19 @@ Le principe fondamental du projet d'origine (2005) est conservé : **pour publie
   - **Photos** : Redimensionnement automatique via l'extension **PHP GD** avec gestion de la rotation EXIF. *Bascule automatique en stream direct si GD n'est pas installé*.
   - **Vidéos** : Extraction automatique d'une image poster (à 1.0s) via **FFmpeg** pour les fichiers `.mp4`, `.webm`, `.mov`, `.mkv`, etc.
   - Mise en cache automatique dans le dossier `.thumbnails/` au format WebP / JPEG optimisé.
+
+---
+
+## ⚡ Démarrage Rapide (Serveur Local)
+
+Pour lancer le serveur localement avec une limite d'upload de **128 Mo** :
+
+```bash
+./start.sh
+# Ou avec un port specifique:
+./start.sh 8080
+```
+
 - 🎬 **Support Média HTML5 Natif** : Lecture directe des vidéos et musiques dans le navigateur (zéro Flash).
 - 📁 **Surcharge de Configuration par Fichiers Cachés (*Dotfiles Unix*)** : Personnalisez les commentaires, fonds d'écran, titres et thèmes par dossier via `.comment`, `.bg`, `.title`, `.desc`, `.theme`.
 - 🎨 **Thèmes & Couleurs Configurables** : Sélection de thèmes (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`) ou couleurs sur mesure dans `config.php`.
@@ -87,6 +100,23 @@ Lorsque le mode administration est actif (**🛡️ Admin Active**), l'édition 
 - **Légende des médias (`.comment`)** : Cliquez sur l'icône **✏️** au survol des cartes Polaroid/Grille ou dans la visionneuse Lightbox pour ajouter/modifier une légende (`fichier.jpg = Ma légende`).
 
 > ℹ️ **Remarque** : Les noms réels des fichiers et répertoires physiques restent 100% inchangés sur le disque. Seuls les fichiers cachés (*Dotfiles*) `.title`, `.desc`, `.comment`, `.bg` et `.theme` du répertoire sont modifiés.
+
+### 5. Augmenter la Taille Maximale de Téléversement (Upload Max Size)
+
+Par défaut, PHP limite parfois la taille des fichiers téléversés (ex: 2 Mo par défaut sous certaines configurations PHP).
+SimpleGallery inclut déjà les fichiers de configuration par dossier suivants (fixés à **128 Mo**) :
+
+- **Nginx / FastCGI / PHP-FPM** : Fichier [.user.ini](file:///home/oktail/Documents/GitHub/SimpleGallery/.user.ini) à la racine du projet.
+- **Apache (mod_php)** : Fichier [.htaccess](file:///home/oktail/Documents/GitHub/SimpleGallery/.htaccess) à la racine du projet.
+
+```ini
+upload_max_filesize = 128M
+post_max_size = 128M
+max_file_uploads = 100
+memory_limit = 256M
+```
+
+
 
 ---
 

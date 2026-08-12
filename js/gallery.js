@@ -218,18 +218,17 @@ class SimpleGallery {
     // Global Desktop File Drag & Drop (Admin Only)
     let dragCounter = 0;
     window.addEventListener('dragenter', (e) => {
-      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       e.preventDefault();
+      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       dragCounter++;
       if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'flex';
     });
     window.addEventListener('dragover', (e) => {
-      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       e.preventDefault();
     });
     window.addEventListener('dragleave', (e) => {
-      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       e.preventDefault();
+      if (!this.state.isAdmin || this.state.draggingItemPath) return;
       dragCounter--;
       if (dragCounter <= 0) {
         dragCounter = 0;
@@ -237,16 +236,19 @@ class SimpleGallery {
       }
     });
     window.addEventListener('drop', (e) => {
-      if (!this.state.isAdmin) return;
+      e.preventDefault();
+      e.stopPropagation();
       dragCounter = 0;
       if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'none';
-      if (this.state.draggingItemPath) return;
+
+      if (!this.state.isAdmin || this.state.draggingItemPath) return;
 
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        e.preventDefault();
         this.handleUploadFiles(e.dataTransfer.files);
       }
     });
+
+
 
     // Admin Create Folder Controls
     if (this.el.createFolderBtn) {
@@ -1564,24 +1566,20 @@ class SimpleGallery {
         this.loadDirectory(this.state.currentPath);
       }
     } catch (err) {
+
       console.error('Logout request failed:', err);
     }
   }
 
-  handleUploadFiles(fileList) {
+  async handleUploadFiles(fileList) {
+
+
     if (!this.state.isAdmin || !fileList || fileList.length === 0) return;
 
-    const files = Array.from(fileList);
-    const formData = new FormData();
-    formData.append('action', 'upload_file');
-    formData.append('dir', this.state.currentPath);
-    if (this.state.csrfToken) {
-      formData.append('csrf_token', this.state.csrfToken);
-    }
-
-    files.forEach(f => {
-      formData.append('files[]', f);
-    });
+    const allFiles = Array.from(fileList);
+    const BATCH_SIZE = 10;
+    const totalFiles = allFiles.length;
+    const totalBatches = Math.ceil(totalFiles / BATCH_SIZE);
 
     if (this.el.uploadProgressModal) {
       this.el.uploadProgressModal.style.display = 'block';
@@ -1592,82 +1590,132 @@ class SimpleGallery {
       this.el.uploadProgressBar.textContent = '0%';
     }
     if (this.el.uploadProgressStatus) {
-      this.el.uploadProgressStatus.textContent = `Téléversement de ${files.length} fichier(s)...`;
+      this.el.uploadProgressStatus.textContent = `Préparation du téléversement de ${totalFiles} fichier(s)...`;
     }
     if (this.el.uploadResultMessages) {
       this.el.uploadResultMessages.style.display = 'none';
       this.el.uploadResultMessages.innerHTML = '';
     }
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'api.php', true);
-    if (this.state.csrfToken) {
-      xhr.setRequestHeader('X-CSRF-Token', this.state.csrfToken);
+    const allUploaded = [];
+    const allErrors = [];
+
+    for (let b = 0; b < totalBatches; b++) {
+      const batchFiles = allFiles.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+      const batchNum = b + 1;
+
+      if (this.el.uploadProgressStatus) {
+        this.el.uploadProgressStatus.textContent = totalBatches > 1
+          ? `Téléversement du lot ${batchNum}/${totalBatches} (${batchFiles.length} fichier(s))...`
+          : `Téléversement de ${batchFiles.length} fichier(s)...`;
+      }
+
+      try {
+        const result = await this.uploadBatch(batchFiles, (loaded, total) => {
+          if (this.el.uploadProgressBar && total > 0) {
+            const batchProgress = loaded / total;
+            const overallPercent = Math.min(100, Math.round(((b + batchProgress) / totalBatches) * 100));
+            this.el.uploadProgressBar.style.width = `${overallPercent}%`;
+            this.el.uploadProgressBar.textContent = `${overallPercent}%`;
+          }
+        });
+
+        if (result.uploaded && result.uploaded.length > 0) {
+          allUploaded.push(...result.uploaded);
+        }
+        if (result.errors && result.errors.length > 0) {
+          allErrors.push(...result.errors);
+        }
+        if (!result.success && result.error && (!result.errors || result.errors.length === 0)) {
+          allErrors.push(result.error);
+        }
+      } catch (err) {
+        allErrors.push(`Erreur réseau sur le lot ${batchNum} : ${err.message || 'Échec du transfert'}`);
+      }
     }
 
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && this.el.uploadProgressBar) {
-        const percent = Math.round((e.loaded / e.total) * 100);
-        this.el.uploadProgressBar.style.width = `${percent}%`;
-        this.el.uploadProgressBar.textContent = `${percent}%`;
+    if (this.el.uploadProgressBar) {
+      this.el.uploadProgressBar.style.width = '100%';
+      this.el.uploadProgressBar.textContent = '100%';
+    }
+
+    if (this.el.uploadProgressStatus) {
+      this.el.uploadProgressStatus.textContent = allErrors.length === 0
+        ? `Téléversement terminé (${allUploaded.length}/${totalFiles} fichiers téléversé(s)) !`
+        : `Téléversement terminé avec des erreurs.`;
+    }
+
+    if (this.el.uploadResultMessages) {
+      let msgHtml = '';
+      if (allUploaded.length > 0) {
+        msgHtml += `<div style="color:#4ade80;margin-bottom:0.4rem;">✔ ${allUploaded.length} fichier(s) téléversé(s) avec succès.</div>`;
+        allUploaded.forEach(item => {
+          if (item.renamed) {
+            msgHtml += `<div style="color:#facc15;font-size:0.8rem;margin-left:1rem;">ℹ ${this.escapeHtml(item.original_name)} ➔ ${this.escapeHtml(item.saved_name)} (Renommé)</div>`;
+          }
+        });
       }
-    };
-
-    xhr.onload = () => {
-      let res = null;
-      try {
-        res = JSON.parse(xhr.responseText);
-      } catch (err) {
-        res = { success: false, error: 'Réponse serveur invalide.' };
+      if (allErrors.length > 0) {
+        msgHtml += `<div style="color:#f87171;margin-top:0.4rem;">❌ Échecs / Rejets :</div>`;
+        allErrors.forEach(err => {
+          msgHtml += `<div style="color:#f87171;font-size:0.8rem;margin-left:1rem;">• ${this.escapeHtml(err)}</div>`;
+        });
       }
+      this.el.uploadResultMessages.innerHTML = msgHtml;
+      this.el.uploadResultMessages.style.display = 'block';
+    }
 
-      if (this.el.uploadProgressStatus) {
-        this.el.uploadProgressStatus.textContent = res.message || (res.success ? 'Téléversement réussi !' : 'Échec du téléversement.');
+    setTimeout(() => {
+      if (this.el.uploadProgressModal) {
+        this.el.uploadProgressModal.style.display = 'none';
+        this.el.uploadProgressModal.classList.remove('open');
       }
-
-      if (this.el.uploadResultMessages) {
-        let msgHtml = '';
-        if (res.uploaded && res.uploaded.length > 0) {
-          msgHtml += `<div style="color:#4ade80;margin-bottom:0.4rem;">✔ ${res.uploaded.length} fichier(s) téléversé(s).</div>`;
-          res.uploaded.forEach(item => {
-            if (item.renamed) {
-              msgHtml += `<div style="color:#facc15;font-size:0.8rem;margin-left:1rem;">ℹ ${this.escapeHtml(item.original_name)} ➔ ${this.escapeHtml(item.saved_name)} (Renommé pour éviter d'écraser)</div>`;
-            }
-          });
-        }
-        if (res.errors && res.errors.length > 0) {
-          msgHtml += `<div style="color:#f87171;margin-top:0.4rem;">❌ Échecs / Rejets de sécurité :</div>`;
-          res.errors.forEach(err => {
-            msgHtml += `<div style="color:#f87171;font-size:0.8rem;margin-left:1rem;">• ${this.escapeHtml(err)}</div>`;
-          });
-        }
-        this.el.uploadResultMessages.innerHTML = msgHtml;
-        this.el.uploadResultMessages.style.display = 'block';
-      }
-
-      setTimeout(() => {
-        if (this.el.uploadProgressModal) {
-          this.el.uploadProgressModal.style.display = 'none';
-          this.el.uploadProgressModal.classList.remove('open');
-        }
-        this.loadDirectory(this.state.currentPath);
-      }, res.errors && res.errors.length > 0 ? 3500 : 1200);
-    };
-
-    xhr.onerror = () => {
-      if (this.el.uploadProgressStatus) {
-        this.el.uploadProgressStatus.textContent = 'Erreur réseau lors du téléversement.';
-      }
-      setTimeout(() => {
-        if (this.el.uploadProgressModal) {
-          this.el.uploadProgressModal.style.display = 'none';
-          this.el.uploadProgressModal.classList.remove('open');
-        }
-      }, 2000);
-    };
-
-    xhr.send(formData);
+      this.loadDirectory(this.state.currentPath);
+    }, allErrors.length > 0 ? 3500 : 1200);
   }
+
+  uploadBatch(batchFiles, onProgress) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('action', 'upload_file');
+      formData.append('dir', this.state.currentPath);
+      if (this.state.csrfToken) {
+        formData.append('csrf_token', this.state.csrfToken);
+      }
+
+      batchFiles.forEach(f => {
+        formData.append('files[]', f);
+      });
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'api.php', true);
+      if (this.state.csrfToken) {
+        xhr.setRequestHeader('X-CSRF-Token', this.state.csrfToken);
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(e.loaded, e.total);
+        }
+      };
+
+      xhr.onload = () => {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          resolve(res);
+        } catch (err) {
+          resolve({ success: false, error: 'Réponse serveur invalide.' });
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Erreur réseau lors du transfert.'));
+      };
+
+      xhr.send(formData);
+    });
+  }
+
 
   async moveItem(sourcePath, targetDir) {
     if (!this.state.isAdmin || !sourcePath) return;

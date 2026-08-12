@@ -781,10 +781,16 @@ if ($action === 'upload_file') {
     }
 
     if (empty($_FILES)) {
+        $content_length = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $post_max = ini_get('post_max_size');
+        $error_msg = 'Aucun fichier reçu pour le téléversement.';
+        if ($content_length > 0) {
+            $error_msg = "La taille totale du téléversement dépasse la limite serveur post_max_size ({$post_max}).";
+        }
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'error'   => 'Aucun fichier reçu pour le téléversement.'
+            'error'   => $error_msg
         ]);
         exit;
     }
@@ -824,7 +830,33 @@ if ($action === 'upload_file') {
         $error_code = $is_multiple ? $files_input['error'][$i] : $files_input['error'];
 
         if ($error_code !== UPLOAD_ERR_OK) {
-            $errors[] = "Erreur de téléversement pour '{$raw_name}' (Code {$error_code}).";
+            switch ($error_code) {
+                case UPLOAD_ERR_INI_SIZE:
+                    $max_size = ini_get('upload_max_filesize');
+                    $errors[] = "Le fichier '{$raw_name}' dépasse la taille maximale autorisée par PHP (upload_max_filesize = {$max_size}).";
+                    break;
+                case UPLOAD_ERR_FORM_SIZE:
+                    $errors[] = "Le fichier '{$raw_name}' dépasse la limite autorisée par le formulaire.";
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $errors[] = "Le téléversement de '{$raw_name}' a été interrompu.";
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $errors[] = "Aucun fichier téléversé pour '{$raw_name}'.";
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                    $errors[] = "Erreur serveur : Dossier temporaire PHP manquant.";
+                    break;
+                case UPLOAD_ERR_CANT_WRITE:
+                    $errors[] = "Erreur serveur : Échec de l'écriture de '{$raw_name}' sur le disque (permissions).";
+                    break;
+                case UPLOAD_ERR_EXTENSION:
+                    $errors[] = "Une extension PHP a stoppé le téléversement de '{$raw_name}'.";
+                    break;
+                default:
+                    $errors[] = "Erreur de téléversement pour '{$raw_name}' (Code {$error_code}).";
+                    break;
+            }
             continue;
         }
 
