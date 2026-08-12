@@ -47,7 +47,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -380,6 +380,20 @@ function invalidate_dir_cache(string $dir_path, string $base_dir, string $thumb_
     $cache_file = get_dir_cache_file_path($dir_path, $base_dir, $thumb_dir);
     if (file_exists($cache_file)) {
         @unlink($cache_file);
+    }
+
+    // Invalidate parent directory cache so subfolder item_count & cover update immediately
+    $real_base = str_replace('\\', '/', realpath($base_dir) ?: $base_dir);
+    $real_dir  = str_replace('\\', '/', realpath($dir_path) ?: $dir_path);
+
+    if ($real_dir !== $real_base) {
+        $parent_dir = dirname($real_dir);
+        if (strpos($parent_dir, $real_base) === 0) {
+            $parent_cache_file = get_dir_cache_file_path($parent_dir, $base_dir, $thumb_dir);
+            if (file_exists($parent_cache_file)) {
+                @unlink($parent_cache_file);
+            }
+        }
     }
 }
 
@@ -717,6 +731,206 @@ if ($action === 'update_dotfile') {
     exit;
 }
 
+if ($action === 'upload_file') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Accès refusé. Mode administrateur requis pour le téléversement.'
+        ]);
+        exit;
+    }
+
+    // CSRF token is verified globally via $mutating_actions
+
+    $dir_param = $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Dossier cible introuvable ou accès refusé.'
+        ]);
+        exit;
+    }
+
+    if (empty($_FILES)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Aucun fichier reçu pour le téléversement.'
+        ]);
+        exit;
+    }
+
+    $overwrite = isset($_POST['overwrite']) && ($_POST['overwrite'] === '1' || $_POST['overwrite'] === 'true');
+
+    $allowed_exts = [
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'heic', 'heif', 'tiff',
+        'mp4', 'webm', 'ogv', 'mov', 'm4v', 'mkv', 'avi',
+        'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac',
+        'pdf', 'txt', 'md', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'zip', 'rar', 'tar', 'gz', '7z'
+    ];
+
+    $forbidden_exts = [
+        'php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc',
+        'js', 'mjs', 'css', 'html', 'htm', 'htaccess', 'htpasswd',
+        'sh', 'bat', 'cmd', 'exe', 'dll', 'py', 'pl', 'cgi'
+    ];
+
+    $files_input = $_FILES['file'] ?? $_FILES['files'] ?? null;
+    if (!$files_input && !empty($_FILES)) {
+        $keys = array_keys($_FILES);
+        $first_key = $keys[0];
+        $files_input = $_FILES[$first_key];
+    }
+
+    $uploaded_results = [];
+    $errors = [];
+
+    $is_multiple = is_array($files_input['name']);
+    $file_count = $is_multiple ? count($files_input['name']) : 1;
+
+    for ($i = 0; $i < $file_count; $i++) {
+        $raw_name = $is_multiple ? $files_input['name'][$i] : $files_input['name'];
+        $tmp_name = $is_multiple ? $files_input['tmp_name'][$i] : $files_input['tmp_name'];
+        $error_code = $is_multiple ? $files_input['error'][$i] : $files_input['error'];
+
+        if ($error_code !== UPLOAD_ERR_OK) {
+            $errors[] = "Erreur de téléversement pour '{$raw_name}' (Code {$error_code}).";
+            continue;
+        }
+
+        $safe_filename = basename($raw_name);
+        $safe_filename = preg_replace('/[^\w\.\-\s]/u', '_', $safe_filename);
+
+        if ($safe_filename[0] === '.') {
+            $errors[] = "Sécurité : Les fichiers système masqués (dotfiles) comme '{$raw_name}' sont strictement interdits.";
+            continue;
+        }
+
+        $ext = strtolower(pathinfo($safe_filename, PATHINFO_EXTENSION));
+        if ($ext === '' || in_array($ext, $forbidden_exts, true) || !in_array($ext, $allowed_exts, true)) {
+            $errors[] = "Sécurité : L'extension '.{$ext}' du fichier '{$raw_name}' n'est pas autorisée.";
+            continue;
+        }
+
+        $target_file_name = $safe_filename;
+        $dest_path = $target_dir . '/' . $target_file_name;
+
+        if (file_exists($dest_path) && !$overwrite) {
+            $info = pathinfo($safe_filename);
+            $base_name = $info['filename'];
+            $counter = 1;
+            while (file_exists($target_dir . '/' . $target_file_name)) {
+                $target_file_name = $base_name . '_' . $counter . ($ext !== '' ? '.' . $ext : '');
+                $counter++;
+            }
+            $dest_path = $target_dir . '/' . $target_file_name;
+        }
+
+        if (@move_uploaded_file($tmp_name, $dest_path)) {
+            @chmod($dest_path, 0644);
+            $uploaded_results[] = [
+                'original_name' => $raw_name,
+                'saved_name'    => $target_file_name,
+                'renamed'       => ($target_file_name !== $raw_name)
+            ];
+        } else {
+            $errors[] = "Échec du déplacement du fichier '{$raw_name}' vers le dossier cible.";
+        }
+    }
+
+    if (!empty($uploaded_results)) {
+        invalidate_dir_cache($target_dir, $real_base_dir, $thumbnail_dir);
+    }
+
+    $has_success = !empty($uploaded_results);
+    http_response_code($has_success ? 200 : 400);
+
+    echo json_encode([
+        'success'  => $has_success,
+        'uploaded' => $uploaded_results,
+        'errors'   => $errors,
+        'message'  => $has_success ? count($uploaded_results) . ' fichier(s) téléversé(s) avec succès.' : 'Échec du téléversement.'
+    ]);
+    exit;
+}
+
+if ($action === 'create_folder') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Accès refusé. Mode administrateur requis pour créer un dossier.'
+        ]);
+        exit;
+    }
+
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $folder_name = trim((string)($raw_body['folder_name'] ?? $_POST['folder_name'] ?? ''));
+
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Dossier parent introuvable ou accès refusé.'
+        ]);
+        exit;
+    }
+
+    if ($folder_name === '') {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Le nom du dossier ne peut pas être vide.'
+        ]);
+        exit;
+    }
+
+    $safe_folder_name = basename($folder_name);
+    $safe_folder_name = preg_replace('/[^\w\.\-\s]/u', '_', $safe_folder_name);
+    $safe_folder_name = trim($safe_folder_name);
+
+    if ($safe_folder_name === '' || $safe_folder_name[0] === '.') {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Sécurité : Les noms de dossiers masqués (dotfiles) ou invalides sont interdits.'
+        ]);
+        exit;
+    }
+
+    $new_folder_path = $target_dir . '/' . $safe_folder_name;
+
+    if (file_exists($new_folder_path)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => "Un dossier ou un fichier nommé '{$safe_folder_name}' existe déjà."
+        ]);
+        exit;
+    }
+
+    if (@mkdir($new_folder_path, 0755, true)) {
+        invalidate_dir_cache($target_dir, $real_base_dir, $thumbnail_dir);
+        echo json_encode([
+            'success'     => true,
+            'message'     => 'Dossier créé avec succès.',
+            'folder_name' => $safe_folder_name
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error'   => "Échec de la création du dossier. Vérifiez les permissions d'écriture sur le serveur."
+        ]);
+    }
+    exit;
+}
+
 function load_dir_comments(string $dir_path): array {
     $comments = [];
     $comment_file = $dir_path . '/.comment';
@@ -963,12 +1177,20 @@ if ($cached_raw !== null) {
             $cover_thumb = find_first_image_thumbnail($full_item_path, $real_base_dir, $cover_exts);
         }
 
+        $sub_items = @scandir($full_item_path) ?: [];
+        $live_item_count = 0;
+        foreach ($sub_items as $sub) {
+            if ($sub[0] !== '.' && !in_array($sub, $ignore_list, true)) {
+                $live_item_count++;
+            }
+        }
+
         $directories[] = [
             'name'         => $dir_display_name,
             'raw_name'     => $dir_item['raw_name'],
             'path'         => $dir_item['path'],
             'mtime'        => $dir_item['mtime'],
-            'item_count'   => $dir_item['item_count'],
+            'item_count'   => $live_item_count,
             'cover'        => $cover_thumb,
             'comment'      => $comments[$dir_item['raw_name']] ?? '',
             'access_mode'  => $sub_access['access_mode'],

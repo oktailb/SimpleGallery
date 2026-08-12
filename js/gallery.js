@@ -135,7 +135,24 @@ class SimpleGallery {
       folderUnlockError: document.getElementById('folderUnlockError'),
 
       // Folder GPS Route Map Button
-      folderMapBtn: document.getElementById('folderMapBtn')
+      folderMapBtn: document.getElementById('folderMapBtn'),
+
+      // Drag & Drop Upload Elements
+      uploadMediaBtn: document.getElementById('uploadMediaBtn'),
+      uploadFileInput: document.getElementById('uploadFileInput'),
+      dropZoneOverlay: document.getElementById('dropZoneOverlay'),
+      uploadProgressModal: document.getElementById('uploadProgressModal'),
+      uploadProgressBar: document.getElementById('uploadProgressBar'),
+      uploadProgressStatus: document.getElementById('uploadProgressStatus'),
+      uploadResultMessages: document.getElementById('uploadResultMessages'),
+
+      // Create Folder Elements
+      createFolderBtn: document.getElementById('createFolderBtn'),
+      createFolderModal: document.getElementById('createFolderModal'),
+      createFolderCloseBtn: document.getElementById('createFolderCloseBtn'),
+      createFolderForm: document.getElementById('createFolderForm'),
+      createFolderNameInput: document.getElementById('createFolderNameInput'),
+      createFolderError: document.getElementById('createFolderError')
     };
   }
 
@@ -174,6 +191,68 @@ class SimpleGallery {
         this.applyFilterAndRender();
       }
     });
+
+    // Upload Controls & Global Drag & Drop (Admin Only)
+    if (this.el.uploadMediaBtn && this.el.uploadFileInput) {
+      this.el.uploadMediaBtn.addEventListener('click', () => {
+        this.el.uploadFileInput.click();
+      });
+      this.el.uploadFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handleUploadFiles(e.target.files);
+          this.el.uploadFileInput.value = '';
+        }
+      });
+    }
+
+    let dragCounter = 0;
+    window.addEventListener('dragenter', (e) => {
+      if (!this.state.isAdmin) return;
+      e.preventDefault();
+      dragCounter++;
+      if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'flex';
+    });
+    window.addEventListener('dragover', (e) => {
+      if (!this.state.isAdmin) return;
+      e.preventDefault();
+    });
+    window.addEventListener('dragleave', (e) => {
+      if (!this.state.isAdmin) return;
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'none';
+      }
+    });
+    window.addEventListener('drop', (e) => {
+      if (!this.state.isAdmin) return;
+      e.preventDefault();
+      dragCounter = 0;
+      if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'none';
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        this.handleUploadFiles(e.dataTransfer.files);
+      }
+    });
+
+    // Admin Create Folder Controls
+    if (this.el.createFolderBtn) {
+      this.el.createFolderBtn.addEventListener('click', () => this.openCreateFolderModal());
+    }
+    if (this.el.createFolderCloseBtn) {
+      this.el.createFolderCloseBtn.addEventListener('click', () => this.closeCreateFolderModal());
+    }
+    if (this.el.createFolderModal) {
+      this.el.createFolderModal.addEventListener('click', (e) => {
+        if (e.target === this.el.createFolderModal) this.closeCreateFolderModal();
+      });
+    }
+    if (this.el.createFolderForm) {
+      this.el.createFolderForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.createFolder();
+      });
+    }
 
     // Admin Controls
     if (this.el.adminBtn) {
@@ -1236,6 +1315,8 @@ class SimpleGallery {
       if (this.el.adminLoginState) this.el.adminLoginState.style.display = 'none';
       if (this.el.adminActiveState) this.el.adminActiveState.style.display = 'block';
       if (this.el.folderSettingsBtn) this.el.folderSettingsBtn.style.display = 'inline-flex';
+      if (this.el.createFolderBtn) this.el.createFolderBtn.style.display = 'inline-flex';
+      if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = 'inline-flex';
       if (this.el.lightboxEditCommentBtn) this.el.lightboxEditCommentBtn.style.display = 'inline-flex';
     } else {
       this.el.adminBtn.classList.remove('admin-active');
@@ -1244,6 +1325,8 @@ class SimpleGallery {
       if (this.el.adminLoginState) this.el.adminLoginState.style.display = 'block';
       if (this.el.adminActiveState) this.el.adminActiveState.style.display = 'none';
       if (this.el.folderSettingsBtn) this.el.folderSettingsBtn.style.display = 'none';
+      if (this.el.createFolderBtn) this.el.createFolderBtn.style.display = 'none';
+      if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = 'none';
       if (this.el.lightboxEditCommentBtn) this.el.lightboxEditCommentBtn.style.display = 'none';
     }
   }
@@ -1321,6 +1404,161 @@ class SimpleGallery {
       }
     } catch (err) {
       console.error('Logout request failed:', err);
+    }
+  }
+
+  handleUploadFiles(fileList) {
+    if (!this.state.isAdmin || !fileList || fileList.length === 0) return;
+
+    const files = Array.from(fileList);
+    const formData = new FormData();
+    formData.append('action', 'upload_file');
+    formData.append('dir', this.state.currentPath);
+    if (this.state.csrfToken) {
+      formData.append('csrf_token', this.state.csrfToken);
+    }
+
+    files.forEach(f => {
+      formData.append('files[]', f);
+    });
+
+    if (this.el.uploadProgressModal) {
+      this.el.uploadProgressModal.style.display = 'block';
+      this.el.uploadProgressModal.classList.add('open');
+    }
+    if (this.el.uploadProgressBar) {
+      this.el.uploadProgressBar.style.width = '0%';
+      this.el.uploadProgressBar.textContent = '0%';
+    }
+    if (this.el.uploadProgressStatus) {
+      this.el.uploadProgressStatus.textContent = `Téléversement de ${files.length} fichier(s)...`;
+    }
+    if (this.el.uploadResultMessages) {
+      this.el.uploadResultMessages.style.display = 'none';
+      this.el.uploadResultMessages.innerHTML = '';
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api.php', true);
+    if (this.state.csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', this.state.csrfToken);
+    }
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && this.el.uploadProgressBar) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        this.el.uploadProgressBar.style.width = `${percent}%`;
+        this.el.uploadProgressBar.textContent = `${percent}%`;
+      }
+    };
+
+    xhr.onload = () => {
+      let res = null;
+      try {
+        res = JSON.parse(xhr.responseText);
+      } catch (err) {
+        res = { success: false, error: 'Réponse serveur invalide.' };
+      }
+
+      if (this.el.uploadProgressStatus) {
+        this.el.uploadProgressStatus.textContent = res.message || (res.success ? 'Téléversement réussi !' : 'Échec du téléversement.');
+      }
+
+      if (this.el.uploadResultMessages) {
+        let msgHtml = '';
+        if (res.uploaded && res.uploaded.length > 0) {
+          msgHtml += `<div style="color:#4ade80;margin-bottom:0.4rem;">✔ ${res.uploaded.length} fichier(s) téléversé(s).</div>`;
+          res.uploaded.forEach(item => {
+            if (item.renamed) {
+              msgHtml += `<div style="color:#facc15;font-size:0.8rem;margin-left:1rem;">ℹ ${this.escapeHtml(item.original_name)} ➔ ${this.escapeHtml(item.saved_name)} (Renommé pour éviter d'écraser)</div>`;
+            }
+          });
+        }
+        if (res.errors && res.errors.length > 0) {
+          msgHtml += `<div style="color:#f87171;margin-top:0.4rem;">❌ Échecs / Rejets de sécurité :</div>`;
+          res.errors.forEach(err => {
+            msgHtml += `<div style="color:#f87171;font-size:0.8rem;margin-left:1rem;">• ${this.escapeHtml(err)}</div>`;
+          });
+        }
+        this.el.uploadResultMessages.innerHTML = msgHtml;
+        this.el.uploadResultMessages.style.display = 'block';
+      }
+
+      setTimeout(() => {
+        if (this.el.uploadProgressModal) {
+          this.el.uploadProgressModal.style.display = 'none';
+          this.el.uploadProgressModal.classList.remove('open');
+        }
+        this.loadDirectory(this.state.currentPath);
+      }, res.errors && res.errors.length > 0 ? 3500 : 1200);
+    };
+
+    xhr.onerror = () => {
+      if (this.el.uploadProgressStatus) {
+        this.el.uploadProgressStatus.textContent = 'Erreur réseau lors du téléversement.';
+      }
+      setTimeout(() => {
+        if (this.el.uploadProgressModal) {
+          this.el.uploadProgressModal.style.display = 'none';
+          this.el.uploadProgressModal.classList.remove('open');
+        }
+      }, 2000);
+    };
+
+    xhr.send(formData);
+  }
+
+  openCreateFolderModal() {
+    if (!this.state.isAdmin || !this.el.createFolderModal) return;
+    if (this.el.createFolderNameInput) this.el.createFolderNameInput.value = '';
+    if (this.el.createFolderError) this.el.createFolderError.style.display = 'none';
+    this.el.createFolderModal.style.display = 'block';
+    this.el.createFolderModal.classList.add('open');
+    if (this.el.createFolderNameInput) this.el.createFolderNameInput.focus();
+  }
+
+  closeCreateFolderModal() {
+    if (!this.el.createFolderModal) return;
+    this.el.createFolderModal.style.display = 'none';
+    this.el.createFolderModal.classList.remove('open');
+  }
+
+  async createFolder() {
+    if (!this.state.isAdmin || !this.el.createFolderNameInput) return;
+    const folderName = this.el.createFolderNameInput.value.trim();
+    if (!folderName) return;
+
+    if (this.el.createFolderError) this.el.createFolderError.style.display = 'none';
+
+    try {
+      const res = await fetch('api.php?action=create_folder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify({
+          action: 'create_folder',
+          dir: this.state.currentPath,
+          folder_name: folderName,
+          csrf_token: this.state.csrfToken
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        this.closeCreateFolderModal();
+        this.loadDirectory(this.state.currentPath);
+      } else {
+        if (this.el.createFolderError) {
+          this.el.createFolderError.textContent = json.error || 'Échec de la création du dossier.';
+          this.el.createFolderError.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      if (this.el.createFolderError) {
+        this.el.createFolderError.textContent = 'Erreur réseau lors de la création du dossier.';
+        this.el.createFolderError.style.display = 'block';
+      }
     }
   }
 

@@ -88,6 +88,15 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             </button>
           </div>
 
+          <button id="createFolderBtn" class="btn-toggle" title="Créer un nouveau sous-dossier" style="display: none;">
+            <span>📁+</span> New Folder
+          </button>
+
+          <button id="uploadMediaBtn" class="btn-toggle" title="Upload Media (Drag & Drop)" style="display: none;">
+            <span>📤</span> Upload
+          </button>
+          <input type="file" id="uploadFileInput" multiple style="display: none;" />
+
           <button id="folderSettingsBtn" class="btn-toggle" title="Customize Folder (.title, .desc, .bg, .theme)" style="display: none;">
             <span>🎨</span> Folder Settings
           </button>
@@ -352,6 +361,51 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <div id="folderUnlockError" class="admin-error-msg" style="display: none;"></div>
           <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
             Unlock Folder
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drag & Drop Upload Overlay (Admin Only) -->
+  <div id="dropZoneOverlay" class="drop-zone-overlay" style="display: none;">
+    <div class="drop-zone-content">
+      <div class="drop-zone-icon">📤</div>
+      <h3>Glissez-déposez vos médias ici</h3>
+      <p>Photos, vidéos, audio, documents (Téléversement administrateur sécurisé)</p>
+    </div>
+  </div>
+
+  <!-- Upload Progress Modal -->
+  <div id="uploadProgressModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content" style="max-width: 480px;">
+      <div class="admin-modal-header">
+        <h3>📤 Téléversement en cours...</h3>
+      </div>
+      <div class="admin-modal-body">
+        <div class="upload-progress-bar-container">
+          <div id="uploadProgressBar" class="upload-progress-bar" style="width: 0%;">0%</div>
+        </div>
+        <p id="uploadProgressStatus" style="font-size:0.85rem;margin-top:0.8rem;color:var(--text-muted);">Préparation des fichiers...</p>
+        <div id="uploadResultMessages" style="margin-top:1rem;max-height:150px;overflow-y:auto;font-size:0.85rem;display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Folder Modal -->
+  <div id="createFolderModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+    <div class="admin-modal-content" style="max-width: 420px;">
+      <div class="admin-modal-header">
+        <h3>📁 Nouveau Dossier</h3>
+        <button id="createFolderCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <form id="createFolderForm">
+          <label for="createFolderNameInput" class="admin-label">Nom du dossier :</label>
+          <input type="text" id="createFolderNameInput" class="admin-input" placeholder="ex: Vacances 2026, Événements..." required />
+          <div id="createFolderError" class="admin-error-msg" style="display: none;"></div>
+          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
+            Créer le dossier
           </button>
         </form>
       </div>
