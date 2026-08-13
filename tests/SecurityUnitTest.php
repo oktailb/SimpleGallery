@@ -85,6 +85,7 @@ class SecurityUnitTestSuite {
         $this->testRateLimiting();
         $this->testUploadExtensionFiltering();
         $this->testHtaccessRules();
+        $this->testNewFeatures();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS DE SÉCURITÉ\n";
@@ -106,7 +107,7 @@ class SecurityUnitTestSuite {
      * 1. PATH TRAVERSAL & CANONICALIZATION TESTS
      */
     private function testPathTraversal(): void {
-        echo "🔍 [1/6] Test de Canonisation & Attaques Path Traversal...\n";
+        echo "🔍 [1/9] Test de Canonisation & Attaques Path Traversal...\n";
 
         $traversal_payloads = [
             '../../etc/passwd',
@@ -356,6 +357,37 @@ SVG;
             $sub_content = file_get_contents($sub_htaccess);
             $this->assert("Interdiction d'accès HTTP dans tests/.htaccess", strpos($sub_content, 'Require all denied') !== false || strpos($sub_content, 'Deny from all') !== false);
         }
+    }
+
+    /**
+     * 9. NEW FEATURES SECURITY & INTEGRITY AUDIT
+     */
+    private function testNewFeatures(): void {
+        echo "\n🚀 [9/9] Audit de Sécurité des Nouvelles Fonctionnalités...\n";
+
+        // 1. Test Permissions Matrix
+        $perms = load_permissions_config($this->base_dir);
+        $this->assert("Chargement Matrice de Permissions", is_array($perms) && isset($perms['can_upload']));
+        $this->assert("Permissions par défaut : Upload désactivé", $perms['can_upload'] === false);
+
+        // 2. Test Archive Binaries Discovery
+        $archives = find_archive_binaries();
+        $this->assert("Détection des binaires d'archivage", is_array($archives));
+
+        // 3. Test Recursive Search Engine
+        global $ignore_list, $media_types;
+        $results = search_gallery_recursive($this->base_dir, $this->base_dir, [
+            'q' => 'index',
+            'category' => 'all',
+            'recursive' => true
+        ], $ignore_list ?: [], $media_types ?: []);
+
+        $this->assert("Sécurité Recherche Récursive (Exécution sans erreur)", is_array($results));
+        $has_php = false;
+        foreach ($results as $res) {
+            if ($res['extension'] === 'php') $has_php = true;
+        }
+        $this->assert("Moteur de Recherche : Exclusion du code PHP", $has_php === false);
     }
 }
 

@@ -492,3 +492,346 @@ function extract_mp4_embedded_jpeg(string $mp4_file, string $output_jpg_file): b
 
     return false;
 }
+
+/**
+ * -------------------------------------------------------------
+ * GUEST PERMISSION MATRIX & RIGHTS MANAGEMENT
+ * -------------------------------------------------------------
+ */
+function get_permissions_file_path(string $base_dir): string {
+    return $base_dir . '/.permissions.json';
+}
+
+function get_default_permissions(): array {
+    return [
+        'can_upload'           => false,
+        'can_delete'           => false,
+        'can_move'             => false,
+        'can_comment'          => true,
+        'can_create_folder'    => false,
+        'can_download_archive' => true
+    ];
+}
+
+function load_permissions_config(string $base_dir): array {
+    $file = get_permissions_file_path($base_dir);
+    $defaults = get_default_permissions();
+    if (!file_exists($file)) {
+        return $defaults;
+    }
+    $content = @file_get_contents($file);
+    if (empty($content)) return $defaults;
+    $data = @json_decode($content, true);
+    if (!is_array($data)) return $defaults;
+
+    return array_merge($defaults, $data);
+}
+
+function save_permissions_config(string $base_dir, array $permissions): bool {
+    $file = get_permissions_file_path($base_dir);
+    $defaults = get_default_permissions();
+    $clean = [];
+    foreach ($defaults as $key => $val) {
+        $clean[$key] = isset($permissions[$key]) ? (bool)$permissions[$key] : $val;
+    }
+    return (@file_put_contents($file, json_encode($clean, JSON_PRETTY_PRINT), LOCK_EX) !== false);
+}
+
+function has_permission(string $permission_key, string $base_dir): bool {
+    if (is_admin_logged_in()) {
+        return true;
+    }
+    $perms = load_permissions_config($base_dir);
+    return !empty($perms[$permission_key]);
+}
+
+/**
+ * -------------------------------------------------------------
+ * MULTI-FORMAT ARCHIVE DISCOVERY & GENERATION (ZIP, 7Z, TAR)
+ * -------------------------------------------------------------
+ */
+function find_archive_binaries(): array {
+    $available = [];
+
+    if (extension_loaded('zip') || class_exists('ZipArchive')) {
+        $available['zip'] = 'PHP ZipArchive';
+    } else {
+        $zip_cli = find_binary_executable('zip');
+        if ($zip_cli) $available['zip'] = 'CLI zip (' . $zip_cli . ')';
+    }
+
+    $sz_cli = find_binary_executable('7z') ?: find_binary_executable('7za');
+    if ($sz_cli) {
+        $available['7z'] = 'CLI 7-Zip (' . $sz_cli . ')';
+    }
+
+    $tar_cli = find_binary_executable('tar');
+    if ($tar_cli) {
+        $available['tar'] = 'CLI tar (' . $tar_cli . ')';
+    }
+
+    return $available;
+}
+
+function find_binary_executable(string $binary_name): ?string {
+    $common_paths = [
+        '/usr/bin/' . $binary_name,
+        '/usr/local/bin/' . $binary_name,
+        '/bin/' . $binary_name,
+        '/opt/homebrew/bin/' . $binary_name
+    ];
+    foreach ($common_paths as $path) {
+        if (file_exists($path) && is_executable($path)) return $path;
+    }
+    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
+        $win_which = @trim((string)@exec('where ' . escapeshellarg($binary_name) . ' 2>nul'));
+        if (!empty($win_which)) {
+            $lines = explode("\n", str_replace("\r", "", $win_which));
+            $first = trim($lines[0]);
+            if (file_exists($first)) return $first;
+        }
+    } else {
+        $which = @trim((string)@exec('which ' . escapeshellarg($binary_name) . ' 2>/dev/null'));
+        if (!empty($which) && file_exists($which) && is_executable($which)) return $which;
+    }
+    return null;
+}
+
+function create_archive(string $format, string $target_dir, string $output_file, string $base_dir, array $ignore_list): bool {
+    if (!is_dir($target_dir)) return false;
+
+    $real_target = realpath($target_dir);
+    if (!$real_target) return false;
+
+    if ($format === 'zip' && (extension_loaded('zip') || class_exists('ZipArchive'))) {
+        $zip = new ZipArchive();
+        if ($zip->open($output_file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($real_target, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $file) {
+            if ($file->isDir()) continue;
+            $filePath = str_replace('\\', '/', $file->getRealPath());
+            if (is_path_ignored($filePath, $base_dir, $ignore_list)) continue;
+
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            if (in_array($ext, ['php', 'htaccess', 'ini', 'hash'], true)) continue;
+
+            $localPath = get_relative_path($filePath, $real_target);
+            $zip->addFile($filePath, $localPath);
+        }
+
+        return $zip->close();
+    }
+
+    if ($format === 'zip') {
+        $zip_cli = find_binary_executable('zip');
+        if ($zip_cli) {
+            $cmd = sprintf(
+                'cd %s && %s -r %s . -x "*.php" "*.htaccess" "*.ini" ".*" 2>&1',
+                escapeshellarg($real_target),
+                escapeshellarg($zip_cli),
+                escapeshellarg($output_file)
+            );
+            @exec($cmd);
+            return (file_exists($output_file) && filesize($output_file) > 0);
+        }
+    }
+
+    if ($format === '7z') {
+        $sz_cli = find_binary_executable('7z') ?: find_binary_executable('7za');
+        if ($sz_cli) {
+            $cmd = sprintf(
+                'cd %s && %s a -t7z %s . -xr!*.php -xr!.* 2>&1',
+                escapeshellarg($real_target),
+                escapeshellarg($sz_cli),
+                escapeshellarg($output_file)
+            );
+            @exec($cmd);
+            return (file_exists($output_file) && filesize($output_file) > 0);
+        }
+    }
+
+    if ($format === 'tar') {
+        $tar_cli = find_binary_executable('tar');
+        if ($tar_cli) {
+            $cmd = sprintf(
+                'cd %s && %s -czf %s --exclude="*.php" --exclude=".*" . 2>&1',
+                escapeshellarg($real_target),
+                escapeshellarg($tar_cli),
+                escapeshellarg($output_file)
+            );
+            @exec($cmd);
+            return (file_exists($output_file) && filesize($output_file) > 0);
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Reads and parses directory .comment legend files
+ */
+function load_dir_comments(string $dir_path): array {
+    $comments = [];
+    $comment_file = $dir_path . '/.comment';
+    if (file_exists($comment_file) && is_readable($comment_file)) {
+        $lines = file($comment_file, FILE_IGNORE_NEW_LINES);
+        if ($lines !== false) {
+            for ($i = 0; $i < count($lines); $i++) {
+                $line = trim($lines[$i]);
+                if ($line === '') continue;
+
+                if (strpos($line, '=') !== false) {
+                    list($fname, $cmt) = explode('=', $line, 2);
+                    $comments[trim($fname)] = trim($cmt);
+                } elseif (strpos($line, ':') !== false && !file_exists($dir_path . '/' . $line)) {
+                    list($fname, $cmt) = explode(':', $line, 2);
+                    $comments[trim($fname)] = trim($cmt);
+                } else {
+                    $fname = $line;
+                    $cmt = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
+                    $comments[$fname] = $cmt;
+                    $i++;
+                }
+            }
+        }
+    }
+    return $comments;
+}
+
+function save_dir_comments(string $dir_path, array $comments): bool {
+    $comment_file = $dir_path . '/.comment';
+    $clean_comments = [];
+    foreach ($comments as $fname => $cmt) {
+        $cmt_clean = trim(str_replace(["\r", "\n"], [' ', ' '], $cmt));
+        if ($cmt_clean !== '') {
+            $clean_comments[] = $fname . '=' . $cmt_clean;
+        }
+    }
+
+    if (empty($clean_comments)) {
+        if (file_exists($comment_file)) {
+            return @unlink($comment_file);
+        }
+        return true;
+    }
+
+    return (@file_put_contents($comment_file, implode("\n", $clean_comments) . "\n", LOCK_EX) !== false);
+}
+
+/**
+ * -------------------------------------------------------------
+ * RECURSIVE MULTIDIMENSIONAL SEARCH ENGINE
+ * -------------------------------------------------------------
+ */
+function search_gallery_recursive(string $start_dir, string $base_dir, array $params, array $ignore_list, array $media_types): array {
+    $results = [];
+    $query = strtolower(trim($params['q'] ?? ''));
+    $cat_filter = strtolower(trim($params['category'] ?? 'all'));
+    $timing_filter = strtolower(trim($params['timing'] ?? 'all'));
+    $gps_only = !empty($params['gps_only']);
+    $recursive = !empty($params['recursive']);
+
+    $now = time();
+    $min_time = 0;
+    if ($timing_filter === 'today') {
+        $min_time = strtotime('today 00:00:00');
+    } elseif ($timing_filter === 'week') {
+        $min_time = $now - (7 * 86400);
+    } elseif ($timing_filter === 'month') {
+        $min_time = $now - (30 * 86400);
+    } elseif ($timing_filter === 'year') {
+        $min_time = $now - (365 * 86400);
+    }
+
+    $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc', 'js', 'css', 'html', 'htm', 'htaccess', 'htpasswd', 'sh', 'bat', 'cmd', 'exe', 'dll', 'py', 'pl', 'cgi', 'hash', 'ini', 'sql', 'bak', 'json'];
+
+    $scan_directory = function(string $dir) use (&$scan_directory, &$results, $query, $cat_filter, $min_time, $gps_only, $recursive, $base_dir, $ignore_list, $media_types, $forbidden_exts) {
+        if (!is_dir($dir) || is_path_ignored($dir, $base_dir, $ignore_list)) {
+            return;
+        }
+
+        $items = @scandir($dir);
+        if ($items === false) return;
+
+        $comments = load_dir_comments($dir);
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..' || $item[0] === '.' || in_array($item, $ignore_list, true)) {
+                continue;
+            }
+
+            $full_path = $dir . '/' . $item;
+            $rel_path = get_relative_path($full_path, $base_dir);
+
+            if (is_dir($full_path)) {
+                if ($recursive) {
+                    $scan_directory($full_path);
+                }
+            } elseif (is_file($full_path)) {
+                $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                if ($ext === '' || in_array($ext, $forbidden_exts, true)) continue;
+
+                $category = 'other';
+                foreach ($media_types as $c => $exts) {
+                    if (in_array($ext, $exts, true)) {
+                        $category = $c;
+                        break;
+                    }
+                }
+
+                if ($cat_filter !== 'all' && $category !== $cat_filter) {
+                    continue;
+                }
+
+                $mtime = filemtime($full_path);
+                if ($min_time > 0 && $mtime < $min_time) {
+                    continue;
+                }
+
+                $comment = $comments[$item] ?? '';
+                if ($query !== '') {
+                    $match_name = (strpos(strtolower($item), $query) !== false);
+                    $match_comment = ($comment !== '' && strpos(strtolower($comment), $query) !== false);
+                    if (!$match_name && !$match_comment) {
+                        continue;
+                    }
+                }
+
+                $exif = ($category === 'image') ? extract_exif_data($full_path) : null;
+                if ($gps_only) {
+                    if (empty($exif['gps'])) {
+                        continue;
+                    }
+                }
+
+                $size = filesize($full_path);
+                $effective_mtime = ($exif && !empty($exif['date_ts'])) ? $exif['date_ts'] : $mtime;
+
+                $results[] = [
+                    'name'           => $item,
+                    'path'           => $rel_path,
+                    'extension'      => $ext,
+                    'category'       => $category,
+                    'size'           => $size,
+                    'size_formatted' => format_bytes($size),
+                    'mtime'          => $mtime,
+                    'effective_mtime'=> $effective_mtime,
+                    'exif'           => $exif,
+                    'thumb_url'      => 'thumb.php?file=' . rawurlencode($rel_path),
+                    'file_url'       => encode_url_path($rel_path),
+                    'comment'        => $comment
+                ];
+            }
+        }
+    };
+
+    $scan_directory($start_dir);
+    return $results;
+}

@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'save_permissions'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -123,6 +123,95 @@ if ($action === 'change_password') {
         ]);
         exit;
     }
+}
+
+if ($action === 'get_permissions') {
+    echo json_encode([
+        'success'           => true,
+        'is_admin'          => is_admin_logged_in(),
+        'permissions'       => load_permissions_config($real_base_dir),
+        'available_archives'=> find_archive_binaries()
+    ]);
+    exit;
+}
+
+if ($action === 'save_permissions') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Droits administrateur requis pour modifier la matrice de droits']);
+        exit;
+    }
+    $new_perms = $raw_body['permissions'] ?? $_POST['permissions'] ?? [];
+    if (save_permissions_config($real_base_dir, $new_perms)) {
+        echo json_encode(['success' => true, 'permissions' => load_permissions_config($real_base_dir)]);
+        exit;
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Échec de la sauvegarde des permissions']);
+        exit;
+    }
+}
+
+if ($action === 'download_archive') {
+    if (!has_permission('can_download_archive', $real_base_dir)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Permission de téléchargement d\'archive refusée']);
+        exit;
+    }
+
+    $format = strtolower($raw_body['format'] ?? $_GET['format'] ?? 'zip');
+    $req_dir = $raw_body['dir'] ?? $_GET['dir'] ?? '';
+    $dir_target = sanitize_path($req_dir, $real_base_dir);
+
+    if (!$dir_target || !is_dir($dir_target) || is_path_ignored($dir_target, $real_base_dir, $ignore_list)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Dossier introuvable ou accès refusé']);
+        exit;
+    }
+
+    $tmp_dir = sys_get_temp_dir() . '/simplegallery_archives';
+    if (!is_dir($tmp_dir)) @mkdir($tmp_dir, 0755, true);
+
+    $ext_map = ['zip' => '.zip', '7z' => '.7z', 'tar' => '.tar.gz'];
+    $file_ext = $ext_map[$format] ?? '.zip';
+    $archive_name = 'gallery_' . date('Ymd_His') . '_' . substr(md5($dir_target), 0, 6) . $file_ext;
+    $archive_path = $tmp_dir . '/' . $archive_name;
+
+    if (create_archive($format, $dir_target, $archive_path, $real_base_dir, $ignore_list)) {
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . $archive_name . '"');
+        header('Content-Length: ' . filesize($archive_path));
+        header('Cache-Control: no-cache, must-revalidate');
+        readfile($archive_path);
+        @unlink($archive_path);
+        exit;
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Impossible de créer l\'archive au format ' . htmlspecialchars($format)]);
+        exit;
+    }
+}
+
+if ($action === 'search') {
+    $req_dir = $raw_body['dir'] ?? $_GET['dir'] ?? '';
+    $start_dir = sanitize_path($req_dir, $real_base_dir) ?: $real_base_dir;
+
+    $search_params = [
+        'q'         => $raw_body['q'] ?? $_GET['q'] ?? '',
+        'category'  => $raw_body['category'] ?? $_GET['category'] ?? 'all',
+        'timing'    => $raw_body['timing'] ?? $_GET['timing'] ?? 'all',
+        'gps_only'  => !empty($raw_body['gps_only']) || !empty($_GET['gps_only']),
+        'recursive' => !empty($raw_body['recursive']) || !empty($_GET['recursive'])
+    ];
+
+    $search_results = search_gallery_recursive($start_dir, $real_base_dir, $search_params, $ignore_list, $media_types);
+
+    echo json_encode([
+        'success' => true,
+        'count'   => count($search_results),
+        'results' => $search_results
+    ]);
+    exit;
 }
 
 // Path & Access functions imported via config.php -> functions.php
@@ -432,13 +521,21 @@ if ($action === 'lock_folder') {
 
 
 if ($action === 'update_dotfile') {
-    if (!is_admin_logged_in()) {
-        http_response_code(403);
-        echo json_encode([
-            'success' => false,
-            'error'   => 'Admin privileges required'
-        ]);
-        exit;
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $type = $raw_body['type'] ?? $_POST['type'] ?? '';
+    
+    if ($type === 'comment') {
+        if (!has_permission('can_comment', $real_base_dir)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Permission d\'édition des légendes refusée']);
+            exit;
+        }
+    } else {
+        if (!is_admin_logged_in()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Droits administrateur requis']);
+            exit;
+        }
     }
 
     $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
@@ -593,11 +690,11 @@ if ($action === 'update_dotfile') {
 }
 
 if ($action === 'upload_file') {
-    if (!is_admin_logged_in()) {
+    if (!has_permission('can_upload', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Accès refusé. Mode administrateur requis pour le téléversement.'
+            'error'   => 'Accès refusé. Permission d\'upload manquante.'
         ]);
         exit;
     }
@@ -760,11 +857,11 @@ if ($action === 'upload_file') {
 }
 
 if ($action === 'create_folder') {
-    if (!is_admin_logged_in()) {
+    if (!has_permission('can_create_folder', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Accès refusé. Mode administrateur requis pour créer un dossier.'
+            'error'   => 'Accès refusé. Permission de création de dossier manquante.'
         ]);
         exit;
     }
@@ -833,11 +930,11 @@ if ($action === 'create_folder') {
 }
 
 if ($action === 'move_item') {
-    if (!is_admin_logged_in()) {
+    if (!has_permission('can_move', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Accès refusé. Mode administrateur requis pour déplacer un élément.'
+            'error'   => 'Accès refusé. Permission de déplacement manquante.'
         ]);
         exit;
     }
@@ -968,11 +1065,11 @@ function recursive_delete_dir(string $dir): bool {
 }
 
 if ($action === 'delete_item') {
-    if (!is_admin_logged_in()) {
+    if (!has_permission('can_delete', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Accès refusé. Mode administrateur requis pour supprimer un élément.'
+            'error'   => 'Accès refusé. Permission de suppression manquante.'
         ]);
         exit;
     }
@@ -1053,55 +1150,7 @@ if ($action === 'delete_item') {
     exit;
 }
 
-function load_dir_comments(string $dir_path): array {
-    $comments = [];
-    $comment_file = $dir_path . '/.comment';
-    if (file_exists($comment_file) && is_readable($comment_file)) {
-        $lines = file($comment_file, FILE_IGNORE_NEW_LINES);
-        if ($lines !== false) {
-            for ($i = 0; $i < count($lines); $i++) {
-                $line = trim($lines[$i]);
-                if ($line === '') continue;
-
-                if (strpos($line, '=') !== false) {
-                    list($fname, $cmt) = explode('=', $line, 2);
-                    $comments[trim($fname)] = trim($cmt);
-                } elseif (strpos($line, ':') !== false && !file_exists($dir_path . '/' . $line)) {
-                    list($fname, $cmt) = explode(':', $line, 2);
-                    $comments[trim($fname)] = trim($cmt);
-                } else {
-                    $fname = $line;
-                    $cmt = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
-                    $comments[$fname] = $cmt;
-                    $i++;
-                }
-            }
-        }
-    }
-    return $comments;
-}
-
-function save_dir_comments(string $dir_path, array $comments): bool {
-    $comment_file = $dir_path . '/.comment';
-    $clean_comments = [];
-    foreach ($comments as $fname => $cmt) {
-        $cmt_clean = trim(str_replace(["\r", "\n"], [' ', ' '], $cmt));
-        if ($cmt_clean !== '') {
-            $clean_comments[basename($fname)] = $cmt_clean;
-        }
-    }
-
-    if (empty($clean_comments)) {
-        if (file_exists($comment_file)) return @unlink($comment_file);
-        return true;
-    }
-
-    $lines = [];
-    foreach ($clean_comments as $fname => $cmt) {
-        $lines[] = $fname . ' = ' . $cmt;
-    }
-    return (@file_put_contents($comment_file, implode("\n", $lines) . "\n") !== false);
-}
+// load_dir_comments() and save_dir_comments() imported from functions.php
 
 function load_folder_overrides(string $dir_path, string $base_dir): array {
     $access_info = get_dir_access_info($dir_path, $base_dir);
@@ -1443,18 +1492,29 @@ usort($files, function($a, $b) {
 });
 
 $output_data = [
-    'success'       => true,
-    'csrf_token'    => get_csrf_token(),
-    'title'         => $folder_overrides['title'] ?? $gallery_title,
-    'current_path'  => $current_relative,
-    'parent_path'   => $parent_path,
-    'breadcrumbs'   => $breadcrumbs,
-    'overrides'     => $folder_overrides,
-    'directories'   => $directories,
-    'files'         => $files,
-    'is_admin'      => is_admin_logged_in(),
-    'admin_enabled' => !empty($admin_password_hash),
-    'stats'         => [
+    'success'           => true,
+    'csrf_token'        => get_csrf_token(),
+    'title'             => $folder_overrides['title'] ?? $gallery_title,
+    'current_path'      => $current_relative,
+    'parent_path'       => $parent_path,
+    'breadcrumbs'       => $breadcrumbs,
+    'overrides'         => $folder_overrides,
+    'directories'       => $directories,
+    'files'             => $files,
+    'is_admin'          => is_admin_logged_in(),
+    'admin_enabled'     => !empty($admin_password_hash),
+    'user_permissions'  => load_permissions_config($real_base_dir),
+    'user_rights'        => [
+        'is_admin'             => is_admin_logged_in(),
+        'can_upload'           => has_permission('can_upload', $real_base_dir),
+        'can_delete'           => has_permission('can_delete', $real_base_dir),
+        'can_move'             => has_permission('can_move', $real_base_dir),
+        'can_comment'          => has_permission('can_comment', $real_base_dir),
+        'can_create_folder'    => has_permission('can_create_folder', $real_base_dir),
+        'can_download_archive' => has_permission('can_download_archive', $real_base_dir)
+    ],
+    'available_archives'=> find_archive_binaries(),
+    'stats'             => [
         'directory_count' => count($directories),
         'file_count'      => count($files)
     ]

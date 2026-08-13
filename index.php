@@ -80,6 +80,23 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             </button>
           </div>
 
+          <button id="toggleFavoritesBtn" class="btn-toggle" title="Afficher uniquement mes favoris">
+            <span>❤️</span> Favoris <span id="favCountBadge" class="polaroid-badge" style="display:none; margin-left:4px;">0</span>
+          </button>
+
+          <div class="archive-dropdown-container">
+            <button id="downloadArchiveBtn" class="btn-toggle" title="Télécharger le dossier sous forme d'archive">
+              <span>📦</span> Archive ▾
+            </button>
+            <div id="archiveMenu" class="archive-dropdown-menu">
+              <!-- Dynamically populated by JS based on server binary availability -->
+            </div>
+          </div>
+
+          <button id="advancedSearchBtn" class="btn-toggle" title="Ouvrir la recherche avancée multidimensionnelle">
+            <span>🔍</span> Recherche
+          </button>
+
           <div class="control-btn-group">
             <button id="viewPolaroidBtn" class="btn-toggle active" title="Polaroid View">
               <span>🖼️</span> Polaroid
@@ -261,7 +278,8 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             </button>
             <div id="adminChangePassMsg" class="admin-success-msg" style="display: none; margin-top: 0.5rem;"></div>
           </form>
-          <button id="adminLogoutBtn" class="pill-btn" style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">
+          <div id="adminPermissionsContainer"></div>
+          <button id="adminLogoutBtn" class="pill-btn" style="width: 100%; margin-top: 1rem; justify-content: center; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">
             Log Out Admin Mode
           </button>
         </div>
@@ -432,6 +450,73 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           </button>
         </div>
       </div>
+    </div>
+  <!-- Floating Picture-in-Picture (PiP) Player Widget -->
+  <div id="pip-player-widget" style="display: none;">
+    <div id="pipHeader" class="pip-header">
+      <span id="pipTitle" class="pip-title">Lecture multimédia...</span>
+      <div class="pip-controls">
+        <button id="pipMinimizeBtn" class="pip-btn" title="Réduire / Agrandir">🗕</button>
+        <button id="pipCloseBtn" class="pip-btn" title="Fermer le lecteur">✕</button>
+      </div>
+    </div>
+    <div id="pipMediaContainer" class="pip-media-content">
+      <!-- Dynamically inserted audio or video tag -->
+    </div>
+  </div>
+
+  <!-- Advanced Multidimensional Search Modal -->
+  <div id="searchModal" class="search-modal-backdrop" style="display: none;">
+    <div class="search-modal-card">
+      <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px;">
+        <h3 style="margin:0; font-size:1.1rem; color:#f8fafc;">🔍 Recherche Avancée Multidimensionnelle</h3>
+        <button id="searchModalCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      </div>
+      <form id="searchAdvancedForm" style="display:flex; flex-direction:column; gap:14px;">
+        <div class="search-filter-item">
+          <label for="advSearchQuery">Mot-clé (nom de fichier ou légende) :</label>
+          <input type="text" id="advSearchQuery" placeholder="Ex: vacances, sunset, 2026..." />
+        </div>
+        <div class="search-filter-grid">
+          <div class="search-filter-item">
+            <label for="advSearchCategory">Catégorie :</label>
+            <select id="advSearchCategory">
+              <option value="all">Toutes les catégories</option>
+              <option value="image">📷 Photos</option>
+              <option value="video">🎬 Vidéos</option>
+              <option value="audio">🎵 Musique / Audio</option>
+              <option value="doc">📄 Documents</option>
+              <option value="archive">📦 Archives</option>
+            </select>
+          </div>
+          <div class="search-filter-item">
+            <label for="advSearchTiming">Période (Date) :</label>
+            <select id="advSearchTiming">
+              <option value="all">Toutes les dates</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="week">7 derniers jours</option>
+              <option value="month">30 derniers jours</option>
+              <option value="year">Cette année</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:20px; margin-top:4px;">
+          <label style="font-size:0.85rem; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="advSearchRecursive" checked style="width:16px; height:16px; accent-color:#6366f1;" />
+            📂 Recherche récursive dans tous les sous-dossiers
+          </label>
+          <label style="font-size:0.85rem; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="advSearchGpsOnly" style="width:16px; height:16px; accent-color:#6366f1;" />
+            📍 Uniquement médias géolocalisés (GPS)
+          </label>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button type="button" id="advSearchResetBtn" class="btn-toggle" style="flex:1;">Réinitialiser</button>
+          <button type="submit" class="pill-btn active" style="flex:2; justify-content:center; background:#6366f1; color:white; font-weight:700;">
+            🔍 Lancer la recherche
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

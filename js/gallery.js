@@ -22,7 +22,19 @@ class SimpleGallery {
       adminEnabled: false,
       csrfToken: csrfMeta ? csrfMeta.content : '',
       draggingItemPath: null,
-      targetItemToDelete: null
+      targetItemToDelete: null,
+      favorites: JSON.parse(localStorage.getItem('sg_favorites') || '[]'),
+      showFavoritesOnly: false,
+      userRights: {
+        is_admin: false,
+        can_upload: false,
+        can_delete: false,
+        can_move: false,
+        can_comment: true,
+        can_create_folder: false,
+        can_download_archive: true
+      },
+      availableArchives: {}
     };
 
     // Zoom, Pan & Rotate Explorer State
@@ -162,7 +174,23 @@ class SimpleGallery {
       deleteConfirmCloseBtn: document.getElementById('deleteConfirmCloseBtn'),
       deleteCancelBtn: document.getElementById('deleteCancelBtn'),
       deleteConfirmActionBtn: document.getElementById('deleteConfirmActionBtn'),
-      deleteConfirmMessage: document.getElementById('deleteConfirmMessage')
+      deleteConfirmMessage: document.getElementById('deleteConfirmMessage'),
+
+      // Feature Controls
+      toggleFavoritesBtn: document.getElementById('toggleFavoritesBtn'),
+      downloadArchiveBtn: document.getElementById('downloadArchiveBtn'),
+      archiveMenu: document.getElementById('archiveMenu'),
+      advancedSearchBtn: document.getElementById('advancedSearchBtn'),
+      searchModal: document.getElementById('searchModal'),
+      searchModalCloseBtn: document.getElementById('searchModalCloseBtn'),
+      searchAdvancedForm: document.getElementById('searchAdvancedForm'),
+      advSearchResetBtn: document.getElementById('advSearchResetBtn'),
+      pipWidget: document.getElementById('pip-player-widget'),
+      pipTitle: document.getElementById('pipTitle'),
+      pipMediaContainer: document.getElementById('pipMediaContainer'),
+      pipHeader: document.getElementById('pipHeader'),
+      pipMinimizeBtn: document.getElementById('pipMinimizeBtn'),
+      pipCloseBtn: document.getElementById('pipCloseBtn')
     };
   }
 
@@ -201,6 +229,36 @@ class SimpleGallery {
         this.applyFilterAndRender();
       }
     });
+
+    if (this.el.toggleFavoritesBtn) {
+      this.el.toggleFavoritesBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.state.showFavoritesOnly = !this.state.showFavoritesOnly;
+        this.el.toggleFavoritesBtn.classList.toggle('active', this.state.showFavoritesOnly);
+        this.applyFilterAndRender();
+      });
+    }
+
+    if (this.el.downloadArchiveBtn && this.el.archiveMenu) {
+      this.el.downloadArchiveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.el.archiveMenu.classList.toggle('open');
+      });
+      window.addEventListener('click', () => {
+        if (this.el.archiveMenu) this.el.archiveMenu.classList.remove('open');
+      });
+    }
+
+    if (this.el.advancedSearchBtn) {
+      this.el.advancedSearchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openSearchModal();
+      });
+    }
+
+    this.initPipPlayer();
+    this.initAdvancedSearch();
+    this.updateFavoritesCountUI();
 
     // Upload Controls & Global Drag & Drop (Admin Only)
     if (this.el.uploadMediaBtn && this.el.uploadFileInput) {
@@ -530,9 +588,14 @@ class SimpleGallery {
       this.state.overrides = json.overrides || {};
       this.state.isAdmin = !!json.is_admin;
       this.state.adminEnabled = !!json.admin_enabled;
+      this.state.userPermissions = json.user_permissions || {};
+      if (json.user_rights) this.state.userRights = json.user_rights;
+      if (json.available_archives) this.state.availableArchives = json.available_archives;
       if (json.csrf_token) this.state.csrfToken = json.csrf_token;
 
       this.updateAdminUI();
+      this.updateRightsUI();
+      this.updateArchiveMenuUI();
       this.updateSortOrderUI();
       this.applyDotfileOverrides(this.state.overrides);
       this.renderBreadcrumbs(json.breadcrumbs);
@@ -994,25 +1057,30 @@ class SimpleGallery {
           gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
         }
 
-        const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
+        const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
+        const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
+        const isFav = this.state.favorites.includes(file.path);
+
+        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
+        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="Ajouter aux favoris" onclick="event.stopPropagation()">❤️</button>`;
+        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="Mode Flottant PiP" onclick="event.stopPropagation()">🗗</button>` : '';
 
         let mediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
-        if (file.category === 'video') {
-          mediaPreviewHtml = `<video src="${file.file_url}#t=0.5" poster="${file.thumb_url}" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>`;
-        }
 
         return `
           <div class="${frameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
             ${deleteBtnHtml}
             <div class="polaroid-img-wrapper">
               ${mediaPreviewHtml}
+              ${favBtnHtml}
+              ${pipCardBtn}
               ${overlayHtml}
               ${badgeHtml}
               ${gpsBadge}
             </div>
             <div class="polaroid-caption">
               <span>${this.escapeHtml(file.comment || file.name)}</span>
-              ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
+              ${canComment ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
             </div>
             <div class="polaroid-subcaption">${file.size_formatted}</div>
           </div>
@@ -1043,18 +1111,23 @@ class SimpleGallery {
           gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
         }
         
-        const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
+        const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
+        const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
+        const isFav = this.state.favorites.includes(file.path);
+
+        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
+        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="Ajouter aux favoris" onclick="event.stopPropagation()">❤️</button>`;
+        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="Mode Flottant PiP" onclick="event.stopPropagation()">🗗</button>` : '';
 
         let gridMediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
-        if (file.category === 'video') {
-          gridMediaPreviewHtml = `<video src="${file.file_url}#t=0.5" poster="${file.thumb_url}" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>`;
-        }
 
         return `
           <div class="${gridFrameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
             ${deleteBtnHtml}
             <div class="grid-img-wrapper">
               ${gridMediaPreviewHtml}
+              ${favBtnHtml}
+              ${pipCardBtn}
               ${overlayHtml}
               ${badgeHtml}
               ${gpsBadge}
@@ -1078,6 +1151,23 @@ class SimpleGallery {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.openDeleteConfirmModal(btn.dataset.path, btn.dataset.name, 'file');
+      });
+    });
+
+    this.el.mediaGrid.querySelectorAll('.favorite-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const filePath = btn.getAttribute('data-path');
+        if (filePath) this.toggleFavorite(filePath);
+      });
+    });
+
+    this.el.mediaGrid.querySelectorAll('.pip-card-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.index, 10);
+        const file = this.state.filteredFiles[idx];
+        if (file) this.openPipPlayer(file);
       });
     });
 
@@ -1157,17 +1247,25 @@ class SimpleGallery {
       html = `<img id="lightboxExplorerImg" src="${file.file_url}" alt="${this.escapeHtml(file.name)}" class="explorer-img" draggable="false" />`;
     } else if (file.category === 'video') {
       html = `
-        <video controls autoplay name="media">
-          <source src="${file.file_url}" type="video/${file.extension === 'mov' ? 'mp4' : file.extension}">
-          Your browser does not support playing this video.
-        </video>
+        <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+          <video controls autoplay name="media" style="max-width:100%; max-height:75vh;">
+            <source src="${file.file_url}" type="video/${file.extension === 'mov' ? 'mp4' : file.extension}">
+            Your browser does not support playing this video.
+          </video>
+          <button id="lightboxPipTransferBtn" class="pill-btn active" style="margin-top:12px; background:#6366f1; color:#fff; border:none; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
+            🗗 Passer en lecteur flottant PiP (Continuer la navigation)
+          </button>
+        </div>
       `;
     } else if (file.category === 'audio') {
       html = `
-        <div class="lightbox-audio-card">
+        <div class="lightbox-audio-card" style="display:flex; flex-direction:column; align-items:center;">
           <div style="font-size:4rem;">🎵</div>
           <h3>${this.escapeHtml(file.name)}</h3>
           <audio controls autoplay src="${file.file_url}"></audio>
+          <button id="lightboxPipTransferBtn" class="pill-btn active" style="margin-top:16px; background:#6366f1; color:#fff; border:none; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
+            🗗 Passer en lecteur flottant PiP (Continuer la navigation)
+          </button>
         </div>
       `;
     } else {
@@ -1182,6 +1280,15 @@ class SimpleGallery {
     }
 
     this.el.lightboxContent.innerHTML = html;
+
+    const pipTransferBtn = document.getElementById('lightboxPipTransferBtn');
+    if (pipTransferBtn) {
+      pipTransferBtn.addEventListener('click', () => {
+        this.openPipPlayer(file);
+        this.closeLightbox();
+      });
+    }
+
     this.el.lightbox.classList.add('open');
   }
 
@@ -1507,6 +1614,9 @@ class SimpleGallery {
   openAdminModal() {
     if (!this.el.adminModal) return;
     this.updateAdminUI();
+    if (this.state.isAdmin) {
+      this.renderPermissionsMatrixUI();
+    }
     this.el.adminModal.style.display = 'flex';
     setTimeout(() => this.el.adminModal.classList.add('open'), 10);
     if (!this.state.isAdmin && this.el.adminPasswordInput) {
@@ -2102,6 +2212,273 @@ class SimpleGallery {
           }
         }
       }
+    }
+  }
+
+  toggleFavorite(filepath) {
+    const idx = this.state.favorites.indexOf(filepath);
+    if (idx >= 0) {
+      this.state.favorites.splice(idx, 1);
+    } else {
+      this.state.favorites.push(filepath);
+    }
+    localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
+    this.updateFavoritesCountUI();
+    this.applyFilterAndRender();
+  }
+
+  updateFavoritesCountUI() {
+    const badge = document.getElementById('favCountBadge');
+    const count = this.state.favorites.length;
+    if (badge) {
+      badge.innerText = count;
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  }
+
+  updateArchiveMenuUI() {
+    if (!this.el.archiveMenu) return;
+    const archives = this.state.availableArchives || {};
+    const keys = Object.keys(archives);
+    if (keys.length === 0) {
+      this.el.archiveMenu.innerHTML = '<div class="archive-option-item" style="opacity:0.6;">Aucun format d\'archive disponible</div>';
+      return;
+    }
+    this.el.archiveMenu.innerHTML = keys.map(fmt => `
+      <div class="archive-option-item" data-format="${fmt}">
+        <span>📦</span> Télécharger .${fmt.toUpperCase()} (${archives[fmt]})
+      </div>
+    `).join('');
+
+    this.el.archiveMenu.querySelectorAll('.archive-option-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const format = item.getAttribute('data-format');
+        if (format) {
+          window.location.href = `api.php?action=download_archive&dir=${encodeURIComponent(this.state.currentPath)}&format=${format}`;
+        }
+      });
+    });
+  }
+
+  updateRightsUI() {
+    const rights = this.state.userRights || { is_admin: false, can_upload: false, can_delete: false, can_move: false, can_comment: true, can_create_folder: false, can_download_archive: true };
+    if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = rights.can_upload ? '' : 'none';
+    if (this.el.createFolderBtn) this.el.createFolderBtn.style.display = rights.can_create_folder ? '' : 'none';
+    if (this.el.folderSettingsBtn) this.el.folderSettingsBtn.style.display = this.state.isAdmin ? '' : 'none';
+    if (this.el.downloadArchiveBtn) this.el.downloadArchiveBtn.style.display = rights.can_download_archive ? '' : 'none';
+  }
+
+  initPipPlayer() {
+    if (this.el.pipMinimizeBtn && this.el.pipWidget) {
+      this.el.pipMinimizeBtn.addEventListener('click', () => {
+        this.el.pipWidget.classList.toggle('minimized');
+      });
+    }
+    if (this.el.pipCloseBtn) {
+      this.el.pipCloseBtn.addEventListener('click', () => {
+        this.closePipPlayer();
+      });
+    }
+
+    if (this.el.pipHeader && this.el.pipWidget) {
+      let isDraggingPip = false;
+      let startX, startY, startLeft, startTop;
+      this.el.pipHeader.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        isDraggingPip = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = this.el.pipWidget.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        this.el.pipWidget.style.right = 'auto';
+        this.el.pipWidget.style.bottom = 'auto';
+        this.el.pipWidget.style.left = `${startLeft}px`;
+        this.el.pipWidget.style.top = `${startTop}px`;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDraggingPip) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        this.el.pipWidget.style.left = `${startLeft + dx}px`;
+        this.el.pipWidget.style.top = `${startTop + dy}px`;
+      });
+      window.addEventListener('mouseup', () => { isDraggingPip = false; });
+    }
+  }
+
+  openPipPlayer(file) {
+    if (!this.el.pipWidget || !this.el.pipMediaContainer) return;
+    if (this.el.pipTitle) this.el.pipTitle.innerText = file.comment || file.name;
+    this.el.pipWidget.style.display = 'flex';
+
+    if (file.category === 'video') {
+      this.el.pipMediaContainer.innerHTML = `<video src="${file.file_url}" controls autoplay style="width:100%;max-height:200px;"></video>`;
+    } else if (file.category === 'audio') {
+      this.el.pipMediaContainer.innerHTML = `<div style="padding:16px; width:100%; text-align:center;"><div style="font-size:2rem;margin-bottom:8px;">🎵</div><audio src="${file.file_url}" controls autoplay style="width:100%;"></audio></div>`;
+    }
+  }
+
+  closePipPlayer() {
+    if (!this.el.pipWidget) return;
+    this.el.pipWidget.style.display = 'none';
+    if (this.el.pipMediaContainer) this.el.pipMediaContainer.innerHTML = '';
+  }
+
+  openSearchModal() {
+    if (!this.el.searchModal) return;
+    this.el.searchModal.style.display = 'flex';
+    setTimeout(() => this.el.searchModal.classList.add('open'), 10);
+  }
+
+  closeSearchModal() {
+    if (!this.el.searchModal) return;
+    this.el.searchModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.searchModal.style.display = 'none';
+    }, 200);
+  }
+
+  initAdvancedSearch() {
+    if (this.el.advancedSearchBtn) {
+      this.el.advancedSearchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openSearchModal();
+      });
+    }
+    if (this.el.searchModalCloseBtn) {
+      this.el.searchModalCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeSearchModal();
+      });
+    }
+    if (this.el.searchModal) {
+      this.el.searchModal.addEventListener('click', (e) => {
+        if (e.target === this.el.searchModal) this.closeSearchModal();
+      });
+    }
+    if (this.el.advSearchResetBtn && this.el.searchAdvancedForm) {
+      this.el.advSearchResetBtn.addEventListener('click', () => {
+        this.el.searchAdvancedForm.reset();
+      });
+    }
+    if (this.el.searchAdvancedForm) {
+      this.el.searchAdvancedForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const q = document.getElementById('advSearchQuery').value;
+        const category = document.getElementById('advSearchCategory').value;
+        const timing = document.getElementById('advSearchTiming').value;
+        const recursive = document.getElementById('advSearchRecursive').checked;
+        const gps_only = document.getElementById('advSearchGpsOnly').checked;
+
+        this.showLoading(true);
+        this.closeSearchModal();
+
+        try {
+          const res = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.state.csrfToken },
+            body: JSON.stringify({
+              action: 'search',
+              dir: this.state.currentPath,
+              q, category, timing, recursive, gps_only
+            })
+          });
+          const json = await res.json();
+          if (json.success) {
+            this.state.files = json.results;
+            this.state.filteredFiles = json.results;
+            this.renderFolders([]);
+            this.renderMediaGrid(json.results);
+            if (this.el.galleryStats) {
+              this.el.galleryStats.innerText = `🔍 ${json.count} résultat(s) de recherche trouvé(s)`;
+            }
+          }
+        } catch (err) {
+          console.error('Search error:', err);
+        } finally {
+          this.showLoading(false);
+        }
+      });
+    }
+  }
+
+  renderPermissionsMatrixUI() {
+    const container = document.getElementById('adminPermissionsContainer');
+    if (!container) return;
+    const perms = this.state.userPermissions || {};
+
+    container.innerHTML = `
+      <h4 style="margin:16px 0 8px 0; color:var(--text-main); font-size:0.95rem;">🛡️ Matrice de Droits Invités</h4>
+      <form id="adminPermissionsForm">
+        <div class="permissions-matrix-grid">
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_upload" ${perms.can_upload ? 'checked' : ''} />
+            <span>📤 Upload de fichiers</span>
+          </label>
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_delete" ${perms.can_delete ? 'checked' : ''} />
+            <span>🗑️ Suppression d'éléments</span>
+          </label>
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_move" ${perms.can_move ? 'checked' : ''} />
+            <span>🖐️ Déplacement d'éléments</span>
+          </label>
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_comment" ${perms.can_comment ? 'checked' : ''} />
+            <span>✏️ Édition des légendes</span>
+          </label>
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_create_folder" ${perms.can_create_folder ? 'checked' : ''} />
+            <span>📁+ Création de dossiers</span>
+          </label>
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_download_archive" ${perms.can_download_archive ? 'checked' : ''} />
+            <span>📦 Téléchargement d'archives</span>
+          </label>
+        </div>
+        <div id="adminPermSaveMsg" class="admin-error-msg" style="display:none; margin-top:8px;"></div>
+        <button type="submit" class="pill-btn active" style="margin-top:12px; width:100%; justify-content:center; background:#6366f1; color:white;">
+          💾 Enregistrer la matrice de droits
+        </button>
+      </form>
+    `;
+
+    const permForm = document.getElementById('adminPermissionsForm');
+    if (permForm) {
+      permForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const updatedPerms = {
+          can_upload: permForm.querySelector('[name="can_upload"]').checked,
+          can_delete: permForm.querySelector('[name="can_delete"]').checked,
+          can_move: permForm.querySelector('[name="can_move"]').checked,
+          can_comment: permForm.querySelector('[name="can_comment"]').checked,
+          can_create_folder: permForm.querySelector('[name="can_create_folder"]').checked,
+          can_download_archive: permForm.querySelector('[name="can_download_archive"]').checked
+        };
+
+        try {
+          const res = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.state.csrfToken },
+            body: JSON.stringify({ action: 'save_permissions', permissions: updatedPerms })
+          });
+          const json = await res.json();
+          const msgEl = document.getElementById('adminPermSaveMsg');
+          if (json.success) {
+            this.state.userPermissions = json.permissions;
+            if (msgEl) {
+              msgEl.style.display = 'block';
+              msgEl.style.color = '#4ade80';
+              msgEl.innerText = 'Matrice de droits mise à jour avec succès !';
+            }
+            this.loadDirectory(this.state.currentPath);
+          }
+        } catch (err) {
+          console.error('Error saving permissions:', err);
+        }
+      });
     }
   }
 
