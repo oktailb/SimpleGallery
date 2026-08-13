@@ -361,20 +361,27 @@ function sanitize_svg_content(string $filepath): bool {
         return false; // Malformed SVG
     }
 
-    // Remove dangerous tags (<script>, <object>, <embed>, <iframe>, <foreignObject>, <link>, <use>)
+    // Remove dangerous tags (<script>, <object>, <embed>, <iframe>, <foreignObject>, <link>, <use>) case-insensitively
+    $xpath = new DOMXPath($dom);
     $forbidden_tags = ['script', 'object', 'embed', 'iframe', 'foreignobject', 'meta', 'link', 'use'];
-    foreach ($forbidden_tags as $tag) {
-        $elements = $dom->getElementsByTagName($tag);
-        while ($elements->length > 0) {
-            $elem = $elements->item(0);
-            if ($elem && $elem->parentNode) {
+    
+    $all_elements = $xpath->query('//*');
+    if ($all_elements) {
+        $to_remove = [];
+        foreach ($all_elements as $elem) {
+            $tag_name = strtolower($elem->localName ?: $elem->nodeName);
+            if (in_array($tag_name, $forbidden_tags, true)) {
+                $to_remove[] = $elem;
+            }
+        }
+        foreach ($to_remove as $elem) {
+            if ($elem->parentNode) {
                 $elem->parentNode->removeChild($elem);
             }
         }
     }
 
     // Remove inline event handler attributes (onload, onclick, onerror, etc.) & dangerous href values
-    $xpath = new DOMXPath($dom);
     $nodes = $xpath->query('//@*');
 
     if ($nodes) {
