@@ -14,8 +14,8 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# Protect PHP Configuration & Password Setup Utilities from Direct External Web Access
-<FilesMatch "^(config\.php|set_admin_password\.php|\.user\.ini)$">
+# Protect PHP Configuration, Core & Password Setup Utilities from Direct External Web Access
+<FilesMatch "^(config\.php|functions\.php|set_admin_password\.php|\.user\.ini|\.admin_password_hash)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -24,6 +24,15 @@ Options -Indexes
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# Force strict Content Security Policy on all SVG assets to prevent XSS
+<IfModule mod_headers.c>
+    <FilesMatch "\.(svg|svgz)$">
+        Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; plugin-types 'none';"
+        Header set X-Content-Type-Options "nosniff"
+        Header set Content-Disposition "inline"
+    </FilesMatch>
+</IfModule>
 
 # Increase PHP upload limits for Apache mod_php environments
 <IfModule mod_php.c>

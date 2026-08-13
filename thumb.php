@@ -10,30 +10,6 @@ error_reporting(0);
 
 require_once __DIR__ . '/config.php';
 
-function sanitize_file_path(?string $requested_file, string $base_dir): ?string {
-    if (empty($requested_file)) {
-        return null;
-    }
-    
-    $base_dir = str_replace('\\', '/', $base_dir);
-    $real_base = realpath($base_dir) ?: $base_dir;
-    $real_base = str_replace('\\', '/', $real_base);
-
-    $requested_file = str_replace(['\\', '..'], ['/', ''], $requested_file);
-    $target = $real_base . '/' . ltrim($requested_file, '/');
-    $target_path = realpath($target) ?: $target;
-    $target_path = str_replace('\\', '/', $target_path);
-
-    if (!is_file($target_path)) {
-        return null;
-    }
-
-    if (strpos($target_path, $real_base . '/') !== 0) {
-        return null;
-    }
-
-    return $target_path;
-}
 
 function send_cached_file(string $file_path, string $content_type, int $max_age = 31536000): void {
     if (!file_exists($file_path)) {
@@ -203,124 +179,36 @@ SVG;
 }
 
 function find_ffmpeg_binary(): ?string {
-    $common_paths = [
-        '/usr/bin/ffmpeg',
-        '/usr/local/bin/ffmpeg',
-        '/bin/ffmpeg',
-        '/opt/homebrew/bin/ffmpeg',
-        '/snap/bin/ffmpeg'
-    ];
-    foreach ($common_paths as $path) {
-        if (file_exists($path) && is_executable($path)) {
-            return $path;
+    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
+        $win_which = @trim((string)@exec('where ffmpeg 2>nul'));
+        if (!empty($win_which)) {
+            $lines = explode("\n", str_replace("\r", "", $win_which));
+            $first = trim($lines[0]);
+            if (file_exists($first)) return $first;
         }
-    }
-    $which = @trim((string)@exec('which ffmpeg 2>/dev/null'));
-    if (!empty($which) && file_exists($which) && is_executable($which)) {
-        return $which;
+    } else {
+        $common_paths = [
+            '/usr/bin/ffmpeg',
+            '/usr/local/bin/ffmpeg',
+            '/bin/ffmpeg',
+            '/opt/homebrew/bin/ffmpeg',
+            '/snap/bin/ffmpeg'
+        ];
+        foreach ($common_paths as $path) {
+            if (file_exists($path) && is_executable($path)) {
+                return $path;
+            }
+        }
+        $which = @trim((string)@exec('which ffmpeg 2>/dev/null'));
+        if (!empty($which) && file_exists($which) && is_executable($which)) {
+            return $which;
+        }
     }
     return null;
 }
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+ensure_session_started();
 
-function get_relative_path(string $full_path, string $base_dir): string {
-    $full_path = str_replace('\\', '/', $full_path);
-    $base_dir  = str_replace('\\', '/', $base_dir);
-    if ($full_path === $base_dir) {
-        return '';
-    }
-    if (strpos($full_path, $base_dir) === 0) {
-        $rel = substr($full_path, strlen($base_dir));
-        return ltrim($rel, '/');
-    }
-    return ltrim($full_path, '/');
-}
-
-function is_dir_accessible(string $dir_path, string $base_dir): bool {
-    if (is_admin_logged_in()) {
-        return true;
-    }
-
-    $rel = get_relative_path($dir_path, $base_dir);
-    if ($rel === '') {
-        return true;
-    }
-
-    $parts = explode('/', $rel);
-    $accumulated = '';
-    foreach ($parts as $part) {
-        $accumulated = ($accumulated === '') ? $part : $accumulated . '/' . $part;
-        $current_check_dir = $base_dir . '/' . $accumulated;
-
-        $access_info = get_dir_access_info($current_check_dir, $base_dir);
-
-        if ($access_info['is_private']) {
-            return false;
-        }
-
-        if ($access_info['is_protected'] && !$access_info['is_unlocked']) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function get_dir_access_info(string $dir_path, string $base_dir): array {
-    $rel = get_relative_path($dir_path, $base_dir);
-
-    $has_password = file_exists($dir_path . '/.password');
-    $has_public   = file_exists($dir_path . '/.public');
-    $has_private  = file_exists($dir_path . '/.private');
-
-    $is_private = false;
-    $is_protected = false;
-
-    if ($has_password) {
-        $is_protected = true;
-    } elseif ($has_public) {
-        $is_private = false;
-        $is_protected = false;
-    } elseif ($has_private) {
-        $is_private = true;
-    } elseif (basename($dir_path) === 'private') {
-        $is_private = true;
-    }
-
-    $is_unlocked = is_admin_logged_in();
-    if (!$is_unlocked && $rel !== '') {
-        if (!empty($_SESSION['unlocked_dirs'][$rel])) {
-            $is_unlocked = true;
-        } else {
-            $parts = explode('/', $rel);
-            $accum = '';
-            foreach ($parts as $p) {
-                $accum = ($accum === '') ? $p : $accum . '/' . $p;
-                if (!empty($_SESSION['unlocked_dirs'][$accum])) {
-                    $is_unlocked = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    $access_mode = 'public';
-    if ($is_private) {
-        $access_mode = 'private';
-    } elseif ($is_protected) {
-        $access_mode = 'password';
-    }
-
-    return [
-        'access_mode'  => $access_mode,
-        'is_private'   => $is_private,
-        'is_protected' => $is_protected,
-        'is_unlocked'  => $is_unlocked
-    ];
-}
 
 $requested_file = $_GET['file'] ?? '';
 $file_path = sanitize_file_path($requested_file, $real_base_dir);

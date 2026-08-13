@@ -13,58 +13,8 @@ require_once __DIR__ . '/config.php';
 
 ensure_session_started();
 
-// Rate limiting helper function based on client IP
-function get_client_ip(): string {
-    return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-}
+// Rate limiting and session management imported via config.php -> functions.php
 
-function get_rate_limit_file(string $key): string {
-    $ip = get_client_ip();
-    $hash = md5($ip . '_' . $key);
-    return sys_get_temp_dir() . '/sg_limit_' . $hash . '.json';
-}
-
-function check_rate_limit(string $key, int $max_attempts = 5, int $decay_seconds = 900): bool {
-    $file = get_rate_limit_file($key);
-    if (!file_exists($file)) {
-        return true;
-    }
-    $content = @file_get_contents($file);
-    if (!$content) return true;
-    $data = @json_decode($content, true);
-    if (!is_array($data)) return true;
-    
-    $now = time();
-    if ($now - ($data['first_attempt'] ?? 0) > $decay_seconds) {
-        @unlink($file);
-        return true;
-    }
-    return ($data['attempts'] ?? 0) < $max_attempts;
-}
-
-function increment_rate_limit(string $key): void {
-    $file = get_rate_limit_file($key);
-    $now = time();
-    $data = ['attempts' => 1, 'first_attempt' => $now];
-    if (file_exists($file)) {
-        $content = @file_get_contents($file);
-        if ($content) {
-            $existing = @json_decode($content, true);
-            if (is_array($existing)) {
-                $data['attempts'] = ($existing['attempts'] ?? 0) + 1;
-                $data['first_attempt'] = $existing['first_attempt'] ?? $now;
-            }
-        }
-    }
-    @file_put_contents($file, json_encode($data), LOCK_EX);
-}
-
-function reset_rate_limit(string $key): void {
-    $file = get_rate_limit_file($key);
-    if (file_exists($file)) {
-        @unlink($file);
-    }
-}
 
 // -------------------------------------------------------------
 // Admin Authentication & Action Handlers
@@ -175,43 +125,8 @@ if ($action === 'change_password') {
     }
 }
 
-function sanitize_path(?string $requested_dir, string $base_dir): ?string {
-    $base_dir = str_replace('\\', '/', $base_dir);
-    $real_base = realpath($base_dir) ?: $base_dir;
-    $real_base = str_replace('\\', '/', $real_base);
+// Path & Access functions imported via config.php -> functions.php
 
-    if (empty($requested_dir) || $requested_dir === '.') {
-        return $real_base;
-    }
-    
-    $requested_dir = str_replace(['\\', '..'], ['/', ''], $requested_dir);
-    $target = $real_base . '/' . ltrim($requested_dir, '/');
-    $target_path = realpath($target) ?: $target;
-    $target_path = str_replace('\\', '/', $target_path);
-
-    if (!is_dir($target_path)) {
-        return null;
-    }
-
-    if ($target_path !== $real_base && strpos($target_path, $real_base . '/') !== 0) {
-        return null;
-    }
-
-    return $target_path;
-}
-
-function get_relative_path(string $full_path, string $base_dir): string {
-    $full_path = str_replace('\\', '/', $full_path);
-    $base_dir  = str_replace('\\', '/', $base_dir);
-    if ($full_path === $base_dir) {
-        return '';
-    }
-    if (strpos($full_path, $base_dir) === 0) {
-        $rel = substr($full_path, strlen($base_dir));
-        return ltrim($rel, '/');
-    }
-    return ltrim($full_path, '/');
-}
 
 /**
  * Safely encodes URL path segments preserving directory slashes '/'
@@ -513,88 +428,8 @@ if ($action === 'lock_folder') {
     exit;
 }
 
-function is_dir_accessible(string $dir_path, string $base_dir): bool {
-    if (is_admin_logged_in()) {
-        return true;
-    }
+// Directory Access Permission helpers imported via config.php -> functions.php
 
-    $rel = get_relative_path($dir_path, $base_dir);
-    if ($rel === '') {
-        return true;
-    }
-
-    $parts = explode('/', $rel);
-    $accumulated = '';
-    foreach ($parts as $part) {
-        $accumulated = ($accumulated === '') ? $part : $accumulated . '/' . $part;
-        $current_check_dir = $base_dir . '/' . $accumulated;
-
-        $access_info = get_dir_access_info($current_check_dir, $base_dir);
-
-        if ($access_info['is_private']) {
-            return false;
-        }
-
-        if ($access_info['is_protected'] && !$access_info['is_unlocked']) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function get_dir_access_info(string $dir_path, string $base_dir): array {
-    $rel = get_relative_path($dir_path, $base_dir);
-
-    $has_password = file_exists($dir_path . '/.password');
-    $has_public   = file_exists($dir_path . '/.public');
-    $has_private  = file_exists($dir_path . '/.private');
-
-    $is_private = false;
-    $is_protected = false;
-
-    if ($has_password) {
-        $is_protected = true;
-    } elseif ($has_public) {
-        $is_private = false;
-        $is_protected = false;
-    } elseif ($has_private) {
-        $is_private = true;
-    } elseif (basename($dir_path) === 'private') {
-        $is_private = true;
-    }
-
-    $is_unlocked = is_admin_logged_in();
-    if (!$is_unlocked && $rel !== '') {
-        if (!empty($_SESSION['unlocked_dirs'][$rel])) {
-            $is_unlocked = true;
-        } else {
-            $parts = explode('/', $rel);
-            $accum = '';
-            foreach ($parts as $p) {
-                $accum = ($accum === '') ? $p : $accum . '/' . $p;
-                if (!empty($_SESSION['unlocked_dirs'][$accum])) {
-                    $is_unlocked = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    $access_mode = 'public';
-    if ($is_private) {
-        $access_mode = 'private';
-    } elseif ($is_protected) {
-        $access_mode = 'password';
-    }
-
-    return [
-        'access_mode'  => $access_mode,
-        'is_private'   => $is_private,
-        'is_protected' => $is_protected,
-        'is_unlocked'  => $is_unlocked
-    ];
-}
 
 if ($action === 'update_dotfile') {
     if (!is_admin_logged_in()) {
@@ -895,6 +730,9 @@ if ($action === 'upload_file') {
 
         if (@move_uploaded_file($tmp_name, $dest_path)) {
             @chmod($dest_path, 0644);
+            if ($ext === 'svg') {
+                sanitize_svg_content($dest_path);
+            }
             $uploaded_results[] = [
                 'original_name' => $raw_name,
                 'saved_name'    => $target_file_name,

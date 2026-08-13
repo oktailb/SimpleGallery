@@ -3,6 +3,8 @@
  * SimpleGallery 2026 Configuration
  */
 
+require_once __DIR__ . '/functions.php';
+
 // Title of the gallery
 $gallery_title = "SimpleGallery";
 
@@ -83,94 +85,18 @@ $media_types = [
     'archive' => ['zip', 'tar', 'gz', 'bz2', 'rar', '7z']
 ];
 
-// Admin Authentication Configuration
-// Password hash generated using PHP password_hash().
-// Set to empty string '' to disable admin authentication until configured.
-// To change/set hash via CLI: `php set_admin_password.php <your_password>`
-$admin_password_hash = '';
+// Admin Authentication Configuration (loaded from .admin_password_hash file or legacy string)
+$admin_password_hash = get_admin_password_hash('');
 
 /**
- * Safely starts PHP session with secure cookie options
- */
-function ensure_session_started(): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        if (!headers_sent()) {
-            if (PHP_VERSION_ID >= 70300) {
-                session_set_cookie_params([
-                    'lifetime' => 0,
-                    'path'     => '/',
-                    'httponly' => true,
-                    'samesite' => 'Lax'
-                ]);
-            } else {
-                session_set_cookie_params(0, '/; samesite=Lax', '', false, true);
-            }
-        }
-        @session_start();
-    }
-}
-
-/**
- * Generates or retrieves the session CSRF token
- */
-function get_csrf_token(): string {
-    ensure_session_started();
-    if (empty($_SESSION['csrf_token'])) {
-        if (function_exists('random_bytes')) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        } else {
-            $_SESSION['csrf_token'] = md5(uniqid((string)mt_rand(), true));
-        }
-    }
-    return $_SESSION['csrf_token'];
-}
-
-/**
- * Verifies submitted CSRF token using constant-time comparison
- */
-function verify_csrf_token(?string $token): bool {
-    ensure_session_started();
-    $session_token = $_SESSION['csrf_token'] ?? '';
-    if (empty($session_token) || empty($token)) {
-        return false;
-    }
-    return hash_equals($session_token, $token);
-}
-
-/**
- * Checks whether current web session is authenticated as admin
- */
-function is_admin_logged_in(): bool {
-    ensure_session_started();
-    return !empty($_SESSION['is_admin']);
-}
-
-/**
- * Dynamically updates $admin_password_hash in config.php
+ * Dynamically updates admin password hash in .admin_password_hash file
  */
 function update_admin_password_in_config(string $new_password): bool {
-    $hash = password_hash($new_password, PASSWORD_DEFAULT);
-    $config_file = __DIR__ . '/config.php';
-
-    if (!file_exists($config_file) || !is_writable($config_file)) {
-        return false;
-    }
-
-    $config_content = file_get_contents($config_file);
-    $pattern = '/\$admin_password_hash\s*=\s*[\'"][^\'"]*[\'"];/';
-    $replacement = "\$admin_password_hash = '" . addcslashes($hash, "'\\") . "';";
-
-    if (preg_match($pattern, $config_content)) {
-        $safe_replacement = str_replace('$', '\$', $replacement);
-        $new_content = preg_replace($pattern, $safe_replacement, $config_content, 1);
-    } else {
-        $new_content = rtrim($config_content) . "\n\n" . $replacement . "\n";
-    }
-
-    return file_put_contents($config_file, $new_content, LOCK_EX) !== false;
+    return update_admin_password_hash($new_password);
 }
 
 // Files and folders to ignore in indexing
-$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', 'index.php', 'api.php', 'thumb.php', 'config.php', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh'];
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh'];
+
 
 
