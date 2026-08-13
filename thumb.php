@@ -213,9 +213,17 @@ ensure_session_started();
 $requested_file = $_GET['file'] ?? '';
 $file_path = sanitize_file_path($requested_file, $real_base_dir);
 
-if (!$file_path) {
+if (!$file_path || is_path_ignored($file_path, $real_base_dir, $ignore_list)) {
     http_response_code(404);
     echo "File not found.";
+    exit;
+}
+
+$ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+$forbidden_system_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc', 'htaccess', 'htpasswd', 'sh', 'bat', 'cmd', 'exe', 'dll', 'py', 'pl', 'cgi', 'hash', 'ini'];
+if (in_array($ext, $forbidden_system_exts, true)) {
+    http_response_code(403);
+    echo "403 Forbidden: Access denied.";
     exit;
 }
 
@@ -224,8 +232,6 @@ if (!is_dir_accessible(dirname($file_path), $real_base_dir)) {
     echo "403 Forbidden: Access denied.";
     exit;
 }
-
-$ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
 
 // Setup thumbnail cache directory with fallback to sys_get_temp_dir()
 $cache_dir = $real_base_dir . '/' . $thumbnail_dir;

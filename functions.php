@@ -247,6 +247,23 @@ function get_relative_path(string $full_path, string $base_dir): string {
 }
 
 /**
+ * Checks if any segment of a relative or full path is ignored by $ignore_list or hidden dotfile
+ */
+function is_path_ignored(string $path, string $base_dir, array $ignore_list): bool {
+    $rel = get_relative_path($path, $base_dir);
+    if ($rel === '') return false;
+
+    $parts = explode('/', str_replace('\\', '/', $rel));
+    foreach ($parts as $part) {
+        if ($part === '' || $part === '.' || $part === '..') continue;
+        if (in_array($part, $ignore_list, true) || $part[0] === '.') {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Access Information & Security Permissions
  */
 function get_dir_access_info(string $dir_path, string $base_dir): array {

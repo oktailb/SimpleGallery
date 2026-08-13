@@ -1192,7 +1192,7 @@ function find_first_image_thumbnail(string $dir_path, string $base_dir, array $i
 $requested_dir = $_GET['dir'] ?? '';
 $target_dir = sanitize_path($requested_dir, $real_base_dir);
 
-if ($target_dir === null || !is_dir($target_dir)) {
+if ($target_dir === null || !is_dir($target_dir) || is_path_ignored($target_dir, $real_base_dir, $ignore_list)) {
     http_response_code(404);
     echo json_encode([
         'success' => false,
@@ -1347,7 +1347,8 @@ if ($cached_raw !== null) {
                 $sub_items = @scandir($full_item_path) ?: [];
                 $item_count = 0;
                 foreach ($sub_items as $sub) {
-                    if ($sub[0] !== '.' && !in_array($sub, $ignore_list, true)) {
+                    $sub_ext = strtolower(pathinfo($sub, PATHINFO_EXTENSION));
+                    if ($sub[0] !== '.' && !in_array($sub, $ignore_list, true) && !in_array($sub_ext, ['php', 'phtml', 'phar', 'htaccess', 'ini', 'hash'], true)) {
                         $item_count++;
                     }
                 }
@@ -1392,6 +1393,10 @@ if ($cached_raw !== null) {
                 ];
             } elseif (is_file($full_item_path)) {
                 $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                $forbidden_system_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc', 'js', 'css', 'html', 'htm', 'htaccess', 'htpasswd', 'sh', 'bat', 'cmd', 'exe', 'dll', 'py', 'pl', 'cgi', 'hash', 'ini', 'sql', 'bak', 'json'];
+                if ($ext === '' || in_array($ext, $forbidden_system_exts, true) || in_array($item, $ignore_list, true)) {
+                    continue;
+                }
                 $category = get_media_category($ext, $media_types);
                 $size = filesize($full_item_path);
                 $mtime = filemtime($full_item_path);

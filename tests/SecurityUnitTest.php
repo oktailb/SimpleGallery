@@ -343,6 +343,19 @@ SVG;
             $this->assert("Protection .admin_password_hash", strpos($content, '\.admin_password_hash') !== false);
             $this->assert("En-tête Content-Security-Policy SVG", strpos($content, 'Content-Security-Policy') !== false);
         }
+
+        // Check tests/ folder is hidden from gallery indexer ($ignore_list)
+        global $ignore_list;
+        $this->assert("Masquage du dossier 'tests' dans \$ignore_list", is_array($ignore_list) && in_array('tests', $ignore_list, true));
+        $this->assert("Validation de is_path_ignored() sur 'tests'", is_path_ignored($this->base_dir . '/tests', $this->base_dir, $ignore_list) === true);
+
+        // Check tests/.htaccess existence and denial rules
+        $sub_htaccess = $this->base_dir . '/tests/.htaccess';
+        $this->assert("Présence de tests/.htaccess", file_exists($sub_htaccess));
+        if (file_exists($sub_htaccess)) {
+            $sub_content = file_get_contents($sub_htaccess);
+            $this->assert("Interdiction d'accès HTTP dans tests/.htaccess", strpos($sub_content, 'Require all denied') !== false || strpos($sub_content, 'Deny from all') !== false);
+        }
     }
 }
 

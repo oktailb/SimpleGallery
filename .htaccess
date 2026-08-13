@@ -14,8 +14,8 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# Protect PHP Configuration, Core & Password Setup Utilities from Direct External Web Access
-<FilesMatch "^(config\.php|functions\.php|set_admin_password\.php|\.user\.ini|\.admin_password_hash)$">
+# Protect PHP Configuration, Core, Tests & Password Setup Utilities from Direct External Web Access
+<FilesMatch "^(config\.php|functions\.php|set_admin_password\.php|\.user\.ini|\.admin_password_hash|run_tests\.php|SecurityUnitTest\.php)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
