@@ -996,11 +996,16 @@ class SimpleGallery {
 
         const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
 
+        let mediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
+        if (file.category === 'video') {
+          mediaPreviewHtml = `<video src="${file.file_url}#t=0.5" poster="${file.thumb_url}" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>`;
+        }
+
         return `
           <div class="${frameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
             ${deleteBtnHtml}
             <div class="polaroid-img-wrapper">
-              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />
+              ${mediaPreviewHtml}
               ${overlayHtml}
               ${badgeHtml}
               ${gpsBadge}
@@ -1040,11 +1045,16 @@ class SimpleGallery {
         
         const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
 
+        let gridMediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
+        if (file.category === 'video') {
+          gridMediaPreviewHtml = `<video src="${file.file_url}#t=0.5" poster="${file.thumb_url}" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>`;
+        }
+
         return `
           <div class="${gridFrameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
             ${deleteBtnHtml}
             <div class="grid-img-wrapper">
-              <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />
+              ${gridMediaPreviewHtml}
               ${overlayHtml}
               ${badgeHtml}
               ${gpsBadge}

@@ -433,3 +433,62 @@ function sanitize_svg_content(string $filepath): bool {
 
     return (file_put_contents($filepath, $clean_xml, LOCK_EX) !== false);
 }
+
+/**
+ * Fast pure PHP parser to extract embedded JPEG thumbnails from MP4/MOV container metadata
+ */
+function extract_mp4_embedded_jpeg(string $mp4_file, string $output_jpg_file): bool {
+    if (!file_exists($mp4_file) || !is_readable($mp4_file)) {
+        return false;
+    }
+
+    $file_size = filesize($mp4_file);
+    if ($file_size < 100) {
+        return false;
+    }
+
+    $handle = @fopen($mp4_file, 'rb');
+    if (!$handle) return false;
+
+    // Read first 2MB and last 1MB of file where moov/meta/covr atoms reside
+    $read_size = min(2 * 1024 * 1024, $file_size);
+    $head_buffer = fread($handle, $read_size);
+
+    $tail_buffer = '';
+    if ($file_size > $read_size) {
+        $tail_seek = max(0, $file_size - (1024 * 1024));
+        fseek($handle, $tail_seek);
+        $tail_buffer = fread($handle, 1024 * 1024);
+    }
+    fclose($handle);
+
+    $buffers = [$head_buffer, $tail_buffer];
+
+    foreach ($buffers as $buffer) {
+        if (empty($buffer)) continue;
+
+        // Look for JPEG Magic Bytes: \xFF\xD8\xFF
+        $offset = 0;
+        while (($soi = strpos($buffer, "\xFF\xD8\xFF", $offset)) !== false) {
+            $eoi = strpos($buffer, "\xFF\xD9", $soi + 3);
+            if ($eoi !== false && ($eoi - $soi) > 2000 && ($eoi - $soi) < 2000000) {
+                $jpeg_data = substr($buffer, $soi, ($eoi - $soi) + 2);
+                if (function_exists('getimagesizefromstring')) {
+                    $img_info = @getimagesizefromstring($jpeg_data);
+                    if ($img_info !== false && $img_info[0] > 50 && $img_info[1] > 50) {
+                        if (@file_put_contents($output_jpg_file, $jpeg_data, LOCK_EX) !== false) {
+                            return true;
+                        }
+                    }
+                } else {
+                    if (@file_put_contents($output_jpg_file, $jpeg_data, LOCK_EX) !== false) {
+                        return true;
+                    }
+                }
+            }
+            $offset = $soi + 3;
+        }
+    }
+
+    return false;
+}

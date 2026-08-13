@@ -207,6 +207,109 @@ function find_ffmpeg_binary(): ?string {
     return null;
 }
 
+function find_exiftool_binary(): ?string {
+    $common_paths = [
+        '/usr/bin/exiftool',
+        '/usr/local/bin/exiftool',
+        '/bin/exiftool',
+        '/opt/homebrew/bin/exiftool'
+    ];
+    foreach ($common_paths as $path) {
+        if (file_exists($path) && is_executable($path)) {
+            return $path;
+        }
+    }
+    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
+        $win_which = @trim((string)@exec('where exiftool 2>nul'));
+        if (!empty($win_which)) {
+            $lines = explode("\n", str_replace("\r", "", $win_which));
+            $first = trim($lines[0]);
+            if (file_exists($first)) return $first;
+        }
+    } else {
+        $which = @trim((string)@exec('which exiftool 2>/dev/null'));
+        if (!empty($which) && file_exists($which) && is_executable($which)) {
+            return $which;
+        }
+    }
+    return null;
+}
+
+function find_convert_binary(): ?string {
+    $common_paths = [
+        '/usr/bin/convert',
+        '/usr/local/bin/convert',
+        '/usr/bin/magick',
+        '/usr/local/bin/magick',
+        '/bin/convert',
+        '/opt/homebrew/bin/convert'
+    ];
+    foreach ($common_paths as $path) {
+        if (file_exists($path) && is_executable($path)) {
+            return $path;
+        }
+    }
+    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
+        $win_which = @trim((string)@exec('where magick 2>nul'));
+        if (!empty($win_which)) {
+            $lines = explode("\n", str_replace("\r", "", $win_which));
+            $first = trim($lines[0]);
+            if (file_exists($first)) return $first;
+        }
+    } else {
+        $which = @trim((string)@exec('which convert 2>/dev/null'));
+        if (!empty($which) && file_exists($which) && is_executable($which)) {
+            return $which;
+        }
+        $which_magick = @trim((string)@exec('which magick 2>/dev/null'));
+        if (!empty($which_magick) && file_exists($which_magick) && is_executable($which_magick)) {
+            return $which_magick;
+        }
+    }
+    return null;
+}
+
+function generate_imagemagick_frame_thumbnail(string $file_path, string $output_file, int $thumb_w = 360, int $thumb_h = 360, int $thumb_q = 85): bool {
+    // 1. Try PHP Imagick extension if loaded
+    if (class_exists('Imagick')) {
+        try {
+            $im = new Imagick();
+            $im->readImage($file_path . '[0]');
+            $im->setImageFormat('jpeg');
+            $im->thumbnailImage($thumb_w, $thumb_h, true);
+            $im->setImageCompressionQuality($thumb_q);
+            $im->writeImage($output_file);
+            $im->clear();
+            $im->destroy();
+            if (file_exists($output_file) && filesize($output_file) > 0) {
+                return true;
+            }
+        } catch (Throwable $e) {
+            // Fallback to CLI convert
+        }
+    }
+
+    // 2. Try ImageMagick CLI (convert / magick)
+    $convert = find_convert_binary();
+    if ($convert) {
+        $cmd = sprintf(
+            '%s %s[0] -thumbnail %dx%d -quality %d %s 2>&1',
+            escapeshellarg($convert),
+            escapeshellarg($file_path),
+            (int)$thumb_w,
+            (int)$thumb_h,
+            (int)$thumb_q,
+            escapeshellarg($output_file)
+        );
+        @exec($cmd);
+        if (file_exists($output_file) && filesize($output_file) > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 ensure_session_started();
 
 
@@ -246,7 +349,7 @@ if (!is_dir($cache_dir) || !is_writable($cache_dir)) {
 }
 
 // -------------------------------------------------------------
-// 1. VIDEO THUMBNAIL HANDLING (via FFmpeg)
+// 1. VIDEO THUMBNAIL HANDLING (5-Stage Extraction Chain)
 // -------------------------------------------------------------
 $is_video = in_array($ext, $media_types['video'], true);
 
@@ -259,10 +362,38 @@ if ($is_video) {
         send_cached_file($video_cache_file, 'image/jpeg', 31536000);
     }
 
-    // Try FFmpeg frame extraction
+    // Attempt 1: Fast pure PHP parser to extract embedded JPEG metadata thumbnail (Android/iOS MP4/MOV)
+    if (extract_mp4_embedded_jpeg($file_path, $video_cache_file)) {
+        send_cached_file($video_cache_file, 'image/jpeg', 31536000);
+    }
+
+    // Attempt 2: ExifTool CLI (Extract embedded Preview/Thumbnail metadata)
+    $exiftool = find_exiftool_binary();
+    if ($exiftool) {
+        $cmd_exif1 = sprintf(
+            '%s -b -ThumbnailImage %s > %s 2>/dev/null',
+            escapeshellarg($exiftool),
+            escapeshellarg($file_path),
+            escapeshellarg($video_cache_file)
+        );
+        @exec($cmd_exif1);
+        if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
+            $cmd_exif2 = sprintf(
+                '%s -b -PreviewImage %s > %s 2>/dev/null',
+                escapeshellarg($exiftool),
+                escapeshellarg($file_path),
+                escapeshellarg($video_cache_file)
+            );
+            @exec($cmd_exif2);
+        }
+        if (file_exists($video_cache_file) && filesize($video_cache_file) > 1000) {
+            send_cached_file($video_cache_file, 'image/jpeg', 31536000);
+        }
+    }
+
+    // Attempt 3: Try FFmpeg frame extraction
     $ffmpeg = find_ffmpeg_binary();
     if ($ffmpeg) {
-        // Attempt 1: Fast seek to 1 second
         $cmd1 = sprintf(
             '%s -y -ss 00:00:01 -i %s -vframes 1 -f image2 -pix_fmt yuv420p -q:v 3 -vf "scale=360:-2" %s 2>&1',
             escapeshellarg($ffmpeg),
@@ -271,7 +402,6 @@ if ($is_video) {
         );
         @exec($cmd1);
 
-        // Attempt 2: Fallback to accurate seek at 0.5s (essential for cueless WebMs)
         if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
             $cmd2 = sprintf(
                 '%s -y -i %s -ss 00:00:00.5 -vframes 1 -f image2 -pix_fmt yuv420p -q:v 3 -vf "scale=360:-2" %s 2>&1',
@@ -282,24 +412,34 @@ if ($is_video) {
             @exec($cmd2);
         }
 
-        // Attempt 3: Fallback to start of stream (00:00:00)
-        if (!file_exists($video_cache_file) || filesize($video_cache_file) === 0) {
-            $cmd3 = sprintf(
-                '%s -y -i %s -vframes 1 -f image2 -pix_fmt yuv420p -q:v 3 -vf "scale=360:-2" %s 2>&1',
-                escapeshellarg($ffmpeg),
-                escapeshellarg($file_path),
-                escapeshellarg($video_cache_file)
-            );
-            @exec($cmd3);
-        }
-
         if (file_exists($video_cache_file) && filesize($video_cache_file) > 0) {
             send_cached_file($video_cache_file, 'image/jpeg', 31536000);
         }
     }
 
-    // Fallback if FFmpeg not available or failed
+    // Attempt 4: ImageMagick (Imagick extension or convert CLI for IONOS / shared hosting)
+    if (generate_imagemagick_frame_thumbnail($file_path, $video_cache_file, $thumb_width, $thumb_height, $thumb_quality)) {
+        send_cached_file($video_cache_file, 'image/jpeg', 31536000);
+    }
+
+    // Fallback if none of the above are available or supported
     render_svg_placeholder('video', $ext, $file_path);
+}
+
+// -------------------------------------------------------------
+// 2. PDF DOCUMENT THUMBNAIL HANDLING (via ImageMagick)
+// -------------------------------------------------------------
+if ($ext === 'pdf') {
+    $pdf_cache_key = md5($file_path . '_' . filesize($file_path) . '_' . filemtime($file_path) . '_pdfthumb');
+    $pdf_cache_file = $cache_dir . '/' . $pdf_cache_key . '.jpg';
+
+    if (file_exists($pdf_cache_file) && filesize($pdf_cache_file) > 0 && filemtime($pdf_cache_file) >= filemtime($file_path)) {
+        send_cached_file($pdf_cache_file, 'image/jpeg', 31536000);
+    }
+
+    if (generate_imagemagick_frame_thumbnail($file_path, $pdf_cache_file, $thumb_width, $thumb_height, $thumb_quality)) {
+        send_cached_file($pdf_cache_file, 'image/jpeg', 31536000);
+    }
 }
 
 // -------------------------------------------------------------
