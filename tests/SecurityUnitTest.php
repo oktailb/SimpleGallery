@@ -83,6 +83,8 @@ class SecurityUnitTestSuite {
         $this->testAdminAuthentication();
         $this->testAccessControlPermissions();
         $this->testRateLimiting();
+        $this->testUploadExtensionFiltering();
+        $this->testHtaccessRules();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS DE SÉCURITÉ\n";
@@ -280,6 +282,67 @@ SVG;
 
         reset_rate_limit($test_key);
         $this->assert("Réinitialisation de la Limite", check_rate_limit($test_key, 3, 60) === true);
+    }
+
+    /**
+     * 7. UPLOAD FILE EXTENSION & DOUBLE EXTENSION TESTS
+     */
+    private function testUploadExtensionFiltering(): void {
+        echo "\n🚫 [7/8] Test du Filtrage des Extensions de Téléversement...\n";
+
+        $forbidden_filenames = [
+            'shell.php',
+            'exploit.phtml',
+            'script.php5',
+            'webshell.phar',
+            'malicious.php.jpg', // Double extension
+            'test.jpg.php',
+            '.htaccess',
+            '.user.ini',
+            'config.php',
+            'script.sh',
+            'runner.exe',
+            'payload.cgi'
+        ];
+
+        $forbidden_exts = [
+            'php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc',
+            'js', 'mjs', 'css', 'html', 'htm', 'htaccess', 'htpasswd',
+            'sh', 'bat', 'cmd', 'exe', 'dll', 'py', 'pl', 'cgi'
+        ];
+
+        foreach ($forbidden_filenames as $filename) {
+            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $is_forbidden = in_array($ext, $forbidden_exts, true) || 
+                             preg_match('/\.(php|phtml|php3|php4|php5|phps|phar|inc|pl|py|cgi|sh|exe|bat|cmd)\./i', $filename) ||
+                             $filename[0] === '.';
+
+            $this->assert(
+                "Filtrage Extension Interdite ('{$filename}')",
+                $is_forbidden === true,
+                "Extension: '{$ext}'"
+            );
+        }
+    }
+
+    /**
+     * 8. HTACCESS SENSITIVE FILE PROTECTION AUDIT
+     */
+    private function testHtaccessRules(): void {
+        echo "\n🛡️ [8/8] Audit des Directives .htaccess de Protection...\n";
+
+        $htaccess_file = $this->base_dir . '/.htaccess';
+        $this->assert("Présence du Fichier .htaccess", file_exists($htaccess_file));
+
+        if (file_exists($htaccess_file)) {
+            $content = file_get_contents($htaccess_file);
+
+            $this->assert("Directive Options -Indexes (Browsing désactivé)", strpos($content, 'Options -Indexes') !== false);
+            $this->assert("Protection Fichiers Masqués (<FilesMatch \"^\\.\">)", strpos($content, '<FilesMatch "^\.">') !== false);
+            $this->assert("Protection config.php & functions.php", (strpos($content, 'functions\.php') !== false || strpos($content, 'functions.php') !== false) && (strpos($content, 'config\.php') !== false || strpos($content, 'config.php') !== false));
+            $this->assert("Protection .admin_password_hash", strpos($content, '\.admin_password_hash') !== false);
+            $this->assert("En-tête Content-Security-Policy SVG", strpos($content, 'Content-Security-Policy') !== false);
+        }
     }
 }
 

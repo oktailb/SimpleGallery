@@ -55,3 +55,14 @@ La suite vérifie automatiquement **6 piliers fondamentaux de sécurité** :
 ### 6. ⏱️ Limiteur de Débit (Rate Limiting Anti-Bruteforce)
 - Comptage et blocage automatique après dépassement du nombre maximal de tentatives (ex. 5 tentatives / 15 min pour la connexion admin et le déverrouillage de dossiers).
 - Réinitialisation après expiration ou succès.
+
+### 7. 🚫 Filtrage des Extensions de Téléversement & Double Extensions
+- Rejet systématique des extensions exécutables (.php, .phtml, .phar, .sh, .exe, .cgi, etc.).
+- Blocage des attaques à double extension (`malicious.php.jpg`, `shell.phtml.png`).
+- Rejet des fichiers masqués et dotfiles.
+
+### 8. 🛡️ Audit des Directives .htaccess
+- Vérification de la désactivation du Directory Indexing (`Options -Indexes`).
+- Verification de la protection des fichiers système et masqués.
+- Blocage d'accès externe sur `functions.php`, `config.php`, `.admin_password_hash`.
+- Enforcement de la directive Content-Security-Policy sur les fichiers SVG.
