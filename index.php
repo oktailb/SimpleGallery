@@ -126,7 +126,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <input type="file" id="uploadFileInput" multiple style="display: none;" />
 
           <button id="folderSettingsBtn" class="btn-toggle" title="Customize Folder (.title, .desc, .bg, .theme)" style="display: none;">
-            <span>🎨</span> Folder Settings
+            <span>⚙</span>
           </button>
 
           <button id="adminBtn" class="btn-toggle" title="Admin Mode">
