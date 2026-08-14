@@ -248,6 +248,7 @@ class SimpleGallery {
       } else {
         this.state.sortOrder = 'asc';
       }
+      this.saveFolderSort(this.state.currentPath, this.state.sortBy, this.state.sortOrder);
       this.updateSortOrderUI();
       this.applyFilterAndRender();
     });
@@ -681,7 +682,21 @@ class SimpleGallery {
       this.updateAdminUI();
       this.updateRightsUI();
       this.updateArchiveMenuUI();
+
+      // Restore per-folder persistent sort order
+      const savedSort = this.getFolderSort(dirPath);
+      if (savedSort && savedSort.sortBy) {
+        this.state.sortBy = savedSort.sortBy;
+        this.state.sortOrder = savedSort.sortOrder || 'asc';
+      } else {
+        this.state.sortBy = 'name';
+        this.state.sortOrder = 'asc';
+      }
+      if (this.el.sortSelect) {
+        this.el.sortSelect.value = this.state.sortBy;
+      }
       this.updateSortOrderUI();
+
       this.applyDotfileOverrides(this.state.overrides);
       this.renderBreadcrumbs(json.breadcrumbs);
       this.renderFolders(json.directories);
@@ -796,8 +811,30 @@ class SimpleGallery {
 
   toggleSortOrder() {
     this.state.sortOrder = (this.state.sortOrder === 'asc') ? 'desc' : 'asc';
+    this.saveFolderSort(this.state.currentPath, this.state.sortBy, this.state.sortOrder);
     this.updateSortOrderUI();
     this.applyFilterAndRender();
+  }
+
+  saveFolderSort(dirPath, sortBy, sortOrder) {
+    try {
+      const sorts = JSON.parse(localStorage.getItem('sg_folder_sorts') || '{}');
+      const key = dirPath || '__root__';
+      sorts[key] = { sortBy, sortOrder };
+      localStorage.setItem('sg_folder_sorts', JSON.stringify(sorts));
+    } catch (e) {
+      console.warn('Could not save folder sort preference:', e);
+    }
+  }
+
+  getFolderSort(dirPath) {
+    try {
+      const sorts = JSON.parse(localStorage.getItem('sg_folder_sorts') || '{}');
+      const key = dirPath || '__root__';
+      return sorts[key] || null;
+    } catch (e) {
+      return null;
+    }
   }
 
   updateSortOrderUI() {
