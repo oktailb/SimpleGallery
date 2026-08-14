@@ -57,6 +57,7 @@ class SimpleGallery {
 
     this.initElements();
     this.bindEvents();
+    this.updateFavoritesCountUI();
     this.handleUrlChange();
   }
 
@@ -89,6 +90,7 @@ class SimpleGallery {
       lightboxPrevBtn: document.getElementById('lightboxPrevBtn'),
       lightboxNextBtn: document.getElementById('lightboxNextBtn'),
       lightboxDownloadBtn: document.getElementById('lightboxDownloadBtn'),
+      lightboxFavBtn: document.getElementById('lightboxFavBtn'),
       lightboxExifBtn: document.getElementById('lightboxExifBtn'),
       lightboxExifPanel: document.getElementById('lightboxExifPanel'),
       closeExifPanelBtn: document.getElementById('closeExifPanelBtn'),
@@ -234,7 +236,7 @@ class SimpleGallery {
       this.el.toggleFavoritesBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.state.showFavoritesOnly = !this.state.showFavoritesOnly;
-        this.el.toggleFavoritesBtn.classList.toggle('active', this.state.showFavoritesOnly);
+        this.updateFavoritesCountUI();
         this.applyFilterAndRender();
       });
     }
@@ -458,6 +460,14 @@ class SimpleGallery {
     }
     this.el.lightboxPrevBtn.addEventListener('click', () => this.navigateLightbox(-1));
     this.el.lightboxNextBtn.addEventListener('click', () => this.navigateLightbox(1));
+    if (this.el.lightboxFavBtn) {
+      this.el.lightboxFavBtn.addEventListener('click', () => {
+        if (this.state.lightboxIndex !== null) {
+          const file = this.state.filteredFiles[this.state.lightboxIndex];
+          if (file) this.toggleFavorite(file.path);
+        }
+      });
+    }
 
     // Image Explorer Toolbar Buttons
     this.el.lightboxZoomInBtn.addEventListener('click', () => this.adjustZoom(0.3));
@@ -498,9 +508,9 @@ class SimpleGallery {
     window.addEventListener('keydown', (e) => {
       const isInputFocused = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
       const isModalOpen = (this.el.mediaCommentModal && this.el.mediaCommentModal.classList.contains('open')) ||
-                          (this.el.folderSettingsModal && this.el.folderSettingsModal.classList.contains('open')) ||
-                          (this.el.adminModal && this.el.adminModal.classList.contains('open')) ||
-                          (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open'));
+        (this.el.folderSettingsModal && this.el.folderSettingsModal.classList.contains('open')) ||
+        (this.el.adminModal && this.el.adminModal.classList.contains('open')) ||
+        (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open'));
 
       if (isInputFocused || isModalOpen) {
         if (e.key === 'Escape') {
@@ -600,6 +610,7 @@ class SimpleGallery {
       this.applyDotfileOverrides(this.state.overrides);
       this.renderBreadcrumbs(json.breadcrumbs);
       this.renderFolders(json.directories);
+      this.updateFavoritesCountUI();
       this.applyFilterAndRender();
 
     } catch (err) {
@@ -891,8 +902,12 @@ class SimpleGallery {
       list = list.filter(f => f.category === this.state.filterCategory);
     }
 
+    if (this.state.showFavoritesOnly) {
+      list = list.filter(f => this.state.favorites.includes(f.path));
+    }
+
     if (this.state.searchQuery) {
-      list = list.filter(f => 
+      list = list.filter(f =>
         f.name.toLowerCase().includes(this.state.searchQuery) ||
         (f.comment && f.comment.toLowerCase().includes(this.state.searchQuery))
       );
@@ -1013,15 +1028,27 @@ class SimpleGallery {
   renderMedia() {
     const list = this.state.filteredFiles;
 
-    if (list.length === 0 && this.state.directories.length === 0) {
-      this.el.emptyState.style.display = 'block';
-      this.el.mediaGrid.style.display = 'none';
-      this.el.emptyState.innerHTML = `
-        <div class="empty-state-icon">📂</div>
-        <h3>No media files found</h3>
-        <p>Copy photos, videos, or audio into this folder to get started!</p>
-      `;
-      return;
+    if (list.length === 0) {
+      if (this.state.showFavoritesOnly) {
+        this.el.emptyState.style.display = 'block';
+        this.el.mediaGrid.style.display = 'none';
+        this.el.emptyState.innerHTML = `
+          <div class="empty-state-icon">🤍</div>
+          <h3>Aucun favori dans ce dossier</h3>
+          <p>Cliquez sur l'icône cœur 🤍 d'un média pour l'ajouter à vos favoris.</p>
+        `;
+        return;
+      }
+      if (this.state.directories.length === 0) {
+        this.el.emptyState.style.display = 'block';
+        this.el.mediaGrid.style.display = 'none';
+        this.el.emptyState.innerHTML = `
+          <div class="empty-state-icon">📂</div>
+          <h3>No media files found</h3>
+          <p>Copy photos, videos, or audio into this folder to get started!</p>
+        `;
+        return;
+      }
     }
 
     this.el.emptyState.style.display = 'none';
@@ -1045,13 +1072,6 @@ class SimpleGallery {
           overlayHtml = '<div class="audio-play-overlay">🎵</div>';
         }
 
-        let badgeHtml = '';
-        if (['doc', 'archive', 'other'].includes(file.category)) {
-          badgeHtml = `<span class="doc-extension-badge badge-${file.category}">${file.extension.toUpperCase()}</span>`;
-        } else {
-          badgeHtml = `<span class="polaroid-badge">${file.extension.toUpperCase()}</span>`;
-        }
-
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
           gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
@@ -1062,7 +1082,7 @@ class SimpleGallery {
         const isFav = this.state.favorites.includes(file.path);
 
         const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
-        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="Ajouter aux favoris" onclick="event.stopPropagation()">❤️</button>`;
+        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
         const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="Mode Flottant PiP" onclick="event.stopPropagation()">🗗</button>` : '';
 
         let mediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
@@ -1075,14 +1095,15 @@ class SimpleGallery {
               ${favBtnHtml}
               ${pipCardBtn}
               ${overlayHtml}
-              ${badgeHtml}
-              ${gpsBadge}
             </div>
             <div class="polaroid-caption">
               <span>${this.escapeHtml(file.comment || file.name)}</span>
               ${canComment ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
             </div>
-            <div class="polaroid-subcaption">${file.size_formatted}</div>
+            <div class="polaroid-subcaption">
+              <span>${file.size_formatted}</span>
+              ${gpsBadge}
+            </div>
           </div>
         `;
       }).join('');
@@ -1101,22 +1122,17 @@ class SimpleGallery {
           overlayHtml = '<div class="audio-play-overlay">🎵</div>';
         }
 
-        let badgeHtml = '';
-        if (['doc', 'archive', 'other'].includes(file.category)) {
-          badgeHtml = `<span class="doc-extension-badge badge-${file.category}">${file.extension.toUpperCase()}</span>`;
-        }
-
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
           gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
         }
-        
+
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
         const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
         const isFav = this.state.favorites.includes(file.path);
 
         const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
-        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="Ajouter aux favoris" onclick="event.stopPropagation()">❤️</button>`;
+        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
         const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="Mode Flottant PiP" onclick="event.stopPropagation()">🗗</button>` : '';
 
         let gridMediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
@@ -1129,8 +1145,6 @@ class SimpleGallery {
               ${favBtnHtml}
               ${pipCardBtn}
               ${overlayHtml}
-              ${badgeHtml}
-              ${gpsBadge}
             </div>
             <div class="grid-info">
               <div class="grid-title">
@@ -1138,8 +1152,8 @@ class SimpleGallery {
                 ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
               </div>
               <div class="grid-subinfo">
-                <span>${file.extension.toUpperCase()}</span>
-                <span>${file.size_formatted}</span>
+                <span>${file.extension.toUpperCase()} • ${file.size_formatted}</span>
+                ${gpsBadge}
               </div>
             </div>
           </div>
@@ -1216,6 +1230,8 @@ class SimpleGallery {
     if (this.el.lightboxDeleteBtn) {
       this.el.lightboxDeleteBtn.style.display = this.state.isAdmin ? 'inline-flex' : 'none';
     }
+
+    this.updateLightboxFavBtn(file.path);
 
     if (this.el.lightboxComment) {
       if (file.comment) {
@@ -2224,15 +2240,34 @@ class SimpleGallery {
     }
     localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
     this.updateFavoritesCountUI();
+    if (this.state.lightboxIndex !== null && this.state.filteredFiles[this.state.lightboxIndex]) {
+      this.updateLightboxFavBtn(this.state.filteredFiles[this.state.lightboxIndex].path);
+    }
     this.applyFilterAndRender();
+  }
+
+  updateLightboxFavBtn(filepath) {
+    if (!this.el.lightboxFavBtn) return;
+    const isFav = this.state.favorites.includes(filepath);
+    this.el.lightboxFavBtn.textContent = isFav ? '❤️' : '🤍';
+    this.el.lightboxFavBtn.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
   }
 
   updateFavoritesCountUI() {
     const badge = document.getElementById('favCountBadge');
-    const count = this.state.favorites.length;
+    const folderFavs = (this.state.files || []).filter(f => this.state.favorites.includes(f.path));
+    const totalCount = this.state.favorites.length;
+    const folderCount = folderFavs.length;
+    const favIcon = this.el.toggleFavoritesBtn ? this.el.toggleFavoritesBtn.querySelector('span:first-child') : null;
+    if (favIcon) {
+      favIcon.textContent = (this.state.showFavoritesOnly || totalCount > 0) ? '❤️' : '🤍';
+    }
     if (badge) {
-      badge.innerText = count;
-      badge.style.display = count > 0 ? 'inline-block' : 'none';
+      badge.innerText = folderCount > 0 ? `${folderCount}` : `${totalCount}`;
+      badge.style.display = totalCount > 0 ? 'inline-block' : 'none';
+    }
+    if (this.el.toggleFavoritesBtn) {
+      this.el.toggleFavoritesBtn.classList.toggle('active', this.state.showFavoritesOnly);
     }
   }
 

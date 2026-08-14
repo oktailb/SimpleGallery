@@ -81,12 +81,12 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           </div>
 
           <button id="toggleFavoritesBtn" class="btn-toggle" title="Afficher uniquement mes favoris">
-            <span>❤️</span> Favoris <span id="favCountBadge" class="polaroid-badge" style="display:none; margin-left:4px;">0</span>
+            <span>❤️</span><span id="favCountBadge" class="polaroid-badge" style="display:none; margin-left:4px;">0</span>
           </button>
 
           <div class="archive-dropdown-container">
             <button id="downloadArchiveBtn" class="btn-toggle" title="Télécharger le dossier sous forme d'archive">
-              <span>📦</span> Archive ▾
+              <span>⇲</span> ▾
             </button>
             <div id="archiveMenu" class="archive-dropdown-menu">
               <!-- Dynamically populated by JS based on server binary availability -->
@@ -107,11 +107,11 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           </div>
 
           <button id="createFolderBtn" class="btn-toggle" title="Créer un nouveau sous-dossier" style="display: none;">
-            <span>📁+</span> New Folder
+            <span>📁+</span>
           </button>
 
           <button id="uploadMediaBtn" class="btn-toggle" title="Upload Media (Drag & Drop)" style="display: none;">
-            <span>📤</span> Upload
+            <span>📤</span>
           </button>
           <input type="file" id="uploadFileInput" multiple style="display: none;" />
 
@@ -205,6 +205,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         </button>
         <button id="lightboxDeleteBtn" class="lightbox-btn" title="Delete Media (Admin Only)" style="display: none; color: #f87171;">
           🗑️
+        </button>
+        <button id="lightboxFavBtn" class="lightbox-btn" title="Ajouter aux favoris">
+          🤍
         </button>
         <button id="lightboxFullscreenBtn" class="lightbox-btn" title="Toggle Fullscreen (F)">
           ⛶

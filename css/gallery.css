@@ -556,8 +556,50 @@ body {
   color: var(--polaroid-sub);
   font-size: 0.75rem;
   text-align: center;
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--font-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gps-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-primary);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.gps-badge:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+.polaroid-card .gps-badge {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--polaroid-sub);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.polaroid-card .gps-badge:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
 }
 
 /* =============================================================
@@ -1334,36 +1376,6 @@ kbd {
 
 .doc-file-card .polaroid-subcaption {
   color: #94a3b8 !important;
-}
-
-/* EXIF & GPS Location Styling */
-.gps-badge {
-  position: absolute;
-  top: 0.6rem;
-  left: 0.6rem;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(8px);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  padding: 0.25rem 0.55rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  text-decoration: none;
-  z-index: 5;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.gps-badge:hover {
-  background: #0284c7;
-  color: #ffffff;
-  border-color: #38bdf8;
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
 }
 
 .lightbox-exif-panel {
