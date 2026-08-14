@@ -17,6 +17,11 @@ class SimpleGallery {
       files: [],
       filteredFiles: [],
       lightboxIndex: null,
+      isSlideshowPlaying: false,
+      slideshowInterval: null,
+      slideshowDelay: 3000,
+      showFavoritesOnly: false,
+      isSearchActive: false,
       overrides: null,
       isAdmin: false,
       adminEnabled: false,
@@ -24,7 +29,6 @@ class SimpleGallery {
       draggingItemPath: null,
       targetItemToDelete: null,
       favorites: JSON.parse(localStorage.getItem('sg_favorites') || '[]'),
-      showFavoritesOnly: false,
       userRights: {
         is_admin: false,
         can_upload: false,
@@ -70,6 +74,10 @@ class SimpleGallery {
       foldersGrid: document.getElementById('foldersGrid'),
       mediaGrid: document.getElementById('mediaGrid'),
       searchInput: document.getElementById('searchInput'),
+      searchClearBtn: document.getElementById('searchClearBtn'),
+      searchResultsBanner: document.getElementById('searchResultsBanner'),
+      searchResultsCountText: document.getElementById('searchResultsCountText'),
+      exitSearchBtn: document.getElementById('exitSearchBtn'),
       sortSelect: document.getElementById('sortSelect'),
       sortOrderBtn: document.getElementById('sortOrderBtn'),
       sortOrderIcon: document.getElementById('sortOrderIcon'),
@@ -203,8 +211,23 @@ class SimpleGallery {
 
     this.el.searchInput.addEventListener('input', (e) => {
       this.state.searchQuery = e.target.value.toLowerCase();
+      if (this.el.searchClearBtn) {
+        this.el.searchClearBtn.style.display = e.target.value ? 'flex' : 'none';
+      }
       this.applyFilterAndRender();
     });
+
+    if (this.el.searchClearBtn) {
+      this.el.searchClearBtn.addEventListener('click', () => {
+        this.exitSearch();
+      });
+    }
+
+    if (this.el.exitSearchBtn) {
+      this.el.exitSearchBtn.addEventListener('click', () => {
+        this.exitSearch();
+      });
+    }
 
     this.el.sortSelect.addEventListener('change', (e) => {
       this.state.sortBy = e.target.value;
@@ -585,6 +608,15 @@ class SimpleGallery {
         }
         this.showLoading(false);
         return;
+      }
+
+      this.state.isSearchActive = false;
+      if (this.el.searchResultsBanner) {
+        this.el.searchResultsBanner.style.display = 'none';
+      }
+      if (this.el.searchInput && !this.state.searchQuery) {
+        this.el.searchInput.value = '';
+        if (this.el.searchClearBtn) this.el.searchClearBtn.style.display = 'none';
       }
 
       this.state.directories = json.directories;
@@ -2455,19 +2487,26 @@ class SimpleGallery {
             if (fav_only) {
               results = results.filter(f => this.state.favorites.includes(f.path));
             }
+            this.state.isSearchActive = true;
             this.state.files = results;
             this.state.filteredFiles = results;
             this.renderFolders([]);
             this.renderMedia();
             this.updateFolderMapButton();
+
+            if (this.el.searchResultsBanner) {
+              this.el.searchResultsBanner.style.display = 'flex';
+            }
+            if (this.el.searchResultsCountText) {
+              const term = name || words;
+              const queryDesc = term ? ` pour « ${this.escapeHtml(term)} »` : '';
+              this.el.searchResultsCountText.innerHTML = `<strong>${results.length}</strong> média(s) trouvé(s)${queryDesc}`;
+            }
+            if (this.el.searchClearBtn) {
+              this.el.searchClearBtn.style.display = 'flex';
+            }
             if (this.el.galleryStats) {
-              this.el.galleryStats.innerHTML = `<span>🔍 <strong>${results.length}</strong> résultat(s) trouvé(s)</span> <button id="clearSearchBtn" class="pill-btn" style="padding:2px 8px; font-size:0.75rem; margin-left:8px; cursor:pointer;">✕ Quitter la recherche</button>`;
-              const clearBtn = document.getElementById('clearSearchBtn');
-              if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
-                  this.loadDirectory(this.state.currentPath);
-                });
-              }
+              this.el.galleryStats.textContent = `🔍 ${results.length} résultat(s) de recherche`;
             }
           }
         } catch (err) {
@@ -2477,6 +2516,21 @@ class SimpleGallery {
         }
       });
     }
+  }
+
+  exitSearch() {
+    this.state.isSearchActive = false;
+    if (this.el.searchResultsBanner) {
+      this.el.searchResultsBanner.style.display = 'none';
+    }
+    if (this.el.searchInput) {
+      this.el.searchInput.value = '';
+      this.state.searchQuery = '';
+    }
+    if (this.el.searchClearBtn) {
+      this.el.searchClearBtn.style.display = 'none';
+    }
+    this.loadDirectory(this.state.currentPath);
   }
 
   renderPermissionsMatrixUI() {

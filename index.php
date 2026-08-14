@@ -66,6 +66,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <div class="search-box">
             <span class="search-icon">🔍</span>
             <input type="text" id="searchInput" class="search-input" placeholder="Rechercher des médias..." aria-label="Rechercher des médias">
+            <button type="button" id="searchClearBtn" class="search-clear-btn" title="Effacer la recherche" style="display: none;">✕</button>
             <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="Options de recherche avancée" onclick="if(window.galleryApp) window.galleryApp.openSearchModal();">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="4" y1="21" x2="4" y2="14"></line>
@@ -162,6 +163,17 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
   <!-- Main Workspace -->
   <main class="gallery-container">
+    <!-- Search Active Results Banner -->
+    <div id="searchResultsBanner" class="search-results-banner" style="display: none;">
+      <div class="search-results-left">
+        <span class="search-results-badge">🔍 Recherche</span>
+        <span id="searchResultsCountText" class="search-results-text">Résultats trouvés</span>
+      </div>
+      <button type="button" id="exitSearchBtn" class="exit-search-btn" title="Quitter la recherche et revenir à la navigation du dossier">
+        ✕ Quitter la recherche
+      </button>
+    </div>
+
     <!-- Subfolders Section -->
     <section id="folderSection" style="display: none;">
       <h2 class="section-title">📂 Subdirectories</h2>
