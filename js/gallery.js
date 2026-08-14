@@ -2671,7 +2671,7 @@ class SimpleGallery {
       })
     };
 
-    this.currentMapTileLayer = 'dark';
+    this.currentMapTileLayer = 'streets';
     this.leafletMap = L.map('galleryLeafletMap', {
       layers: [this.leafletTileLayers.dark],
       zoomControl: true
