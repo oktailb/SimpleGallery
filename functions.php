@@ -733,13 +733,20 @@ function save_dir_comments(string $dir_path, array $comments): bool {
 function search_gallery_recursive(string $start_dir, string $base_dir, array $params, array $ignore_list, array $media_types): array {
     $results = [];
     $query = strtolower(trim($params['q'] ?? ''));
+    $name_filter = strtolower(trim($params['name'] ?? ''));
+    $words_filter = strtolower(trim($params['words'] ?? ''));
     $cat_filter = strtolower(trim($params['category'] ?? 'all'));
     $timing_filter = strtolower(trim($params['timing'] ?? 'all'));
+    $date_from_str = trim($params['date_from'] ?? '');
+    $date_to_str = trim($params['date_to'] ?? '');
+    $size_range = strtolower(trim($params['size_range'] ?? 'all'));
     $gps_only = !empty($params['gps_only']);
     $recursive = !empty($params['recursive']);
 
     $now = time();
     $min_time = 0;
+    $max_time = 0;
+
     if ($timing_filter === 'today') {
         $min_time = strtotime('today 00:00:00');
     } elseif ($timing_filter === 'week') {
@@ -748,11 +755,34 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
         $min_time = $now - (30 * 86400);
     } elseif ($timing_filter === 'year') {
         $min_time = $now - (365 * 86400);
+    } elseif ($timing_filter === 'custom') {
+        if ($date_from_str !== '') {
+            $ts_from = strtotime($date_from_str . ' 00:00:00');
+            if ($ts_from !== false) $min_time = $ts_from;
+        }
+        if ($date_to_str !== '') {
+            $ts_to = strtotime($date_to_str . ' 23:59:59');
+            if ($ts_to !== false) $max_time = $ts_to;
+        }
+    }
+
+    $min_bytes = 0;
+    $max_bytes = 0;
+    if ($size_range === 'small') {
+        $max_bytes = 1024 * 1024; // < 1MB
+    } elseif ($size_range === 'medium') {
+        $min_bytes = 1024 * 1024;
+        $max_bytes = 10 * 1024 * 1024; // 1-10MB
+    } elseif ($size_range === 'large') {
+        $min_bytes = 10 * 1024 * 1024;
+        $max_bytes = 50 * 1024 * 1024; // 10-50MB
+    } elseif ($size_range === 'xlarge') {
+        $min_bytes = 50 * 1024 * 1024; // > 50MB
     }
 
     $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc', 'js', 'css', 'html', 'htm', 'htaccess', 'htpasswd', 'sh', 'bat', 'cmd', 'exe', 'dll', 'py', 'pl', 'cgi', 'hash', 'ini', 'sql', 'bak', 'json'];
 
-    $scan_directory = function(string $dir) use (&$scan_directory, &$results, $query, $cat_filter, $min_time, $gps_only, $recursive, $base_dir, $ignore_list, $media_types, $forbidden_exts) {
+    $scan_directory = function(string $dir) use (&$scan_directory, &$results, $query, $name_filter, $words_filter, $cat_filter, $min_time, $max_time, $min_bytes, $max_bytes, $gps_only, $recursive, $base_dir, $ignore_list, $media_types, $forbidden_exts) {
         if (!is_dir($dir) || is_path_ignored($dir, $base_dir, $ignore_list)) {
             return;
         }
@@ -790,12 +820,22 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
                     continue;
                 }
 
-                $mtime = filemtime($full_path);
-                if ($min_time > 0 && $mtime < $min_time) {
+                $size = filesize($full_path);
+                if ($min_bytes > 0 && $size < $min_bytes) continue;
+                if ($max_bytes > 0 && $size > $max_bytes) continue;
+
+                $comment = $comments[$item] ?? '';
+
+                // Matching logic
+                if ($name_filter !== '' && strpos(strtolower($item), $name_filter) === false) {
                     continue;
                 }
 
-                $comment = $comments[$item] ?? '';
+                if ($words_filter !== '') {
+                    $match_words = ($comment !== '' && strpos(strtolower($comment), $words_filter) !== false);
+                    if (!$match_words) continue;
+                }
+
                 if ($query !== '') {
                     $match_name = (strpos(strtolower($item), $query) !== false);
                     $match_comment = ($comment !== '' && strpos(strtolower($comment), $query) !== false);
@@ -811,8 +851,11 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
                     }
                 }
 
-                $size = filesize($full_path);
+                $mtime = filemtime($full_path);
                 $effective_mtime = ($exif && !empty($exif['date_ts'])) ? $exif['date_ts'] : $mtime;
+
+                if ($min_time > 0 && $effective_mtime < $min_time) continue;
+                if ($max_time > 0 && $effective_mtime > $max_time) continue;
 
                 $results[] = [
                     'name'           => $item,

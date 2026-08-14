@@ -197,11 +197,16 @@ if ($action === 'search') {
     $start_dir = sanitize_path($req_dir, $real_base_dir) ?: $real_base_dir;
 
     $search_params = [
-        'q'         => $raw_body['q'] ?? $_GET['q'] ?? '',
-        'category'  => $raw_body['category'] ?? $_GET['category'] ?? 'all',
-        'timing'    => $raw_body['timing'] ?? $_GET['timing'] ?? 'all',
-        'gps_only'  => !empty($raw_body['gps_only']) || !empty($_GET['gps_only']),
-        'recursive' => !empty($raw_body['recursive']) || !empty($_GET['recursive'])
+        'q'          => $raw_body['q'] ?? $_GET['q'] ?? '',
+        'name'       => $raw_body['name'] ?? $_GET['name'] ?? '',
+        'words'      => $raw_body['words'] ?? $_GET['words'] ?? '',
+        'category'   => $raw_body['category'] ?? $_GET['category'] ?? 'all',
+        'timing'     => $raw_body['timing'] ?? $_GET['timing'] ?? 'all',
+        'date_from'  => $raw_body['date_from'] ?? $_GET['date_from'] ?? '',
+        'date_to'    => $raw_body['date_to'] ?? $_GET['date_to'] ?? '',
+        'size_range' => $raw_body['size_range'] ?? $_GET['size_range'] ?? 'all',
+        'gps_only'   => !empty($raw_body['gps_only']) || !empty($_GET['gps_only']),
+        'recursive'  => !empty($raw_body['recursive']) || !empty($_GET['recursive'])
     ];
 
     $search_results = search_gallery_recursive($start_dir, $real_base_dir, $search_params, $ignore_list, $media_types);

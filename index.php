@@ -65,7 +65,20 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         <div class="toolbar-controls">
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Search media..." aria-label="Search media">
+            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher des médias..." aria-label="Rechercher des médias">
+            <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="Options de recherche avancée" onclick="if(window.galleryApp) window.galleryApp.openSearchModal();">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+            </button>
           </div>
 
           <div class="sort-group" style="display: flex; align-items: center; gap: 0.35rem;">
@@ -92,10 +105,6 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
               <!-- Dynamically populated by JS based on server binary availability -->
             </div>
           </div>
-
-          <button id="advancedSearchBtn" class="btn-toggle" title="Ouvrir la recherche avancée multidimensionnelle">
-            <span>🔍</span> Recherche
-          </button>
 
           <div class="control-btn-group">
             <button id="viewPolaroidBtn" class="btn-toggle active" title="Polaroid View">
@@ -468,56 +477,116 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     </div>
   </div>
 
-  <!-- Advanced Multidimensional Search Modal -->
+  <!-- Google Drive Style Advanced Search Modal -->
   <div id="searchModal" class="search-modal-backdrop" style="display: none;">
     <div class="search-modal-card">
-      <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px;">
-        <h3 style="margin:0; font-size:1.1rem; color:#f8fafc;">🔍 Recherche Avancée Multidimensionnelle</h3>
-        <button id="searchModalCloseBtn" class="lightbox-btn" title="Close">✕</button>
+      <div class="gdrive-modal-header">
+        <h3 class="gdrive-modal-title">Recherche avancée</h3>
+        <button type="button" id="searchModalCloseBtn" class="gdrive-modal-close" title="Fermer (Échap)">✕</button>
       </div>
-      <form id="searchAdvancedForm" style="display:flex; flex-direction:column; gap:14px;">
-        <div class="search-filter-item">
-          <label for="advSearchQuery">Mot-clé (nom de fichier ou légende) :</label>
-          <input type="text" id="advSearchQuery" placeholder="Ex: vacances, sunset, 2026..." />
-        </div>
-        <div class="search-filter-grid">
-          <div class="search-filter-item">
-            <label for="advSearchCategory">Catégorie :</label>
-            <select id="advSearchCategory">
-              <option value="all">Toutes les catégories</option>
-              <option value="image">📷 Photos</option>
-              <option value="video">🎬 Vidéos</option>
-              <option value="audio">🎵 Musique / Audio</option>
-              <option value="doc">📄 Documents</option>
-              <option value="archive">📦 Archives</option>
+
+      <form id="searchAdvancedForm" class="gdrive-search-form">
+        <!-- Row 1: Type -->
+        <div class="gdrive-form-row">
+          <label for="advSearchCategory" class="gdrive-form-label">Type</label>
+          <div class="gdrive-form-control">
+            <select id="advSearchCategory" class="gdrive-select">
+              <option value="all">Tout</option>
+              <option value="image">Photos (Images)</option>
+              <option value="video">Vidéos</option>
+              <option value="audio">Audio / Musique</option>
+              <option value="doc">Documents</option>
+              <option value="archive">Archives</option>
             </select>
           </div>
-          <div class="search-filter-item">
-            <label for="advSearchTiming">Période (Date) :</label>
-            <select id="advSearchTiming">
-              <option value="all">Toutes les dates</option>
+        </div>
+
+        <!-- Row 2: Nom de l'élément -->
+        <div class="gdrive-form-row">
+          <label for="advSearchName" class="gdrive-form-label">Nom de l'élément</label>
+          <div class="gdrive-form-control">
+            <input type="text" id="advSearchName" class="gdrive-input" placeholder="Saisissez un terme figurant dans le nom du fichier">
+          </div>
+        </div>
+
+        <!-- Row 3: Contient les mots -->
+        <div class="gdrive-form-row">
+          <label for="advSearchWords" class="gdrive-form-label">Contient les mots</label>
+          <div class="gdrive-form-control">
+            <input type="text" id="advSearchWords" class="gdrive-input" placeholder="Saisissez des mots figurant dans la légende ou description">
+          </div>
+        </div>
+
+        <!-- Row 4: Emplacement -->
+        <div class="gdrive-form-row">
+          <label for="advSearchLocation" class="gdrive-form-label">Emplacement</label>
+          <div class="gdrive-form-control">
+            <select id="advSearchLocation" class="gdrive-select">
+              <option value="everywhere">Partout (recherche récursive dans tous les sous-dossiers)</option>
+              <option value="current">Dans ce dossier uniquement</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 5: Date -->
+        <div class="gdrive-form-row">
+          <label for="advSearchTiming" class="gdrive-form-label">Date</label>
+          <div class="gdrive-form-control">
+            <select id="advSearchTiming" class="gdrive-select">
+              <option value="all">N'importe quand</option>
               <option value="today">Aujourd'hui</option>
               <option value="week">7 derniers jours</option>
               <option value="month">30 derniers jours</option>
               <option value="year">Cette année</option>
+              <option value="custom">Période personnalisée...</option>
             </select>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:20px; margin-top:4px;">
-          <label style="font-size:0.85rem; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="advSearchRecursive" checked style="width:16px; height:16px; accent-color:#6366f1;" />
-            📂 Recherche récursive dans tous les sous-dossiers
-          </label>
-          <label style="font-size:0.85rem; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="advSearchGpsOnly" style="width:16px; height:16px; accent-color:#6366f1;" />
-            📍 Uniquement médias géolocalisés (GPS)
-          </label>
+
+        <!-- Row 5b: Custom Date Range (hidden by default) -->
+        <div id="advSearchCustomDateRow" class="gdrive-form-row" style="display: none;">
+          <label class="gdrive-form-label">Période</label>
+          <div class="gdrive-form-control gdrive-date-range">
+            <span class="gdrive-date-label">Du</span>
+            <input type="date" id="advSearchDateFrom" class="gdrive-input gdrive-date-input">
+            <span class="gdrive-date-label">Au</span>
+            <input type="date" id="advSearchDateTo" class="gdrive-input gdrive-date-input">
+          </div>
         </div>
-        <div style="display:flex; gap:12px; margin-top:8px;">
-          <button type="button" id="advSearchResetBtn" class="btn-toggle" style="flex:1;">Réinitialiser</button>
-          <button type="submit" class="pill-btn active" style="flex:2; justify-content:center; background:#6366f1; color:white; font-weight:700;">
-            🔍 Lancer la recherche
-          </button>
+
+        <!-- Row 6: Taille -->
+        <div class="gdrive-form-row">
+          <label for="advSearchSize" class="gdrive-form-label">Taille</label>
+          <div class="gdrive-form-control">
+            <select id="advSearchSize" class="gdrive-select">
+              <option value="all">N'importe quelle taille</option>
+              <option value="small">Petite (&lt; 1 Mo)</option>
+              <option value="medium">Moyenne (1 Mo à 10 Mo)</option>
+              <option value="large">Grande (10 Mo à 50 Mo)</option>
+              <option value="xlarge">Très grande (&gt; 50 Mo)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 7: Options (GPS, Favoris) -->
+        <div class="gdrive-form-row">
+          <label class="gdrive-form-label">Options</label>
+          <div class="gdrive-form-control gdrive-checkbox-group">
+            <label class="gdrive-checkbox-label">
+              <input type="checkbox" id="advSearchGpsOnly" class="gdrive-checkbox">
+              <span>📍 Avec coordonnées GPS uniquement</span>
+            </label>
+            <label class="gdrive-checkbox-label">
+              <input type="checkbox" id="advSearchFavOnly" class="gdrive-checkbox">
+              <span>❤️ Uniquement les favoris</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="gdrive-modal-footer">
+          <button type="button" id="advSearchResetBtn" class="gdrive-btn-text">Réinitialiser</button>
+          <button type="submit" id="advSearchSubmitBtn" class="gdrive-btn-primary">Rechercher</button>
         </div>
       </form>
     </div>

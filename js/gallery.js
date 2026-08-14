@@ -57,6 +57,8 @@ class SimpleGallery {
 
     this.initElements();
     this.bindEvents();
+    this.initPipPlayer();
+    this.initAdvancedSearch();
     this.updateFavoritesCountUI();
     this.handleUrlChange();
   }
@@ -510,7 +512,8 @@ class SimpleGallery {
       const isModalOpen = (this.el.mediaCommentModal && this.el.mediaCommentModal.classList.contains('open')) ||
         (this.el.folderSettingsModal && this.el.folderSettingsModal.classList.contains('open')) ||
         (this.el.adminModal && this.el.adminModal.classList.contains('open')) ||
-        (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open'));
+        (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open')) ||
+        (this.el.searchModal && this.el.searchModal.classList.contains('open'));
 
       if (isInputFocused || isModalOpen) {
         if (e.key === 'Escape') {
@@ -522,6 +525,8 @@ class SimpleGallery {
             this.closeAdminModal();
           } else if (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open')) {
             this.closeFolderUnlockModal();
+          } else if (this.el.searchModal && this.el.searchModal.classList.contains('open')) {
+            this.closeSearchModal();
           }
         }
         return;
@@ -2362,12 +2367,22 @@ class SimpleGallery {
   }
 
   openSearchModal() {
+    if (!this.el.searchModal) {
+      this.el.searchModal = document.getElementById('searchModal');
+    }
     if (!this.el.searchModal) return;
     this.el.searchModal.style.display = 'flex';
-    setTimeout(() => this.el.searchModal.classList.add('open'), 10);
+    requestAnimationFrame(() => {
+      this.el.searchModal.classList.add('open');
+    });
+    const firstInput = document.getElementById('advSearchName') || document.getElementById('advSearchWords');
+    if (firstInput) setTimeout(() => firstInput.focus(), 50);
   }
 
   closeSearchModal() {
+    if (!this.el.searchModal) {
+      this.el.searchModal = document.getElementById('searchModal');
+    }
     if (!this.el.searchModal) return;
     this.el.searchModal.classList.remove('open');
     setTimeout(() => {
@@ -2393,41 +2408,77 @@ class SimpleGallery {
         if (e.target === this.el.searchModal) this.closeSearchModal();
       });
     }
+
+    const timingSelect = document.getElementById('advSearchTiming');
+    const customDateRow = document.getElementById('advSearchCustomDateRow');
+    if (timingSelect && customDateRow) {
+      timingSelect.addEventListener('change', (e) => {
+        customDateRow.style.display = (e.target.value === 'custom') ? 'grid' : 'none';
+      });
+    }
+
     if (this.el.advSearchResetBtn && this.el.searchAdvancedForm) {
       this.el.advSearchResetBtn.addEventListener('click', () => {
         this.el.searchAdvancedForm.reset();
+        if (customDateRow) customDateRow.style.display = 'none';
       });
     }
+
     if (this.el.searchAdvancedForm) {
       this.el.searchAdvancedForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const q = document.getElementById('advSearchQuery').value;
-        const category = document.getElementById('advSearchCategory').value;
-        const timing = document.getElementById('advSearchTiming').value;
-        const recursive = document.getElementById('advSearchRecursive').checked;
-        const gps_only = document.getElementById('advSearchGpsOnly').checked;
+        const category = document.getElementById('advSearchCategory')?.value || 'all';
+        const name = document.getElementById('advSearchName')?.value || '';
+        const words = document.getElementById('advSearchWords')?.value || '';
+        const location = document.getElementById('advSearchLocation')?.value || 'everywhere';
+        const timing = document.getElementById('advSearchTiming')?.value || 'all';
+        const date_from = document.getElementById('advSearchDateFrom')?.value || '';
+        const date_to = document.getElementById('advSearchDateTo')?.value || '';
+        const size_range = document.getElementById('advSearchSize')?.value || 'all';
+        const gps_only = !!document.getElementById('advSearchGpsOnly')?.checked;
+        const fav_only = !!document.getElementById('advSearchFavOnly')?.checked;
 
         this.showLoading(true);
         this.closeSearchModal();
 
         try {
+          const searchDir = (location === 'current') ? this.state.currentPath : '';
           const res = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.state.csrfToken },
             body: JSON.stringify({
               action: 'search',
-              dir: this.state.currentPath,
-              q, category, timing, recursive, gps_only
+              dir: searchDir,
+              name,
+              words,
+              category,
+              timing,
+              date_from,
+              date_to,
+              size_range,
+              gps_only,
+              recursive: (location === 'everywhere')
             })
           });
           const json = await res.json();
           if (json.success) {
-            this.state.files = json.results;
-            this.state.filteredFiles = json.results;
+            let results = json.results || [];
+            if (fav_only) {
+              results = results.filter(f => this.state.favorites.includes(f.path));
+            }
+            this.state.files = results;
+            this.state.filteredFiles = results;
             this.renderFolders([]);
-            this.renderMediaGrid(json.results);
+            this.renderMedia();
+            this.updateFolderMapButton();
             if (this.el.galleryStats) {
-              this.el.galleryStats.innerText = `🔍 ${json.count} résultat(s) de recherche trouvé(s)`;
+              this.el.galleryStats.innerHTML = `<span>🔍 <strong>${results.length}</strong> résultat(s) trouvé(s)</span> <button id="clearSearchBtn" class="pill-btn" style="padding:2px 8px; font-size:0.75rem; margin-left:8px; cursor:pointer;">✕ Quitter la recherche</button>`;
+              const clearBtn = document.getElementById('clearSearchBtn');
+              if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                  this.loadDirectory(this.state.currentPath);
+                });
+              }
             }
           }
         } catch (err) {
