@@ -1113,9 +1113,9 @@ class SimpleGallery {
 
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
-          gpsBadge = `<button type="button" class="gps-badge" title="Localiser sur la carte interactive" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">📍 GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive">📍 GPS</button>`;
         } else if (smartLocationsMap.has(file.path)) {
-          gpsBadge = `<button type="button" class="gps-badge magic-badge" title="Localiser sur la carte interactive (Position déduite)" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">✨ GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive (Position déduite)">✨ GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
@@ -1165,9 +1165,9 @@ class SimpleGallery {
 
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
-          gpsBadge = `<button type="button" class="gps-badge" title="Localiser sur la carte interactive" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">📍 GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive">📍 GPS</button>`;
         } else if (smartLocationsMap.has(file.path)) {
-          gpsBadge = `<button type="button" class="gps-badge magic-badge" title="Localiser sur la carte interactive (Position déduite)" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">✨ GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive (Position déduite)">✨ GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
@@ -1203,6 +1203,14 @@ class SimpleGallery {
         `;
       }).join('');
     }
+
+    this.el.mediaGrid.querySelectorAll('.gps-badge[data-path]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openMapModal(btn.dataset.path);
+      });
+    });
 
     this.el.mediaGrid.querySelectorAll('.delete-item-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -2934,12 +2942,19 @@ class SimpleGallery {
       this.leafletMap.invalidateSize();
       if (focusPath && markersMap.has(focusPath)) {
         const targetMarker = markersMap.get(focusPath);
-        this.leafletMap.setView(targetMarker.getLatLng(), 16);
-        targetMarker.openPopup();
+        if (typeof this.mapMarkersGroup.zoomToShowLayer === 'function') {
+          this.mapMarkersGroup.zoomToShowLayer(targetMarker, () => {
+            this.leafletMap.setView(targetMarker.getLatLng(), Math.max(this.leafletMap.getZoom(), 16));
+            targetMarker.openPopup();
+          });
+        } else {
+          this.leafletMap.setView(targetMarker.getLatLng(), 16);
+          targetMarker.openPopup();
+        }
       } else if (latLngs.length > 0) {
         this.fitMapBounds();
       }
-    }, 200);
+    }, 250);
   }
 
   closeMapModal() {
