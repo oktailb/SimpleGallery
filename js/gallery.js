@@ -253,17 +253,6 @@ class SimpleGallery {
       });
     }
 
-    if (this.el.advancedSearchBtn) {
-      this.el.advancedSearchBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.openSearchModal();
-      });
-    }
-
-    this.initPipPlayer();
-    this.initAdvancedSearch();
-    this.updateFavoritesCountUI();
-
     // Upload Controls & Global Drag & Drop (Admin Only)
     if (this.el.uploadMediaBtn && this.el.uploadFileInput) {
       this.el.uploadMediaBtn.addEventListener('click', () => {

@@ -463,6 +463,8 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         </div>
       </div>
     </div>
+  </div>
+
   <!-- Floating Picture-in-Picture (PiP) Player Widget -->
   <div id="pip-player-widget" style="display: none;">
     <div id="pipHeader" class="pip-header">
