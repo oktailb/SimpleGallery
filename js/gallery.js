@@ -2673,7 +2673,7 @@ class SimpleGallery {
 
     this.currentMapTileLayer = 'streets';
     this.leafletMap = L.map('galleryLeafletMap', {
-      layers: [this.leafletTileLayers.dark],
+      layers: [this.leafletTileLayers.streets],
       zoomControl: true
     });
 
