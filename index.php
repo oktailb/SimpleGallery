@@ -32,6 +32,13 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   
   <link rel="stylesheet" href="css/gallery.css?v=<?php echo filemtime(__DIR__ . '/css/gallery.css'); ?>">
 
+  <!-- Leaflet & MarkerCluster for Interactive Maps (100% Free, Zero API Key) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
   <!-- Dynamic Theme Injection from config.php -->
   <style id="dynamic-theme-vars">
     :root {
@@ -156,9 +163,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     </div>
 
     <div id="galleryStats" class="gallery-stats">Loading...</div>
-    <a id="folderMapBtn" href="#" target="_blank" class="folder-map-btn" style="display: none;" title="Ouvrir le trajet/parcours GPS complet du dossier dans Google Maps">
-      🗺️ Trajet GPS
-    </a>
+    <button type="button" id="folderMapBtn" class="folder-map-btn" style="display: none;" title="Explorer la carte et le trajet GPS interactif des photos du dossier">
+      🗺️ Carte GPS
+    </button>
   </div>
 
   <!-- Main Workspace -->
@@ -603,6 +610,33 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <button type="submit" id="advSearchSubmitBtn" class="gdrive-btn-primary">Rechercher</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Interactive Leaflet Map & GPS Route Modal -->
+  <div id="mapModal" class="map-modal-backdrop" style="display: none;">
+    <div class="map-modal-card">
+      <div class="map-modal-header">
+        <div class="map-modal-title-group">
+          <h3 class="map-modal-title">🗺️ Exploration Cartographique &amp; Trajet GPS</h3>
+          <span id="mapModalCountBadge" class="map-count-badge">0 photos géolocalisées</span>
+        </div>
+        <div class="map-modal-controls">
+          <div class="map-layer-selector">
+            <button type="button" class="map-layer-btn active" data-layer="dark" title="Fond de carte sombre">🌙 Sombre</button>
+            <button type="button" class="map-layer-btn" data-layer="streets" title="Plan de rues (OpenStreetMap)">🗺️ Rues</button>
+            <button type="button" class="map-layer-btn" data-layer="satellite" title="Vue Satellite (Esri)">🛰️ Satellite</button>
+          </div>
+          <button type="button" id="mapToggleRouteBtn" class="map-ctrl-btn active" title="Afficher / Masquer le tracé chronologique du parcours">
+            〰️ Trajet
+          </button>
+          <button type="button" id="mapFitBoundsBtn" class="map-ctrl-btn" title="Recentrer la carte sur tous les médias">
+            🎯 Recentrer
+          </button>
+          <button type="button" id="mapModalCloseBtn" class="map-modal-close" title="Fermer la carte (Échap)">✕</button>
+        </div>
+      </div>
+      <div id="galleryLeafletMap" class="map-canvas"></div>
     </div>
   </div>
 

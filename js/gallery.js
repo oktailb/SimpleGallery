@@ -202,7 +202,15 @@ class SimpleGallery {
       pipMediaContainer: document.getElementById('pipMediaContainer'),
       pipHeader: document.getElementById('pipHeader'),
       pipMinimizeBtn: document.getElementById('pipMinimizeBtn'),
-      pipCloseBtn: document.getElementById('pipCloseBtn')
+      pipCloseBtn: document.getElementById('pipCloseBtn'),
+
+      // Interactive Leaflet Map Elements
+      folderMapBtn: document.getElementById('folderMapBtn'),
+      mapModal: document.getElementById('mapModal'),
+      mapModalCloseBtn: document.getElementById('mapModalCloseBtn'),
+      mapModalCountBadge: document.getElementById('mapModalCountBadge'),
+      mapToggleRouteBtn: document.getElementById('mapToggleRouteBtn'),
+      mapFitBoundsBtn: document.getElementById('mapFitBoundsBtn')
     };
   }
 
@@ -255,6 +263,36 @@ class SimpleGallery {
         this.state.filterCategory = pill.dataset.category;
         this.applyFilterAndRender();
       }
+    });
+
+    if (this.el.folderMapBtn) {
+      this.el.folderMapBtn.addEventListener('click', () => this.openMapModal());
+    }
+
+    if (this.el.mapModalCloseBtn) {
+      this.el.mapModalCloseBtn.addEventListener('click', () => this.closeMapModal());
+    }
+
+    if (this.el.mapModal) {
+      this.el.mapModal.addEventListener('click', (e) => {
+        if (e.target === this.el.mapModal) this.closeMapModal();
+      });
+    }
+
+    if (this.el.mapToggleRouteBtn) {
+      this.el.mapToggleRouteBtn.addEventListener('click', () => this.toggleMapRoute());
+    }
+
+    if (this.el.mapFitBoundsBtn) {
+      this.el.mapFitBoundsBtn.addEventListener('click', () => this.fitMapBounds());
+    }
+
+    document.querySelectorAll('.map-layer-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.map-layer-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.setMapTileLayer(btn.dataset.layer);
+      });
     });
 
     if (this.el.toggleFavoritesBtn) {
@@ -525,7 +563,8 @@ class SimpleGallery {
         (this.el.folderSettingsModal && this.el.folderSettingsModal.classList.contains('open')) ||
         (this.el.adminModal && this.el.adminModal.classList.contains('open')) ||
         (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open')) ||
-        (this.el.searchModal && this.el.searchModal.classList.contains('open'));
+        (this.el.searchModal && this.el.searchModal.classList.contains('open')) ||
+        (this.el.mapModal && this.el.mapModal.classList.contains('open'));
 
       if (isInputFocused || isModalOpen) {
         if (e.key === 'Escape') {
@@ -539,6 +578,8 @@ class SimpleGallery {
             this.closeFolderUnlockModal();
           } else if (this.el.searchModal && this.el.searchModal.classList.contains('open')) {
             this.closeSearchModal();
+          } else if (this.el.mapModal && this.el.mapModal.classList.contains('open')) {
+            this.closeMapModal();
           }
         }
         return;
@@ -968,61 +1009,14 @@ class SimpleGallery {
   updateFolderMapButton() {
     if (!this.el.folderMapBtn) return;
 
-    const gpsFiles = this.state.files.filter(f => f.exif && f.exif.gps && f.exif.gps.lat && f.exif.gps.lng);
+    const gpsFiles = this.state.filteredFiles.filter(f => f.exif && f.exif.gps && f.exif.gps.lat && f.exif.gps.lng);
 
     if (gpsFiles.length === 0) {
       this.el.folderMapBtn.style.display = 'none';
       return;
     }
 
-    // Sort chronologically by EXIF timestamp or file mtime
-    gpsFiles.sort((a, b) => (a.effective_mtime || a.mtime) - (b.effective_mtime || b.mtime));
-
-    // Deduplicate close GPS coordinates (same lat/lng to 4 decimal places)
-    const uniquePoints = [];
-    const seen = new Set();
-    for (const f of gpsFiles) {
-      const key = `${f.exif.gps.lat.toFixed(4)},${f.exif.gps.lng.toFixed(4)}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniquePoints.push(f.exif.gps);
-      }
-    }
-
-    let mapUrl = '';
-    let btnText = '';
-
-    if (uniquePoints.length === 1) {
-      const pt = uniquePoints[0];
-      mapUrl = `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}`;
-      btnText = `📍 Localisation (1 point GPS)`;
-    } else if (uniquePoints.length === 2) {
-      const p1 = uniquePoints[0];
-      const p2 = uniquePoints[1];
-      mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${p1.lat},${p1.lng}&destination=${p2.lat},${p2.lng}`;
-      btnText = `🗺️ Trajet GPS (2 étapes)`;
-    } else {
-      const first = uniquePoints[0];
-      const last = uniquePoints[uniquePoints.length - 1];
-
-      const intermediates = uniquePoints.slice(1, uniquePoints.length - 1);
-      let selectedWaypoints = intermediates;
-      if (intermediates.length > 8) {
-        selectedWaypoints = [];
-        const step = (intermediates.length - 1) / 7;
-        for (let i = 0; i < 8; i++) {
-          const idx = Math.min(Math.round(i * step), intermediates.length - 1);
-          selectedWaypoints.push(intermediates[idx]);
-        }
-      }
-
-      const waypointsStr = selectedWaypoints.map(pt => `${pt.lat},${pt.lng}`).join('|');
-      mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${first.lat},${first.lng}&destination=${last.lat},${last.lng}&waypoints=${encodeURIComponent(waypointsStr)}`;
-      btnText = `🗺️ Trajet GPS (${uniquePoints.length} étapes)`;
-    }
-
-    this.el.folderMapBtn.href = mapUrl;
-    this.el.folderMapBtn.textContent = btnText;
+    this.el.folderMapBtn.innerHTML = `🗺️ Carte GPS (${gpsFiles.length})`;
     this.el.folderMapBtn.style.display = 'inline-flex';
   }
 
@@ -1100,7 +1094,7 @@ class SimpleGallery {
 
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
-          gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
+          gpsBadge = `<button type="button" class="gps-badge" title="Localiser sur la carte interactive" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">📍 GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
@@ -1150,7 +1144,7 @@ class SimpleGallery {
 
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
-          gpsBadge = `<a href="${file.exif.gps.maps_url}" target="_blank" class="gps-badge" title="Géolocalisation GPS - Voir sur Google Maps" onclick="event.stopPropagation()">📍 Maps</a>`;
+          gpsBadge = `<button type="button" class="gps-badge" title="Localiser sur la carte interactive" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">📍 GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
@@ -1383,20 +1377,41 @@ class SimpleGallery {
     }
 
     if (exif.gps) {
+      const currentFilePath = this.state.filteredFiles[this.state.lightboxIndex]?.path;
       html += `
         <div class="exif-group" style="margin-top:0.5rem;">
           <div class="exif-label">Géolocalisation GPS</div>
-          <div class="exif-value" style="font-size:0.85rem;color:var(--text-muted);">
+          <div class="exif-value" style="font-size:0.85rem;color:var(--text-muted); margin-bottom:6px;">
             Lat: ${exif.gps.lat}°, Lng: ${exif.gps.lng}°
           </div>
-          <a href="${exif.gps.maps_url}" target="_blank" class="exif-maps-btn">
-            📍 Ouvrir dans Google Maps
-          </a>
+          <div id="exifMiniMap" class="exif-mini-map"></div>
+          <button type="button" class="btn-toggle" style="width:100%; justify-content:center; margin-top:6px;" onclick="window.galleryApp.openMapModal('${this.escapeHtml(currentFilePath || '')}')">
+            🗺️ Explorer sur la grande carte
+          </button>
         </div>
       `;
     }
 
     this.el.exifPanelBody.innerHTML = html || '<p style="color:var(--text-muted);font-style:italic;">Aucune métadonnée EXIF disponible.</p>';
+
+    if (exif && exif.gps && typeof L !== 'undefined') {
+      setTimeout(() => {
+        const miniContainer = document.getElementById('exifMiniMap');
+        if (!miniContainer) return;
+        miniContainer.innerHTML = '';
+        const miniMap = L.map('exifMiniMap', {
+          center: [exif.gps.lat, exif.gps.lng],
+          zoom: 14,
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          touchZoom: false
+        });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
+        L.marker([exif.gps.lat, exif.gps.lng]).addTo(miniMap);
+      }, 50);
+    }
   }
 
   // =============================================================
@@ -2608,6 +2623,190 @@ class SimpleGallery {
           console.error('Error saving permissions:', err);
         }
       });
+    }
+  }
+
+  // =============================================================
+  // LEAFLET INTERACTIVE MAP & GPS TRAIL ENGINE
+  // =============================================================
+
+  initLeafletMap() {
+    if (this.leafletMap || typeof L === 'undefined') return;
+
+    this.leafletTileLayers = {
+      dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
+      }),
+      streets: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }),
+      satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri &mdash; Earthstar Geographics'
+      })
+    };
+
+    this.currentMapTileLayer = 'dark';
+    this.leafletMap = L.map('galleryLeafletMap', {
+      layers: [this.leafletTileLayers.dark],
+      zoomControl: true
+    });
+
+    this.mapMarkersGroup = typeof L.markerClusterGroup === 'function' ? L.markerClusterGroup({
+      maxClusterRadius: 40,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false
+    }) : L.featureGroup();
+
+    this.leafletMap.addLayer(this.mapMarkersGroup);
+    this.isMapRouteVisible = true;
+  }
+
+  setMapTileLayer(layerName) {
+    if (!this.leafletMap || !this.leafletTileLayers[layerName]) return;
+    Object.values(this.leafletTileLayers).forEach(layer => {
+      if (this.leafletMap.hasLayer(layer)) this.leafletMap.removeLayer(layer);
+    });
+    this.leafletTileLayers[layerName].addTo(this.leafletMap);
+    this.currentMapTileLayer = layerName;
+  }
+
+  openMapModal(focusPath = null) {
+    if (!this.el.mapModal) {
+      this.el.mapModal = document.getElementById('mapModal');
+    }
+    if (!this.el.mapModal || typeof L === 'undefined') return;
+
+    this.el.mapModal.style.display = 'flex';
+    requestAnimationFrame(() => {
+      this.el.mapModal.classList.add('open');
+    });
+
+    this.initLeafletMap();
+
+    const gpsFiles = this.state.filteredFiles.filter(f => f.exif?.gps?.lat && f.exif?.gps?.lng);
+    gpsFiles.sort((a, b) => (a.effective_mtime || a.mtime) - (b.effective_mtime || b.mtime));
+
+    if (this.el.mapModalCountBadge) {
+      this.el.mapModalCountBadge.textContent = `${gpsFiles.length} photo(s) géolocalisée(s)`;
+    }
+
+    this.mapMarkersGroup.clearLayers();
+    if (this.mapRouteLine) {
+      this.leafletMap.removeLayer(this.mapRouteLine);
+      this.mapRouteLine = null;
+    }
+
+    if (gpsFiles.length === 0) return;
+
+    const markersMap = new Map();
+    const latLngs = [];
+
+    gpsFiles.forEach((file) => {
+      const lat = file.exif.gps.lat;
+      const lng = file.exif.gps.lng;
+      latLngs.push([lat, lng]);
+
+      const isFocused = focusPath === file.path;
+      const markerIcon = L.divIcon({
+        className: 'custom-map-marker',
+        html: `
+          <div class="marker-bubble ${isFocused ? 'highlight' : ''}">
+            <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+          </div>
+          <div class="marker-pointer"></div>
+        `,
+        iconSize: [44, 52],
+        iconAnchor: [22, 50],
+        popupAnchor: [0, -48]
+      });
+
+      const marker = L.marker([lat, lng], { icon: markerIcon });
+      const popupContent = `
+        <div class="map-popup-card">
+          <div class="map-popup-img-wrap" onclick="window.galleryApp.openLightboxByPath('${this.escapeHtml(file.path)}')">
+            <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" />
+            <div class="map-popup-play-overlay">🔍 Voir</div>
+          </div>
+          <div class="map-popup-info">
+            <div class="map-popup-title" title="${this.escapeHtml(file.name)}">${this.escapeHtml(file.name)}</div>
+            ${file.exif?.datetime ? `<div class="map-popup-date">📅 ${this.escapeHtml(file.exif.datetime)}</div>` : ''}
+            ${file.comment ? `<div class="map-popup-comment">💬 ${this.escapeHtml(file.comment)}</div>` : ''}
+            <button type="button" class="map-popup-btn" onclick="window.galleryApp.openLightboxByPath('${this.escapeHtml(file.path)}')">
+              🖼️ Ouvrir dans la visionneuse
+            </button>
+          </div>
+        </div>
+      `;
+      marker.bindPopup(popupContent, { maxWidth: 260, className: 'sg-leaflet-popup' });
+      this.mapMarkersGroup.addLayer(marker);
+      markersMap.set(file.path, marker);
+    });
+
+    if (latLngs.length > 1) {
+      this.mapRouteLine = L.polyline(latLngs, {
+        color: '#6366f1',
+        weight: 4,
+        opacity: 0.85,
+        dashArray: '8, 8',
+        lineCap: 'round',
+        lineJoin: 'round'
+      });
+      if (this.isMapRouteVisible) {
+        this.mapRouteLine.addTo(this.leafletMap);
+      }
+    }
+
+    setTimeout(() => {
+      this.leafletMap.invalidateSize();
+      if (focusPath && markersMap.has(focusPath)) {
+        const targetMarker = markersMap.get(focusPath);
+        this.leafletMap.setView(targetMarker.getLatLng(), 16);
+        targetMarker.openPopup();
+      } else if (latLngs.length > 0) {
+        this.fitMapBounds();
+      }
+    }, 200);
+  }
+
+  closeMapModal() {
+    if (!this.el.mapModal) {
+      this.el.mapModal = document.getElementById('mapModal');
+    }
+    if (!this.el.mapModal) return;
+    this.el.mapModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.mapModal.style.display = 'none';
+    }, 250);
+  }
+
+  toggleMapRoute() {
+    if (!this.leafletMap || !this.mapRouteLine) return;
+    this.isMapRouteVisible = !this.isMapRouteVisible;
+    if (this.isMapRouteVisible) {
+      this.mapRouteLine.addTo(this.leafletMap);
+      if (this.el.mapToggleRouteBtn) this.el.mapToggleRouteBtn.classList.add('active');
+    } else {
+      this.leafletMap.removeLayer(this.mapRouteLine);
+      if (this.el.mapToggleRouteBtn) this.el.mapToggleRouteBtn.classList.remove('active');
+    }
+  }
+
+  fitMapBounds() {
+    if (!this.leafletMap || !this.mapMarkersGroup) return;
+    const bounds = this.mapMarkersGroup.getBounds();
+    if (bounds.isValid()) {
+      this.leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    }
+  }
+
+  openLightboxByPath(filePath) {
+    this.closeMapModal();
+    const idx = this.state.filteredFiles.findIndex(f => f.path === filePath);
+    if (idx !== -1) {
+      this.openLightbox(idx);
     }
   }
 
