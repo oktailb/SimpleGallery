@@ -627,6 +627,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             <button type="button" class="map-layer-btn" data-layer="streets" title="Plan de rues (OpenStreetMap)">🗺️ Rues</button>
             <button type="button" class="map-layer-btn" data-layer="satellite" title="Vue Satellite (Esri)">🛰️ Satellite</button>
           </div>
+          <button type="button" id="mapToggleSmartGpsBtn" class="map-ctrl-btn active" title="Activer / Désactiver l'interpolation et déduction GPS intelligente des photos prises à proximité temporelle">
+            ✨ Déduction auto (<span id="mapSmartGpsCount">0</span>)
+          </button>
           <button type="button" id="mapToggleRouteBtn" class="map-ctrl-btn active" title="Afficher / Masquer le tracé chronologique du parcours">
             〰️ Trajet
           </button>

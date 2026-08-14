@@ -59,6 +59,8 @@ class SimpleGallery {
       startTime: 0
     };
 
+    this.isSmartGpsEnabled = true;
+
     this.initElements();
     this.bindEvents();
     this.initPipPlayer();
@@ -209,6 +211,8 @@ class SimpleGallery {
       mapModal: document.getElementById('mapModal'),
       mapModalCloseBtn: document.getElementById('mapModalCloseBtn'),
       mapModalCountBadge: document.getElementById('mapModalCountBadge'),
+      mapToggleSmartGpsBtn: document.getElementById('mapToggleSmartGpsBtn'),
+      mapSmartGpsCount: document.getElementById('mapSmartGpsCount'),
       mapToggleRouteBtn: document.getElementById('mapToggleRouteBtn'),
       mapFitBoundsBtn: document.getElementById('mapFitBoundsBtn')
     };
@@ -277,6 +281,10 @@ class SimpleGallery {
       this.el.mapModal.addEventListener('click', (e) => {
         if (e.target === this.el.mapModal) this.closeMapModal();
       });
+    }
+
+    if (this.el.mapToggleSmartGpsBtn) {
+      this.el.mapToggleSmartGpsBtn.addEventListener('click', () => this.toggleSmartGps());
     }
 
     if (this.el.mapToggleRouteBtn) {
@@ -1009,38 +1017,41 @@ class SimpleGallery {
   updateFolderMapButton() {
     if (!this.el.folderMapBtn) return;
 
-    const gpsFiles = this.state.filteredFiles.filter(f => f.exif && f.exif.gps && f.exif.gps.lat && f.exif.gps.lng);
+    const mapped = this.computeSmartGpsLocations(this.state.filteredFiles);
+    const nativeCount = mapped.filter(i => i.gps_source === 'native').length;
+    const magicCount = mapped.filter(i => i.gps_source !== 'native').length;
 
-    if (gpsFiles.length === 0) {
+    if (mapped.length === 0) {
       this.el.folderMapBtn.style.display = 'none';
       return;
     }
 
-    this.el.folderMapBtn.innerHTML = `🗺️ Carte GPS (${gpsFiles.length})`;
+    const label = magicCount > 0 ? `🗺️ Carte GPS (${nativeCount}+${magicCount}✨)` : `🗺️ Carte GPS (${nativeCount})`;
+    this.el.folderMapBtn.innerHTML = label;
     this.el.folderMapBtn.style.display = 'inline-flex';
   }
 
   renderProtectedState(dirPath) {
     if (!this.el.emptyState) return;
-    this.el.emptyState.style.display = 'block';
     this.el.mediaGrid.style.display = 'none';
+    this.el.emptyState.style.display = 'block';
     this.el.emptyState.innerHTML = `
       <div class="empty-state-icon">🔒</div>
-      <h3>Dossier Protégé par Mot de Passe</h3>
-      <p>Saisissez le mot de passe du dossier pour afficher son contenu.</p>
-      <button class="pill-btn active" style="margin-top: 1rem;" onclick="galleryApp.openFolderUnlockModal('${this.escapeHtml(dirPath)}')">
-        🔑 Déverrouiller le Dossier
+      <h3>Protected Folder</h3>
+      <p>This folder is password protected. Enter the password to explore its contents.</p>
+      <button class="pill-btn active" style="margin-top: 1rem;" onclick="window.galleryApp.openFolderUnlockModal('${encodeURIComponent(dirPath)}')">
+        Unlock Folder
       </button>
     `;
   }
 
-  renderRestrictedState(msg) {
+  renderPrivateState(msg) {
     if (!this.el.emptyState) return;
-    this.el.emptyState.style.display = 'block';
     this.el.mediaGrid.style.display = 'none';
+    this.el.emptyState.style.display = 'block';
     this.el.emptyState.innerHTML = `
       <div class="empty-state-icon">👁️‍🗨️</div>
-      <h3>Dossier Privé</h3>
+      <h3>Private Folder</h3>
       <p>${this.escapeHtml(msg || 'Ce dossier est masqué et réservé à l\'administrateur.')}</p>
     `;
   }
@@ -1077,6 +1088,14 @@ class SimpleGallery {
     const isDraggable = this.state.isAdmin ? 'true' : 'false';
     const handleClass = this.state.isAdmin ? 'drag-handle' : '';
 
+    const smartLocationsMap = new Map();
+    if (this.isSmartGpsEnabled) {
+      const smartLocations = this.computeSmartGpsLocations(list);
+      smartLocations.forEach(item => {
+        smartLocationsMap.set(item.file.path, item);
+      });
+    }
+
     if (this.state.viewMode === 'polaroid') {
       this.el.mediaGrid.className = 'polaroid-grid';
       this.el.mediaGrid.innerHTML = list.map((file, idx) => {
@@ -1095,6 +1114,8 @@ class SimpleGallery {
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
           gpsBadge = `<button type="button" class="gps-badge" title="Localiser sur la carte interactive" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">📍 GPS</button>`;
+        } else if (smartLocationsMap.has(file.path)) {
+          gpsBadge = `<button type="button" class="gps-badge magic-badge" title="Localiser sur la carte interactive (Position déduite)" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">✨ GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
@@ -1145,6 +1166,8 @@ class SimpleGallery {
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
           gpsBadge = `<button type="button" class="gps-badge" title="Localiser sur la carte interactive" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">📍 GPS</button>`;
+        } else if (smartLocationsMap.has(file.path)) {
+          gpsBadge = `<button type="button" class="gps-badge magic-badge" title="Localiser sur la carte interactive (Position déduite)" onclick="event.stopPropagation(); window.galleryApp.openMapModal('${this.escapeHtml(file.path)}')">✨ GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
@@ -2673,6 +2696,129 @@ class SimpleGallery {
     this.currentMapTileLayer = layerName;
   }
 
+  computeSmartGpsLocations(files) {
+    if (!files || files.length === 0) return [];
+
+    // Filter image/video files with timestamps
+    const sorted = [...files]
+      .filter(f => ['image', 'video'].includes(f.category))
+      .sort((a, b) => (a.effective_mtime || a.mtime) - (b.effective_mtime || b.mtime));
+
+    // Identify native GPS items
+    const nativeGpsItems = [];
+    sorted.forEach((f, idx) => {
+      if (f.exif?.gps?.lat && f.exif?.gps?.lng) {
+        nativeGpsItems.push({ file: f, index: idx, time: f.effective_mtime || f.mtime });
+      }
+    });
+
+    if (nativeGpsItems.length === 0) return [];
+
+    const result = [];
+    const maxInterpolationGapSec = 7200; // 2 hours max gap between anchors
+    const maxExtrapolationGapSec = 1800; // 30 minutes max before first / after last anchor
+
+    sorted.forEach((file) => {
+      const time = file.effective_mtime || file.mtime;
+
+      // 1. Native GPS
+      if (file.exif?.gps?.lat && file.exif?.gps?.lng) {
+        result.push({
+          file,
+          gps_source: 'native',
+          lat: file.exif.gps.lat,
+          lng: file.exif.gps.lng,
+          time
+        });
+        return;
+      }
+
+      // If smart GPS deduction is disabled, skip non-native
+      if (!this.isSmartGpsEnabled) return;
+
+      // 2. Find closest preceding anchor A and succeeding anchor B
+      let prevAnchor = null;
+      let nextAnchor = null;
+
+      for (let i = 0; i < nativeGpsItems.length; i++) {
+        const item = nativeGpsItems[i];
+        if (item.time <= time) {
+          prevAnchor = item;
+        }
+        if (item.time >= time && !nextAnchor) {
+          nextAnchor = item;
+        }
+      }
+
+      // Case A: Linear Interpolation between A and B
+      if (prevAnchor && nextAnchor && prevAnchor !== nextAnchor) {
+        const deltaT = nextAnchor.time - prevAnchor.time;
+        if (deltaT > 0 && deltaT <= maxInterpolationGapSec) {
+          const ratio = (time - prevAnchor.time) / deltaT;
+          const lat = prevAnchor.file.exif.gps.lat + ratio * (nextAnchor.file.exif.gps.lat - prevAnchor.file.exif.gps.lat);
+          const lng = prevAnchor.file.exif.gps.lng + ratio * (nextAnchor.file.exif.gps.lng - prevAnchor.file.exif.gps.lng);
+          const deltaMinA = Math.round((time - prevAnchor.time) / 60);
+
+          result.push({
+            file,
+            gps_source: 'interpolated',
+            lat,
+            lng,
+            time,
+            anchor_a: prevAnchor.file.name,
+            anchor_b: nextAnchor.file.name,
+            delta_min_a: deltaMinA
+          });
+          return;
+        }
+      }
+
+      // Case B: Extrapolation before the very first anchor
+      if (!prevAnchor && nextAnchor) {
+        const gap = nextAnchor.time - time;
+        if (gap <= maxExtrapolationGapSec) {
+          result.push({
+            file,
+            gps_source: 'extrapolated',
+            lat: nextAnchor.file.exif.gps.lat,
+            lng: nextAnchor.file.exif.gps.lng,
+            time,
+            anchor_name: nextAnchor.file.name,
+            delta_min: Math.round(gap / 60)
+          });
+          return;
+        }
+      }
+
+      // Case C: Extrapolation after the very last anchor
+      if (prevAnchor && !nextAnchor) {
+        const gap = time - prevAnchor.time;
+        if (gap <= maxExtrapolationGapSec) {
+          result.push({
+            file,
+            gps_source: 'extrapolated',
+            lat: prevAnchor.file.exif.gps.lat,
+            lng: prevAnchor.file.exif.gps.lng,
+            time,
+            anchor_name: prevAnchor.file.name,
+            delta_min: Math.round(gap / 60)
+          });
+          return;
+        }
+      }
+    });
+
+    return result;
+  }
+
+  toggleSmartGps() {
+    this.isSmartGpsEnabled = !this.isSmartGpsEnabled;
+    if (this.el.mapToggleSmartGpsBtn) {
+      this.el.mapToggleSmartGpsBtn.classList.toggle('active', this.isSmartGpsEnabled);
+    }
+    this.openMapModal();
+  }
+
   openMapModal(focusPath = null) {
     if (!this.el.mapModal) {
       this.el.mapModal = document.getElementById('mapModal');
@@ -2686,11 +2832,17 @@ class SimpleGallery {
 
     this.initLeafletMap();
 
-    const gpsFiles = this.state.filteredFiles.filter(f => f.exif?.gps?.lat && f.exif?.gps?.lng);
-    gpsFiles.sort((a, b) => (a.effective_mtime || a.mtime) - (b.effective_mtime || b.mtime));
+    const mappedItems = this.computeSmartGpsLocations(this.state.filteredFiles);
+    const nativeCount = mappedItems.filter(i => i.gps_source === 'native').length;
+    const magicCount = mappedItems.filter(i => i.gps_source !== 'native').length;
+
+    if (this.el.mapSmartGpsCount) {
+      this.el.mapSmartGpsCount.textContent = magicCount;
+    }
 
     if (this.el.mapModalCountBadge) {
-      this.el.mapModalCountBadge.textContent = `${gpsFiles.length} photo(s) géolocalisée(s)`;
+      const extraLabel = magicCount > 0 ? ` + <strong>${magicCount}</strong> estimée(s)` : '';
+      this.el.mapModalCountBadge.innerHTML = `${nativeCount}${extraLabel} photo(s)`;
     }
 
     this.mapMarkersGroup.clearLayers();
@@ -2699,24 +2851,32 @@ class SimpleGallery {
       this.mapRouteLine = null;
     }
 
-    if (gpsFiles.length === 0) return;
+    if (mappedItems.length === 0) return;
 
     const markersMap = new Map();
     const latLngs = [];
 
-    gpsFiles.forEach((file) => {
-      const lat = file.exif.gps.lat;
-      const lng = file.exif.gps.lng;
+    mappedItems.forEach((item) => {
+      const file = item.file;
+      const lat = item.lat;
+      const lng = item.lng;
       latLngs.push([lat, lng]);
 
       const isFocused = focusPath === file.path;
+      const isMagic = item.gps_source !== 'native';
+
+      let markerClasses = `marker-bubble ${isFocused ? 'highlight' : ''} ${isMagic ? 'magic' : ''}`;
+      let sparkleHtml = isMagic ? '<div class="marker-magic-sparkle" title="Position déduite par horodatage">✨</div>' : '';
+      let pointerClass = isMagic ? 'marker-pointer magic-pointer' : 'marker-pointer';
+
       const markerIcon = L.divIcon({
         className: 'custom-map-marker',
         html: `
-          <div class="marker-bubble ${isFocused ? 'highlight' : ''}">
+          <div class="${markerClasses}">
             <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" />
+            ${sparkleHtml}
           </div>
-          <div class="marker-pointer"></div>
+          <div class="${pointerClass}"></div>
         `,
         iconSize: [44, 52],
         iconAnchor: [22, 50],
@@ -2724,6 +2884,16 @@ class SimpleGallery {
       });
 
       const marker = L.marker([lat, lng], { icon: markerIcon });
+
+      let sourceBadgeHtml = '';
+      if (item.gps_source === 'interpolated') {
+        sourceBadgeHtml = `<div class="map-popup-magic-badge">✨ Position estimée (+${item.delta_min_a} min après « ${this.escapeHtml(item.anchor_a)} »)</div>`;
+      } else if (item.gps_source === 'extrapolated') {
+        sourceBadgeHtml = `<div class="map-popup-magic-badge">✨ Position estimée (proche de « ${this.escapeHtml(item.anchor_name)} »)</div>`;
+      } else {
+        sourceBadgeHtml = `<div class="map-popup-date" style="color:#4ade80; font-weight:600; font-size:0.75rem; margin-bottom:2px;">📍 Coordonnées GPS réelles</div>`;
+      }
+
       const popupContent = `
         <div class="map-popup-card">
           <div class="map-popup-img-wrap" onclick="window.galleryApp.openLightboxByPath('${this.escapeHtml(file.path)}')">
@@ -2731,6 +2901,7 @@ class SimpleGallery {
             <div class="map-popup-play-overlay">🔍 Voir</div>
           </div>
           <div class="map-popup-info">
+            ${sourceBadgeHtml}
             <div class="map-popup-title" title="${this.escapeHtml(file.name)}">${this.escapeHtml(file.name)}</div>
             ${file.exif?.datetime ? `<div class="map-popup-date">📅 ${this.escapeHtml(file.exif.datetime)}</div>` : ''}
             ${file.comment ? `<div class="map-popup-comment">💬 ${this.escapeHtml(file.comment)}</div>` : ''}
@@ -2740,14 +2911,14 @@ class SimpleGallery {
           </div>
         </div>
       `;
-      marker.bindPopup(popupContent, { maxWidth: 260, className: 'sg-leaflet-popup' });
+      marker.bindPopup(popupContent, { maxWidth: 270, className: 'sg-leaflet-popup' });
       this.mapMarkersGroup.addLayer(marker);
       markersMap.set(file.path, marker);
     });
 
     if (latLngs.length > 1) {
       this.mapRouteLine = L.polyline(latLngs, {
-        color: '#6366f1',
+        color: '#818cf8',
         weight: 4,
         opacity: 0.85,
         dashArray: '8, 8',
