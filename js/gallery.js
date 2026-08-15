@@ -712,12 +712,19 @@ class SimpleGallery {
 
   applyDotfileOverrides(overrides) {
     if (overrides.background) {
-      if (overrides.background.startsWith('thumb.php') || overrides.background.includes('/')) {
+      const isImg = overrides.background.startsWith('thumb.php') ||
+                    overrides.background.includes('/') ||
+                    /\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)$/i.test(overrides.background) ||
+                    /^https?:\/\//i.test(overrides.background);
+
+      if (isImg && !overrides.background.includes('linear-gradient') && !overrides.background.startsWith('#') && !overrides.background.startsWith('rgb')) {
         document.body.style.backgroundImage = `url("${overrides.background}")`;
-        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundSize = '100% 100%';
         document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
         document.body.style.backgroundAttachment = 'fixed';
       } else {
+        document.body.style.backgroundImage = '';
         document.body.style.background = overrides.background;
       }
     } else {
@@ -2163,7 +2170,7 @@ class SimpleGallery {
     const overrides = this.state.overrides || {};
     if (this.el.dotfileTitleInput) this.el.dotfileTitleInput.value = overrides.title || '';
     if (this.el.dotfileDescInput) this.el.dotfileDescInput.value = overrides.description || '';
-    if (this.el.dotfileBgInput) this.el.dotfileBgInput.value = overrides.background || '';
+    if (this.el.dotfileBgInput) this.el.dotfileBgInput.value = (overrides.raw_background !== undefined) ? overrides.raw_background : (overrides.background || '');
     if (this.el.dotfileThemeSelect) {
       this.el.dotfileThemeSelect.value = overrides.theme_name || (typeof overrides.theme === 'string' ? overrides.theme : '');
     }

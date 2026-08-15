@@ -1185,10 +1185,11 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
     if (file_exists($bg_file) && is_readable($bg_file)) {
         $bg_val = trim(file_get_contents($bg_file));
         if ($bg_val !== '') {
+            $overrides['raw_background'] = $bg_val;
             $possible_image = $dir_path . '/' . $bg_val;
             if (file_exists($possible_image) && is_file($possible_image)) {
                 $rel_bg = get_relative_path($possible_image, $base_dir);
-                $overrides['background'] = 'thumb.php?file=' . rawurlencode($rel_bg);
+                $overrides['background'] = encode_url_path($rel_bg);
             } else {
                 $overrides['background'] = $bg_val;
             }
