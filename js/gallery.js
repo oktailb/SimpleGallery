@@ -2768,7 +2768,20 @@ class SimpleGallery {
 
     const result = [];
     const maxInterpolationGapSec = 7200; // 2 hours max gap between anchors
-    const maxExtrapolationGapSec = 1800; // 30 minutes max before first / after last anchor
+    const maxInterpolationDistKm = 50;   // 50 km max distance for linear interpolation
+    const maxSpeedKmH = 130;             // 130 km/h max speed threshold
+    const maxExtrapolationGapSec = 3600; // 60 minutes max to attach to nearest anchor
+
+    // Haversine distance calculation in kilometers
+    const haversineKm = (lat1, lon1, lat2, lon2) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
 
     sorted.forEach((file) => {
       const time = file.effective_mtime || file.mtime;
@@ -2806,57 +2819,59 @@ class SimpleGallery {
       if (prevAnchor && nextAnchor && prevAnchor !== nextAnchor) {
         const deltaT = nextAnchor.time - prevAnchor.time;
         if (deltaT > 0 && deltaT <= maxInterpolationGapSec) {
-          const ratio = (time - prevAnchor.time) / deltaT;
-          const lat = prevAnchor.file.exif.gps.lat + ratio * (nextAnchor.file.exif.gps.lat - prevAnchor.file.exif.gps.lat);
-          const lng = prevAnchor.file.exif.gps.lng + ratio * (nextAnchor.file.exif.gps.lng - prevAnchor.file.exif.gps.lng);
-          const deltaMinA = Math.round((time - prevAnchor.time) / 60);
+          const distKm = haversineKm(
+            prevAnchor.file.exif.gps.lat, prevAnchor.file.exif.gps.lng,
+            nextAnchor.file.exif.gps.lat, nextAnchor.file.exif.gps.lng
+          );
+          const speedKmH = (distKm / (deltaT / 3600));
 
-          result.push({
-            file,
-            gps_source: 'interpolated',
-            lat,
-            lng,
-            time,
-            anchor_a: prevAnchor.file.name,
-            anchor_b: nextAnchor.file.name,
-            delta_min_a: deltaMinA
-          });
-          return;
+          // Only perform linear interpolation if distance and speed are realistic for local movement
+          if (distKm <= maxInterpolationDistKm && speedKmH <= maxSpeedKmH) {
+            const ratio = (time - prevAnchor.time) / deltaT;
+            const lat = prevAnchor.file.exif.gps.lat + ratio * (nextAnchor.file.exif.gps.lat - prevAnchor.file.exif.gps.lat);
+            const lng = prevAnchor.file.exif.gps.lng + ratio * (nextAnchor.file.exif.gps.lng - prevAnchor.file.exif.gps.lng);
+            const deltaMinA = Math.round((time - prevAnchor.time) / 60);
+
+            result.push({
+              file,
+              gps_source: 'interpolated',
+              lat,
+              lng,
+              time,
+              anchor_a: prevAnchor.file.name,
+              anchor_b: nextAnchor.file.name,
+              delta_min_a: deltaMinA
+            });
+            return;
+          }
         }
       }
 
-      // Case B: Extrapolation before the very first anchor
-      if (!prevAnchor && nextAnchor) {
-        const gap = nextAnchor.time - time;
-        if (gap <= maxExtrapolationGapSec) {
-          result.push({
-            file,
-            gps_source: 'extrapolated',
-            lat: nextAnchor.file.exif.gps.lat,
-            lng: nextAnchor.file.exif.gps.lng,
-            time,
-            anchor_name: nextAnchor.file.name,
-            delta_min: Math.round(gap / 60)
-          });
-          return;
-        }
+      // Case B: Fallback - Proximity attachment to nearest anchor in time
+      const gapPrev = prevAnchor ? (time - prevAnchor.time) : Infinity;
+      const gapNext = nextAnchor ? (nextAnchor.time - time) : Infinity;
+
+      let closestAnchor = null;
+      let minGapSec = Infinity;
+
+      if (gapPrev <= gapNext) {
+        closestAnchor = prevAnchor;
+        minGapSec = gapPrev;
+      } else {
+        closestAnchor = nextAnchor;
+        minGapSec = gapNext;
       }
 
-      // Case C: Extrapolation after the very last anchor
-      if (prevAnchor && !nextAnchor) {
-        const gap = time - prevAnchor.time;
-        if (gap <= maxExtrapolationGapSec) {
-          result.push({
-            file,
-            gps_source: 'extrapolated',
-            lat: prevAnchor.file.exif.gps.lat,
-            lng: prevAnchor.file.exif.gps.lng,
-            time,
-            anchor_name: prevAnchor.file.name,
-            delta_min: Math.round(gap / 60)
-          });
-          return;
-        }
+      if (closestAnchor && minGapSec <= maxExtrapolationGapSec) {
+        result.push({
+          file,
+          gps_source: 'extrapolated',
+          lat: closestAnchor.file.exif.gps.lat,
+          lng: closestAnchor.file.exif.gps.lng,
+          time,
+          anchor_name: closestAnchor.file.name,
+          delta_min: Math.round(minGapSec / 60)
+        });
       }
     });
 
