@@ -1517,7 +1517,8 @@ $output_data = [
         'can_move'             => has_permission('can_move', $real_base_dir),
         'can_comment'          => has_permission('can_comment', $real_base_dir),
         'can_create_folder'    => has_permission('can_create_folder', $real_base_dir),
-        'can_download_archive' => has_permission('can_download_archive', $real_base_dir)
+        'can_download_archive' => has_permission('can_download_archive', $real_base_dir),
+        'can_download_item'    => has_permission('can_download_item', $real_base_dir)
     ],
     'available_archives'=> find_archive_binaries(),
     'stats'             => [

@@ -503,13 +503,16 @@ function get_permissions_file_path(string $base_dir): string {
 }
 
 function get_default_permissions(): array {
+    global $allow_direct_download;
+    $allow_item = isset($allow_direct_download) ? (bool)$allow_direct_download : true;
     return [
         'can_upload'           => false,
         'can_delete'           => false,
         'can_move'             => false,
         'can_comment'          => true,
         'can_create_folder'    => false,
-        'can_download_archive' => true
+        'can_download_archive' => true,
+        'can_download_item'    => $allow_item
     ];
 }
 

@@ -2670,3 +2670,16 @@ kbd {
   background: #0f172a;
 }
 
+/* Protection anti-téléchargement direct (Désactivation glisser-déposer & clic droit) */
+body.no-direct-download img,
+body.no-direct-download video,
+body.no-direct-download audio {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+

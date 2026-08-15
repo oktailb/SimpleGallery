@@ -36,7 +36,8 @@ class SimpleGallery {
         can_move: false,
         can_comment: true,
         can_create_folder: false,
-        can_download_archive: true
+        can_download_archive: true,
+        can_download_item: true
       },
       availableArchives: {}
     };
@@ -273,6 +274,28 @@ class SimpleGallery {
     if (this.el.folderMapBtn) {
       this.el.folderMapBtn.addEventListener('click', () => this.openMapModal());
     }
+
+    // Protection anti-clic droit "Enregistrer sous" et glisser-déposer quand la permission de téléchargement direct est désactivée
+    document.addEventListener('contextmenu', (e) => {
+      const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item !== false : true);
+      if (!canDownloadItem) {
+        const target = e.target;
+        if (target.tagName === 'IMG' || target.tagName === 'VIDEO' || target.tagName === 'AUDIO' || target.closest('.polaroid-card, .grid-card, .lightbox-content')) {
+          e.preventDefault();
+          return false;
+        }
+      }
+    }, true);
+
+    document.addEventListener('dragstart', (e) => {
+      const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item !== false : true);
+      if (!canDownloadItem) {
+        if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO' || e.target.tagName === 'AUDIO') {
+          e.preventDefault();
+          return false;
+        }
+      }
+    }, true);
 
     if (this.el.mapModalCloseBtn) {
       this.el.mapModalCloseBtn.addEventListener('click', () => this.closeMapModal());
@@ -1319,8 +1342,12 @@ class SimpleGallery {
 
     this.el.lightboxTitle.textContent = file.name;
     this.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
+    const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item : true);
     this.el.lightboxDownloadBtn.href = file.file_url;
     this.el.lightboxDownloadBtn.setAttribute('download', file.name);
+    if (this.el.lightboxDownloadBtn) {
+      this.el.lightboxDownloadBtn.style.display = canDownloadItem ? 'inline-flex' : 'none';
+    }
 
     if (this.el.lightboxDeleteBtn) {
       this.el.lightboxDeleteBtn.style.display = this.state.isAdmin ? 'inline-flex' : 'none';
@@ -1353,13 +1380,15 @@ class SimpleGallery {
       this.el.imageExplorerControls.style.display = 'none';
     }
 
+    const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
+
     let html = '';
     if (file.category === 'image') {
       html = `<img id="lightboxExplorerImg" src="${file.file_url}" alt="${this.escapeHtml(file.name)}" class="explorer-img" draggable="false" />`;
     } else if (file.category === 'video') {
       html = `
         <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
-          <video controls autoplay name="media" style="max-width:100%; max-height:75vh;">
+          <video controls ${controlsListAttr} autoplay name="media" style="max-width:100%; max-height:75vh;">
             <source src="${file.file_url}" type="video/${file.extension === 'mov' ? 'mp4' : file.extension}">
             Your browser does not support playing this video.
           </video>
@@ -1373,7 +1402,7 @@ class SimpleGallery {
         <div class="lightbox-audio-card" style="display:flex; flex-direction:column; align-items:center;">
           <div style="font-size:4rem;">🎵</div>
           <h3>${this.escapeHtml(file.name)}</h3>
-          <audio controls autoplay src="${file.file_url}"></audio>
+          <audio controls ${controlsListAttr} autoplay src="${file.file_url}"></audio>
           <button id="lightboxPipTransferBtn" class="pill-btn active" style="margin-top:16px; background:#6366f1; color:#fff; border:none; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
             🗗 Passer en lecteur flottant PiP (Continuer la navigation)
           </button>
@@ -2413,11 +2442,15 @@ class SimpleGallery {
   }
 
   updateRightsUI() {
-    const rights = this.state.userRights || { is_admin: false, can_upload: false, can_delete: false, can_move: false, can_comment: true, can_create_folder: false, can_download_archive: true };
+    const rights = this.state.userRights || { is_admin: false, can_upload: false, can_delete: false, can_move: false, can_comment: true, can_create_folder: false, can_download_archive: true, can_download_item: true };
+    const canDownloadItem = this.state.isAdmin || (rights.can_download_item !== false);
+    document.body.classList.toggle('no-direct-download', !canDownloadItem);
+
     if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = rights.can_upload ? '' : 'none';
     if (this.el.createFolderBtn) this.el.createFolderBtn.style.display = rights.can_create_folder ? '' : 'none';
     if (this.el.folderSettingsBtn) this.el.folderSettingsBtn.style.display = this.state.isAdmin ? '' : 'none';
     if (this.el.downloadArchiveBtn) this.el.downloadArchiveBtn.style.display = rights.can_download_archive ? '' : 'none';
+    if (this.el.lightboxDownloadBtn) this.el.lightboxDownloadBtn.style.display = canDownloadItem ? '' : 'none';
   }
 
   initPipPlayer() {
@@ -2656,6 +2689,10 @@ class SimpleGallery {
             <input type="checkbox" name="can_download_archive" ${perms.can_download_archive ? 'checked' : ''} />
             <span>📦 Téléchargement d'archives</span>
           </label>
+          <label class="perm-checkbox-card">
+            <input type="checkbox" name="can_download_item" ${perms.can_download_item !== false ? 'checked' : ''} />
+            <span>⬇️ Téléchargement direct des médias seuls</span>
+          </label>
         </div>
         <div id="adminPermSaveMsg" class="admin-error-msg" style="display:none; margin-top:8px;"></div>
         <button type="submit" class="pill-btn active" style="margin-top:12px; width:100%; justify-content:center; background:#6366f1; color:white;">
@@ -2674,7 +2711,8 @@ class SimpleGallery {
           can_move: permForm.querySelector('[name="can_move"]').checked,
           can_comment: permForm.querySelector('[name="can_comment"]').checked,
           can_create_folder: permForm.querySelector('[name="can_create_folder"]').checked,
-          can_download_archive: permForm.querySelector('[name="can_download_archive"]').checked
+          can_download_archive: permForm.querySelector('[name="can_download_archive"]').checked,
+          can_download_item: permForm.querySelector('[name="can_download_item"]').checked
         };
 
         try {

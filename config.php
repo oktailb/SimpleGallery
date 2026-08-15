@@ -20,6 +20,9 @@ $thumb_width = 360;
 $thumb_height = 360;
 $thumb_quality = 85;
 
+// Allow direct individual item downloads (true by default, set to false to disable direct item downloads)
+$allow_direct_download = true;
+
 /**
  * Theme & Color Configuration
  * Preset choices: 'polaroid-classic', 'dark-glass', 'light-minimal', 'cyberpunk', 'custom'
