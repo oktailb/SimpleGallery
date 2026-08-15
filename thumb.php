@@ -459,7 +459,7 @@ if ($is_image) {
     }
 
     // GD processing
-    $cache_key = md5($file_path . '_' . filesize($file_path) . '_' . filemtime($file_path) . '_' . $thumb_width . 'x' . $thumb_height);
+    $cache_key = md5($file_path . '_' . filesize($file_path) . '_' . filemtime($file_path) . '_' . $thumb_width . 'x' . $thumb_height . '_v2');
     $cache_file_webp = $cache_dir . '/' . $cache_key . '.webp';
     $cache_file_jpg  = $cache_dir . '/' . $cache_key . '.jpg';
 
@@ -498,6 +498,59 @@ if ($is_image) {
     // If GD loading failed, serve original image file directly!
     if (!$src_img) {
         serve_direct_file($file_path, $ext);
+    }
+
+    // Auto-rotate image according to EXIF orientation metadata (JPEG / TIFF)
+    if (in_array($ext, ['jpg', 'jpeg', 'tif', 'tiff'], true) && function_exists('exif_read_data')) {
+        $exif = @exif_read_data($file_path);
+        if (!empty($exif['Orientation'])) {
+            $orientation = (int)$exif['Orientation'];
+            switch ($orientation) {
+                case 2:
+                    if (function_exists('imageflip')) @imageflip($src_img, IMG_FLIP_HORIZONTAL);
+                    break;
+                case 3:
+                    $rotated = @imagerotate($src_img, 180, 0);
+                    if ($rotated !== false) {
+                        imagedestroy($src_img);
+                        $src_img = $rotated;
+                    }
+                    break;
+                case 4:
+                    if (function_exists('imageflip')) @imageflip($src_img, IMG_FLIP_VERTICAL);
+                    break;
+                case 5:
+                    $rotated = @imagerotate($src_img, 270, 0);
+                    if ($rotated !== false) {
+                        imagedestroy($src_img);
+                        $src_img = $rotated;
+                        if (function_exists('imageflip')) @imageflip($src_img, IMG_FLIP_HORIZONTAL);
+                    }
+                    break;
+                case 6:
+                    $rotated = @imagerotate($src_img, 270, 0); // 270 deg CCW = 90 deg CW
+                    if ($rotated !== false) {
+                        imagedestroy($src_img);
+                        $src_img = $rotated;
+                    }
+                    break;
+                case 7:
+                    $rotated = @imagerotate($src_img, 90, 0);
+                    if ($rotated !== false) {
+                        imagedestroy($src_img);
+                        $src_img = $rotated;
+                        if (function_exists('imageflip')) @imageflip($src_img, IMG_FLIP_HORIZONTAL);
+                    }
+                    break;
+                case 8:
+                    $rotated = @imagerotate($src_img, 90, 0); // 90 deg CCW = 270 deg CW
+                    if ($rotated !== false) {
+                        imagedestroy($src_img);
+                        $src_img = $rotated;
+                    }
+                    break;
+            }
+        }
     }
 
     $orig_w = imagesx($src_img);
