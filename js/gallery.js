@@ -53,11 +53,14 @@ class SimpleGallery {
       startY: 0
     };
 
-    // Touch Swipe State for Mobile
+    // Touch Swipe & Pinch-to-Zoom State for Mobile
     this.touchState = {
       startX: 0,
       startY: 0,
-      startTime: 0
+      startTime: 0,
+      pinchDist: 0,
+      pinchScale: 1,
+      isPinching: false
     };
 
     this.isSmartGpsEnabled = true;
@@ -572,10 +575,17 @@ class SimpleGallery {
     window.addEventListener('mousemove', (e) => this.doDrag(e));
     window.addEventListener('mouseup', (e) => this.endDrag(e));
 
-    // Touch Drag & Swipe Events for Mobile
-    this.el.lightboxContent.addEventListener('touchstart', (e) => this.startTouchDrag(e), { passive: true });
+    // Touch Drag, Swipe & Pinch-to-Zoom Events for Mobile
+    this.el.lightboxContent.addEventListener('touchstart', (e) => this.startTouchDrag(e), { passive: false });
     window.addEventListener('touchmove', (e) => this.doTouchDrag(e), { passive: false });
     window.addEventListener('touchend', (e) => this.endDrag(e));
+
+    // Mobile Hardware "Back" Button / History Popstate Listener
+    window.addEventListener('popstate', (e) => {
+      if (this.el.lightbox && this.el.lightbox.classList.contains('open')) {
+        this.closeLightbox(false);
+      }
+    });
 
     // Double Click to Toggle Zoom (1x <-> 2.5x)
     this.el.lightboxContent.addEventListener('dblclick', (e) => {
@@ -1344,6 +1354,12 @@ class SimpleGallery {
     this.state.lightboxIndex = index;
     const file = this.state.filteredFiles[index];
 
+    // Push history state so mobile "Back" button closes Lightbox instead of exiting page
+    if (!this.state.isLightboxHistoryPushed) {
+      history.pushState({ lightbox: true }, '');
+      this.state.isLightboxHistoryPushed = true;
+    }
+
     this.el.lightboxTitle.textContent = file.name;
     this.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
     const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item : true);
@@ -1616,16 +1632,29 @@ class SimpleGallery {
   }
 
   startTouchDrag(e) {
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    this.touchState.startX = touch.clientX;
-    this.touchState.startY = touch.clientY;
-    this.touchState.startTime = Date.now();
+    if (e.touches.length === 2 && this.isCurrentMediaImage()) {
+      e.preventDefault();
+      this.touchState.isPinching = true;
+      this.zoomState.isDragging = false;
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      this.touchState.pinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      this.touchState.pinchScale = this.zoomState.scale;
+      return;
+    }
 
-    if (this.isCurrentMediaImage() && this.zoomState.scale > 1) {
-      this.zoomState.isDragging = true;
-      this.zoomState.startX = touch.clientX - this.zoomState.translateX;
-      this.zoomState.startY = touch.clientY - this.zoomState.translateY;
+    if (e.touches.length === 1) {
+      this.touchState.isPinching = false;
+      const touch = e.touches[0];
+      this.touchState.startX = touch.clientX;
+      this.touchState.startY = touch.clientY;
+      this.touchState.startTime = Date.now();
+
+      if (this.isCurrentMediaImage() && this.zoomState.scale > 1) {
+        this.zoomState.isDragging = true;
+        this.zoomState.startX = touch.clientX - this.zoomState.translateX;
+        this.zoomState.startY = touch.clientY - this.zoomState.translateY;
+      }
     }
   }
 
@@ -1639,7 +1668,29 @@ class SimpleGallery {
   }
 
   doTouchDrag(e) {
+    if (e.touches.length === 2 && this.touchState.isPinching && this.isCurrentMediaImage()) {
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+      if (this.touchState.pinchDist > 0) {
+        const factor = currentDist / this.touchState.pinchDist;
+        let newScale = this.touchState.pinchScale * factor;
+        newScale = Math.min(Math.max(newScale, 1), 5);
+        this.zoomState.scale = newScale;
+        if (newScale === 1) {
+          this.zoomState.translateX = 0;
+          this.zoomState.translateY = 0;
+        }
+        this.clampTranslate();
+        this.updateExplorerTransform(false);
+      }
+      return;
+    }
+
     if (this.isCurrentMediaImage() && this.zoomState.scale > 1 && this.zoomState.isDragging && e.touches.length === 1) {
+      e.preventDefault();
       const touch = e.touches[0];
       this.zoomState.translateX = touch.clientX - this.zoomState.startX;
       this.zoomState.translateY = touch.clientY - this.zoomState.startY;
@@ -1649,6 +1700,14 @@ class SimpleGallery {
   }
 
   endDrag(e) {
+    if (this.touchState.isPinching) {
+      if (!e.touches || e.touches.length < 2) {
+        this.touchState.isPinching = false;
+        this.touchState.pinchDist = 0;
+      }
+      return;
+    }
+
     // Check horizontal touch swipe gesture for Lightbox navigation
     if (this.touchState.startTime > 0) {
       const elapsed = Date.now() - this.touchState.startTime;
@@ -1709,11 +1768,18 @@ class SimpleGallery {
     }
   }
 
-  closeLightbox() {
+  closeLightbox(shouldPopHistory = true) {
     this.el.lightbox.classList.remove('open');
     this.el.lightboxContent.innerHTML = '';
     this.state.lightboxIndex = null;
     this.resetZoom();
+
+    if (this.state.isLightboxHistoryPushed) {
+      this.state.isLightboxHistoryPushed = false;
+      if (shouldPopHistory && history.state && history.state.lightbox) {
+        history.back();
+      }
+    }
   }
 
   navigateLightbox(direction) {

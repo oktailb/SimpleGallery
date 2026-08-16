@@ -475,7 +475,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
       <div class="admin-modal-body">
         <p id="deleteConfirmMessage" style="font-size: 0.95rem; margin: 1rem 0; color: var(--text-main); line-height: 1.5;"></p>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
-          <button id="deleteCancelBtn" class="btn-toggle" style="flex: 1;">Annuler</button>
+          <button id="deleteCancelBtn" class="btn-toggle" style="flex: 1; justify-content: center;">Annuler</button>
           <button id="deleteConfirmActionBtn" class="pill-btn active" style="flex: 1; background: #ef4444; color: white; justify-content: center; font-weight: 700;">
             🗑️ Supprimer
           </button>

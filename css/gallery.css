@@ -1138,6 +1138,40 @@ kbd {
     gap: 0.65rem !important;
   }
 
+  .lightbox-footer {
+    display: none !important;
+  }
+
+  #imageExplorerControls {
+    display: none !important;
+  }
+
+  .lightbox-header {
+    padding: 0.6rem 0.85rem !important;
+    gap: 0.5rem;
+  }
+
+  .lightbox-title {
+    font-size: 0.95rem !important;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lightbox-actions {
+    gap: 0.3rem !important;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+
+  .lightbox-btn {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.9rem !important;
+    flex-shrink: 0;
+  }
+
   .lightbox-nav-btn {
     width: 36px !important;
     height: 36px !important;
