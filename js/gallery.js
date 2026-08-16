@@ -737,7 +737,7 @@ class SimpleGallery {
           this.openFolderUnlockModal(dirPath);
           this.renderProtectedState(dirPath);
         } else {
-          this.renderRestrictedState(json.error || 'Accès refusé');
+          this.renderPrivateState(json.error || 'Accès refusé');
         }
         this.showLoading(false);
         return;
@@ -1203,6 +1203,10 @@ class SimpleGallery {
       <h3>Private Folder</h3>
       <p>${this.escapeHtml(msg || 'Ce dossier est masqué et réservé à l\'administrateur.')}</p>
     `;
+  }
+
+  renderRestrictedState(msg) {
+    this.renderPrivateState(msg);
   }
 
   renderMedia() {
