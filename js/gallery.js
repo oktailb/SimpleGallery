@@ -1021,10 +1021,15 @@ class SimpleGallery {
         card.addEventListener('dragstart', (e) => {
           this.state.draggingItemPath = folderPath;
           e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: folderPath }));
-          setTimeout(() => card.classList.add('dragging'), 0);
+          card.style.opacity = '0.6';
+          setTimeout(() => {
+            card.style.opacity = '';
+            card.classList.add('dragging');
+          }, 0);
         });
 
         card.addEventListener('dragend', () => {
+          card.style.opacity = '';
           card.classList.remove('dragging');
           this.state.draggingItemPath = null;
         });
@@ -1401,7 +1406,9 @@ class SimpleGallery {
             primaryPath: file.path
           }));
 
+          card.style.opacity = '0.6';
           setTimeout(() => {
+            card.style.opacity = '';
             card.classList.add('dragging');
             pathsToMove.forEach(p => {
               const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
@@ -1414,7 +1421,11 @@ class SimpleGallery {
         });
 
         card.addEventListener('dragend', () => {
-          this.el.mediaGrid.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+          card.style.opacity = '';
+          this.el.mediaGrid.querySelectorAll('.dragging').forEach(el => {
+            el.style.opacity = '';
+            el.classList.remove('dragging');
+          });
           this.state.draggingPaths = null;
           this.state.draggingItemPath = null;
         });
