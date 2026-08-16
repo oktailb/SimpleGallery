@@ -1020,8 +1020,8 @@ class SimpleGallery {
       if (this.state.isAdmin) {
         card.addEventListener('dragstart', (e) => {
           this.state.draggingItemPath = folderPath;
-          card.classList.add('dragging');
           e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: folderPath }));
+          setTimeout(() => card.classList.add('dragging'), 0);
         });
 
         card.addEventListener('dragend', () => {
@@ -1401,13 +1401,15 @@ class SimpleGallery {
             primaryPath: file.path
           }));
 
-          pathsToMove.forEach(p => {
-            const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
-              const idx = parseInt(c.dataset.index, 10);
-              return this.state.filteredFiles[idx]?.path === p;
+          setTimeout(() => {
+            pathsToMove.forEach(p => {
+              const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
+                const idx = parseInt(c.dataset.index, 10);
+                return this.state.filteredFiles[idx]?.path === p;
+              });
+              if (el) el.classList.add('dragging');
             });
-            if (el) el.classList.add('dragging');
-          });
+          }, 0);
         });
 
         card.addEventListener('dragend', () => {
