@@ -1330,7 +1330,11 @@ class SimpleGallery {
       }
 
       card.addEventListener('click', () => {
-        this.openLightbox(index);
+        if (file && file.category === 'audio') {
+          this.openPipPlayer(file);
+        } else {
+          this.openLightbox(index);
+        }
       });
     });
   }
@@ -1398,13 +1402,14 @@ class SimpleGallery {
         </div>
       `;
     } else if (file.category === 'audio') {
+      this.openPipPlayer(file);
       html = `
         <div class="lightbox-audio-card" style="display:flex; flex-direction:column; align-items:center;">
           <div style="font-size:4rem;">🎵</div>
           <h3>${this.escapeHtml(file.name)}</h3>
-          <audio controls ${controlsListAttr} autoplay src="${file.file_url}"></audio>
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-top:4px;">Lecture démarrée en lecteur flottant PiP 🎵</p>
           <button id="lightboxPipTransferBtn" class="pill-btn active" style="margin-top:16px; background:#6366f1; color:#fff; border:none; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
-            🗗 Passer en lecteur flottant PiP (Continuer la navigation)
+            🗗 Relancer le lecteur flottant PiP
           </button>
         </div>
       `;
@@ -2496,11 +2501,15 @@ class SimpleGallery {
     if (!this.el.pipWidget || !this.el.pipMediaContainer) return;
     if (this.el.pipTitle) this.el.pipTitle.innerText = file.comment || file.name;
     this.el.pipWidget.style.display = 'flex';
+    this.el.pipWidget.classList.remove('minimized');
+
+    const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item !== false : true);
+    const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
 
     if (file.category === 'video') {
-      this.el.pipMediaContainer.innerHTML = `<video src="${file.file_url}" controls autoplay style="width:100%;max-height:200px;"></video>`;
+      this.el.pipMediaContainer.innerHTML = `<video src="${file.file_url}" controls ${controlsListAttr} autoplay style="width:100%;max-height:200px;"></video>`;
     } else if (file.category === 'audio') {
-      this.el.pipMediaContainer.innerHTML = `<div style="padding:16px; width:100%; text-align:center;"><div style="font-size:2rem;margin-bottom:8px;">🎵</div><audio src="${file.file_url}" controls autoplay style="width:100%;"></audio></div>`;
+      this.el.pipMediaContainer.innerHTML = `<div style="padding:16px; width:100%; text-align:center;"><div style="font-size:2rem;margin-bottom:8px;">🎵</div><audio src="${file.file_url}" controls ${controlsListAttr} autoplay style="width:100%;"></audio></div>`;
     }
   }
 
