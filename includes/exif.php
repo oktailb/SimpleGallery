@@ -416,6 +416,10 @@ function extract_exif_data(string $file_path): ?array {
         'gps'           => $gps_data
     ];
 
+    if (function_exists('sanitize_utf8')) {
+        $result = sanitize_utf8($result);
+    }
+
     write_exif_log("SUCCESS: Extracted EXIF for " . basename($file_path) . " -> " . json_encode($result));
     return $result;
 }

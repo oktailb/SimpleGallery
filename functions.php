@@ -32,6 +32,29 @@ function ensure_session_started(): void {
 }
 
 /**
+ * Recursively cleans and sanitizes any string or array to ensure valid UTF-8 for json_encode
+ */
+function sanitize_utf8($mixed) {
+    if (is_array($mixed)) {
+        $clean = [];
+        foreach ($mixed as $k => $v) {
+            $clean_k = sanitize_utf8($k);
+            $clean[$clean_k] = sanitize_utf8($v);
+        }
+        return $clean;
+    } elseif (is_string($mixed)) {
+        if (!mb_check_encoding($mixed, 'UTF-8')) {
+            $mixed = mb_convert_encoding($mixed, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252, ASCII');
+        }
+        if (function_exists('mb_scrub')) {
+            return mb_scrub($mixed, 'UTF-8');
+        }
+        return $mixed;
+    }
+    return $mixed;
+}
+
+/**
  * Generates or retrieves the session CSRF token
  */
 function get_csrf_token(): string {
@@ -779,7 +802,7 @@ function get_cache_storage_dir(string $base_dir, string $thumb_dir): string {
 function get_dir_cache_file_path(string $dir_path, string $base_dir, string $thumb_dir): string {
     $storage = get_cache_storage_dir($base_dir, $thumb_dir);
     $rel = get_relative_path($dir_path, $base_dir);
-    $key = md5('dir_index_v5_pure_php_exif_' . $rel);
+    $key = md5('dir_index_v6_utf8_sanitized_' . $rel);
     return $storage . '/cache_' . $key . '.json';
 }
 

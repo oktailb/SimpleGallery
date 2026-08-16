@@ -1198,9 +1198,10 @@ class SimpleGallery {
     if (!this.el.emptyState) return;
     this.el.mediaGrid.style.display = 'none';
     this.el.emptyState.style.display = 'block';
+    const isCustomError = !!msg && msg !== 'Accès refusé';
     this.el.emptyState.innerHTML = `
-      <div class="empty-state-icon">👁️‍🗨️</div>
-      <h3>Private Folder</h3>
+      <div class="empty-state-icon">${isCustomError ? '⚠️' : '👁️‍🗨️'}</div>
+      <h3>${this.escapeHtml(isCustomError ? 'Erreur d\'accès' : 'Dossier Privé')}</h3>
       <p>${this.escapeHtml(msg || 'Ce dossier est masqué et réservé à l\'administrateur.')}</p>
     `;
   }

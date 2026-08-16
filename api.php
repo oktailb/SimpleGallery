@@ -1255,7 +1255,16 @@ $output_data = [
     ]
 ];
 
-$json_string = json_encode($output_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+if (function_exists('sanitize_utf8')) {
+    $output_data = sanitize_utf8($output_data);
+}
+
+$json_flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
+    $json_flags |= JSON_INVALID_UTF8_SUBSTITUTE;
+}
+
+$json_string = json_encode($output_data, $json_flags);
 if ($json_string === false) {
     $json_string = json_encode([
         'success' => false,
