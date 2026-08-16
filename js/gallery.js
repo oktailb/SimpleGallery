@@ -2224,6 +2224,10 @@ class SimpleGallery {
         reject(new Error('Erreur réseau lors du transfert.'));
       };
 
+      xhr.send(formData);
+    });
+  }
+
   showDragFollower(card, count = 1) {
     let follower = document.getElementById('customDragFollower');
     if (!follower) {
