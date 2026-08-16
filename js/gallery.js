@@ -1022,18 +1022,12 @@ class SimpleGallery {
           this.state.draggingItemPath = folderPath;
           e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: folderPath }));
 
-          const ghost = this.createDragGhost(card, 1);
+          const canvas = this.createDragCanvas(card, 1);
           if (e.dataTransfer && e.dataTransfer.setDragImage) {
-            const rect = card.getBoundingClientRect();
-            const offsetX = Math.min(Math.max(e.clientX - rect.left, 20), rect.width - 20);
-            const offsetY = Math.min(Math.max(e.clientY - rect.top, 20), rect.height - 20);
-            e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+            e.dataTransfer.setDragImage(canvas, 55, 55);
           }
 
-          setTimeout(() => {
-            if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-            card.classList.add('dragging');
-          }, 0);
+          setTimeout(() => card.classList.add('dragging'), 0);
         });
 
         card.addEventListener('dragend', () => {
@@ -1413,16 +1407,12 @@ class SimpleGallery {
             primaryPath: file.path
           }));
 
-          const ghost = this.createDragGhost(card, pathsToMove.length);
+          const canvas = this.createDragCanvas(card, pathsToMove.length);
           if (e.dataTransfer && e.dataTransfer.setDragImage) {
-            const rect = card.getBoundingClientRect();
-            const offsetX = Math.min(Math.max(e.clientX - rect.left, 20), rect.width - 20);
-            const offsetY = Math.min(Math.max(e.clientY - rect.top, 20), rect.height - 20);
-            e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+            e.dataTransfer.setDragImage(canvas, 55, 55);
           }
 
           setTimeout(() => {
-            if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
             card.classList.add('dragging');
             pathsToMove.forEach(p => {
               const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
@@ -2214,35 +2204,74 @@ class SimpleGallery {
   }
 
 
-  createDragGhost(card, count = 1) {
-    const clone = card.cloneNode(true);
-    clone.style.position = 'absolute';
-    clone.style.top = '-9999px';
-    clone.style.left = '-9999px';
-    clone.style.opacity = '0.5';
-    clone.style.pointerEvents = 'none';
-    clone.style.transform = 'scale(0.85)';
-    clone.style.transformOrigin = 'top left';
+  createDragCanvas(card, count = 1) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 110;
+    canvas.height = 110;
+    const ctx = canvas.getContext('2d');
 
-    if (count > 1) {
-      const badge = document.createElement('div');
-      badge.textContent = `📁 ${count} éléments`;
-      badge.style.position = 'absolute';
-      badge.style.top = '-10px';
-      badge.style.right = '-10px';
-      badge.style.background = '#6366f1';
-      badge.style.color = '#ffffff';
-      badge.style.padding = '4px 10px';
-      badge.style.borderRadius = '16px';
-      badge.style.fontWeight = 'bold';
-      badge.style.fontSize = '0.85rem';
-      badge.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
-      badge.style.zIndex = '9999';
-      clone.appendChild(badge);
+    // 45% opacité (semi-transparence réelle garantie du preview flottant)
+    ctx.globalAlpha = 0.45;
+
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(3, 3, 104, 104, 14);
+    } else {
+      ctx.rect(3, 3, 104, 104);
+    }
+    ctx.fill();
+
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    const img = card.querySelector('img');
+    if (img && img.complete && img.naturalWidth > 0) {
+      try {
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(8, 8, 94, 94, 10);
+        } else {
+          ctx.rect(8, 8, 94, 94);
+        }
+        ctx.clip();
+        ctx.drawImage(img, 8, 8, 94, 94);
+        ctx.restore();
+      } catch (err) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '32px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🖼️', 55, 55);
+      }
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('📁', 55, 55);
     }
 
-    document.body.appendChild(clone);
-    return clone;
+    if (count > 1) {
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = '#6366f1';
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(50, 72, 54, 26, 13);
+      } else {
+        ctx.rect(50, 72, 54, 26);
+      }
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${count}`, 77, 85);
+    }
+
+    return canvas;
   }
 
   updateSelectionUI() {
