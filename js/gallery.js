@@ -68,6 +68,9 @@ class SimpleGallery {
     this.state.lastSelectedIndex = null;
     this.state.draggingPaths = null;
 
+    this.emptyDragImage = new Image();
+    this.emptyDragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
     this.isSmartGpsEnabled = true;
 
     this.initElements();
@@ -667,6 +670,20 @@ class SimpleGallery {
       }
     });
 
+    window.addEventListener('dragover', (e) => {
+      if (this.state.draggingItemPath || this.state.draggingPaths) {
+        this.updateDragFollowerPos(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener('dragend', () => {
+      this.hideDragFollower();
+    });
+
+    window.addEventListener('drop', () => {
+      this.hideDragFollower();
+    });
+
     if (this.el.selectionSelectAllBtn) {
       this.el.selectionSelectAllBtn.addEventListener('click', () => this.selectAll());
     }
@@ -1021,15 +1038,20 @@ class SimpleGallery {
         card.addEventListener('dragstart', (e) => {
           this.state.draggingItemPath = folderPath;
           e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: folderPath }));
-          card.style.opacity = '0.6';
+
+          if (e.dataTransfer && e.dataTransfer.setDragImage) {
+            e.dataTransfer.setDragImage(this.emptyDragImage, 0, 0);
+          }
+          this.showDragFollower(card, 1);
+          this.updateDragFollowerPos(e.clientX, e.clientY);
+
           setTimeout(() => {
-            card.style.opacity = '';
             card.classList.add('dragging');
           }, 0);
         });
 
         card.addEventListener('dragend', () => {
-          card.style.opacity = '';
+          this.hideDragFollower();
           card.classList.remove('dragging');
           this.state.draggingItemPath = null;
         });
@@ -1406,9 +1428,13 @@ class SimpleGallery {
             primaryPath: file.path
           }));
 
-          card.style.opacity = '0.6';
+          if (e.dataTransfer && e.dataTransfer.setDragImage) {
+            e.dataTransfer.setDragImage(this.emptyDragImage, 0, 0);
+          }
+          this.showDragFollower(card, pathsToMove.length);
+          this.updateDragFollowerPos(e.clientX, e.clientY);
+
           setTimeout(() => {
-            card.style.opacity = '';
             card.classList.add('dragging');
             pathsToMove.forEach(p => {
               const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
@@ -1421,9 +1447,8 @@ class SimpleGallery {
         });
 
         card.addEventListener('dragend', () => {
-          card.style.opacity = '';
+          this.hideDragFollower();
           this.el.mediaGrid.querySelectorAll('.dragging').forEach(el => {
-            el.style.opacity = '';
             el.classList.remove('dragging');
           });
           this.state.draggingPaths = null;
@@ -2199,12 +2224,46 @@ class SimpleGallery {
         reject(new Error('Erreur réseau lors du transfert.'));
       };
 
-      xhr.send(formData);
-    });
+  showDragFollower(card, count = 1) {
+    let follower = document.getElementById('customDragFollower');
+    if (!follower) {
+      follower = document.createElement('div');
+      follower.id = 'customDragFollower';
+      follower.className = 'custom-drag-follower';
+      document.body.appendChild(follower);
+    }
+
+    const img = card.querySelector('img');
+    let contentHtml = '';
+    if (img && img.src) {
+      contentHtml = `<img src="${img.src}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; display:block;" />`;
+    } else {
+      contentHtml = `<div style="width:100px; height:100px; background:#0f172a; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:2.5rem;">📁</div>`;
+    }
+
+    if (count > 1) {
+      contentHtml += `<div class="drag-follower-badge">${count} fichiers</div>`;
+    }
+
+    follower.innerHTML = contentHtml;
+    follower.style.display = 'block';
   }
 
+  updateDragFollowerPos(x, y) {
+    const follower = document.getElementById('customDragFollower');
+    if (follower && follower.style.display !== 'none' && x > 0 && y > 0) {
+      follower.style.left = `${x}px`;
+      follower.style.top = `${y}px`;
+    }
+  }
 
-
+  hideDragFollower() {
+    const follower = document.getElementById('customDragFollower');
+    if (follower) {
+      follower.style.display = 'none';
+      follower.innerHTML = '';
+    }
+  }
 
   updateSelectionUI() {
     if (!this.el.mediaGrid) return;
