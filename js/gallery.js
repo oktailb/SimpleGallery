@@ -1021,7 +1021,19 @@ class SimpleGallery {
         card.addEventListener('dragstart', (e) => {
           this.state.draggingItemPath = folderPath;
           e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: folderPath }));
-          setTimeout(() => card.classList.add('dragging'), 0);
+
+          const ghost = this.createDragGhost(card, 1);
+          if (e.dataTransfer && e.dataTransfer.setDragImage) {
+            const rect = card.getBoundingClientRect();
+            const offsetX = Math.min(Math.max(e.clientX - rect.left, 20), rect.width - 20);
+            const offsetY = Math.min(Math.max(e.clientY - rect.top, 20), rect.height - 20);
+            e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+          }
+
+          setTimeout(() => {
+            if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+            card.classList.add('dragging');
+          }, 0);
         });
 
         card.addEventListener('dragend', () => {
@@ -1401,7 +1413,16 @@ class SimpleGallery {
             primaryPath: file.path
           }));
 
+          const ghost = this.createDragGhost(card, pathsToMove.length);
+          if (e.dataTransfer && e.dataTransfer.setDragImage) {
+            const rect = card.getBoundingClientRect();
+            const offsetX = Math.min(Math.max(e.clientX - rect.left, 20), rect.width - 20);
+            const offsetY = Math.min(Math.max(e.clientY - rect.top, 20), rect.height - 20);
+            e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+          }
+
           setTimeout(() => {
+            if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
             card.classList.add('dragging');
             pathsToMove.forEach(p => {
               const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
@@ -2192,6 +2213,37 @@ class SimpleGallery {
     });
   }
 
+
+  createDragGhost(card, count = 1) {
+    const clone = card.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    clone.style.opacity = '0.5';
+    clone.style.pointerEvents = 'none';
+    clone.style.transform = 'scale(0.85)';
+    clone.style.transformOrigin = 'top left';
+
+    if (count > 1) {
+      const badge = document.createElement('div');
+      badge.textContent = `📁 ${count} éléments`;
+      badge.style.position = 'absolute';
+      badge.style.top = '-10px';
+      badge.style.right = '-10px';
+      badge.style.background = '#6366f1';
+      badge.style.color = '#ffffff';
+      badge.style.padding = '4px 10px';
+      badge.style.borderRadius = '16px';
+      badge.style.fontWeight = 'bold';
+      badge.style.fontSize = '0.85rem';
+      badge.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+      badge.style.zIndex = '9999';
+      clone.appendChild(badge);
+    }
+
+    document.body.appendChild(clone);
+    return clone;
+  }
 
   updateSelectionUI() {
     if (!this.el.mediaGrid) return;
