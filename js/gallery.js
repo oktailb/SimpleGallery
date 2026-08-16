@@ -2097,14 +2097,16 @@ class SimpleGallery {
       }
     }
 
-    this.el.deleteConfirmModal.style.display = 'block';
-    this.el.deleteConfirmModal.classList.add('open');
+    this.el.deleteConfirmModal.style.display = 'flex';
+    setTimeout(() => this.el.deleteConfirmModal.classList.add('open'), 10);
   }
 
   closeDeleteConfirmModal() {
     if (!this.el.deleteConfirmModal) return;
-    this.el.deleteConfirmModal.style.display = 'none';
     this.el.deleteConfirmModal.classList.remove('open');
+    setTimeout(() => {
+      if (this.el.deleteConfirmModal) this.el.deleteConfirmModal.style.display = 'none';
+    }, 250);
     this.state.targetItemToDelete = null;
   }
 
