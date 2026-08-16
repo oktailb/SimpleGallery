@@ -23,6 +23,9 @@ $thumb_quality = 85;
 // Allow direct individual item downloads (true by default, set to false to disable direct item downloads)
 $allow_direct_download = true;
 
+// Enable detailed EXIF extraction logs in .thumbnails/simplegallery_exif.log (false by default)
+$enable_exif_debug = false;
+
 /**
  * Theme & Color Configuration
  * Preset choices: 'polaroid-classic', 'dark-glass', 'light-minimal', 'cyberpunk', 'custom'
@@ -99,7 +102,7 @@ function update_admin_password_in_config(string $new_password): bool {
 }
 
 // Files and folders to ignore in indexing
-$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh'];
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'includes', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh'];
 
 
 

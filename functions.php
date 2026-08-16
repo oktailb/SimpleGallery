@@ -7,6 +7,9 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
     define('SIMPLE_GALLERY_CORE', true);
 }
 
+require_once __DIR__ . '/includes/exif.php';
+require_once __DIR__ . '/includes/binaries.php';
+
 /**
  * Safely starts PHP session with secure cookie parameters
  */
@@ -83,8 +86,9 @@ function get_admin_password_hash(string $legacy_hash = ''): string {
 function update_admin_password_hash(string $new_password): bool {
     $hash = password_hash($new_password, PASSWORD_DEFAULT);
     $hash_file = __DIR__ . '/.admin_password_hash';
-    return (file_put_contents($hash_file, $hash . "\n", LOCK_EX) !== false);
+    return (@file_put_contents($hash_file, $hash . "\n", LOCK_EX) !== false);
 }
+
 
 /**
  * Rate Limiting Helpers
@@ -553,52 +557,7 @@ function has_permission(string $permission_key, string $base_dir): bool {
  * MULTI-FORMAT ARCHIVE DISCOVERY & GENERATION (ZIP, 7Z, TAR)
  * -------------------------------------------------------------
  */
-function find_archive_binaries(): array {
-    $available = [];
 
-    if (extension_loaded('zip') || class_exists('ZipArchive')) {
-        $available['zip'] = 'PHP ZipArchive';
-    } else {
-        $zip_cli = find_binary_executable('zip');
-        if ($zip_cli) $available['zip'] = 'CLI zip (' . $zip_cli . ')';
-    }
-
-    $sz_cli = find_binary_executable('7z') ?: find_binary_executable('7za');
-    if ($sz_cli) {
-        $available['7z'] = 'CLI 7-Zip (' . $sz_cli . ')';
-    }
-
-    $tar_cli = find_binary_executable('tar');
-    if ($tar_cli) {
-        $available['tar'] = 'CLI tar (' . $tar_cli . ')';
-    }
-
-    return $available;
-}
-
-function find_binary_executable(string $binary_name): ?string {
-    $common_paths = [
-        '/usr/bin/' . $binary_name,
-        '/usr/local/bin/' . $binary_name,
-        '/bin/' . $binary_name,
-        '/opt/homebrew/bin/' . $binary_name
-    ];
-    foreach ($common_paths as $path) {
-        if (file_exists($path) && is_executable($path)) return $path;
-    }
-    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
-        $win_which = @trim((string)@exec('where ' . escapeshellarg($binary_name) . ' 2>nul'));
-        if (!empty($win_which)) {
-            $lines = explode("\n", str_replace("\r", "", $win_which));
-            $first = trim($lines[0]);
-            if (file_exists($first)) return $first;
-        }
-    } else {
-        $which = @trim((string)@exec('which ' . escapeshellarg($binary_name) . ' 2>/dev/null'));
-        if (!empty($which) && file_exists($which) && is_executable($which)) return $which;
-    }
-    return null;
-}
 
 function create_archive(string $format, string $target_dir, string $output_file, string $base_dir, array $ignore_list): bool {
     if (!is_dir($target_dir)) return false;
@@ -727,6 +686,147 @@ function save_dir_comments(string $dir_path, array $comments): bool {
 
     return (@file_put_contents($comment_file, implode("\n", $clean_comments) . "\n", LOCK_EX) !== false);
 }
+
+/**
+ * Reads folder .dotfile configuration overrides (.title, .desc, .bg, .theme) & access info
+ */
+function load_folder_overrides(string $dir_path, string $base_dir): array {
+    $access_info = get_dir_access_info($dir_path, $base_dir);
+
+    $overrides = [
+        'title'        => null,
+        'description'  => null,
+        'background'   => null,
+        'theme'        => null,
+        'access_mode'  => $access_info['access_mode'],
+        'is_private'   => $access_info['is_private'],
+        'is_protected' => $access_info['is_protected'],
+        'is_unlocked'  => $access_info['is_unlocked']
+    ];
+
+    $title_file = $dir_path . '/.title';
+    if (file_exists($title_file) && is_readable($title_file)) {
+        $overrides['title'] = trim(file_get_contents($title_file));
+    }
+
+    $desc_file = file_exists($dir_path . '/.desc') ? $dir_path . '/.desc' : (file_exists($dir_path . '/.description') ? $dir_path . '/.description' : null);
+    if ($desc_file && is_readable($desc_file)) {
+        $overrides['description'] = trim(file_get_contents($desc_file));
+    }
+
+    $bg_file = $dir_path . '/.bg';
+    if (file_exists($bg_file) && is_readable($bg_file)) {
+        $bg_val = trim(file_get_contents($bg_file));
+        if ($bg_val !== '') {
+            $overrides['raw_background'] = $bg_val;
+            $possible_image = $dir_path . '/' . $bg_val;
+            if (file_exists($possible_image) && is_file($possible_image)) {
+                $rel_bg = get_relative_path($possible_image, $base_dir);
+                $overrides['background'] = encode_url_path($rel_bg);
+            } else {
+                $overrides['background'] = $bg_val;
+            }
+        }
+    }
+
+    $theme_file = $dir_path . '/.theme';
+    if (file_exists($theme_file) && is_readable($theme_file)) {
+        $theme_val = trim(file_get_contents($theme_file));
+        if ($theme_val !== '') {
+            global $theme_colors;
+            if (strpos($theme_val, '=') !== false) {
+                $custom_theme = [];
+                $lines = explode("\n", $theme_val);
+                foreach ($lines as $line) {
+                    if (strpos($line, '=') !== false) {
+                        list($k, $v) = explode('=', trim($line), 2);
+                        $custom_theme[trim($k)] = trim($v);
+                    }
+                }
+                $overrides['theme'] = $custom_theme;
+                $overrides['theme_name'] = 'custom';
+            } else {
+                $overrides['theme_name'] = $theme_val;
+                if (!empty($theme_colors[$theme_val])) {
+                    $overrides['theme'] = $theme_colors[$theme_val];
+                } else {
+                    $overrides['theme'] = $theme_val;
+                }
+            }
+        }
+    }
+
+    return $overrides;
+}
+
+/**
+ * Directory Cache Engine Helpers
+ */
+function get_cache_storage_dir(string $base_dir, string $thumb_dir): string {
+    $cache_dir = $base_dir . '/' . $thumb_dir;
+    if (!is_dir($cache_dir)) {
+        @mkdir($cache_dir, 0755, true);
+    }
+    if (!is_dir($cache_dir) || !is_writable($cache_dir)) {
+        $cache_dir = sys_get_temp_dir() . '/simplegallery_thumbs';
+        if (!is_dir($cache_dir)) {
+            @mkdir($cache_dir, 0755, true);
+        }
+    }
+    return $cache_dir;
+}
+
+function get_dir_cache_file_path(string $dir_path, string $base_dir, string $thumb_dir): string {
+    $storage = get_cache_storage_dir($base_dir, $thumb_dir);
+    $rel = get_relative_path($dir_path, $base_dir);
+    $key = md5('dir_index_v5_pure_php_exif_' . $rel);
+    return $storage . '/cache_' . $key . '.json';
+}
+
+function is_dir_cache_valid(string $cache_file, string $dir_path): bool {
+    if (!file_exists($cache_file) || filesize($cache_file) === 0) {
+        return false;
+    }
+    $cache_mtime = filemtime($cache_file);
+    $dir_mtime = filemtime($dir_path);
+
+    if ($cache_mtime < $dir_mtime) {
+        return false;
+    }
+
+    $dotfiles = ['.title', '.desc', '.description', '.comment', '.theme', '.bg', '.private', '.password', '.public'];
+    foreach ($dotfiles as $df) {
+        $df_path = $dir_path . '/' . $df;
+        if (file_exists($df_path) && filemtime($df_path) > $cache_mtime) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function invalidate_dir_cache(string $dir_path, string $base_dir, string $thumb_dir): void {
+    $cache_file = get_dir_cache_file_path($dir_path, $base_dir, $thumb_dir);
+    if (file_exists($cache_file)) {
+        @unlink($cache_file);
+    }
+
+    // Invalidate parent directory cache so subfolder item_count & cover update immediately
+    $real_base = str_replace('\\', '/', realpath($base_dir) ?: $base_dir);
+    $real_dir  = str_replace('\\', '/', realpath($dir_path) ?: $dir_path);
+
+    if ($real_dir !== $real_base) {
+        $parent_dir = dirname($real_dir);
+        if (strpos($parent_dir, $real_base) === 0) {
+            $parent_cache_file = get_dir_cache_file_path($parent_dir, $base_dir, $thumb_dir);
+            if (file_exists($parent_cache_file)) {
+                @unlink($parent_cache_file);
+            }
+        }
+    }
+}
+
+
 
 /**
  * -------------------------------------------------------------

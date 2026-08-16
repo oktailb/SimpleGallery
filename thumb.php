@@ -178,96 +178,9 @@ SVG;
     exit;
 }
 
-function find_ffmpeg_binary(): ?string {
-    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
-        $win_which = @trim((string)@exec('where ffmpeg 2>nul'));
-        if (!empty($win_which)) {
-            $lines = explode("\n", str_replace("\r", "", $win_which));
-            $first = trim($lines[0]);
-            if (file_exists($first)) return $first;
-        }
-    } else {
-        $common_paths = [
-            '/usr/bin/ffmpeg',
-            '/usr/local/bin/ffmpeg',
-            '/bin/ffmpeg',
-            '/opt/homebrew/bin/ffmpeg',
-            '/snap/bin/ffmpeg'
-        ];
-        foreach ($common_paths as $path) {
-            if (file_exists($path) && is_executable($path)) {
-                return $path;
-            }
-        }
-        $which = @trim((string)@exec('which ffmpeg 2>/dev/null'));
-        if (!empty($which) && file_exists($which) && is_executable($which)) {
-            return $which;
-        }
-    }
-    return null;
-}
+// Binary discovery helpers imported via config.php -> functions.php -> includes/binaries.php
 
-function find_exiftool_binary(): ?string {
-    $common_paths = [
-        '/usr/bin/exiftool',
-        '/usr/local/bin/exiftool',
-        '/bin/exiftool',
-        '/opt/homebrew/bin/exiftool'
-    ];
-    foreach ($common_paths as $path) {
-        if (file_exists($path) && is_executable($path)) {
-            return $path;
-        }
-    }
-    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
-        $win_which = @trim((string)@exec('where exiftool 2>nul'));
-        if (!empty($win_which)) {
-            $lines = explode("\n", str_replace("\r", "", $win_which));
-            $first = trim($lines[0]);
-            if (file_exists($first)) return $first;
-        }
-    } else {
-        $which = @trim((string)@exec('which exiftool 2>/dev/null'));
-        if (!empty($which) && file_exists($which) && is_executable($which)) {
-            return $which;
-        }
-    }
-    return null;
-}
 
-function find_convert_binary(): ?string {
-    $common_paths = [
-        '/usr/bin/convert',
-        '/usr/local/bin/convert',
-        '/usr/bin/magick',
-        '/usr/local/bin/magick',
-        '/bin/convert',
-        '/opt/homebrew/bin/convert'
-    ];
-    foreach ($common_paths as $path) {
-        if (file_exists($path) && is_executable($path)) {
-            return $path;
-        }
-    }
-    if (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows') {
-        $win_which = @trim((string)@exec('where magick 2>nul'));
-        if (!empty($win_which)) {
-            $lines = explode("\n", str_replace("\r", "", $win_which));
-            $first = trim($lines[0]);
-            if (file_exists($first)) return $first;
-        }
-    } else {
-        $which = @trim((string)@exec('which convert 2>/dev/null'));
-        if (!empty($which) && file_exists($which) && is_executable($which)) {
-            return $which;
-        }
-        $which_magick = @trim((string)@exec('which magick 2>/dev/null'));
-        if (!empty($which_magick) && file_exists($which_magick) && is_executable($which_magick)) {
-            return $which_magick;
-        }
-    }
-    return null;
-}
 
 function generate_imagemagick_frame_thumbnail(string $file_path, string $output_file, int $thumb_w = 360, int $thumb_h = 360, int $thumb_q = 85): bool {
     // 1. Try PHP Imagick extension if loaded
@@ -501,8 +414,8 @@ if ($is_image) {
     }
 
     // Auto-rotate image according to EXIF orientation metadata (JPEG / TIFF)
-    if (in_array($ext, ['jpg', 'jpeg', 'tif', 'tiff'], true) && function_exists('exif_read_data')) {
-        $exif = @exif_read_data($file_path);
+    if (in_array($ext, ['jpg', 'jpeg', 'tif', 'tiff'], true)) {
+        $exif = function_exists('exif_read_data') ? @exif_read_data($file_path) : parse_exif_app1_pure_php($file_path);
         if (!empty($exif['Orientation'])) {
             $orientation = (int)$exif['Orientation'];
             switch ($orientation) {

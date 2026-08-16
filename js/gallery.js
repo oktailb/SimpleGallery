@@ -1661,6 +1661,19 @@ class SimpleGallery {
       `;
     }
 
+    if (exif.artist || exif.software || exif.description) {
+      html += `
+        <div class="exif-group">
+          <div class="exif-label">Auteur & Software</div>
+          <div class="exif-value" style="font-size:0.85rem; line-height:1.4;">
+            ${exif.artist ? `<div>👤 <strong>Auteur :</strong> ${this.escapeHtml(exif.artist)}</div>` : ''}
+            ${exif.software ? `<div>💻 <strong>Logiciel :</strong> ${this.escapeHtml(exif.software)}</div>` : ''}
+            ${exif.description ? `<div>📝 <strong>Description :</strong> ${this.escapeHtml(exif.description)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
     if (exif.gps) {
       const currentFilePath = this.state.filteredFiles[this.state.lightboxIndex]?.path;
       html += `

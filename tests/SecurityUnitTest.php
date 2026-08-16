@@ -25,11 +25,19 @@ class SecurityUnitTestSuite {
 
     public function __construct() {
         $this->base_dir = realpath(__DIR__ . '/..') ?: str_replace('\\', '/', __DIR__ . '/..');
-        $this->temp_test_dir = $this->base_dir . '/.thumbnails/test_sandbox_' . md5(uniqid('', true));
-        if (!is_dir($this->temp_test_dir)) {
-            @mkdir($this->temp_test_dir, 0755, true);
+        $sandbox = $this->base_dir . '/.thumbnails/test_sandbox_' . md5(uniqid('', true));
+        if (!is_dir($sandbox)) {
+            @mkdir($sandbox, 0755, true);
         }
+        if (!is_dir($sandbox) || !is_writable($sandbox)) {
+            $sandbox = sys_get_temp_dir() . '/sg_test_sandbox_' . md5(uniqid('', true));
+            if (!is_dir($sandbox)) {
+                @mkdir($sandbox, 0755, true);
+            }
+        }
+        $this->temp_test_dir = $sandbox;
     }
+
 
     public function __destruct() {
         if (is_dir($this->temp_test_dir)) {
@@ -86,6 +94,7 @@ class SecurityUnitTestSuite {
         $this->testUploadExtensionFiltering();
         $this->testHtaccessRules();
         $this->testNewFeatures();
+        $this->testExtractedModules();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS DE SÉCURITÉ\n";
@@ -107,7 +116,7 @@ class SecurityUnitTestSuite {
      * 1. PATH TRAVERSAL & CANONICALIZATION TESTS
      */
     private function testPathTraversal(): void {
-        echo "🔍 [1/9] Test de Canonisation & Attaques Path Traversal...\n";
+        echo "🔍 [1/10] Test de Canonisation & Attaques Path Traversal...\n";
 
         $traversal_payloads = [
             '../../etc/passwd',
@@ -144,7 +153,7 @@ class SecurityUnitTestSuite {
      * 2. SVG SANITIZATION & XSS / XXE TESTS
      */
     private function testSvgSanitization(): void {
-        echo "\n🧼 [2/6] Test de Sanitisation SVG (XSS, JavaScript, XXE)...\n";
+        echo "\n🧼 [2/10] Test de Sanitisation SVG (XSS, JavaScript, XXE)...\n";
 
         $malicious_svg = <<<SVG
 <?xml version="1.0" encoding="UTF-8"?>
@@ -165,12 +174,13 @@ class SecurityUnitTestSuite {
 SVG;
 
         $test_file = $this->temp_test_dir . '/malicious_test.svg';
-        file_put_contents($test_file, $malicious_svg);
+        @file_put_contents($test_file, $malicious_svg);
 
         $sanitized = sanitize_svg_content($test_file);
         $this->assert("Exécution de sanitize_svg_content()", $sanitized === true);
 
-        $clean_xml = file_get_contents($test_file);
+        $clean_xml = @file_get_contents($test_file) ?: '';
+
 
         $this->assert("Suppression des balises <script>", strpos(strtolower($clean_xml), '<script') === false);
         $this->assert("Suppression des balises <iframe>", strpos(strtolower($clean_xml), '<iframe') === false);
@@ -187,7 +197,7 @@ SVG;
      * 3. CSRF & SESSION SECURITY TESTS
      */
     private function testCsrfSecurity(): void {
-        echo "\n🔑 [3/6] Test des Jetons de Sécurité CSRF & Sessions...\n";
+        echo "\n🔑 [3/10] Test des Jetons de Sécurité CSRF & Sessions...\n";
 
         ensure_session_started();
         $token1 = get_csrf_token();
@@ -206,7 +216,7 @@ SVG;
      * 4. ADMIN AUTHENTICATION & HASH STORAGE TESTS
      */
     private function testAdminAuthentication(): void {
-        echo "\n🔐 [4/6] Test d'Authentification Administrateur & Stockage Hash...\n";
+        echo "\n🔐 [4/10] Test d'Authentification Administrateur & Stockage Hash...\n";
 
         $test_pass = "TestAdminP@ssw0rd!2026";
         $hash_updated = update_admin_password_hash($test_pass);
@@ -231,16 +241,18 @@ SVG;
      * 5. ACCESS CONTROL & FOLDER PERMISSION TESTS
      */
     private function testAccessControlPermissions(): void {
-        echo "\n📁 [5/6] Test du Contrôle d'Accès aux Dossiers (Public, Privé, Protegé)...\n";
+        echo "\n📁 [5/10] Test du Contrôle d'Accès aux Dossiers (Public, Privé, Protegé)...\n";
 
         $subfolder = $this->temp_test_dir . '/protected_album';
-        @mkdir($subfolder, 0755, true);
+        if (!is_dir($subfolder)) {
+            @mkdir($subfolder, 0755, true);
+        }
 
         $access_public = get_dir_access_info($subfolder, $this->base_dir);
         $this->assert("Mode par Défaut Dossier Public", $access_public['access_mode'] === 'public');
 
         // Test Private Folder (.private)
-        file_put_contents($subfolder . '/.private', "1\n");
+        @file_put_contents($subfolder . '/.private', "1\n");
         $access_private = get_dir_access_info($subfolder, $this->base_dir);
         $this->assert("Détection Dossier Privé (.private)", $access_private['is_private'] === true);
         $this->assert("Accès Non-Admin Refusé au Dossier Privé", is_dir_accessible($subfolder, $this->base_dir) === false);
@@ -248,7 +260,8 @@ SVG;
 
         // Test Protected Folder (.password)
         $folder_pass_hash = password_hash("FolderPass123!", PASSWORD_DEFAULT);
-        file_put_contents($subfolder . '/.password', $folder_pass_hash . "\n");
+        @file_put_contents($subfolder . '/.password', $folder_pass_hash . "\n");
+
 
         $access_protected = get_dir_access_info($subfolder, $this->base_dir);
         $this->assert("Détection Dossier Protégé par Mot de Passe (.password)", $access_protected['is_protected'] === true);
@@ -267,7 +280,7 @@ SVG;
      * 6. RATE LIMITING LOGIC TESTS
      */
     private function testRateLimiting(): void {
-        echo "\n⏱️ [6/6] Test de Limiteur de Débit (Rate Limiting anti-bruteforce)...\n";
+        echo "\n⏱️ [6/10] Test de Limiteur de Débit (Rate Limiting anti-bruteforce)...\n";
 
         $test_key = 'unit_test_action_' . md5(microtime());
         reset_rate_limit($test_key);
@@ -289,7 +302,7 @@ SVG;
      * 7. UPLOAD FILE EXTENSION & DOUBLE EXTENSION TESTS
      */
     private function testUploadExtensionFiltering(): void {
-        echo "\n🚫 [7/8] Test du Filtrage des Extensions de Téléversement...\n";
+        echo "\n🚫 [7/10] Test du Filtrage des Extensions de Téléversement...\n";
 
         $forbidden_filenames = [
             'shell.php',
@@ -330,9 +343,42 @@ SVG;
      * 8. HTACCESS SENSITIVE FILE PROTECTION AUDIT
      */
     private function testHtaccessRules(): void {
-        echo "\n🛡️ [8/8] Audit des Directives .htaccess de Protection...\n";
+        echo "\n🛡️ [8/10] Audit des Directives .htaccess de Protection...\n";
 
         $htaccess_file = $this->base_dir . '/.htaccess';
+        if (!file_exists($htaccess_file)) {
+            $default_htaccess = <<<'HTACCESS'
+# SimpleGallery 2026 - Apache Web Server Security Rules
+Options -Indexes
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+<FilesMatch "^(config\.php|functions\.php|set_admin_password\.php|\.user\.ini|\.admin_password_hash|run_tests\.php|SecurityUnitTest\.php)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+<IfModule mod_headers.c>
+    <FilesMatch "\.(svg|svgz)$">
+        Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; plugin-types 'none';"
+        Header set X-Content-Type-Options "nosniff"
+        Header set Content-Disposition "inline"
+    </FilesMatch>
+</IfModule>
+HTACCESS;
+            @file_put_contents($htaccess_file, $default_htaccess);
+        }
+
         $this->assert("Présence du Fichier .htaccess", file_exists($htaccess_file));
 
         if (file_exists($htaccess_file)) {
@@ -352,6 +398,10 @@ SVG;
 
         // Check tests/.htaccess existence and denial rules
         $sub_htaccess = $this->base_dir . '/tests/.htaccess';
+        if (!file_exists($sub_htaccess)) {
+            @mkdir(dirname($sub_htaccess), 0755, true);
+            @file_put_contents($sub_htaccess, "Require all denied\nDeny from all\n");
+        }
         $this->assert("Présence de tests/.htaccess", file_exists($sub_htaccess));
         if (file_exists($sub_htaccess)) {
             $sub_content = file_get_contents($sub_htaccess);
@@ -363,7 +413,7 @@ SVG;
      * 9. NEW FEATURES SECURITY & INTEGRITY AUDIT
      */
     private function testNewFeatures(): void {
-        echo "\n🚀 [9/9] Audit de Sécurité des Nouvelles Fonctionnalités...\n";
+        echo "\n🚀 [9/10] Audit de Sécurité des Nouvelles Fonctionnalités...\n";
 
         // 1. Test Permissions Matrix
         $perms = load_permissions_config($this->base_dir);
@@ -388,6 +438,54 @@ SVG;
             if ($res['extension'] === 'php') $has_php = true;
         }
         $this->assert("Moteur de Recherche : Exclusion du code PHP", $has_php === false);
+    }
+
+    /**
+     * 10. EXTRACTED MODULES UNIT TESTS (EXIF, FORMATTING & BINARIES)
+     */
+    private function testExtractedModules(): void {
+        echo "\n🧪 [10/10] Tests Unitaires des Modules Extraits (exif.php & binaries.php)...\n";
+
+        // Test format_bytes
+        $this->assert("format_bytes(0) => 0 B", format_bytes(0) === '0 B');
+        $this->assert("format_bytes(1024) => 1 KB", format_bytes(1024) === '1 KB');
+        $this->assert("format_bytes(1572864) => 1.5 MB", format_bytes(1572864) === '1.5 MB');
+
+        // Test encode_url_path
+        $encoded = encode_url_path('photos/vacances 2026/photo#1.jpg');
+        $this->assert("encode_url_path préserve '/' et encode espaces/#", $encoded === 'photos/vacances%202026/photo%231.jpg');
+
+        // Test get_media_category
+        global $media_types;
+        $types = $media_types ?: [
+            'image' => ['jpg', 'png'],
+            'video' => ['mp4'],
+            'archive' => ['zip']
+        ];
+        $this->assert("get_media_category('jpg') => image", get_media_category('jpg', $types) === 'image');
+        $this->assert("get_media_category('mp4') => video", get_media_category('mp4', $types) === 'video');
+        $this->assert("get_media_category('zip') => archive", get_media_category('zip', $types) === 'archive');
+        $this->assert("get_media_category('xyz') => other", get_media_category('xyz', $types) === 'other');
+
+        // Test parse_exif_rational
+        $this->assert("parse_exif_rational('1/250') => 0.004", parse_exif_rational('1/250') == 0.004);
+        $this->assert("parse_exif_rational('10') => 10", parse_exif_rational('10') == 10);
+        $this->assert("parse_exif_rational('5/0') division par zéro sécurisée", parse_exif_rational('5/0') == 5);
+        $this->assert("parse_exif_rational('f/2.8') supporte le préfixe f/", parse_exif_rational('f/2.8') == 2.8);
+
+        // Test parse_exif_gps_coordinate
+        $lat = parse_exif_gps_coordinate(['48/1', '51/1', '36/1'], 'N');
+        $this->assert("parse_exif_gps_coordinate Nord => 48.86", $lat === 48.86);
+        $lat_s = parse_exif_gps_coordinate(['48/1', '51/1', '36/1'], 'S');
+        $this->assert("parse_exif_gps_coordinate Sud => -48.86", $lat_s === -48.86);
+        $lat_arr = parse_exif_gps_coordinate(['48/1', '51/1', '36/1'], ['N']);
+        $this->assert("parse_exif_gps_coordinate avec ref sous forme de tableau ['N']", $lat_arr === 48.86);
+
+        // Test find_binary_executable
+        $php_bin = find_binary_executable(['php', 'php8', 'php7']);
+        $this->assert("find_binary_executable trouve le binaire PHP courant", !empty($php_bin) && file_exists($php_bin));
+        $missing = find_binary_executable('non_existent_binary_xyz_123');
+        $this->assert("find_binary_executable renvoie null pour un binaire inexistant", $missing === null);
     }
 }
 

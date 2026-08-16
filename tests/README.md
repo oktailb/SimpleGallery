@@ -1,23 +1,28 @@
-# 🧪 Suite de Tests Unitaires de Sécurité - SimpleGallery
+# 🧪 Suites de Tests Unitaires - SimpleGallery
 
-Ce dossier contient les tests unitaires automatisés dédiés à la validation de la sécurité de **SimpleGallery**.
+Ce dossier contient les suites de tests unitaires automatisées de **SimpleGallery**.
 La suite est conçue **sans aucune dépendance externe** et s'exécute directement en PHP CLI.
 
 ---
 
 ## 🚀 Exécution des Tests
 
-Pour exécuter la suite complète de tests de sécurité :
+Pour exécuter la suite complète de tests (Sécurité + Fonctionnalités Générales) :
 
 ```bash
 php tests/run_tests.php
 ```
 
-ou directement :
+Pour exécuter une suite de tests spécifique :
 
 ```bash
+# Tests de Sécurité & Protection
 php tests/SecurityUnitTest.php
+
+# Tests Fonctionnels Généraux (Découpage, Cache, Dotfiles, Recherche, Archives)
+php tests/GeneralUnitTest.php
 ```
+
 
 ---
 
