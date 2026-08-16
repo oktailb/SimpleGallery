@@ -1402,10 +1402,11 @@ class SimpleGallery {
           }));
 
           setTimeout(() => {
+            card.classList.add('dragging');
             pathsToMove.forEach(p => {
               const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
                 const idx = parseInt(c.dataset.index, 10);
-                return this.state.filteredFiles[idx]?.path === p;
+                return list[idx]?.path === p;
               });
               if (el) el.classList.add('dragging');
             });

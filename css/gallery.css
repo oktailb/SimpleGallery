@@ -1734,7 +1734,10 @@ kbd {
   cursor: grabbing !important;
 }
 
-.dragging {
+.dragging,
+.polaroid-card.dragging,
+.grid-card.dragging,
+.folder-card.dragging {
   opacity: 0.35 !important;
   transform: scale(0.95) !important;
   filter: grayscale(30%) !important;
