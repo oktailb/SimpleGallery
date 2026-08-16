@@ -2717,3 +2717,80 @@ body.no-direct-download audio {
   -webkit-user-select: none;
 }
 
+/* Multi-Selection & Rectangular Marquee Selection Styles */
+.polaroid-card.selected,
+.grid-card.selected {
+  outline: 3px solid #6366f1 !important;
+  box-shadow: 0 0 18px rgba(99, 102, 241, 0.5) !important;
+  transform: translateY(-2px);
+  position: relative;
+}
+
+.polaroid-card.selected::before,
+.grid-card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: #6366f1;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Rectangular Marquee Lasso Selection Box */
+.selection-marquee {
+  position: fixed;
+  border: 1.5px dashed #6366f1;
+  background: rgba(99, 102, 241, 0.18);
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 4px;
+}
+
+/* Floating Multi-Selection Action Toolbar */
+.selection-toolbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.6rem 1.25rem;
+  border-radius: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1500;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.selection-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: #ffffff;
+  padding: 0.35rem 0.8rem;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.selection-btn:hover {
+  background: #6366f1;
+}
+

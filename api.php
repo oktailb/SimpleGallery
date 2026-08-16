@@ -945,38 +945,21 @@ if ($action === 'move_item') {
     }
 
     $source_param = $raw_body['source_path'] ?? $_POST['source_path'] ?? $_GET['source_path'] ?? '';
+    $source_paths_param = $raw_body['source_paths'] ?? $_POST['source_paths'] ?? null;
     $target_dir_param = $raw_body['target_dir'] ?? $_POST['target_dir'] ?? $_GET['target_dir'] ?? '';
 
-    $real_base = str_replace('\\', '/', realpath($real_base_dir) ?: $real_base_dir);
-
-    $source_rel = str_replace(['\\', '..'], ['/', ''], $source_param);
-    $source_full = $real_base . '/' . ltrim($source_rel, '/');
-    $source_full = str_replace('\\', '/', realpath($source_full) ?: $source_full);
-
-    if (!file_exists($source_full)) {
-        http_response_code(404);
-        echo json_encode([
-            'success' => false,
-            'error'   => 'Élément source introuvable.'
-        ]);
-        exit;
+    $paths_to_move = [];
+    if (is_array($source_paths_param) && !empty($source_paths_param)) {
+        $paths_to_move = $source_paths_param;
+    } elseif (!empty($source_param)) {
+        $paths_to_move = [$source_param];
     }
 
-    $real_base_slash = rtrim($real_base, '/') . '/';
-    if ($source_full !== $real_base && strpos($source_full . '/', $real_base_slash) !== 0) {
-        http_response_code(403);
+    if (empty($paths_to_move)) {
+        http_response_code(400);
         echo json_encode([
             'success' => false,
-            'error'   => 'Accès refusé au fichier source.'
-        ]);
-        exit;
-    }
-
-    if (strtolower($source_full) === strtolower($real_base)) {
-        http_response_code(403);
-        echo json_encode([
-            'success' => false,
-            'error'   => 'Sécurité : Impossible de déplacer la racine de la galerie.'
+            'error'   => 'Aucun fichier source spécifié pour le déplacement.'
         ]);
         exit;
     }
@@ -991,64 +974,80 @@ if ($action === 'move_item') {
         exit;
     }
 
-    if (is_dir($source_full)) {
-        if (strtolower($target_dir_full) === strtolower($source_full) || stripos($target_dir_full, $source_full . '/') === 0) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => 'Impossible de déplacer un dossier à l\'intérieur de lui-même.'
-            ]);
-            exit;
+    $real_base = str_replace('\\', '/', realpath($real_base_dir) ?: $real_base_dir);
+    $real_base_slash = rtrim($real_base, '/') . '/';
+
+    $moved_count = 0;
+    $errors = [];
+
+    foreach ($paths_to_move as $sp) {
+        $source_rel = str_replace(['\\', '..'], ['/', ''], $sp);
+        $source_full = $real_base . '/' . ltrim($source_rel, '/');
+        $source_full = str_replace('\\', '/', realpath($source_full) ?: $source_full);
+
+        if (!file_exists($source_full)) {
+            $errors[] = "Introuvable : " . basename($sp);
+            continue;
+        }
+
+        if ($source_full !== $real_base && strpos($source_full . '/', $real_base_slash) !== 0) {
+            $errors[] = "Accès refusé : " . basename($sp);
+            continue;
+        }
+
+        if (strtolower($source_full) === strtolower($real_base)) {
+            $errors[] = "Impossible de déplacer la racine";
+            continue;
+        }
+
+        if (is_dir($source_full)) {
+            if (strtolower($target_dir_full) === strtolower($source_full) || stripos($target_dir_full, $source_full . '/') === 0) {
+                $errors[] = "Impossible de déplacer un dossier dans lui-même";
+                continue;
+            }
+        }
+
+        $source_parent_dir = str_replace('\\', '/', dirname($source_full));
+        if (strtolower($source_parent_dir) === strtolower($target_dir_full)) {
+            $moved_count++;
+            continue;
+        }
+
+        $item_name = basename($source_full);
+        $dest_full = $target_dir_full . '/' . $item_name;
+
+        if (file_exists($dest_full)) {
+            $info = pathinfo($item_name);
+            $base_name = $info['filename'];
+            $ext = isset($info['extension']) ? '.' . $info['extension'] : '';
+            $counter = 1;
+            while (file_exists($target_dir_full . '/' . $base_name . '_' . $counter . $ext)) {
+                $counter++;
+            }
+            $dest_full = $target_dir_full . '/' . $base_name . '_' . $counter . $ext;
+        }
+
+        error_clear_last();
+        $move_success = @rename($source_full, $dest_full);
+        if (!$move_success && is_file($source_full)) {
+            $move_success = @copy($source_full, $dest_full) && @unlink($source_full);
+        }
+
+        if ($move_success) {
+            invalidate_dir_cache($source_parent_dir, $real_base_dir, $thumbnail_dir);
+            invalidate_dir_cache($target_dir_full, $real_base_dir, $thumbnail_dir);
+            $moved_count++;
+        } else {
+            $errors[] = "Échec du déplacement de " . basename($sp);
         }
     }
 
-    $source_parent_dir = str_replace('\\', '/', dirname($source_full));
-    if (strtolower($source_parent_dir) === strtolower($target_dir_full)) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'L\'élément est déjà dans le dossier cible.'
-        ]);
-        exit;
-    }
-
-    $item_name = basename($source_full);
-    $dest_full = $target_dir_full . '/' . $item_name;
-
-    if (file_exists($dest_full)) {
-        $info = pathinfo($item_name);
-        $base_name = $info['filename'];
-        $ext = isset($info['extension']) ? '.' . $info['extension'] : '';
-        $counter = 1;
-        while (file_exists($target_dir_full . '/' . $base_name . '_' . $counter . $ext)) {
-            $counter++;
-        }
-        $dest_full = $target_dir_full . '/' . $base_name . '_' . $counter . $ext;
-    }
-
-    error_clear_last();
-    $move_success = @rename($source_full, $dest_full);
-    if (!$move_success && is_file($source_full)) {
-        $move_success = @copy($source_full, $dest_full) && @unlink($source_full);
-    }
-
-    if ($move_success) {
-        invalidate_dir_cache($source_parent_dir, $real_base_dir, $thumbnail_dir);
-        invalidate_dir_cache($target_dir_full, $real_base_dir, $thumbnail_dir);
-
-        echo json_encode([
-            'success'  => true,
-            'message'  => 'Élément déplacé avec succès.',
-            'new_path' => get_relative_path($dest_full, $real_base_dir)
-        ]);
-    } else {
-        $last_err = error_get_last();
-        $detail = $last_err ? $last_err['message'] : 'Vérifiez les permissions d\'écriture sur les dossiers source et destination.';
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'error'   => 'Échec du déplacement : ' . $detail
-        ]);
-    }
+    echo json_encode([
+        'success'     => $moved_count > 0,
+        'moved_count' => $moved_count,
+        'errors'      => $errors,
+        'message'     => $moved_count . ' élément(s) déplacé(s) avec succès.'
+    ]);
     exit;
 }
 

@@ -498,6 +498,13 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     </div>
   </div>
 
+  <!-- Floating Multi-Selection Action Toolbar -->
+  <div id="selectionToolbar" class="selection-toolbar" style="display: none;">
+    <span id="selectionToolbarCount">0 élément(s) sélectionné(s)</span>
+    <button id="selectionSelectAllBtn" type="button" class="selection-btn">Tout sélectionner</button>
+    <button id="selectionClearBtn" type="button" class="selection-btn">Désélectionner tout</button>
+  </div>
+
   <!-- Google Drive Style Advanced Search Modal -->
   <div id="searchModal" class="search-modal-backdrop" style="display: none;">
     <div class="search-modal-card">

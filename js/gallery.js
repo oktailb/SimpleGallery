@@ -63,6 +63,11 @@ class SimpleGallery {
       isPinching: false
     };
 
+    // Multi-Selection State (Ctrl, Shift, Rectangular Marquee)
+    this.state.selectedPaths = new Set();
+    this.state.lastSelectedIndex = null;
+    this.state.draggingPaths = null;
+
     this.isSmartGpsEnabled = true;
 
     this.initElements();
@@ -218,7 +223,13 @@ class SimpleGallery {
       mapToggleSmartGpsBtn: document.getElementById('mapToggleSmartGpsBtn'),
       mapSmartGpsCount: document.getElementById('mapSmartGpsCount'),
       mapToggleRouteBtn: document.getElementById('mapToggleRouteBtn'),
-      mapFitBoundsBtn: document.getElementById('mapFitBoundsBtn')
+      mapFitBoundsBtn: document.getElementById('mapFitBoundsBtn'),
+
+      // Multi-Selection Action Toolbar
+      selectionToolbar: document.getElementById('selectionToolbar'),
+      selectionToolbarCount: document.getElementById('selectionToolbarCount'),
+      selectionSelectAllBtn: document.getElementById('selectionSelectAllBtn'),
+      selectionClearBtn: document.getElementById('selectionClearBtn')
     };
   }
 
@@ -627,7 +638,20 @@ class SimpleGallery {
         return;
       }
 
-      if (!this.el.lightbox.classList.contains('open')) return;
+      if (!this.el.lightbox.classList.contains('open')) {
+        if (e.key === 'Escape') {
+          if (this.state.selectedPaths.size > 0) {
+            this.clearSelection();
+            return;
+          }
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+          e.preventDefault();
+          this.selectAll();
+          return;
+        }
+        return;
+      }
 
       if (e.key === 'Escape') this.closeLightbox();
       if (e.key === 'ArrowLeft') this.navigateLightbox(-1);
@@ -642,6 +666,15 @@ class SimpleGallery {
         if (e.key === 'r' || e.key === 'R') { e.preventDefault(); this.rotateImage(); }
       }
     });
+
+    if (this.el.selectionSelectAllBtn) {
+      this.el.selectionSelectAllBtn.addEventListener('click', () => this.selectAll());
+    }
+    if (this.el.selectionClearBtn) {
+      this.el.selectionClearBtn.addEventListener('click', () => this.clearSelection());
+    }
+
+    this.initMarqueeSelection();
 
     // Close lightbox on backdrop click
     this.el.lightbox.addEventListener('click', (e) => {
@@ -931,8 +964,14 @@ class SimpleGallery {
           e.preventDefault();
           e.stopPropagation();
           crumb.classList.remove('drop-hover');
-          const sourcePath = this.state.draggingItemPath;
-          this.moveItem(sourcePath, crumbPath);
+
+          let data = null;
+          try {
+            data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          } catch(err) {}
+
+          const pathsToMove = (data && data.paths && data.paths.length > 0) ? data.paths : (this.state.draggingPaths || [this.state.draggingItemPath]);
+          this.moveItems(pathsToMove, crumbPath);
         });
       });
     }
@@ -1006,8 +1045,14 @@ class SimpleGallery {
           e.preventDefault();
           e.stopPropagation();
           card.classList.remove('drop-hover');
-          const sourcePath = this.state.draggingItemPath;
-          this.moveItem(sourcePath, folderPath);
+
+          let data = null;
+          try {
+            data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          } catch(err) {}
+
+          const pathsToMove = (data && data.paths && data.paths.length > 0) ? data.paths : (this.state.draggingPaths || [this.state.draggingItemPath]);
+          this.moveItems(pathsToMove, folderPath);
         });
       }
 
@@ -1326,20 +1371,96 @@ class SimpleGallery {
       const index = parseInt(card.dataset.index, 10);
       const file = this.state.filteredFiles[index];
 
+      if (file && this.state.selectedPaths.has(file.path)) {
+        card.classList.add('selected');
+      }
+
       if (this.state.isAdmin && file) {
         card.addEventListener('dragstart', (e) => {
+          if (e.target.closest('button, input, a, .edit-media-comment-btn, .gps-badge, .favorite-btn, .pip-card-btn, .delete-item-btn')) {
+            e.preventDefault();
+            return;
+          }
+
+          let pathsToMove = [];
+          if (this.state.selectedPaths.has(file.path) && this.state.selectedPaths.size > 1) {
+            pathsToMove = Array.from(this.state.selectedPaths);
+          } else {
+            pathsToMove = [file.path];
+            this.state.selectedPaths.clear();
+            this.state.selectedPaths.add(file.path);
+            this.updateSelectionUI();
+          }
+
+          this.state.draggingPaths = pathsToMove;
           this.state.draggingItemPath = file.path;
-          card.classList.add('dragging');
-          e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'internal_item', path: file.path }));
+
+          e.dataTransfer.setData('text/plain', JSON.stringify({
+            type: 'internal_items',
+            paths: pathsToMove,
+            primaryPath: file.path
+          }));
+
+          pathsToMove.forEach(p => {
+            const el = Array.from(this.el.mediaGrid.querySelectorAll('[data-index]')).find(c => {
+              const idx = parseInt(c.dataset.index, 10);
+              return this.state.filteredFiles[idx]?.path === p;
+            });
+            if (el) el.classList.add('dragging');
+          });
         });
 
         card.addEventListener('dragend', () => {
-          card.classList.remove('dragging');
+          this.el.mediaGrid.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+          this.state.draggingPaths = null;
           this.state.draggingItemPath = null;
         });
       }
 
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button, input, a, .edit-media-comment-btn, .gps-badge, .favorite-btn, .pip-card-btn, .delete-item-btn')) {
+          return;
+        }
+
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (this.state.selectedPaths.has(file.path)) {
+            this.state.selectedPaths.delete(file.path);
+          } else {
+            this.state.selectedPaths.add(file.path);
+          }
+          this.state.lastSelectedIndex = index;
+          this.updateSelectionUI();
+          return;
+        }
+
+        if (e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          const start = this.state.lastSelectedIndex !== null ? Math.min(this.state.lastSelectedIndex, index) : 0;
+          const end = this.state.lastSelectedIndex !== null ? Math.max(this.state.lastSelectedIndex, index) : index;
+          for (let i = start; i <= end; i++) {
+            const item = this.state.filteredFiles[i];
+            if (item) this.state.selectedPaths.add(item.path);
+          }
+          this.state.lastSelectedIndex = index;
+          this.updateSelectionUI();
+          return;
+        }
+
+        if (this.state.selectedPaths.size > 0) {
+          if (!this.state.selectedPaths.has(file.path)) {
+            this.clearSelection();
+            if (file && file.category === 'audio') {
+              this.openPipPlayer(file);
+            } else {
+              this.openLightbox(index);
+            }
+          }
+          return;
+        }
+
         if (file && file.category === 'audio') {
           this.openPipPlayer(file);
         } else {
@@ -2069,9 +2190,138 @@ class SimpleGallery {
   }
 
 
-  async moveItem(sourcePath, targetDir) {
-    if (!this.state.isAdmin || !sourcePath) return;
+  updateSelectionUI() {
+    if (!this.el.mediaGrid) return;
+    const cards = this.el.mediaGrid.querySelectorAll('[data-index]');
+    cards.forEach(card => {
+      const idx = parseInt(card.dataset.index, 10);
+      const file = this.state.filteredFiles[idx];
+      if (file) {
+        const isSelected = this.state.selectedPaths.has(file.path);
+        card.classList.toggle('selected', isSelected);
+      }
+    });
 
+    const count = this.state.selectedPaths.size;
+    if (this.el.selectionToolbar) {
+      if (count > 0) {
+        this.el.selectionToolbar.style.display = 'flex';
+        if (this.el.selectionToolbarCount) {
+          this.el.selectionToolbarCount.textContent = `${count} élément${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+        }
+      } else {
+        this.el.selectionToolbar.style.display = 'none';
+      }
+    }
+  }
+
+  clearSelection() {
+    this.state.selectedPaths.clear();
+    this.state.lastSelectedIndex = null;
+    this.updateSelectionUI();
+  }
+
+  selectAll() {
+    this.state.filteredFiles.forEach(file => this.state.selectedPaths.add(file.path));
+    this.updateSelectionUI();
+  }
+
+  initMarqueeSelection() {
+    let marquee = document.getElementById('selectionMarquee');
+    if (!marquee) {
+      marquee = document.createElement('div');
+      marquee.id = 'selectionMarquee';
+      marquee.className = 'selection-marquee';
+      marquee.style.display = 'none';
+      document.body.appendChild(marquee);
+    }
+
+    let isSelecting = false;
+    let startX = 0, startY = 0;
+
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.polaroid-card, .grid-card, .folder-card, button, input, select, textarea, a, .admin-modal, .lightbox-modal, .search-modal-card, .selection-toolbar')) {
+        return;
+      }
+
+      isSelecting = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        this.clearSelection();
+      }
+
+      marquee.style.left = `${startX}px`;
+      marquee.style.top = `${startY}px`;
+      marquee.style.width = '0px';
+      marquee.style.height = '0px';
+      marquee.style.display = 'block';
+    };
+
+    const onMouseMove = (e) => {
+      if (!isSelecting) return;
+      e.preventDefault();
+
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+
+      const rectLeft = Math.min(startX, currentX);
+      const rectTop = Math.min(startY, currentY);
+      const rectWidth = Math.abs(currentX - startX);
+      const rectHeight = Math.abs(currentY - startY);
+
+      marquee.style.left = `${rectLeft}px`;
+      marquee.style.top = `${rectTop}px`;
+      marquee.style.width = `${rectWidth}px`;
+      marquee.style.height = `${rectHeight}px`;
+
+      const marqueeBox = {
+        left: rectLeft,
+        top: rectTop,
+        right: rectLeft + rectWidth,
+        bottom: rectTop + rectHeight
+      };
+
+      const cards = this.el.mediaGrid.querySelectorAll('[data-index]');
+      cards.forEach(card => {
+        const idx = parseInt(card.dataset.index, 10);
+        const file = this.state.filteredFiles[idx];
+        if (!file) return;
+
+        const cardRect = card.getBoundingClientRect();
+        const isIntersecting = !(
+          cardRect.right < marqueeBox.left ||
+          cardRect.left > marqueeBox.right ||
+          cardRect.bottom < marqueeBox.top ||
+          cardRect.top > marqueeBox.bottom
+        );
+
+        if (isIntersecting) {
+          this.state.selectedPaths.add(file.path);
+        }
+      });
+
+      this.updateSelectionUI();
+    };
+
+    const onMouseUp = () => {
+      if (isSelecting) {
+        isSelecting = false;
+        marquee.style.display = 'none';
+      }
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  async moveItems(sourcePaths, targetDir) {
+    if (!this.state.isAdmin || !sourcePaths || sourcePaths.length === 0) return;
+
+    this.showLoading(true);
     try {
       const res = await fetch('api.php?action=move_item', {
         method: 'POST',
@@ -2081,20 +2331,27 @@ class SimpleGallery {
         },
         body: JSON.stringify({
           action: 'move_item',
-          source_path: sourcePath,
+          source_paths: sourcePaths,
           target_dir: targetDir,
           csrf_token: this.state.csrfToken
         })
       });
-      const json = await res.json();
-      if (json.success) {
+      const data = await res.json();
+      if (data.success) {
+        this.clearSelection();
         this.loadDirectory(this.state.currentPath);
       } else {
-        alert(json.error || 'Échec du déplacement de l\'élément.');
+        alert(data.error || 'Erreur lors du déplacement des éléments.');
       }
     } catch (err) {
-      console.error('Move item request failed:', err);
+      alert('Erreur réseau lors du déplacement.');
+    } finally {
+      this.showLoading(false);
     }
+  }
+
+  async moveItem(sourcePath, targetDir) {
+    return this.moveItems([sourcePath], targetDir);
   }
 
   openCreateFolderModal() {
