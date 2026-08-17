@@ -75,6 +75,7 @@ class GeneralUnitTestSuite {
         $this->testSearchEngineFilters();
         $this->testArchiveGenerationEngine();
         $this->testMp4ExtractorFallback();
+        $this->testCookieConsentConfiguration();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS FONCTIONNELS\n";
@@ -275,6 +276,23 @@ class GeneralUnitTestSuite {
         if (file_exists($fake_mp4)) @unlink($fake_mp4);
         if (file_exists($out_jpg)) @unlink($out_jpg);
     }
+
+    /**
+     * 8. Cookie Consent Configuration & Template Meta Tag Test
+     */
+    private function testCookieConsentConfiguration(): void {
+        echo "\n🍪 [8/8] Test de la Configuration du Consentement Cookies...\n";
+        global $enable_cookie_consent;
+
+        $this->assert("Variable \$enable_cookie_consent définie dans config.php", isset($enable_cookie_consent));
+        $this->assert("Consentement des cookies activé par défaut", $enable_cookie_consent === true);
+
+        $index_content = @file_get_contents($this->base_dir . '/index.php');
+        $this->assert("index.php contient la balise meta cookie-consent-enabled", strpos($index_content, 'name="cookie-consent-enabled"') !== false);
+        $this->assert("index.php contient le bandeau cookieConsentBanner", strpos($index_content, 'id="cookieConsentBanner"') !== false);
+        $this->assert("index.php contient le modal cookieSettingsModal", strpos($index_content, 'id="cookieSettingsModal"') !== false);
+        $this->assert("index.php contient le pied de page app-footer", strpos($index_content, 'class="app-footer"') !== false);
+    }
 }
 
 
@@ -284,3 +302,4 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     $success = $suite->runAll();
     exit($success ? 0 : 1);
 }
+

@@ -6,6 +6,9 @@
 class SimpleGallery {
   constructor() {
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const cookieConsentMeta = document.querySelector('meta[name="cookie-consent-enabled"]');
+    const isConsentEnabled = cookieConsentMeta ? cookieConsentMeta.content === '1' : true;
+
     this.state = {
       currentPath: '',
       viewMode: localStorage.getItem('gallery_view_mode') || 'polaroid',
@@ -26,6 +29,8 @@ class SimpleGallery {
       isAdmin: false,
       adminEnabled: false,
       csrfToken: csrfMeta ? csrfMeta.content : '',
+      isCookieConsentEnabled: isConsentEnabled,
+      cookieConsent: this.getCookieConsent(),
       draggingItemPath: null,
       targetItemToDelete: null,
       favorites: JSON.parse(localStorage.getItem('sg_favorites') || '[]'),
@@ -77,6 +82,7 @@ class SimpleGallery {
     this.bindEvents();
     this.initPipPlayer();
     this.initAdvancedSearch();
+    this.initCookieConsent();
     this.updateFavoritesCountUI();
     this.handleUrlChange();
   }
@@ -232,7 +238,21 @@ class SimpleGallery {
       selectionToolbar: document.getElementById('selectionToolbar'),
       selectionToolbarCount: document.getElementById('selectionToolbarCount'),
       selectionSelectAllBtn: document.getElementById('selectionSelectAllBtn'),
-      selectionClearBtn: document.getElementById('selectionClearBtn')
+      selectionClearBtn: document.getElementById('selectionClearBtn'),
+
+      // Cookie Consent Elements
+      cookieConsentBanner: document.getElementById('cookieConsentBanner'),
+      cookieAcceptAllBtn: document.getElementById('cookieAcceptAllBtn'),
+      cookieRejectNonEssentialBtn: document.getElementById('cookieRejectNonEssentialBtn'),
+      cookieCustomizeBtn: document.getElementById('cookieCustomizeBtn'),
+      cookieSettingsModal: document.getElementById('cookieSettingsModal'),
+      cookieSettingsCloseBtn: document.getElementById('cookieSettingsCloseBtn'),
+      cookieOptNecessary: document.getElementById('cookieOptNecessary'),
+      cookieOptPreferences: document.getElementById('cookieOptPreferences'),
+      cookieOptCdn: document.getElementById('cookieOptCdn'),
+      cookieSaveCustomBtn: document.getElementById('cookieSaveCustomBtn'),
+      cookieModalAcceptAllBtn: document.getElementById('cookieModalAcceptAllBtn'),
+      openCookieSettingsBtn: document.getElementById('openCookieSettingsBtn')
     };
   }
 
@@ -620,7 +640,8 @@ class SimpleGallery {
         (this.el.adminModal && this.el.adminModal.classList.contains('open')) ||
         (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open')) ||
         (this.el.searchModal && this.el.searchModal.classList.contains('open')) ||
-        (this.el.mapModal && this.el.mapModal.classList.contains('open'));
+        (this.el.mapModal && this.el.mapModal.classList.contains('open')) ||
+        (this.el.cookieSettingsModal && this.el.cookieSettingsModal.classList.contains('open'));
 
       if (isInputFocused || isModalOpen) {
         if (e.key === 'Escape') {
@@ -636,6 +657,8 @@ class SimpleGallery {
             this.closeSearchModal();
           } else if (this.el.mapModal && this.el.mapModal.classList.contains('open')) {
             this.closeMapModal();
+          } else if (this.el.cookieSettingsModal && this.el.cookieSettingsModal.classList.contains('open')) {
+            this.closeCookieSettings();
           }
         }
         return;
@@ -893,7 +916,9 @@ class SimpleGallery {
 
   setViewMode(mode) {
     this.state.viewMode = mode;
-    localStorage.setItem('gallery_view_mode', mode);
+    if (this.isPreferencesStorageAllowed()) {
+      localStorage.setItem('gallery_view_mode', mode);
+    }
     this.el.viewPolaroidBtn.classList.toggle('active', mode === 'polaroid');
     this.el.viewGridBtn.classList.toggle('active', mode === 'grid');
     this.renderMedia();
@@ -907,6 +932,7 @@ class SimpleGallery {
   }
 
   saveFolderSort(dirPath, sortBy, sortOrder) {
+    if (!this.isPreferencesStorageAllowed()) return;
     try {
       const sorts = JSON.parse(localStorage.getItem('sg_folder_sorts') || '{}');
       const key = dirPath || '__root__';
@@ -2810,7 +2836,9 @@ class SimpleGallery {
     } else {
       this.state.favorites.push(filepath);
     }
-    localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
+    if (this.isPreferencesStorageAllowed()) {
+      localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
+    }
     this.updateFavoritesCountUI();
     if (this.state.lightboxIndex !== null && this.state.filteredFiles[this.state.lightboxIndex]) {
       this.updateLightboxFavBtn(this.state.filteredFiles[this.state.lightboxIndex].path);
@@ -3534,6 +3562,152 @@ class SimpleGallery {
       .replace(/'/g, '&#39;')
       .replace(/`/g, '&#96;')
       .replace(/\//g, '&#47;');
+  }
+
+  // =============================================================
+  // 15. RGPD / ePrivacy COOKIE CONSENT & STORAGE MANAGEMENT
+  // =============================================================
+
+  getCookieConsent() {
+    try {
+      const stored = localStorage.getItem('sg_cookie_consent');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('Unable to read sg_cookie_consent from localStorage:', e);
+    }
+    return null;
+  }
+
+  setCookieConsent(consent) {
+    const fullConsent = {
+      necessary: true,
+      preferences: !!(consent && consent.preferences),
+      cdn: !!(consent && consent.cdn),
+      timestamp: Date.now()
+    };
+    this.state.cookieConsent = fullConsent;
+    try {
+      localStorage.setItem('sg_cookie_consent', JSON.stringify(fullConsent));
+      if (!fullConsent.preferences) {
+        // If user revoked preferences, clean non-essential localStorage keys
+        localStorage.removeItem('sg_favorites');
+        localStorage.removeItem('gallery_view_mode');
+        localStorage.removeItem('sg_folder_sorts');
+      } else {
+        // Persist current state if permitted
+        localStorage.setItem('gallery_view_mode', this.state.viewMode);
+        localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
+      }
+    } catch (e) {
+      console.warn('Unable to save sg_cookie_consent to localStorage:', e);
+    }
+
+    if (this.el.cookieConsentBanner) {
+      this.el.cookieConsentBanner.style.display = 'none';
+    }
+  }
+
+  isPreferencesStorageAllowed() {
+    if (!this.state.isCookieConsentEnabled) return true;
+    if (!this.state.cookieConsent) return true; // Default allowed until explicitly rejected
+    return !!this.state.cookieConsent.preferences;
+  }
+
+  initCookieConsent() {
+    if (!this.state.isCookieConsentEnabled) {
+      if (this.el.cookieConsentBanner) this.el.cookieConsentBanner.style.display = 'none';
+      if (this.el.openCookieSettingsBtn) this.el.openCookieSettingsBtn.style.display = 'none';
+      return;
+    }
+
+    // Show floating banner if user hasn't made a choice yet
+    if (!this.state.cookieConsent) {
+      setTimeout(() => {
+        if (this.el.cookieConsentBanner) {
+          this.el.cookieConsentBanner.style.display = 'block';
+        }
+      }, 400);
+    }
+
+    // Bind banner actions
+    if (this.el.cookieAcceptAllBtn) {
+      this.el.cookieAcceptAllBtn.addEventListener('click', () => {
+        this.setCookieConsent({ necessary: true, preferences: true, cdn: true });
+      });
+    }
+
+    if (this.el.cookieRejectNonEssentialBtn) {
+      this.el.cookieRejectNonEssentialBtn.addEventListener('click', () => {
+        this.setCookieConsent({ necessary: true, preferences: false, cdn: false });
+      });
+    }
+
+    if (this.el.cookieCustomizeBtn) {
+      this.el.cookieCustomizeBtn.addEventListener('click', () => {
+        this.openCookieSettings();
+      });
+    }
+
+    // Bind footer trigger
+    if (this.el.openCookieSettingsBtn) {
+      this.el.openCookieSettingsBtn.addEventListener('click', () => {
+        this.openCookieSettings();
+      });
+    }
+
+    // Bind modal actions
+    if (this.el.cookieSettingsCloseBtn) {
+      this.el.cookieSettingsCloseBtn.addEventListener('click', () => {
+        this.closeCookieSettings();
+      });
+    }
+
+    if (this.el.cookieSettingsModal) {
+      this.el.cookieSettingsModal.addEventListener('click', (e) => {
+        if (e.target === this.el.cookieSettingsModal) {
+          this.closeCookieSettings();
+        }
+      });
+    }
+
+    if (this.el.cookieSaveCustomBtn) {
+      this.el.cookieSaveCustomBtn.addEventListener('click', () => {
+        const prefVal = this.el.cookieOptPreferences ? this.el.cookieOptPreferences.checked : true;
+        const cdnVal = this.el.cookieOptCdn ? this.el.cookieOptCdn.checked : true;
+        this.setCookieConsent({ necessary: true, preferences: prefVal, cdn: cdnVal });
+        this.closeCookieSettings();
+      });
+    }
+
+    if (this.el.cookieModalAcceptAllBtn) {
+      this.el.cookieModalAcceptAllBtn.addEventListener('click', () => {
+        this.setCookieConsent({ necessary: true, preferences: true, cdn: true });
+        this.closeCookieSettings();
+      });
+    }
+  }
+
+  openCookieSettings() {
+    if (!this.el.cookieSettingsModal) return;
+    const consent = this.state.cookieConsent || { necessary: true, preferences: true, cdn: true };
+    if (this.el.cookieOptPreferences) {
+      this.el.cookieOptPreferences.checked = consent.preferences !== false;
+    }
+    if (this.el.cookieOptCdn) {
+      this.el.cookieOptCdn.checked = consent.cdn !== false;
+    }
+    this.el.cookieSettingsModal.style.display = 'flex';
+    setTimeout(() => this.el.cookieSettingsModal.classList.add('open'), 10);
+  }
+
+  closeCookieSettings() {
+    if (!this.el.cookieSettingsModal) return;
+    this.el.cookieSettingsModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.cookieSettingsModal.style.display = 'none';
+    }, 250);
   }
 }
 

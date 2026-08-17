@@ -23,8 +23,8 @@ $thumb_quality = 85;
 // Allow direct individual item downloads (true by default, set to false to disable direct item downloads)
 $allow_direct_download = true;
 
-// Enable detailed EXIF extraction logs in .thumbnails/simplegallery_exif.log (false by default)
-$enable_exif_debug = false;
+// Enable RGPD / ePrivacy cookie consent dialog banner (true by default)
+$enable_cookie_consent = true;
 
 /**
  * Theme & Color Configuration

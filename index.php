@@ -22,6 +22,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
+  <meta name="cookie-consent-enabled" content="<?php echo !empty($enable_cookie_consent) ? '1' : '0'; ?>">
   <meta name="description" content="SimpleGallery 2026 - Ultra-fast zero-dependency modern PHP web gallery">
   <title><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></title>
 
@@ -647,6 +648,122 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         </div>
       </div>
       <div id="galleryLeafletMap" class="map-canvas"></div>
+    </div>
+  </div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-info">
+        <span>📸 <?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></span>
+        <span class="footer-separator">•</span>
+        <span class="footer-tech">PHP 8+ &amp; Vanilla JS</span>
+      </div>
+      <div class="footer-links">
+        <button type="button" id="openCookieSettingsBtn" class="footer-link-btn" title="Gérer vos préférences de confidentialité et cookies">
+          🍪 Préférences Cookies
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- RGPD / ePrivacy Cookie Consent Floating Toast Banner -->
+  <div id="cookieConsentBanner" class="cookie-banner" role="region" aria-label="Gestion des cookies et confidentialité" style="display: none;">
+    <div class="cookie-banner-content">
+      <div class="cookie-banner-header">
+        <div class="cookie-banner-icon">🍪</div>
+        <div class="cookie-banner-title-group">
+          <h4 class="cookie-banner-title">Respect de votre vie privée</h4>
+          <p class="cookie-banner-desc">
+            SimpleGallery utilise uniquement des <strong>cookies essentiels</strong> (sécurité, session administrateur et CSRF) et le stockage local (vos favoris ❤️ et vos préférences d'affichage). Zéro traceur publicitaire ou commercial.
+          </p>
+        </div>
+      </div>
+      <div class="cookie-banner-actions">
+        <button type="button" id="cookieAcceptAllBtn" class="cookie-btn cookie-btn-primary">
+          ✓ Tout accepter
+        </button>
+        <button type="button" id="cookieRejectNonEssentialBtn" class="cookie-btn cookie-btn-secondary">
+          Essentiels uniquement
+        </button>
+        <button type="button" id="cookieCustomizeBtn" class="cookie-btn cookie-btn-ghost">
+          ⚙️ Personnaliser
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Cookie Settings Modal -->
+  <div id="cookieSettingsModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="cookieModalTitle" style="display: none;">
+    <div class="admin-modal-content cookie-modal-card">
+      <div class="admin-modal-header">
+        <h3 id="cookieModalTitle">🍪 Préférences de Confidentialité &amp; Cookies</h3>
+        <button type="button" id="cookieSettingsCloseBtn" class="lightbox-btn" title="Fermer (Échap)">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <p class="cookie-modal-intro">
+          Vous pouvez choisir les fonctionnalités utilisant du stockage local et des cookies sur cette galerie. Vos choix sont conservés localement sur votre appareil.
+        </p>
+
+        <div class="cookie-options-list">
+          <!-- Option 1: Strictly Necessary -->
+          <div class="cookie-option-card">
+            <div class="cookie-option-info">
+              <div class="cookie-option-title-row">
+                <span class="cookie-option-name">1. Cookies Strictement Nécessaires</span>
+                <span class="cookie-badge cookie-badge-required">Toujours actif</span>
+              </div>
+              <p class="cookie-option-desc">
+                Indispensables au fonctionnement sécurisé de la galerie : maintien de la session d'administration, protection contre les attaques CSRF et accès aux dossiers protégés par mot de passe.
+              </p>
+            </div>
+            <div class="cookie-toggle-wrap">
+              <input type="checkbox" id="cookieOptNecessary" checked disabled aria-label="Cookies strictement nécessaires">
+            </div>
+          </div>
+
+          <!-- Option 2: Local Preferences & Favorites -->
+          <div class="cookie-option-card">
+            <div class="cookie-option-info">
+              <div class="cookie-option-title-row">
+                <span class="cookie-option-name">2. Préférences d'Affichage &amp; Favoris</span>
+                <span class="cookie-badge cookie-badge-optional">Optionnel</span>
+              </div>
+              <p class="cookie-option-desc">
+                Permet à votre navigateur d'enregistrer localement (localStorage) vos photos coups de cœur (favoris ❤️) et votre mode de vue préféré (Polaroid / Grille).
+              </p>
+            </div>
+            <div class="cookie-toggle-wrap">
+              <input type="checkbox" id="cookieOptPreferences" checked aria-label="Préférences d'affichage et favoris">
+            </div>
+          </div>
+
+          <!-- Option 3: External CDN Resources -->
+          <div class="cookie-option-card">
+            <div class="cookie-option-info">
+              <div class="cookie-option-title-row">
+                <span class="cookie-option-name">3. Typographies &amp; Cartographie (CDN)</span>
+                <span class="cookie-badge cookie-badge-optional">Optionnel</span>
+              </div>
+              <p class="cookie-option-desc">
+                Chargement des polices stylisées Google Fonts et des cartes interactives OpenStreetMap / Leaflet sans pistage publicitaire.
+              </p>
+            </div>
+            <div class="cookie-toggle-wrap">
+              <input type="checkbox" id="cookieOptCdn" checked aria-label="Ressources externes CDN">
+            </div>
+          </div>
+        </div>
+
+        <div class="cookie-modal-footer">
+          <button type="button" id="cookieSaveCustomBtn" class="pill-btn active" style="justify-content: center;">
+            Enregistrer mes choix
+          </button>
+          <button type="button" id="cookieModalAcceptAllBtn" class="pill-btn" style="justify-content: center; background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); border-color: var(--accent-primary);">
+            Tout accepter
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
