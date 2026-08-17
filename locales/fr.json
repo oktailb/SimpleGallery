@@ -32,6 +32,21 @@
     "folder_desc.relock_title": "Re-verrouiller ce dossier pour la session",
     "folder_desc.relock_btn": "🔒 Verrouiller le dossier",
 
+    "folder.private_badge": "👁️‍🗨️ Privé",
+    "folder.private_title": "Dossier masqué au public (.private)",
+    "folder.unlocked_badge": "🔓 Déverrouillé",
+    "folder.unlocked_title": "Protection par mot de passe déverrouillée",
+    "folder.protected_badge": "🔒 Protégé",
+    "folder.protected_title": "Dossier protégé par mot de passe (.password)",
+    "folder.delete_title": "Supprimer le dossier",
+    "folder.items_count": "{count} élément(s)",
+
+    "card.gps_locate": "Localiser sur la carte interactive",
+    "card.gps_locate_deduced": "Localiser sur la carte interactive (Position déduite)",
+    "card.delete_item": "Supprimer le fichier",
+    "card.pip_mode": "Mode Flottant PiP",
+    "card.edit_comment": "Éditer la légende (.comment)",
+
     "search.badge": "🔍 Recherche",
     "search.results_found": "Résultats trouvés",
     "search.exit_title": "Quitter la recherche et revenir à la navigation du dossier",
@@ -113,7 +128,10 @@
 
     "editor.title": "🎨 Éditeur d'Image",
     "editor.reset_all": "🔄 Réinitialiser tout",
+    "editor.reset_all_title": "Réinitialiser toutes les modifications",
     "editor.save_btn": "💾 Enregistrer l'image",
+    "editor.save_title": "Sauvegarder les modifications",
+    "editor.close_title": "Fermer sans enregistrer (Échap)",
     "editor.crop_title": "✂️ Recadrage (Crop)",
     "editor.crop_free": "Libre",
     "editor.crop_square": "1:1 (Carré)",

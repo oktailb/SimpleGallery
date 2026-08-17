@@ -1073,16 +1073,16 @@ class SimpleGallery {
     this.el.foldersGrid.innerHTML = folders.map(folder => {
       let badge = '';
       if (folder.is_private) {
-        badge = '<span class="folder-badge private-badge" title="Folder is hidden from public (.private)">👁️‍🗨️ Private</span>';
+        badge = `<span class="folder-badge private-badge" title="${this.escapeHtml(this.t('folder.private_title'))}">${this.escapeHtml(this.t('folder.private_badge'))}</span>`;
       } else if (folder.is_protected) {
         badge = folder.is_unlocked
-          ? '<span class="folder-badge unlocked-badge" title="Password protection unlocked">🔓 Unlocked</span>'
-          : '<span class="folder-badge protected-badge" title="Password protected folder (.password)">🔒 Protected</span>';
+          ? `<span class="folder-badge unlocked-badge" title="${this.escapeHtml(this.t('folder.unlocked_title'))}">${this.escapeHtml(this.t('folder.unlocked_badge'))}</span>`
+          : `<span class="folder-badge protected-badge" title="${this.escapeHtml(this.t('folder.protected_title'))}">${this.escapeHtml(this.t('folder.protected_badge'))}</span>`;
       }
 
       const isDraggable = this.state.isAdmin ? 'true' : 'false';
       const handleClass = this.state.isAdmin ? 'drag-handle' : '';
-      const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="Supprimer le dossier">🗑️</button>` : '';
+      const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="${this.escapeHtml(this.t('folder.delete_title'))}">🗑️</button>` : '';
 
       return `
         <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="${isDraggable}">
@@ -1093,7 +1093,7 @@ class SimpleGallery {
           </div>
           <div class="folder-name">${this.escapeHtml(folder.name)}</div>
           <div class="folder-meta">
-            <span>${folder.item_count} ${folder.item_count === 1 ? 'item' : 'items'}</span>
+            <span>${this.escapeHtml(this.t('folder.items_count', { count: folder.item_count }))}</span>
           </div>
           ${folder.comment ? `<div class="folder-comment">💬 ${this.escapeHtml(folder.comment)}</div>` : ''}
         </a>
@@ -1341,18 +1341,18 @@ class SimpleGallery {
 
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
-          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive">📍 GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate'))}">📍 GPS</button>`;
         } else if (smartLocationsMap.has(file.path)) {
-          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive (Position déduite)">✨ GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
         const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
         const isFav = this.state.favorites.includes(file.path);
 
-        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
-        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="Mode Flottant PiP" onclick="event.stopPropagation()">🗗</button>` : '';
+        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="${this.escapeHtml(this.t('card.delete_item'))}">🗑️</button>` : '';
+        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${this.escapeHtml(isFav ? this.t('lightbox.favorite_remove') : this.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
+        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="${this.escapeHtml(this.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>` : '';
 
         let mediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
 
@@ -1367,7 +1367,7 @@ class SimpleGallery {
             </div>
             <div class="polaroid-caption">
               <span>${this.escapeHtml(file.comment || file.name)}</span>
-              ${canComment ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
+              ${canComment ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="${this.escapeHtml(this.t('card.edit_comment'))}">✏️</button>` : ''}
             </div>
             <div class="polaroid-subcaption">
               <span>${file.size_formatted}</span>
@@ -1393,18 +1393,18 @@ class SimpleGallery {
 
         let gpsBadge = '';
         if (file.exif && file.exif.gps) {
-          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive">📍 GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate'))}">📍 GPS</button>`;
         } else if (smartLocationsMap.has(file.path)) {
-          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="Localiser sur la carte interactive (Position déduite)">✨ GPS</button>`;
+          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
         }
 
         const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
         const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
         const isFav = this.state.favorites.includes(file.path);
 
-        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="Supprimer le fichier">🗑️</button>` : '';
-        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="Mode Flottant PiP" onclick="event.stopPropagation()">🗗</button>` : '';
+        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="${this.escapeHtml(this.t('card.delete_item'))}">🗑️</button>` : '';
+        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${this.escapeHtml(isFav ? this.t('lightbox.favorite_remove') : this.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
+        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="${this.escapeHtml(this.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>` : '';
 
         let gridMediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
 

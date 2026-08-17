@@ -692,18 +692,18 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <div class="editor-modal-card">
       <div class="editor-modal-header">
         <div class="editor-title-group">
-          <h3 id="editorModalTitle" class="editor-title">🎨 Éditeur d'Image</h3>
+          <h3 id="editorModalTitle" class="editor-title" data-i18n="editor.title">🎨 Éditeur d'Image</h3>
           <span id="editorImageNameBadge" class="editor-badge">image.jpg</span>
           <span id="editorImageDimBadge" class="editor-dim-badge">0 × 0 px</span>
         </div>
         <div class="editor-header-actions">
-          <button type="button" id="editorResetAllBtn" class="editor-btn-secondary" title="Réinitialiser toutes les modifications">
+          <button type="button" id="editorResetAllBtn" class="editor-btn-secondary" title="Réinitialiser toutes les modifications" data-i18n-title="editor.reset_all_title" data-i18n="editor.reset_all">
             🔄 Réinitialiser tout
           </button>
-          <button type="button" id="editorOpenSaveChoiceBtn" class="editor-btn-primary" title="Sauvegarder les modifications">
+          <button type="button" id="editorOpenSaveChoiceBtn" class="editor-btn-primary" title="Sauvegarder les modifications" data-i18n-title="editor.save_title" data-i18n="editor.save_btn">
             💾 Enregistrer l'image
           </button>
-          <button type="button" id="imageEditorCloseBtn" class="editor-close-btn" title="Fermer sans enregistrer (Échap)">✕</button>
+          <button type="button" id="imageEditorCloseBtn" class="editor-close-btn" title="Fermer sans enregistrer (Échap)" data-i18n-title="editor.close_title">✕</button>
         </div>
       </div>
 
@@ -731,10 +731,10 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
         <div class="editor-sidebar">
           <!-- Tool Tab 1: Recadrage (Crop) -->
           <div class="editor-tool-section">
-            <h4 class="editor-section-title">✂️ Recadrage (Crop)</h4>
+            <h4 class="editor-section-title" data-i18n="editor.crop_title">✂️ Recadrage (Crop)</h4>
             <div class="crop-ratio-buttons">
-              <button type="button" class="crop-ratio-btn active" data-ratio="free">Libre</button>
-              <button type="button" class="crop-ratio-btn" data-ratio="1:1">1:1 (Carré)</button>
+              <button type="button" class="crop-ratio-btn active" data-ratio="free" data-i18n="editor.crop_free">Libre</button>
+              <button type="button" class="crop-ratio-btn" data-ratio="1:1" data-i18n="editor.crop_square">1:1 (Carré)</button>
               <button type="button" class="crop-ratio-btn" data-ratio="4:3">4:3</button>
               <button type="button" class="crop-ratio-btn" data-ratio="16:9">16:9</button>
               <button type="button" class="crop-ratio-btn" data-ratio="3:2">3:2</button>
