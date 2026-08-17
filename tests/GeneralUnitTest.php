@@ -428,6 +428,28 @@ class GeneralUnitTestSuite {
         $api_code = @file_get_contents($this->base_dir . '/api.php');
         $this->assert("api.php utilise sanitize_file_path pour get_metadata", strpos($api_code, "sanitize_file_path(\$file_param") !== false);
 
+        // 5. Test Synthetic MP4 Atom Parsing (mvhd duration & tkhd dimensions)
+        $mp4_test = $this->test_dir . '/test_video.mp4';
+        // Build minimal valid ISO MP4: ftyp + moov (mvhd + trak/tkhd)
+        $ftyp = pack('Na4a4N', 16, 'ftyp', 'isom', 512);
+        
+        // mvhd (version 0): size=108, 'mvhd', ver/flags=0, ctime=0, mtime=0, timescale=1000, duration=15000 (15 sec)
+        $mvhd_body = "\x00\x00\x00\x00" . pack('NNNN', 0, 0, 1000, 15000) . str_repeat("\x00", 80);
+        $mvhd = pack('Na4', 8 + strlen($mvhd_body), 'mvhd') . $mvhd_body;
+
+        // tkhd (version 0): size=92, 'tkhd', ver/flags=0, ctime/mtime/track_id..., width=1920<<16, height=1080<<16
+        $tkhd_body = "\x00\x00\x00\x01" . str_repeat("\x00", 72) . pack('NN', 1920 << 16, 1080 << 16);
+        $tkhd = pack('Na4', 8 + strlen($tkhd_body), 'tkhd') . $tkhd_body;
+        $trak = pack('Na4', 8 + strlen($tkhd), 'trak') . $tkhd;
+
+        $moov = pack('Na4', 8 + strlen($mvhd) + strlen($trak), 'moov') . $mvhd . $trak;
+        file_put_contents($mp4_test, $ftyp . $moov);
+
+        $parsed_mp4 = parse_mp4_atoms_pure_php($mp4_test);
+        $this->assert("Parseur MP4 pur PHP extrait la durée (15s)", ($parsed_mp4['duration'] ?? 0) == 15);
+        $this->assert("Parseur MP4 pur PHP extrait la résolution (1920x1080)", ($parsed_mp4['width'] ?? 0) === 1920 && ($parsed_mp4['height'] ?? 0) === 1080);
+
+        if (file_exists($mp4_test)) @unlink($mp4_test);
         if (file_exists($doc_path)) @unlink($doc_path);
     }
 }
