@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'save_permissions'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'save_permissions', 'edit_image'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -949,6 +949,133 @@ if ($action === 'delete_item') {
         ]);
     }
     exit;
+}
+
+if ($action === 'edit_image') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Droits administrateur requis pour éditer une image.'
+        ]);
+        exit;
+    }
+
+    $target_param = $raw_body['target_path'] ?? $_POST['target_path'] ?? '';
+    $save_mode = $raw_body['save_mode'] ?? $_POST['save_mode'] ?? 'copy'; // 'overwrite' or 'copy'
+    $image_data = $raw_body['image_data'] ?? $_POST['image_data'] ?? ''; // base64 data URI
+
+    if (empty($target_param)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Chemin de l\'image non spécifié.']);
+        exit;
+    }
+
+    if (empty($image_data)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Données d\'image manquantes.']);
+        exit;
+    }
+
+    $target_file = sanitize_file_path($target_param, $real_base_dir);
+    if ($target_file === null || !is_file($target_file) || is_path_ignored($target_file, $real_base_dir, $ignore_list)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Fichier image introuvable ou accès refusé.']);
+        exit;
+    }
+
+    $ext = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    if (!in_array($ext, $media_types['image'], true) || in_array($ext, ['php', 'phtml', 'phar', 'svg'], true)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Format de fichier non pris en charge pour l\'édition.']);
+        exit;
+    }
+
+    // Decode base64 image data
+    if (preg_match('/^data:image\/(\w+);base64,/', $image_data, $type_match)) {
+        $data_substr = substr($image_data, strpos($image_data, ',') + 1);
+        $decoded_image = base64_decode($data_substr);
+        if ($decoded_image === false) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Données d\'image base64 invalides.']);
+            exit;
+        }
+    } else {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Format d\'encodage base64 non reconnu.']);
+        exit;
+    }
+
+    // Verify it is a valid image with getimagesizefromstring if available
+    if (function_exists('getimagesizefromstring')) {
+        $check_info = @getimagesizefromstring($decoded_image);
+        if ($check_info === false) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Les données transmises ne constituent pas une image valide.']);
+            exit;
+        }
+    }
+
+    $parent_dir = dirname($target_file);
+    if (!is_writable($parent_dir)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Permissions d\'écriture insuffisantes dans le dossier cible.']);
+        exit;
+    }
+
+    $dest_file = $target_file;
+    $is_copy = ($save_mode === 'copy');
+
+    if ($is_copy) {
+        $info = pathinfo($target_file);
+        $base_name = $info['filename'];
+        $file_ext = !empty($info['extension']) ? '.' . $info['extension'] : '.jpg';
+        
+        // Strip previous _edited suffix if present to prevent photo_edited_edited_edited...
+        $clean_base = preg_replace('/_edited(_\d+)?$/i', '', $base_name);
+        $candidate_name = $clean_base . '_edited' . $file_ext;
+        $counter = 1;
+        while (file_exists($parent_dir . '/' . $candidate_name)) {
+            $candidate_name = $clean_base . '_edited_' . $counter . $file_ext;
+            $counter++;
+        }
+        $dest_file = $parent_dir . '/' . $candidate_name;
+    }
+
+    $save_success = (@file_put_contents($dest_file, $decoded_image, LOCK_EX) !== false);
+
+    if ($save_success) {
+        @chmod($dest_file, 0644);
+
+        // Invalidate directory cache
+        invalidate_dir_cache($parent_dir, $real_base_dir, $thumbnail_dir);
+
+        // If overwrite, also delete old cached thumbnail
+        if (!$is_copy) {
+            $rel = get_relative_path($dest_file, $real_base_dir);
+            $cache_key_jpg = $thumbnail_dir . '/' . md5($rel) . '.jpg';
+            if (file_exists($cache_key_jpg)) @unlink($cache_key_jpg);
+        }
+
+        $saved_relative = get_relative_path($dest_file, $real_base_dir);
+        $saved_filename = basename($dest_file);
+
+        echo json_encode([
+            'success'        => true,
+            'message'        => $is_copy ? "Copie '{$saved_filename}' enregistrée avec succès." : "Image '{$saved_filename}' mise à jour avec succès.",
+            'save_mode'      => $save_mode,
+            'is_copy'        => $is_copy,
+            'file_name'      => $saved_filename,
+            'path'           => $saved_relative,
+            'thumb_url'      => 'thumb.php?file=' . rawurlencode($saved_relative) . '&t=' . time(),
+            'file_url'       => encode_url_path($saved_relative) . '?t=' . time()
+        ]);
+        exit;
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Échec de l\'écriture du fichier image sur le serveur.']);
+        exit;
+    }
 }
 
 // load_dir_comments(), save_dir_comments(), and load_folder_overrides() imported from functions.php

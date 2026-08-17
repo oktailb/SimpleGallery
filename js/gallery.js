@@ -83,6 +83,7 @@ class SimpleGallery {
     this.initPipPlayer();
     this.initAdvancedSearch();
     this.initCookieConsent();
+    this.initImageEditor();
     this.updateFavoritesCountUI();
     this.handleUrlChange();
   }
@@ -122,6 +123,7 @@ class SimpleGallery {
       lightboxDownloadBtn: document.getElementById('lightboxDownloadBtn'),
       lightboxFavBtn: document.getElementById('lightboxFavBtn'),
       lightboxExifBtn: document.getElementById('lightboxExifBtn'),
+      lightboxEditImageBtn: document.getElementById('lightboxEditImageBtn'),
       lightboxExifPanel: document.getElementById('lightboxExifPanel'),
       closeExifPanelBtn: document.getElementById('closeExifPanelBtn'),
       exifPanelBody: document.getElementById('exifPanelBody'),
@@ -225,7 +227,6 @@ class SimpleGallery {
       pipCloseBtn: document.getElementById('pipCloseBtn'),
 
       // Interactive Leaflet Map Elements
-      folderMapBtn: document.getElementById('folderMapBtn'),
       mapModal: document.getElementById('mapModal'),
       mapModalCloseBtn: document.getElementById('mapModalCloseBtn'),
       mapModalCountBadge: document.getElementById('mapModalCountBadge'),
@@ -252,7 +253,35 @@ class SimpleGallery {
       cookieOptCdn: document.getElementById('cookieOptCdn'),
       cookieSaveCustomBtn: document.getElementById('cookieSaveCustomBtn'),
       cookieModalAcceptAllBtn: document.getElementById('cookieModalAcceptAllBtn'),
-      openCookieSettingsBtn: document.getElementById('openCookieSettingsBtn')
+      openCookieSettingsBtn: document.getElementById('openCookieSettingsBtn'),
+
+      // Admin Image Editor Elements
+      imageEditorModal: document.getElementById('imageEditorModal'),
+      imageEditorCloseBtn: document.getElementById('imageEditorCloseBtn'),
+      editorResetAllBtn: document.getElementById('editorResetAllBtn'),
+      editorOpenSaveChoiceBtn: document.getElementById('editorOpenSaveChoiceBtn'),
+      editorCanvas: document.getElementById('editorCanvas'),
+      editorCanvasWrapper: document.getElementById('editorCanvasWrapper'),
+      editorCropBox: document.getElementById('editorCropBox'),
+      editorToggleCropBtn: document.getElementById('editorToggleCropBtn'),
+      editorApplyCropBtn: document.getElementById('editorApplyCropBtn'),
+      editorRotateCcwBtn: document.getElementById('editorRotateCcwBtn'),
+      editorRotateCwBtn: document.getElementById('editorRotateCwBtn'),
+      editorFlipHBtn: document.getElementById('editorFlipHBtn'),
+      editorFlipVBtn: document.getElementById('editorFlipVBtn'),
+      editorBrightnessSlider: document.getElementById('editorBrightnessSlider'),
+      editorBrightnessVal: document.getElementById('editorBrightnessVal'),
+      editorContrastSlider: document.getElementById('editorContrastSlider'),
+      editorContrastVal: document.getElementById('editorContrastVal'),
+      editorSaturationSlider: document.getElementById('editorSaturationSlider'),
+      editorSaturationVal: document.getElementById('editorSaturationVal'),
+      editorImageNameBadge: document.getElementById('editorImageNameBadge'),
+      editorImageDimBadge: document.getElementById('editorImageDimBadge'),
+      imageSaveChoiceModal: document.getElementById('imageSaveChoiceModal'),
+      saveChoiceCloseBtn: document.getElementById('saveChoiceCloseBtn'),
+      saveChoiceCancelBtn: document.getElementById('saveChoiceCancelBtn'),
+      saveChoiceConfirmBtn: document.getElementById('saveChoiceConfirmBtn'),
+      saveChoiceCopyNamePreview: document.getElementById('saveChoiceCopyNamePreview')
     };
   }
 
@@ -641,11 +670,17 @@ class SimpleGallery {
         (this.el.folderUnlockModal && this.el.folderUnlockModal.classList.contains('open')) ||
         (this.el.searchModal && this.el.searchModal.classList.contains('open')) ||
         (this.el.mapModal && this.el.mapModal.classList.contains('open')) ||
-        (this.el.cookieSettingsModal && this.el.cookieSettingsModal.classList.contains('open'));
+        (this.el.cookieSettingsModal && this.el.cookieSettingsModal.classList.contains('open')) ||
+        (this.el.imageEditorModal && this.el.imageEditorModal.classList.contains('open')) ||
+        (this.el.imageSaveChoiceModal && this.el.imageSaveChoiceModal.classList.contains('open'));
 
       if (isInputFocused || isModalOpen) {
         if (e.key === 'Escape') {
-          if (this.el.mediaCommentModal && this.el.mediaCommentModal.classList.contains('open')) {
+          if (this.el.imageSaveChoiceModal && this.el.imageSaveChoiceModal.classList.contains('open')) {
+            this.closeSaveChoiceModal();
+          } else if (this.el.imageEditorModal && this.el.imageEditorModal.classList.contains('open')) {
+            this.closeImageEditor();
+          } else if (this.el.mediaCommentModal && this.el.mediaCommentModal.classList.contains('open')) {
             this.closeMediaCommentModal();
           } else if (this.el.folderSettingsModal && this.el.folderSettingsModal.classList.contains('open')) {
             this.closeFolderSettingsModal();
@@ -1585,6 +1620,11 @@ class SimpleGallery {
       this.toggleExifPanel(false);
     }
 
+    const isEditableImage = this.state.isAdmin && file.category === 'image' && file.extension !== 'svg';
+    if (this.el.lightboxEditImageBtn) {
+      this.el.lightboxEditImageBtn.style.display = isEditableImage ? 'inline-flex' : 'none';
+    }
+
     if (file.category === 'image') {
       this.el.imageExplorerControls.style.display = 'flex';
     } else {
@@ -2033,6 +2073,10 @@ class SimpleGallery {
       if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = 'inline-flex';
       if (this.el.lightboxEditCommentBtn) this.el.lightboxEditCommentBtn.style.display = 'inline-flex';
       if (this.el.lightboxDeleteBtn) this.el.lightboxDeleteBtn.style.display = 'inline-flex';
+      if (this.el.lightboxEditImageBtn) {
+        const curFile = this.state.lightboxIndex !== null ? this.state.filteredFiles[this.state.lightboxIndex] : null;
+        this.el.lightboxEditImageBtn.style.display = (curFile && curFile.category === 'image' && curFile.extension !== 'svg') ? 'inline-flex' : 'none';
+      }
     } else {
       this.el.adminBtn.classList.remove('admin-active');
       if (this.el.adminBtnIcon) this.el.adminBtnIcon.textContent = '🔑';
@@ -2044,6 +2088,7 @@ class SimpleGallery {
       if (this.el.uploadMediaBtn) this.el.uploadMediaBtn.style.display = 'none';
       if (this.el.lightboxEditCommentBtn) this.el.lightboxEditCommentBtn.style.display = 'none';
       if (this.el.lightboxDeleteBtn) this.el.lightboxDeleteBtn.style.display = 'none';
+      if (this.el.lightboxEditImageBtn) this.el.lightboxEditImageBtn.style.display = 'none';
     }
   }
 
@@ -3708,6 +3753,565 @@ class SimpleGallery {
     setTimeout(() => {
       this.el.cookieSettingsModal.style.display = 'none';
     }, 250);
+  }
+
+  // =============================================================
+  // 16. ADMIN IMAGE EDITOR ENGINE (Canvas, Crop, Rotate, Adjust)
+  // =============================================================
+
+  initImageEditor() {
+    this.editorState = {
+      imageObj: null,
+      sourceCanvas: document.createElement('canvas'),
+      file: null,
+      rotation: 0,
+      flipH: false,
+      flipV: false,
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      filter: 'none',
+      isCropping: false,
+      cropRatio: 'free',
+      cropBox: { x: 0, y: 0, w: 0, h: 0 },
+      isDraggingCrop: false,
+      activeCropHandle: null,
+      cropDragStart: { x: 0, y: 0 },
+      cropBoxStart: null
+    };
+
+    if (this.el.lightboxEditImageBtn) {
+      this.el.lightboxEditImageBtn.addEventListener('click', () => {
+        if (this.state.lightboxIndex !== null) {
+          const file = this.state.filteredFiles[this.state.lightboxIndex];
+          if (file) this.openImageEditor(file);
+        }
+      });
+    }
+
+    if (this.el.imageEditorCloseBtn) {
+      this.el.imageEditorCloseBtn.addEventListener('click', () => this.closeImageEditor());
+    }
+
+    if (this.el.editorResetAllBtn) {
+      this.el.editorResetAllBtn.addEventListener('click', () => this.resetImageEditor());
+    }
+
+    // Transformations
+    if (this.el.editorRotateCcwBtn) {
+      this.el.editorRotateCcwBtn.addEventListener('click', () => this.rotateEditor(-90));
+    }
+    if (this.el.editorRotateCwBtn) {
+      this.el.editorRotateCwBtn.addEventListener('click', () => this.rotateEditor(90));
+    }
+    if (this.el.editorFlipHBtn) {
+      this.el.editorFlipHBtn.addEventListener('click', () => this.flipEditor('h'));
+    }
+    if (this.el.editorFlipVBtn) {
+      this.el.editorFlipVBtn.addEventListener('click', () => this.flipEditor('v'));
+    }
+
+    // Crop Toggle & Apply
+    if (this.el.editorToggleCropBtn) {
+      this.el.editorToggleCropBtn.addEventListener('click', () => this.toggleCrop());
+    }
+    if (this.el.editorApplyCropBtn) {
+      this.el.editorApplyCropBtn.addEventListener('click', () => this.applyCrop());
+    }
+
+    // Crop Ratios
+    const ratioBtns = document.querySelectorAll('.crop-ratio-btn');
+    ratioBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        ratioBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.editorState.cropRatio = btn.dataset.ratio || 'free';
+        if (!this.editorState.isCropping) {
+          this.toggleCrop(true);
+        } else {
+          this.initDefaultCropBox();
+          this.updateCropBoxDOM();
+        }
+      });
+    });
+
+    // Sliders (Brightness, Contrast, Saturation)
+    if (this.el.editorBrightnessSlider) {
+      this.el.editorBrightnessSlider.addEventListener('input', (e) => {
+        this.editorState.brightness = parseInt(e.target.value, 10);
+        if (this.el.editorBrightnessVal) this.el.editorBrightnessVal.textContent = `${this.editorState.brightness}%`;
+        this.renderEditorCanvas();
+      });
+    }
+
+    if (this.el.editorContrastSlider) {
+      this.el.editorContrastSlider.addEventListener('input', (e) => {
+        this.editorState.contrast = parseInt(e.target.value, 10);
+        if (this.el.editorContrastVal) this.el.editorContrastVal.textContent = `${this.editorState.contrast}%`;
+        this.renderEditorCanvas();
+      });
+    }
+
+    if (this.el.editorSaturationSlider) {
+      this.el.editorSaturationSlider.addEventListener('input', (e) => {
+        this.editorState.saturation = parseInt(e.target.value, 10);
+        if (this.el.editorSaturationVal) this.el.editorSaturationVal.textContent = `${this.editorState.saturation}%`;
+        this.renderEditorCanvas();
+      });
+    }
+
+    // Filter Buttons
+    const filterBtns = document.querySelectorAll('.editor-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.editorState.filter = btn.dataset.filter || 'none';
+        this.renderEditorCanvas();
+      });
+    });
+
+    // Save Choice Modal triggers
+    if (this.el.editorOpenSaveChoiceBtn) {
+      this.el.editorOpenSaveChoiceBtn.addEventListener('click', () => this.openSaveChoiceModal());
+    }
+    if (this.el.saveChoiceCloseBtn) {
+      this.el.saveChoiceCloseBtn.addEventListener('click', () => this.closeSaveChoiceModal());
+    }
+    if (this.el.saveChoiceCancelBtn) {
+      this.el.saveChoiceCancelBtn.addEventListener('click', () => this.closeSaveChoiceModal());
+    }
+    if (this.el.imageSaveChoiceModal) {
+      this.el.imageSaveChoiceModal.addEventListener('click', (e) => {
+        if (e.target === this.el.imageSaveChoiceModal) {
+          this.closeSaveChoiceModal();
+        }
+      });
+    }
+    if (this.el.saveChoiceConfirmBtn) {
+      this.el.saveChoiceConfirmBtn.addEventListener('click', () => {
+        const radio = document.querySelector('input[name="saveImageModeRadio"]:checked');
+        const saveMode = radio ? radio.value : 'copy';
+        this.saveEditedImage(saveMode);
+      });
+    }
+
+    // Crop Drag & Resize Interactions
+    this.initCropInteractions();
+  }
+
+  openImageEditor(file) {
+    if (!this.el.imageEditorModal) return;
+    this.editorState.file = file;
+
+    if (this.el.editorImageNameBadge) {
+      this.el.editorImageNameBadge.textContent = file.name;
+    }
+
+    this.showLoading(true);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      this.showLoading(false);
+      this.editorState.imageObj = img;
+      
+      // Initialize source canvas with original image
+      const srcCanvas = this.editorState.sourceCanvas;
+      srcCanvas.width = img.naturalWidth;
+      srcCanvas.height = img.naturalHeight;
+      const ctx = srcCanvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      this.resetImageEditorState();
+      this.el.imageEditorModal.style.display = 'flex';
+      setTimeout(() => {
+        this.el.imageEditorModal.classList.add('open');
+        this.renderEditorCanvas();
+      }, 20);
+    };
+
+    img.onerror = () => {
+      this.showLoading(false);
+      alert("⚠️ Impossible de charger l'image pour l'édition.");
+    };
+
+    img.src = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+  }
+
+  closeImageEditor() {
+    if (!this.el.imageEditorModal) return;
+    this.el.imageEditorModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.imageEditorModal.style.display = 'none';
+      this.closeSaveChoiceModal();
+    }, 250);
+  }
+
+  resetImageEditorState() {
+    this.editorState.rotation = 0;
+    this.editorState.flipH = false;
+    this.editorState.flipV = false;
+    this.editorState.brightness = 0;
+    this.editorState.contrast = 0;
+    this.editorState.saturation = 0;
+    this.editorState.filter = 'none';
+    this.editorState.isCropping = false;
+    this.editorState.cropRatio = 'free';
+
+    if (this.el.editorBrightnessSlider) this.el.editorBrightnessSlider.value = '0';
+    if (this.el.editorBrightnessVal) this.el.editorBrightnessVal.textContent = '0%';
+    if (this.el.editorContrastSlider) this.el.editorContrastSlider.value = '0';
+    if (this.el.editorContrastVal) this.el.editorContrastVal.textContent = '0%';
+    if (this.el.editorSaturationSlider) this.el.editorSaturationSlider.value = '0';
+    if (this.el.editorSaturationVal) this.el.editorSaturationVal.textContent = '0%';
+
+    document.querySelectorAll('.editor-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'none'));
+    document.querySelectorAll('.crop-ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+
+    if (this.el.editorCropBox) this.el.editorCropBox.style.display = 'none';
+    if (this.el.editorToggleCropBtn) this.el.editorToggleCropBtn.classList.remove('active');
+  }
+
+  resetImageEditor() {
+    if (!this.editorState.imageObj) return;
+    const srcCanvas = this.editorState.sourceCanvas;
+    srcCanvas.width = this.editorState.imageObj.naturalWidth;
+    srcCanvas.height = this.editorState.imageObj.naturalHeight;
+    const ctx = srcCanvas.getContext('2d');
+    ctx.drawImage(this.editorState.imageObj, 0, 0);
+
+    this.resetImageEditorState();
+    this.renderEditorCanvas();
+  }
+
+  rotateEditor(degrees) {
+    this.editorState.rotation = (this.editorState.rotation + degrees + 360) % 360;
+    this.renderEditorCanvas();
+    if (this.editorState.isCropping) {
+      this.initDefaultCropBox();
+      this.updateCropBoxDOM();
+    }
+  }
+
+  flipEditor(axis) {
+    if (axis === 'h') this.editorState.flipH = !this.editorState.flipH;
+    if (axis === 'v') this.editorState.flipV = !this.editorState.flipV;
+    this.renderEditorCanvas();
+  }
+
+  toggleCrop(forceState) {
+    const nextState = (forceState !== undefined) ? forceState : !this.editorState.isCropping;
+    this.editorState.isCropping = nextState;
+    if (this.el.editorToggleCropBtn) {
+      this.el.editorToggleCropBtn.classList.toggle('active', nextState);
+    }
+    if (this.el.editorCropBox) {
+      this.el.editorCropBox.style.display = nextState ? 'block' : 'none';
+    }
+    if (nextState) {
+      this.initDefaultCropBox();
+      this.updateCropBoxDOM();
+    }
+  }
+
+  initDefaultCropBox() {
+    const canvas = this.el.editorCanvas;
+    if (!canvas) return;
+    const w = canvas.offsetWidth;
+    const h = canvas.offsetHeight;
+    if (w <= 0 || h <= 0) return;
+
+    let cropW = w * 0.8;
+    let cropH = h * 0.8;
+
+    if (this.editorState.cropRatio !== 'free') {
+      const parts = this.editorState.cropRatio.split(':').map(Number);
+      if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) {
+        const targetAspect = parts[0] / parts[1];
+        if (cropW / cropH > targetAspect) {
+          cropW = cropH * targetAspect;
+        } else {
+          cropH = cropW / targetAspect;
+        }
+      }
+    }
+
+    this.editorState.cropBox = {
+      x: (w - cropW) / 2,
+      y: (h - cropH) / 2,
+      w: cropW,
+      h: cropH
+    };
+  }
+
+  updateCropBoxDOM() {
+    if (!this.el.editorCropBox || !this.editorState.isCropping) return;
+    const box = this.editorState.cropBox;
+    this.el.editorCropBox.style.left = `${box.x}px`;
+    this.el.editorCropBox.style.top = `${box.y}px`;
+    this.el.editorCropBox.style.width = `${box.w}px`;
+    this.el.editorCropBox.style.height = `${box.h}px`;
+  }
+
+  initCropInteractions() {
+    const cropBox = this.el.editorCropBox;
+    if (!cropBox) return;
+
+    const onPointerDown = (clientX, clientY, target) => {
+      if (!this.editorState.isCropping) return;
+      this.editorState.isDraggingCrop = true;
+      this.editorState.activeCropHandle = target.dataset.handle || null;
+      this.editorState.cropDragStart = { x: clientX, y: clientY };
+      this.editorState.cropBoxStart = { ...this.editorState.cropBox };
+    };
+
+    cropBox.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onPointerDown(e.clientX, e.clientY, e.target);
+    });
+
+    cropBox.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        onPointerDown(e.touches[0].clientX, e.touches[0].clientY, e.target);
+      }
+    }, { passive: false });
+
+    const onPointerMove = (clientX, clientY) => {
+      if (!this.editorState.isDraggingCrop || !this.editorState.isCropping) return;
+      const canvas = this.el.editorCanvas;
+      if (!canvas) return;
+
+      const maxW = canvas.offsetWidth;
+      const maxH = canvas.offsetHeight;
+      const dx = clientX - this.editorState.cropDragStart.x;
+      const dy = clientY - this.editorState.cropDragStart.y;
+      const start = this.editorState.cropBoxStart;
+      const handle = this.editorState.activeCropHandle;
+      const minSize = 30;
+
+      let newBox = { ...start };
+
+      if (!handle) {
+        // Dragging entire crop box
+        newBox.x = Math.max(0, Math.min(maxW - start.w, start.x + dx));
+        newBox.y = Math.max(0, Math.min(maxH - start.h, start.y + dy));
+      } else {
+        // Resizing via handles
+        if (handle.includes('e')) newBox.w = Math.max(minSize, Math.min(maxW - start.x, start.w + dx));
+        if (handle.includes('s')) newBox.h = Math.max(minSize, Math.min(maxH - start.y, start.h + dy));
+        if (handle.includes('w')) {
+          const adjDx = Math.min(dx, start.w - minSize);
+          newBox.x = Math.max(0, start.x + adjDx);
+          newBox.w = start.w - (newBox.x - start.x);
+        }
+        if (handle.includes('n')) {
+          const adjDy = Math.min(dy, start.h - minSize);
+          newBox.y = Math.max(0, start.y + adjDy);
+          newBox.h = start.h - (newBox.y - start.y);
+        }
+
+        // Apply aspect ratio constraint if set
+        if (this.editorState.cropRatio !== 'free') {
+          const parts = this.editorState.cropRatio.split(':').map(Number);
+          if (parts.length === 2) {
+            const aspect = parts[0] / parts[1];
+            if (handle === 'e' || handle === 'w' || handle.includes('e') || handle.includes('w')) {
+              newBox.h = newBox.w / aspect;
+            } else {
+              newBox.w = newBox.h * aspect;
+            }
+          }
+        }
+      }
+
+      this.editorState.cropBox = newBox;
+      this.updateCropBoxDOM();
+    };
+
+    window.addEventListener('mousemove', (e) => {
+      if (this.editorState.isDraggingCrop) {
+        e.preventDefault();
+        onPointerMove(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (this.editorState.isDraggingCrop && e.touches.length === 1) {
+        e.preventDefault();
+        onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    const onPointerUp = () => {
+      this.editorState.isDraggingCrop = false;
+      this.editorState.activeCropHandle = null;
+    };
+
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchend', onPointerUp);
+  }
+
+  applyCrop() {
+    if (!this.editorState.isCropping) return;
+    const canvas = this.el.editorCanvas;
+    if (!canvas || canvas.width <= 0 || canvas.height <= 0) return;
+
+    const displayW = canvas.offsetWidth;
+    const displayH = canvas.offsetHeight;
+    if (displayW <= 0 || displayH <= 0) return;
+
+    const scaleX = canvas.width / displayW;
+    const scaleY = canvas.height / displayH;
+
+    const box = this.editorState.cropBox;
+    const sx = Math.max(0, Math.floor(box.x * scaleX));
+    const sy = Math.max(0, Math.floor(box.y * scaleY));
+    const sw = Math.min(canvas.width - sx, Math.floor(box.w * scaleX));
+    const sh = Math.min(canvas.height - sy, Math.floor(box.h * scaleY));
+
+    if (sw <= 10 || sh <= 10) return;
+
+    // Create cropped canvas
+    const cropped = document.createElement('canvas');
+    cropped.width = sw;
+    cropped.height = sh;
+    const ctx = cropped.getContext('2d');
+    ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    // Update source canvas
+    this.editorState.sourceCanvas = cropped;
+    this.editorState.rotation = 0;
+    this.editorState.flipH = false;
+    this.editorState.flipV = false;
+    this.toggleCrop(false);
+    this.renderEditorCanvas();
+  }
+
+  renderEditorCanvas() {
+    const canvas = this.el.editorCanvas;
+    const src = this.editorState.sourceCanvas;
+    if (!canvas || !src || src.width <= 0 || src.height <= 0) return;
+
+    const rot = this.editorState.rotation;
+    const isRotated90 = (rot === 90 || rot === 270);
+    const destW = isRotated90 ? src.height : src.width;
+    const destH = isRotated90 ? src.width : src.height;
+
+    canvas.width = destW;
+    canvas.height = destH;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, destW, destH);
+
+    ctx.save();
+    ctx.translate(destW / 2, destH / 2);
+    ctx.rotate((rot * Math.PI) / 180);
+    ctx.scale(this.editorState.flipH ? -1 : 1, this.editorState.flipV ? -1 : 1);
+
+    // Build CSS filter string for canvas draw
+    const b = 100 + this.editorState.brightness;
+    const c = 100 + this.editorState.contrast;
+    const s = 100 + this.editorState.saturation;
+    let filterStr = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+
+    if (this.editorState.filter === 'grayscale') filterStr += ' grayscale(100%)';
+    if (this.editorState.filter === 'sepia') filterStr += ' sepia(85%)';
+    if (this.editorState.filter === 'warm') filterStr += ' sepia(35%) saturate(140%)';
+    if (this.editorState.filter === 'invert') filterStr += ' invert(100%)';
+
+    ctx.filter = filterStr;
+    ctx.drawImage(src, -src.width / 2, -src.height / 2);
+    ctx.restore();
+
+    if (this.el.editorImageDimBadge) {
+      this.el.editorImageDimBadge.textContent = `${destW} × ${destH} px`;
+    }
+  }
+
+  openSaveChoiceModal() {
+    if (!this.el.imageSaveChoiceModal) return;
+    const file = this.editorState.file;
+    if (file && this.el.saveChoiceCopyNamePreview) {
+      const parts = file.name.split('.');
+      const ext = parts.length > 1 ? '.' + parts.pop() : '';
+      const base = parts.join('.');
+      const cleanBase = base.replace(/_edited(_\d+)?$/i, '');
+      this.el.saveChoiceCopyNamePreview.textContent = `${cleanBase}_edited${ext}`;
+    }
+    this.el.imageSaveChoiceModal.style.display = 'flex';
+    setTimeout(() => this.el.imageSaveChoiceModal.classList.add('open'), 10);
+  }
+
+  closeSaveChoiceModal() {
+    if (!this.el.imageSaveChoiceModal) return;
+    this.el.imageSaveChoiceModal.classList.remove('open');
+    setTimeout(() => {
+      this.el.imageSaveChoiceModal.style.display = 'none';
+    }, 250);
+  }
+
+  async saveEditedImage(saveMode) {
+    const canvas = this.el.editorCanvas;
+    const file = this.editorState.file;
+    if (!canvas || !file) return;
+
+    this.showLoading(true);
+
+    try {
+      // Export canvas to high quality Data URL
+      const ext = (file.extension || 'jpg').toLowerCase();
+      const mime = (ext === 'png') ? 'image/png' : (ext === 'webp' ? 'image/webp' : 'image/jpeg');
+      const quality = (mime === 'image/png') ? undefined : 0.92;
+      const dataUrl = canvas.toDataURL(mime, quality);
+
+      const payload = {
+        action: 'edit_image',
+        target_path: file.path,
+        save_mode: saveMode, // 'overwrite' or 'copy'
+        image_data: dataUrl,
+        csrf_token: this.state.csrfToken
+      };
+
+      const res = await fetch('api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.state.csrfToken
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+      this.showLoading(false);
+
+      if (json.success) {
+        this.closeSaveChoiceModal();
+        this.closeImageEditor();
+
+        // Reload gallery directory to display new/updated image
+        await this.loadDirectory(this.state.currentPath);
+
+        // If lightbox is open, refresh preview
+        if (this.state.lightboxIndex !== null) {
+          if (saveMode === 'overwrite') {
+            this.openLightbox(this.state.lightboxIndex);
+          } else {
+            // Find index of newly created copy
+            const copyIdx = this.state.filteredFiles.findIndex(f => f.name === json.file_name);
+            if (copyIdx !== -1) {
+              this.openLightbox(copyIdx);
+            }
+          }
+        }
+      } else {
+        alert('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde de l\'image.'));
+      }
+    } catch (err) {
+      this.showLoading(false);
+      alert('⚠️ Erreur réseau lors de la sauvegarde : ' + err.message);
+    }
   }
 }
 

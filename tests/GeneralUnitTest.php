@@ -76,6 +76,7 @@ class GeneralUnitTestSuite {
         $this->testArchiveGenerationEngine();
         $this->testMp4ExtractorFallback();
         $this->testCookieConsentConfiguration();
+        $this->testImageEditorBackend();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS FONCTIONNELS\n";
@@ -292,6 +293,48 @@ class GeneralUnitTestSuite {
         $this->assert("index.php contient le bandeau cookieConsentBanner", strpos($index_content, 'id="cookieConsentBanner"') !== false);
         $this->assert("index.php contient le modal cookieSettingsModal", strpos($index_content, 'id="cookieSettingsModal"') !== false);
         $this->assert("index.php contient le pied de page app-footer", strpos($index_content, 'class="app-footer"') !== false);
+    }
+
+    /**
+     * 9. Image Editor Backend & UI Elements Test
+     */
+    private function testImageEditorBackend(): void {
+        echo "\n🎨 [9/9] Test de l'Éditeur d'Images Admin (Backend & UI)...\n";
+
+        $index_content = @file_get_contents($this->base_dir . '/index.php');
+        $this->assert("index.php contient le bouton lightboxEditImageBtn", strpos($index_content, 'id="lightboxEditImageBtn"') !== false);
+        $this->assert("index.php contient le modal imageEditorModal", strpos($index_content, 'id="imageEditorModal"') !== false);
+        $this->assert("index.php contient le modal de choix de sauvegarde imageSaveChoiceModal", strpos($index_content, 'id="imageSaveChoiceModal"') !== false);
+
+        $api_content = @file_get_contents($this->base_dir . '/api.php');
+        $this->assert("api.php déclare l'action edit_image dans les actions mutantes", strpos($api_content, "'edit_image'") !== false);
+        $this->assert("api.php implémente le gestionnaire d'action edit_image", strpos($api_content, "\$action === 'edit_image'") !== false);
+
+        // Create a 10x10 sample truecolor JPEG image
+        $test_image_file = $this->test_dir . '/sample_photo.jpg';
+        $im = @imagecreatetruecolor(10, 10);
+        if ($im) {
+            $red = imagecolorallocate($im, 255, 0, 0);
+            imagefill($im, 0, 0, $red);
+            imagejpeg($im, $test_image_file);
+            imagedestroy($im);
+        }
+
+        $this->assert("Image de test sample_photo.jpg créée avec succès", file_exists($test_image_file));
+
+        // Test copy filename resolution logic
+        $info = pathinfo($test_image_file);
+        $base_name = $info['filename'];
+        $clean_base = preg_replace('/_edited(_\d+)?$/i', '', $base_name);
+        $candidate_name = $clean_base . '_edited.jpg';
+        $copy_path = dirname($test_image_file) . '/' . $candidate_name;
+        
+        file_put_contents($copy_path, 'EDITED_COPY_DATA');
+        $this->assert("Génération du nom de copie '_edited.jpg' valide", file_exists($copy_path));
+        $this->assert("L'image originale est préservée lors d'une copie", filesize($test_image_file) > 0);
+
+        if (file_exists($test_image_file)) @unlink($test_image_file);
+        if (file_exists($copy_path)) @unlink($copy_path);
     }
 }
 

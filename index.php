@@ -229,6 +229,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         <button id="lightboxExifBtn" class="lightbox-btn" title="Toggle EXIF Details (I)" style="display: none;">
           ℹ️ EXIF
         </button>
+        <button id="lightboxEditImageBtn" class="lightbox-btn" title="Éditer l'image (Recadrage, Rotation, Filtres - Mode Admin)" style="display: none;">
+          🎨 Éditer
+        </button>
         <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Edit Legend (.comment)" style="display: none;">
           ✏️
         </button>
@@ -648,6 +651,173 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         </div>
       </div>
       <div id="galleryLeafletMap" class="map-canvas"></div>
+    </div>
+  </div>
+
+  <!-- Admin Image Editor Modal (HTML5 Canvas & Transformations) -->
+  <div id="imageEditorModal" class="editor-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle">
+    <div class="editor-modal-card">
+      <div class="editor-modal-header">
+        <div class="editor-title-group">
+          <h3 id="editorModalTitle" class="editor-title">🎨 Éditeur d'Image</h3>
+          <span id="editorImageNameBadge" class="editor-badge">image.jpg</span>
+          <span id="editorImageDimBadge" class="editor-dim-badge">0 × 0 px</span>
+        </div>
+        <div class="editor-header-actions">
+          <button type="button" id="editorResetAllBtn" class="editor-btn-secondary" title="Réinitialiser toutes les modifications">
+            🔄 Réinitialiser tout
+          </button>
+          <button type="button" id="editorOpenSaveChoiceBtn" class="editor-btn-primary" title="Sauvegarder les modifications">
+            💾 Enregistrer l'image
+          </button>
+          <button type="button" id="imageEditorCloseBtn" class="editor-close-btn" title="Fermer sans enregistrer (Échap)">✕</button>
+        </div>
+      </div>
+
+      <div class="editor-modal-body">
+        <!-- Canvas Workspace Area -->
+        <div class="editor-workspace" id="editorWorkspace">
+          <div class="editor-canvas-wrapper" id="editorCanvasWrapper">
+            <canvas id="editorCanvas" class="editor-canvas"></canvas>
+            <!-- Crop Marquee Selection Box Overlay -->
+            <div id="editorCropBox" class="editor-crop-box" style="display: none;">
+              <div class="crop-handle handle-nw" data-handle="nw"></div>
+              <div class="crop-handle handle-ne" data-handle="ne"></div>
+              <div class="crop-handle handle-sw" data-handle="sw"></div>
+              <div class="crop-handle handle-se" data-handle="se"></div>
+              <div class="crop-handle handle-n" data-handle="n"></div>
+              <div class="crop-handle handle-s" data-handle="s"></div>
+              <div class="crop-handle handle-w" data-handle="w"></div>
+              <div class="crop-handle handle-e" data-handle="e"></div>
+              <div class="crop-grid-lines"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar / Tools Panel -->
+        <div class="editor-sidebar">
+          <!-- Tool Tab 1: Recadrage (Crop) -->
+          <div class="editor-tool-section">
+            <h4 class="editor-section-title">✂️ Recadrage (Crop)</h4>
+            <div class="crop-ratio-buttons">
+              <button type="button" class="crop-ratio-btn active" data-ratio="free">Libre</button>
+              <button type="button" class="crop-ratio-btn" data-ratio="1:1">1:1 (Carré)</button>
+              <button type="button" class="crop-ratio-btn" data-ratio="4:3">4:3</button>
+              <button type="button" class="crop-ratio-btn" data-ratio="16:9">16:9</button>
+              <button type="button" class="crop-ratio-btn" data-ratio="3:2">3:2</button>
+            </div>
+            <div class="editor-tool-row" style="margin-top: 8px;">
+              <button type="button" id="editorToggleCropBtn" class="editor-tool-btn active" title="Activer / Désactiver le cadre de recadrage">
+                ✂️ Activer Recadrage
+              </button>
+              <button type="button" id="editorApplyCropBtn" class="editor-tool-btn editor-tool-btn-accent" title="Appliquer le recadrage sélectionné">
+                ✓ Valider Recadrage
+              </button>
+            </div>
+          </div>
+
+          <!-- Tool Tab 2: Transformations -->
+          <div class="editor-tool-section">
+            <h4 class="editor-section-title">🔄 Rotation &amp; Miroir</h4>
+            <div class="editor-tool-grid">
+              <button type="button" id="editorRotateCcwBtn" class="editor-tool-btn" title="Rotation 90° Anti-horaire">
+                ⟲ 90° Gauche
+              </button>
+              <button type="button" id="editorRotateCwBtn" class="editor-tool-btn" title="Rotation 90° Horaire">
+                ⟳ 90° Droite
+              </button>
+              <button type="button" id="editorFlipHBtn" class="editor-tool-btn" title="Miroir Horizontal">
+                ⇄ Miroir H
+              </button>
+              <button type="button" id="editorFlipVBtn" class="editor-tool-btn" title="Miroir Vertical">
+                ⇅ Miroir V
+              </button>
+            </div>
+          </div>
+
+          <!-- Tool Tab 3: Ajustements de Couleur -->
+          <div class="editor-tool-section">
+            <h4 class="editor-section-title">☀️ Réglages &amp; Lumière</h4>
+            <div class="editor-slider-group">
+              <div class="editor-slider-header">
+                <label for="editorBrightnessSlider">Luminosité</label>
+                <span id="editorBrightnessVal" class="slider-val">0%</span>
+              </div>
+              <input type="range" id="editorBrightnessSlider" min="-100" max="100" value="0" class="editor-slider">
+            </div>
+
+            <div class="editor-slider-group">
+              <div class="editor-slider-header">
+                <label for="editorContrastSlider">Contraste</label>
+                <span id="editorContrastVal" class="slider-val">0%</span>
+              </div>
+              <input type="range" id="editorContrastSlider" min="-100" max="100" value="0" class="editor-slider">
+            </div>
+
+            <div class="editor-slider-group">
+              <div class="editor-slider-header">
+                <label for="editorSaturationSlider">Saturation</label>
+                <span id="editorSaturationVal" class="slider-val">0%</span>
+              </div>
+              <input type="range" id="editorSaturationSlider" min="-100" max="100" value="0" class="editor-slider">
+            </div>
+          </div>
+
+          <!-- Tool Tab 4: Filtres Rapides -->
+          <div class="editor-tool-section">
+            <h4 class="editor-section-title">🎭 Filtres</h4>
+            <div class="editor-filter-pills">
+              <button type="button" class="editor-filter-btn active" data-filter="none">Normal</button>
+              <button type="button" class="editor-filter-btn" data-filter="grayscale">Noir &amp; Blanc</button>
+              <button type="button" class="editor-filter-btn" data-filter="sepia">Sépia</button>
+              <button type="button" class="editor-filter-btn" data-filter="warm">Chaud / Vintage</button>
+              <button type="button" class="editor-filter-btn" data-filter="invert">Inversé</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Image Mode Choice Modal (Overwrite vs Copy) -->
+  <div id="imageSaveChoiceModal" class="admin-modal" role="dialog" aria-modal="true" style="display: none;">
+    <div class="admin-modal-content" style="max-width: 480px;">
+      <div class="admin-modal-header">
+        <h3>💾 Enregistrer les Modifications</h3>
+        <button type="button" id="saveChoiceCloseBtn" class="lightbox-btn" title="Fermer">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="color: var(--text-main); font-size: 0.9rem; margin-bottom: 1.25rem;">
+          Comment souhaitez-vous enregistrer cette image modifiée ?
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem;">
+          <label class="save-choice-card">
+            <input type="radio" name="saveImageModeRadio" value="copy" checked class="save-choice-radio">
+            <div class="save-choice-text">
+              <strong>✨ Créer une nouvelle copie (Recommandé)</strong>
+              <span>Enregistre l'image éditée sous un nouveau nom (ex: <code id="saveChoiceCopyNamePreview">photo_edited.jpg</code>) et préserve l'original.</span>
+            </div>
+          </label>
+
+          <label class="save-choice-card">
+            <input type="radio" name="saveImageModeRadio" value="overwrite" class="save-choice-radio">
+            <div class="save-choice-text">
+              <strong>⚠️ Remplacer le fichier original</strong>
+              <span>Écrase directement le fichier source sur le serveur et régénère immédiatement sa miniature.</span>
+            </div>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" id="saveChoiceCancelBtn" class="pill-btn" style="justify-content: center;">
+            Annuler
+          </button>
+          <button type="button" id="saveChoiceConfirmBtn" class="pill-btn active" style="justify-content: center;">
+            ✓ Confirmer l'enregistrement
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
