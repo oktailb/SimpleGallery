@@ -15,16 +15,31 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     header('Location: ' . $redirect, true, 301);
     exit;
 }
+
+// i18n Locales Discovery & Detection
+$available_locales = get_available_locales($real_base_dir);
+$default_locale = detect_browser_locale($available_locales, 'fr');
+$initial_translations = load_locale_translations($real_base_dir, $default_locale);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars($default_locale, ENT_QUOTES, 'UTF-8'); ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
   <meta name="cookie-consent-enabled" content="<?php echo !empty($enable_cookie_consent) ? '1' : '0'; ?>">
+  <meta name="default-locale" content="<?php echo htmlspecialchars($default_locale, ENT_QUOTES, 'UTF-8'); ?>">
   <meta name="description" content="SimpleGallery 2026 - Ultra-fast zero-dependency modern PHP web gallery">
   <title><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></title>
+
+  <!-- Initial i18n Locales Configuration Payload -->
+  <script id="initialLocalesConfig" type="application/json">
+    <?php echo json_encode([
+      'locales'      => $available_locales,
+      'default'      => $default_locale,
+      'translations' => $initial_translations
+    ], JSON_HEX_TAG | JSON_HEX_AMP); ?>
+  </script>
 
   <!-- Google Fonts: Inter, Outfit, and Caveat for Polaroid handwriting -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,9 +88,9 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         <div class="toolbar-controls">
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher des médias..." aria-label="Rechercher des médias">
-            <button type="button" id="searchClearBtn" class="search-clear-btn" title="Effacer la recherche" style="display: none;">✕</button>
-            <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="Options de recherche avancée" onclick="if(window.galleryApp) window.galleryApp.openSearchModal();">
+            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher des médias..." aria-label="Rechercher des médias" data-i18n-placeholder="nav.search_placeholder">
+            <button type="button" id="searchClearBtn" class="search-clear-btn" title="Effacer la recherche" data-i18n-title="nav.search_clear" style="display: none;">✕</button>
+            <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="Options de recherche avancée" data-i18n-title="nav.search_advanced" onclick="if(window.galleryApp) window.galleryApp.openSearchModal();">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="4" y1="21" x2="4" y2="14"></line>
                 <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -92,22 +107,22 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
           <div class="sort-group" style="display: flex; align-items: center; gap: 0.35rem;">
             <select id="sortSelect" class="sort-select" aria-label="Sort options">
-              <option value="name">Sort by Name</option>
-              <option value="exif_date">Sort by Date EXIF 📷</option>
-              <option value="date">Sort by File Date</option>
-              <option value="size">Sort by Size</option>
+              <option value="name" data-i18n="sort.name">Nom</option>
+              <option value="exif_date" data-i18n="sort.date">Date de prise de vue 📷</option>
+              <option value="date" data-i18n="sort.mtime">Date de modification</option>
+              <option value="size" data-i18n="sort.size">Taille du fichier</option>
             </select>
-            <button id="sortOrderBtn" class="btn-toggle" title="Toggle Ascending / Descending Order">
+            <button id="sortOrderBtn" class="btn-toggle" title="Inverser l'ordre" data-i18n-title="sort.order_asc">
               <span id="sortOrderIcon" style="font-size: 1.1rem; font-weight: bold;">⇩</span>
             </button>
           </div>
 
-          <button id="toggleFavoritesBtn" class="btn-toggle" title="Afficher uniquement mes favoris">
-            <span>❤️</span><span id="favCountBadge" class="polaroid-badge" style="display:none; margin-left:4px;">0</span>
+          <button id="toggleFavoritesBtn" class="btn-toggle" title="Afficher uniquement mes favoris" data-i18n-title="nav.favorites">
+            <span>❤️</span><span id="favCountBadge" class="fav-count-badge" style="display:none;">0</span>
           </button>
 
           <div class="archive-dropdown-container">
-            <button id="downloadArchiveBtn" class="btn-toggle" title="Télécharger le dossier sous forme d'archive">
+            <button id="downloadArchiveBtn" class="btn-toggle" title="Télécharger le dossier sous forme d'archive" data-i18n-title="nav.download_archive">
               <span>⇲</span> ▾
             </button>
             <div id="archiveMenu" class="archive-dropdown-menu">
@@ -116,29 +131,47 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           </div>
 
           <div class="control-btn-group">
-            <button id="viewPolaroidBtn" class="btn-toggle active" title="Polaroid View">
-              <span>🖼️</span> Polaroid
+            <button id="viewPolaroidBtn" class="btn-toggle active" title="Vue Polaroid" data-i18n-title="view.polaroid">
+              <span>🖼️</span> <span data-i18n="view.polaroid">Polaroid</span>
             </button>
-            <button id="viewGridBtn" class="btn-toggle" title="Grid View">
-              <span>🔲</span> Grid
+            <button id="viewGridBtn" class="btn-toggle" title="Vue Grille" data-i18n-title="view.grid">
+              <span>🔲</span> <span data-i18n="view.grid">Grille</span>
             </button>
           </div>
 
-          <button id="createFolderBtn" class="btn-toggle" title="Créer un nouveau sous-dossier" style="display: none;">
+          <button id="createFolderBtn" class="btn-toggle" title="Créer un nouveau sous-dossier" data-i18n-title="nav.create_folder" style="display: none;">
             <span>📁+</span>
           </button>
 
-          <button id="uploadMediaBtn" class="btn-toggle" title="Upload Media (Drag & Drop)" style="display: none;">
+          <button id="uploadMediaBtn" class="btn-toggle" title="Uploader des médias" data-i18n-title="nav.upload_media" style="display: none;">
             <span>📤</span>
           </button>
           <input type="file" id="uploadFileInput" multiple style="display: none;" />
 
-          <button id="folderSettingsBtn" class="btn-toggle" title="Customize Folder (.title, .desc, .bg, .theme)" style="display: none;">
+          <button id="folderSettingsBtn" class="btn-toggle" title="Paramètres du dossier (.title, .desc, .bg, .theme)" data-i18n-title="nav.folder_settings" style="display: none;">
             <span>⚙</span>
           </button>
 
-          <button id="adminBtn" class="btn-toggle" title="Admin Mode">
-            <span id="adminBtnIcon">🔑</span> <span id="adminBtnText">Admin</span>
+          <!-- Language Selector Dropdown -->
+          <div class="lang-selector-container" id="langSelectorContainer">
+            <button type="button" id="langSelectorBtn" class="btn-toggle lang-btn" title="Changer la langue" data-i18n-title="nav.switch_lang">
+              <span id="currentLangFlag"><?php echo get_locale_flag_html($available_locales[$default_locale] ?? []); ?></span>
+              <span id="currentLangCode"><?php echo strtoupper(htmlspecialchars($default_locale, ENT_QUOTES, 'UTF-8')); ?></span>
+              <span class="lang-dropdown-arrow">▾</span>
+            </button>
+            <div id="langDropdownMenu" class="lang-dropdown-menu" style="display: none;">
+              <?php foreach ($available_locales as $code => $info): ?>
+                <button type="button" class="lang-option-btn <?php echo ($code === $default_locale) ? 'active' : ''; ?>" data-lang="<?php echo htmlspecialchars($code, ENT_QUOTES, 'UTF-8'); ?>">
+                  <span class="lang-flag"><?php echo get_locale_flag_html($info); ?></span>
+                  <span class="lang-name"><?php echo htmlspecialchars($info['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                  <span class="lang-code"><?php echo strtoupper(htmlspecialchars($code, ENT_QUOTES, 'UTF-8')); ?></span>
+                </button>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <button id="adminBtn" class="btn-toggle" title="Mode Administration" data-i18n-title="nav.admin">
+            <span id="adminBtnIcon">🔑</span> <span id="adminBtnText" data-i18n="nav.admin">Admin</span>
           </button>
         </div>
       </div>
@@ -155,17 +188,17 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <!-- Filter Pills Bar -->
   <div class="filter-bar">
     <div id="filterPills" class="filter-pills">
-      <button class="pill-btn active" data-category="all">All Media</button>
-      <button class="pill-btn" data-category="image">Photos</button>
-      <button class="pill-btn" data-category="video">Videos</button>
-      <button class="pill-btn" data-category="audio">Audio</button>
-      <button class="pill-btn" data-category="doc">Documents</button>
-      <button class="pill-btn" data-category="archive">Archives</button>
+      <button class="pill-btn active" data-category="all" data-i18n="view.filter_all">Tout</button>
+      <button class="pill-btn" data-category="image" data-i18n="view.filter_images">Photos</button>
+      <button class="pill-btn" data-category="video" data-i18n="view.filter_videos">Vidéos</button>
+      <button class="pill-btn" data-category="audio" data-i18n="view.filter_audio">Audio</button>
+      <button class="pill-btn" data-category="doc" data-i18n="view.filter_docs">Documents</button>
+      <button class="pill-btn" data-category="archive" data-i18n="view.filter_archives">Archives</button>
     </div>
 
-    <div id="galleryStats" class="gallery-stats">Loading...</div>
-    <button type="button" id="folderMapBtn" class="folder-map-btn" style="display: none;" title="Explorer la carte et le trajet GPS interactif des photos du dossier">
-      🗺️ Carte GPS
+    <div id="galleryStats" class="gallery-stats" data-i18n="stats.loading">Chargement...</div>
+    <button type="button" id="folderMapBtn" class="folder-map-btn" style="display: none;" title="Explorer la carte et le trajet GPS interactif des photos du dossier" data-i18n-title="nav.map">
+      🗺️ <span data-i18n="nav.map">Carte GPS</span>
     </button>
   </div>
 
@@ -174,17 +207,17 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     <!-- Search Active Results Banner -->
     <div id="searchResultsBanner" class="search-results-banner" style="display: none;">
       <div class="search-results-left">
-        <span class="search-results-badge">🔍 Recherche</span>
-        <span id="searchResultsCountText" class="search-results-text">Résultats trouvés</span>
+        <span class="search-results-badge" data-i18n="search.badge">🔍 Recherche</span>
+        <span id="searchResultsCountText" class="search-results-text" data-i18n="search.results_found">Résultats trouvés</span>
       </div>
-      <button type="button" id="exitSearchBtn" class="exit-search-btn" title="Quitter la recherche et revenir à la navigation du dossier">
-        ✕ Quitter la recherche
+      <button type="button" id="exitSearchBtn" class="exit-search-btn" title="Quitter la recherche et revenir à la navigation du dossier" data-i18n-title="search.exit_title">
+        <span data-i18n="search.exit_btn">✕ Quitter la recherche</span>
       </button>
     </div>
 
     <!-- Subfolders Section -->
     <section id="folderSection" style="display: none;">
-      <h2 class="section-title">📂 Subdirectories</h2>
+      <h2 class="section-title">📂 <span data-i18n="nav.subfolders">Sous-dossiers</span></h2>
       <div id="foldersGrid" class="folders-grid"></div>
     </section>
 
@@ -196,14 +229,14 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     <!-- Loading State -->
     <div id="loadingState" class="loading-spinner">
       <div class="spinner"></div>
-      <p>Indexing folder media...</p>
+      <p data-i18n="stats.indexing">Indexation des fichiers médias...</p>
     </div>
 
     <!-- Empty State -->
     <div id="emptyState" class="empty-state" style="display: none;">
       <div class="empty-state-icon">📂</div>
-      <h3>No media files found</h3>
-      <p>Copy photos, videos, or audio into this folder to get started!</p>
+      <h3 data-i18n="stats.empty">Ce dossier ne contient aucun fichier média.</h3>
+      <p data-i18n="stats.drag_drop_hint">Glissez-déposez des fichiers ici pour les ajouter.</p>
     </div>
   </main>
 
@@ -211,7 +244,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="lightbox" class="lightbox-modal" role="dialog" aria-hidden="true">
     <div class="lightbox-header">
       <div>
-        <div id="lightboxTitle" class="lightbox-title">Media Preview</div>
+        <div id="lightboxTitle" class="lightbox-title" data-i18n="lightbox.preview_title">Aperçu média</div>
         <div id="lightboxMeta" style="font-size:0.8rem;color:var(--text-muted);"></div>
         <div id="lightboxComment" class="lightbox-comment" style="display:none;"></div>
       </div>
@@ -219,48 +252,48 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
       <!-- Image Explorer Controls (Zoom, Rotate, Download, Close) -->
       <div class="lightbox-actions">
         <div id="imageExplorerControls" class="image-explorer-controls" style="display: flex; gap: 0.4rem;">
-          <button id="lightboxZoomInBtn" class="lightbox-btn" title="Zoom In (+)">➕</button>
-          <button id="lightboxZoomOutBtn" class="lightbox-btn" title="Zoom Out (-)">➖</button>
-          <button id="lightboxResetZoomBtn" class="lightbox-btn" title="Reset Zoom (0)">🔄</button>
-          <button id="lightboxRotateBtn" class="lightbox-btn" title="Rotate 90° (R)">⟳</button>
+          <button id="lightboxZoomInBtn" class="lightbox-btn" title="Zoom In (+)" data-i18n-title="lightbox.zoom_in">➕</button>
+          <button id="lightboxZoomOutBtn" class="lightbox-btn" title="Zoom Out (-)" data-i18n-title="lightbox.zoom_out">➖</button>
+          <button id="lightboxResetZoomBtn" class="lightbox-btn" title="Reset Zoom (0)" data-i18n-title="lightbox.reset_zoom">🔄</button>
+          <button id="lightboxRotateBtn" class="lightbox-btn" title="Rotate 90° (R)" data-i18n-title="lightbox.rotate">⟳</button>
           <span id="zoomBadge" class="zoom-badge">100%</span>
         </div>
 
-        <button id="lightboxExifBtn" class="lightbox-btn" title="Toggle EXIF Details (I)" style="display: none;">
-          ℹ️ EXIF
+        <button id="lightboxExifBtn" class="lightbox-btn" title="Détails EXIF (I)" data-i18n-title="lightbox.exif" style="display: none;">
+          <span data-i18n="lightbox.exif_btn">ℹ️ EXIF</span>
         </button>
-        <button id="lightboxEditImageBtn" class="lightbox-btn" title="Éditer l'image (Recadrage, Rotation, Filtres - Mode Admin)" style="display: none;">
-          🎨 Éditer
+        <button id="lightboxEditImageBtn" class="lightbox-btn" title="Éditer l'image (Recadrage, Rotation, Filtres - Mode Admin)" data-i18n-title="lightbox.edit_image" style="display: none;">
+          🎨 <span data-i18n="lightbox.edit_image_btn">Éditer</span>
         </button>
-        <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Edit Legend (.comment)" style="display: none;">
+        <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Éditer la légende (.comment)" data-i18n-title="lightbox.edit_comment" style="display: none;">
           ✏️
         </button>
-        <button id="lightboxDeleteBtn" class="lightbox-btn" title="Delete Media (Admin Only)" style="display: none; color: #f87171;">
+        <button id="lightboxDeleteBtn" class="lightbox-btn" title="Supprimer le média (Mode Admin)" data-i18n-title="lightbox.delete" style="display: none; color: #f87171;">
           🗑️
         </button>
-        <button id="lightboxFavBtn" class="lightbox-btn" title="Ajouter aux favoris">
+        <button id="lightboxFavBtn" class="lightbox-btn" title="Ajouter aux favoris" data-i18n-title="lightbox.favorite_add">
           🤍
         </button>
-        <button id="lightboxFullscreenBtn" class="lightbox-btn" title="Toggle Fullscreen (F)">
+        <button id="lightboxFullscreenBtn" class="lightbox-btn" title="Plein écran (F)" data-i18n-title="lightbox.fullscreen">
           ⛶
         </button>
-        <a id="lightboxDownloadBtn" href="#" class="lightbox-btn" title="Download Media" download>
+        <a id="lightboxDownloadBtn" href="#" class="lightbox-btn" title="Télécharger le fichier" data-i18n-title="lightbox.download" download>
           ⬇️
         </a>
-        <button id="lightboxCloseBtn" class="lightbox-btn" title="Close (Esc)">
+        <button id="lightboxCloseBtn" class="lightbox-btn" title="Fermer (Échap)" data-i18n-title="lightbox.close">
           ✕
         </button>
       </div>
     </div>
 
     <div class="lightbox-body">
-      <button id="lightboxPrevBtn" class="lightbox-nav-btn lightbox-nav-prev" title="Previous (&larr;)">
+      <button id="lightboxPrevBtn" class="lightbox-nav-btn lightbox-nav-prev" title="Précédent" data-i18n-title="lightbox.prev">
         &lsaquo;
       </button>
 
       <div id="lightboxContent" class="lightbox-content-wrapper"></div>
 
-      <button id="lightboxNextBtn" class="lightbox-nav-btn lightbox-nav-next" title="Next (&rarr;)">
+      <button id="lightboxNextBtn" class="lightbox-nav-btn lightbox-nav-next" title="Suivant" data-i18n-title="lightbox.next">
         &rsaquo;
       </button>
     </div>
@@ -268,14 +301,14 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     <!-- Lightbox EXIF Drawer Panel -->
     <div id="lightboxExifPanel" class="lightbox-exif-panel" style="display: none;">
       <div class="exif-panel-header">
-        <h4>📷 EXIF Metadata</h4>
-        <button id="closeExifPanelBtn" class="lightbox-btn" style="padding:0.2rem 0.5rem;">✕</button>
+        <h4 data-i18n="lightbox.exif_panel_title">📷 Métadonnées EXIF</h4>
+        <button id="closeExifPanelBtn" class="lightbox-btn" style="padding:0.2rem 0.5rem;" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div id="exifPanelBody" class="exif-panel-body"></div>
     </div>
 
     <div class="lightbox-footer">
-      <div>
+      <div data-i18n="lightbox.shortcuts_hint">
         Navigation: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> / Swipe | Zoom: <kbd>+</kbd> <kbd>-</kbd> | Drag/Pan: <kbd>Mouse drag</kbd> | Reset: <kbd>0</kbd> / <kbd>R</kbd> | Fullscreen: <kbd>F</kbd> | Exit: <kbd>Esc</kbd>
       </div>
     </div>
@@ -285,37 +318,37 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="adminModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content">
       <div class="admin-modal-header">
-        <h3>🔐 Admin Mode</h3>
-        <button id="adminModalCloseBtn" class="lightbox-btn" title="Close">✕</button>
+        <h3 data-i18n="admin.login_title">🔐 Connexion Administrateur</h3>
+        <button id="adminModalCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
         <div id="adminLoginState">
-          <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
-            Enter your admin password to unlock management features.
+          <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;" data-i18n="admin.password_placeholder">
+            Saisissez votre mot de passe administrateur pour déverrouiller la gestion.
           </p>
           <form id="adminLoginForm">
-            <input type="password" id="adminPasswordInput" class="admin-input" placeholder="Admin password..." required />
+            <input type="password" id="adminPasswordInput" class="admin-input" placeholder="Mot de passe administrateur..." data-i18n-placeholder="admin.password_placeholder" required />
             <div id="adminLoginError" class="admin-error-msg" style="display: none;"></div>
-            <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
-              Log In
+            <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;" data-i18n="admin.login_btn">
+              Se connecter
             </button>
           </form>
         </div>
         <div id="adminActiveState" style="display: none;">
-          <p style="margin-bottom: 1rem; color: var(--text-main); font-weight: 500;">
-            🛡️ Admin mode is currently active!
+          <p style="margin-bottom: 1rem; color: var(--text-main); font-weight: 500;" data-i18n="admin.active_notice">
+            🛡️ Mode Administrateur activé !
           </p>
           <form id="changePasswordForm" style="margin-bottom: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main);">Change Admin Password</h4>
-            <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="New password..." required minlength="4" />
-            <button type="submit" class="pill-btn" style="width: 100%; margin-top: 0.5rem; justify-content: center;">
-              Update Password
+            <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main);" data-i18n="admin.change_password">Changer le mot de passe</h4>
+            <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="Nouveau mot de passe..." data-i18n-placeholder="admin.new_password_placeholder" required minlength="4" />
+            <button type="submit" class="pill-btn" style="width: 100%; margin-top: 0.5rem; justify-content: center;" data-i18n="admin.save_new_password">
+              Mettre à jour
             </button>
             <div id="adminChangePassMsg" class="admin-success-msg" style="display: none; margin-top: 0.5rem;"></div>
           </form>
           <div id="adminPermissionsContainer"></div>
-          <button id="adminLogoutBtn" class="pill-btn" style="width: 100%; margin-top: 1rem; justify-content: center; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">
-            Log Out Admin Mode
+          <button id="adminLogoutBtn" class="pill-btn" style="width: 100%; margin-top: 1rem; justify-content: center; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);" data-i18n="admin.logout_btn">
+            Déconnexion
           </button>
         </div>
       </div>
@@ -326,44 +359,44 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="folderSettingsModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content">
       <div class="admin-modal-header">
-        <h3>📁 Customize Folder Dotfiles</h3>
-        <button id="folderSettingsCloseBtn" class="lightbox-btn" title="Close">✕</button>
+        <h3 data-i18n="folder_settings.title">📁 Paramètres du Dossier</h3>
+        <button id="folderSettingsCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
         <form id="folderSettingsForm">
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Display Title (.title)</label>
-            <input type="text" id="dotfileTitleInput" class="admin-input" placeholder="Custom folder name..." />
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_title">Titre personnalisé (.title)</label>
+            <input type="text" id="dotfileTitleInput" class="admin-input" placeholder="Titre..." />
           </div>
 
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Description Banner (.desc)</label>
-            <textarea id="dotfileDescInput" class="admin-input" rows="3" placeholder="Folder description or banner text..." style="resize: vertical;"></textarea>
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_desc">Description du dossier (.desc)</label>
+            <textarea id="dotfileDescInput" class="admin-input" rows="3" placeholder="Description..." style="resize: vertical;"></textarea>
           </div>
 
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Access Control (.private / .password)</label>
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_access">Contrôle d'accès (.private / .password)</label>
             <select id="dotfileAccessModeSelect" class="sort-select" style="width: 100%;">
-              <option value="public">🌐 Public (Visible to everyone)</option>
-              <option value="private">👁️‍🗨️ Hidden / Admin Only (.private)</option>
-              <option value="password">🔒 Password Protected (.password)</option>
+              <option value="public" data-i18n="folder_settings.access_public">🌐 Public (Visible par tous)</option>
+              <option value="private" data-i18n="folder_settings.access_private">👁️‍🗨️ Privé (Admin uniquement)</option>
+              <option value="password" data-i18n="folder_settings.access_password">🔒 Protégé par mot de passe</option>
             </select>
           </div>
 
           <div id="folderPasswordGroup" class="form-group" style="margin-bottom: 1rem; display: none;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Password (.password)</label>
-            <input type="password" id="dotfileFolderPasswordInput" class="admin-input" placeholder="Set or update folder password..." />
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.password_label">Mot de passe du dossier</label>
+            <input type="password" id="dotfileFolderPasswordInput" class="admin-input" placeholder="Mot de passe..." />
           </div>
 
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Background (.bg - color/gradient or image path)</label>
-            <input type="text" id="dotfileBgInput" class="admin-input" placeholder="e.g. #0f172a or bg.jpg" />
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_bg">Image ou couleur de fond (.bg)</label>
+            <input type="text" id="dotfileBgInput" class="admin-input" placeholder="ex: #0f172a ou bg.jpg" />
           </div>
 
           <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">Folder Theme Preset (.theme)</label>
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_theme">Thème visuel (.theme)</label>
             <select id="dotfileThemeSelect" class="sort-select" style="width: 100%;">
-              <option value="">(Use Global Default Theme)</option>
+              <option value="">(Thème par défaut)</option>
               <option value="polaroid-classic">Polaroid Classic</option>
               <option value="dark-glass">Dark Glassmorphism</option>
               <option value="light-minimal">Light Minimal</option>
@@ -371,8 +404,8 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
             </select>
           </div>
 
-          <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;">
-            Save Folder Dotfiles
+          <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;" data-i18n="common.save">
+            Enregistrer
           </button>
         </form>
       </div>
@@ -383,18 +416,18 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="mediaCommentModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content">
       <div class="admin-modal-header">
-        <h3 id="mediaCommentModalTitle">💬 Edit Media Legend</h3>
-        <button id="mediaCommentCloseBtn" class="lightbox-btn" title="Close">✕</button>
+        <h3 id="mediaCommentModalTitle" data-i18n="comment.title">💬 Éditer la Légende</h3>
+        <button id="mediaCommentCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
         <form id="mediaCommentForm">
           <input type="hidden" id="mediaCommentFilename" />
           <div class="form-group" style="margin-bottom: 1rem;">
             <label id="mediaCommentFilenameLabel" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;"></label>
-            <input type="text" id="mediaCommentInput" class="admin-input" placeholder="Legend / comment text for this media..." />
+            <input type="text" id="mediaCommentInput" class="admin-input" placeholder="Écrivez une légende pour ce média..." data-i18n-placeholder="comment.placeholder" />
           </div>
-          <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;">
-            Save Legend (.comment)
+          <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;" data-i18n="common.save">
+            Enregistrer
           </button>
         </form>
       </div>
@@ -405,19 +438,19 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="folderUnlockModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content">
       <div class="admin-modal-header">
-        <h3>🔒 Protected Folder</h3>
-        <button id="folderUnlockCloseBtn" class="lightbox-btn" title="Close">✕</button>
+        <h3 data-i18n="stats.folder_locked">🔒 Dossier Protégé</h3>
+        <button id="folderUnlockCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
-        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
-          This folder is password protected. Please enter the password to view its contents.
+        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;" data-i18n="stats.folder_locked_desc">
+          Ce dossier est protégé par mot de passe. Saisissez le mot de passe pour explorer son contenu.
         </p>
         <form id="folderUnlockForm">
           <input type="hidden" id="folderUnlockPath" />
-          <input type="password" id="folderUnlockPasswordInput" class="admin-input" placeholder="Folder password..." required />
+          <input type="password" id="folderUnlockPasswordInput" class="admin-input" placeholder="Mot de passe du dossier..." data-i18n-placeholder="folder_settings.password_label" required />
           <div id="folderUnlockError" class="admin-error-msg" style="display: none;"></div>
-          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
-            Unlock Folder
+          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;" data-i18n="stats.folder_unlock_action">
+            Déverrouiller le dossier
           </button>
         </form>
       </div>
@@ -428,8 +461,8 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="dropZoneOverlay" class="drop-zone-overlay" style="display: none;">
     <div class="drop-zone-content">
       <div class="drop-zone-icon">📤</div>
-      <h3>Glissez-déposez vos médias ici</h3>
-      <p>Photos, vidéos, audio, documents (Téléversement administrateur sécurisé)</p>
+      <h3 data-i18n="upload.drag_drop_title">Glissez-déposez vos médias ici</h3>
+      <p data-i18n="upload.drag_drop_subtitle">Photos, vidéos, audio, documents (Téléversement administrateur sécurisé)</p>
     </div>
   </div>
 
@@ -437,13 +470,13 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="uploadProgressModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content" style="max-width: 480px;">
       <div class="admin-modal-header">
-        <h3>📤 Téléversement en cours...</h3>
+        <h3 data-i18n="upload.progress_title">📤 Téléversement en cours...</h3>
       </div>
       <div class="admin-modal-body">
         <div class="upload-progress-bar-container">
           <div id="uploadProgressBar" class="upload-progress-bar" style="width: 0%;">0%</div>
         </div>
-        <p id="uploadProgressStatus" style="font-size:0.85rem;margin-top:0.8rem;color:var(--text-muted);">Préparation des fichiers...</p>
+        <p id="uploadProgressStatus" style="font-size:0.85rem;margin-top:0.8rem;color:var(--text-muted);" data-i18n="upload.status_prep">Préparation des fichiers...</p>
         <div id="uploadResultMessages" style="margin-top:1rem;max-height:150px;overflow-y:auto;font-size:0.85rem;display:none;"></div>
       </div>
     </div>
@@ -453,15 +486,15 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="createFolderModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content" style="max-width: 420px;">
       <div class="admin-modal-header">
-        <h3>📁 Nouveau Dossier</h3>
-        <button id="createFolderCloseBtn" class="lightbox-btn" title="Close">✕</button>
+        <h3 data-i18n="create_folder.title">📁 Nouveau Dossier</h3>
+        <button id="createFolderCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
         <form id="createFolderForm">
-          <label for="createFolderNameInput" class="admin-label">Nom du dossier :</label>
-          <input type="text" id="createFolderNameInput" class="admin-input" placeholder="ex: Vacances 2026, Événements..." required />
+          <label for="createFolderNameInput" class="admin-label" data-i18n="create_folder.placeholder">Nom du dossier :</label>
+          <input type="text" id="createFolderNameInput" class="admin-input" placeholder="ex: Vacances 2026, Événements..." data-i18n-placeholder="create_folder.placeholder" required />
           <div id="createFolderError" class="admin-error-msg" style="display: none;"></div>
-          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;">
+          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;" data-i18n="create_folder.submit">
             Créer le dossier
           </button>
         </form>
@@ -473,14 +506,14 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="deleteConfirmModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
     <div class="admin-modal-content" style="max-width: 440px; text-align: center;">
       <div class="admin-modal-header">
-        <h3 style="color: #ef4444; width: 100%;">🗑️ Confirmation de suppression</h3>
-        <button id="deleteConfirmCloseBtn" class="lightbox-btn" title="Close">✕</button>
+        <h3 style="color: #ef4444; width: 100%;" data-i18n="delete_confirm.title">🗑️ Confirmation de suppression</h3>
+        <button id="deleteConfirmCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
         <p id="deleteConfirmMessage" style="font-size: 0.95rem; margin: 1rem 0; color: var(--text-main); line-height: 1.5;"></p>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
-          <button id="deleteCancelBtn" class="btn-toggle" style="flex: 1; justify-content: center;">Annuler</button>
-          <button id="deleteConfirmActionBtn" class="pill-btn active" style="flex: 1; background: #ef4444; color: white; justify-content: center; font-weight: 700;">
+          <button id="deleteCancelBtn" class="btn-toggle" style="flex: 1; justify-content: center;" data-i18n="common.cancel">Annuler</button>
+          <button id="deleteConfirmActionBtn" class="pill-btn active" style="flex: 1; background: #ef4444; color: white; justify-content: center; font-weight: 700;" data-i18n="common.delete">
             🗑️ Supprimer
           </button>
         </div>
@@ -491,10 +524,10 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <!-- Floating Picture-in-Picture (PiP) Player Widget -->
   <div id="pip-player-widget" style="display: none;">
     <div id="pipHeader" class="pip-header">
-      <span id="pipTitle" class="pip-title">Lecture multimédia...</span>
+      <span id="pipTitle" class="pip-title" data-i18n="pip.title">Lecture multimédia...</span>
       <div class="pip-controls">
-        <button id="pipMinimizeBtn" class="pip-btn" title="Réduire / Agrandir">🗕</button>
-        <button id="pipCloseBtn" class="pip-btn" title="Fermer le lecteur">✕</button>
+        <button id="pipMinimizeBtn" class="pip-btn" title="Réduire / Agrandir" data-i18n-title="pip.minimize">🗕</button>
+        <button id="pipCloseBtn" class="pip-btn" title="Fermer le lecteur" data-i18n-title="pip.close">✕</button>
       </div>
     </div>
     <div id="pipMediaContainer" class="pip-media-content">
@@ -505,120 +538,120 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <!-- Floating Multi-Selection Action Toolbar -->
   <div id="selectionToolbar" class="selection-toolbar" style="display: none;">
     <span id="selectionToolbarCount">0 élément(s) sélectionné(s)</span>
-    <button id="selectionSelectAllBtn" type="button" class="selection-btn">Tout sélectionner</button>
-    <button id="selectionClearBtn" type="button" class="selection-btn">Désélectionner tout</button>
+    <button id="selectionSelectAllBtn" type="button" class="selection-btn" data-i18n="selection.select_all">Tout sélectionner</button>
+    <button id="selectionClearBtn" type="button" class="selection-btn" data-i18n="selection.clear">Désélectionner tout</button>
   </div>
 
   <!-- Google Drive Style Advanced Search Modal -->
   <div id="searchModal" class="search-modal-backdrop" style="display: none;">
     <div class="search-modal-card">
       <div class="gdrive-modal-header">
-        <h3 class="gdrive-modal-title">Recherche avancée</h3>
-        <button type="button" id="searchModalCloseBtn" class="gdrive-modal-close" title="Fermer (Échap)">✕</button>
+        <h3 class="gdrive-modal-title" data-i18n="adv_search.title">Recherche avancée</h3>
+        <button type="button" id="searchModalCloseBtn" class="gdrive-modal-close" title="Fermer (Échap)" data-i18n-title="common.close">✕</button>
       </div>
 
       <form id="searchAdvancedForm" class="gdrive-search-form">
         <!-- Row 1: Type -->
         <div class="gdrive-form-row">
-          <label for="advSearchCategory" class="gdrive-form-label">Type</label>
+          <label for="advSearchCategory" class="gdrive-form-label" data-i18n="sort.title">Type</label>
           <div class="gdrive-form-control">
             <select id="advSearchCategory" class="gdrive-select">
-              <option value="all">Tout</option>
-              <option value="image">Photos (Images)</option>
-              <option value="video">Vidéos</option>
-              <option value="audio">Audio / Musique</option>
-              <option value="doc">Documents</option>
-              <option value="archive">Archives</option>
+              <option value="all" data-i18n="adv_search.type_all">Tout</option>
+              <option value="image" data-i18n="adv_search.type_image">Photos (Images)</option>
+              <option value="video" data-i18n="adv_search.type_video">Vidéos</option>
+              <option value="audio" data-i18n="adv_search.type_audio">Audio / Musique</option>
+              <option value="doc" data-i18n="view.filter_docs">Documents</option>
+              <option value="archive" data-i18n="view.filter_archives">Archives</option>
             </select>
           </div>
         </div>
 
         <!-- Row 2: Nom de l'élément -->
         <div class="gdrive-form-row">
-          <label for="advSearchName" class="gdrive-form-label">Nom de l'élément</label>
+          <label for="advSearchName" class="gdrive-form-label" data-i18n="sort.name">Nom de l'élément</label>
           <div class="gdrive-form-control">
-            <input type="text" id="advSearchName" class="gdrive-input" placeholder="Saisissez un terme figurant dans le nom du fichier">
+            <input type="text" id="advSearchName" class="gdrive-input" placeholder="Saisissez un terme figurant dans le nom du fichier" data-i18n-placeholder="nav.search_placeholder">
           </div>
         </div>
 
         <!-- Row 3: Contient les mots -->
         <div class="gdrive-form-row">
-          <label for="advSearchWords" class="gdrive-form-label">Contient les mots</label>
+          <label for="advSearchWords" class="gdrive-form-label" data-i18n="comment.title">Contient les mots</label>
           <div class="gdrive-form-control">
-            <input type="text" id="advSearchWords" class="gdrive-input" placeholder="Saisissez des mots figurant dans la légende ou description">
+            <input type="text" id="advSearchWords" class="gdrive-input" placeholder="Saisissez des mots figurant dans la légende ou description" data-i18n-placeholder="comment.placeholder">
           </div>
         </div>
 
         <!-- Row 4: Emplacement -->
         <div class="gdrive-form-row">
-          <label for="advSearchLocation" class="gdrive-form-label">Emplacement</label>
+          <label for="advSearchLocation" class="gdrive-form-label" data-i18n="common.search">Emplacement</label>
           <div class="gdrive-form-control">
             <select id="advSearchLocation" class="gdrive-select">
-              <option value="everywhere">Partout (recherche récursive dans tous les sous-dossiers)</option>
-              <option value="current">Dans ce dossier uniquement</option>
+              <option value="everywhere" data-i18n="adv_search.loc_everywhere">Partout (recherche récursive dans tous les sous-dossiers)</option>
+              <option value="current" data-i18n="adv_search.loc_current">Dans ce dossier uniquement</option>
             </select>
           </div>
         </div>
 
         <!-- Row 5: Date -->
         <div class="gdrive-form-row">
-          <label for="advSearchTiming" class="gdrive-form-label">Date</label>
+          <label for="advSearchTiming" class="gdrive-form-label" data-i18n="sort.date">Date</label>
           <div class="gdrive-form-control">
             <select id="advSearchTiming" class="gdrive-select">
-              <option value="all">N'importe quand</option>
-              <option value="today">Aujourd'hui</option>
-              <option value="week">7 derniers jours</option>
-              <option value="month">30 derniers jours</option>
-              <option value="year">Cette année</option>
-              <option value="custom">Période personnalisée...</option>
+              <option value="all" data-i18n="adv_search.time_all">N'importe quand</option>
+              <option value="today" data-i18n="adv_search.time_today">Aujourd'hui</option>
+              <option value="week" data-i18n="adv_search.time_week">7 derniers jours</option>
+              <option value="month" data-i18n="adv_search.time_month">30 derniers jours</option>
+              <option value="year" data-i18n="adv_search.time_year">Cette année</option>
+              <option value="custom" data-i18n="adv_search.time_custom">Période personnalisée...</option>
             </select>
           </div>
         </div>
 
         <!-- Row 5b: Custom Date Range (hidden by default) -->
         <div id="advSearchCustomDateRow" class="gdrive-form-row" style="display: none;">
-          <label class="gdrive-form-label">Période</label>
+          <label class="gdrive-form-label" data-i18n="adv_search.date_range">Période</label>
           <div class="gdrive-form-control gdrive-date-range">
-            <span class="gdrive-date-label">Du</span>
+            <span class="gdrive-date-label" data-i18n="adv_search.date_from">Du</span>
             <input type="date" id="advSearchDateFrom" class="gdrive-input gdrive-date-input">
-            <span class="gdrive-date-label">Au</span>
+            <span class="gdrive-date-label" data-i18n="adv_search.date_to">Au</span>
             <input type="date" id="advSearchDateTo" class="gdrive-input gdrive-date-input">
           </div>
         </div>
 
         <!-- Row 6: Taille -->
         <div class="gdrive-form-row">
-          <label for="advSearchSize" class="gdrive-form-label">Taille</label>
+          <label for="advSearchSize" class="gdrive-form-label" data-i18n="sort.size">Taille</label>
           <div class="gdrive-form-control">
             <select id="advSearchSize" class="gdrive-select">
-              <option value="all">N'importe quelle taille</option>
-              <option value="small">Petite (&lt; 1 Mo)</option>
-              <option value="medium">Moyenne (1 Mo à 10 Mo)</option>
-              <option value="large">Grande (10 Mo à 50 Mo)</option>
-              <option value="xlarge">Très grande (&gt; 50 Mo)</option>
+              <option value="all" data-i18n="adv_search.size_all">N'importe quelle taille</option>
+              <option value="small" data-i18n="adv_search.size_small">Petite (&lt; 1 Mo)</option>
+              <option value="medium" data-i18n="adv_search.size_medium">Moyenne (1 Mo à 10 Mo)</option>
+              <option value="large" data-i18n="adv_search.size_large">Grande (10 Mo à 50 Mo)</option>
+              <option value="xlarge" data-i18n="adv_search.size_xlarge">Très grande (&gt; 50 Mo)</option>
             </select>
           </div>
         </div>
 
         <!-- Row 7: Options (GPS, Favoris) -->
         <div class="gdrive-form-row">
-          <label class="gdrive-form-label">Options</label>
+          <label class="gdrive-form-label" data-i18n="adv_search.options_label">Options</label>
           <div class="gdrive-form-control gdrive-checkbox-group">
             <label class="gdrive-checkbox-label">
               <input type="checkbox" id="advSearchGpsOnly" class="gdrive-checkbox">
-              <span>📍 Avec coordonnées GPS uniquement</span>
+              <span data-i18n="adv_search.gps_only">📍 Avec coordonnées GPS uniquement</span>
             </label>
             <label class="gdrive-checkbox-label">
               <input type="checkbox" id="advSearchFavOnly" class="gdrive-checkbox">
-              <span>❤️ Uniquement les favoris</span>
+              <span data-i18n="nav.favorites">❤️ Uniquement les favoris</span>
             </label>
           </div>
         </div>
 
         <!-- Modal Footer -->
         <div class="gdrive-modal-footer">
-          <button type="button" id="advSearchResetBtn" class="gdrive-btn-text">Réinitialiser</button>
-          <button type="submit" id="advSearchSubmitBtn" class="gdrive-btn-primary">Rechercher</button>
+          <button type="button" id="advSearchResetBtn" class="gdrive-btn-text" data-i18n="adv_search.reset">Réinitialiser</button>
+          <button type="submit" id="advSearchSubmitBtn" class="gdrive-btn-primary" data-i18n="adv_search.submit">Rechercher</button>
         </div>
       </form>
     </div>
@@ -629,25 +662,25 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
     <div class="map-modal-card">
       <div class="map-modal-header">
         <div class="map-modal-title-group">
-          <h3 class="map-modal-title">🗺️ Exploration Cartographique &amp; Trajet GPS</h3>
-          <span id="mapModalCountBadge" class="map-count-badge">0 photos géolocalisées</span>
+          <h3 class="map-modal-title" data-i18n="map.title">🗺️ Exploration Cartographique &amp; Trajet GPS</h3>
+          <span id="mapModalCountBadge" class="map-count-badge" data-i18n="map.count_badge">0 photos géolocalisées</span>
         </div>
         <div class="map-modal-controls">
           <div class="map-layer-selector">
-            <button type="button" class="map-layer-btn" data-layer="dark" title="Fond de carte sombre">🌙 Sombre</button>
-            <button type="button" class="map-layer-btn active" data-layer="streets" title="Plan de rues (OpenStreetMap)">🗺️ Rues</button>
-            <button type="button" class="map-layer-btn" data-layer="satellite" title="Vue Satellite (Esri)">🛰️ Satellite</button>
+            <button type="button" class="map-layer-btn" data-layer="dark" title="Fond de carte sombre" data-i18n-title="map.layer_dark" data-i18n="map.layer_dark">🌙 Sombre</button>
+            <button type="button" class="map-layer-btn active" data-layer="streets" title="Plan de rues (OpenStreetMap)" data-i18n-title="map.layer_streets" data-i18n="map.layer_streets">🗺️ Rues</button>
+            <button type="button" class="map-layer-btn" data-layer="satellite" title="Vue Satellite (Esri)" data-i18n-title="map.layer_satellite" data-i18n="map.layer_satellite">🛰️ Satellite</button>
           </div>
           <button type="button" id="mapToggleSmartGpsBtn" class="map-ctrl-btn active" title="Activer / Désactiver l'interpolation et déduction GPS intelligente des photos prises à proximité temporelle">
-            ✨ Déduction auto (<span id="mapSmartGpsCount">0</span>)
+            <span data-i18n="map.smart_deduction">✨ Déduction auto</span> (<span id="mapSmartGpsCount">0</span>)
           </button>
-          <button type="button" id="mapToggleRouteBtn" class="map-ctrl-btn active" title="Afficher / Masquer le tracé chronologique du parcours">
+          <button type="button" id="mapToggleRouteBtn" class="map-ctrl-btn active" title="Afficher / Masquer le tracé chronologique du parcours" data-i18n="map.route">
             〰️ Trajet
           </button>
-          <button type="button" id="mapFitBoundsBtn" class="map-ctrl-btn" title="Recentrer la carte sur tous les médias">
+          <button type="button" id="mapFitBoundsBtn" class="map-ctrl-btn" title="Recentrer la carte sur tous les médias" data-i18n="map.recenter">
             🎯 Recentrer
           </button>
-          <button type="button" id="mapModalCloseBtn" class="map-modal-close" title="Fermer la carte (Échap)">✕</button>
+          <button type="button" id="mapModalCloseBtn" class="map-modal-close" title="Fermer la carte (Échap)" data-i18n-title="common.close">✕</button>
         </div>
       </div>
       <div id="galleryLeafletMap" class="map-canvas"></div>
@@ -707,10 +740,10 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
               <button type="button" class="crop-ratio-btn" data-ratio="3:2">3:2</button>
             </div>
             <div class="editor-tool-row" style="margin-top: 8px;">
-              <button type="button" id="editorToggleCropBtn" class="editor-tool-btn active" title="Activer / Désactiver le cadre de recadrage">
+              <button type="button" id="editorToggleCropBtn" class="editor-tool-btn active" title="Activer / Désactiver le cadre de recadrage" data-i18n="editor.crop_toggle">
                 ✂️ Activer Recadrage
               </button>
-              <button type="button" id="editorApplyCropBtn" class="editor-tool-btn editor-tool-btn-accent" title="Appliquer le recadrage sélectionné">
+              <button type="button" id="editorApplyCropBtn" class="editor-tool-btn editor-tool-btn-accent" title="Appliquer le recadrage sélectionné" data-i18n="editor.crop_apply">
                 ✓ Valider Recadrage
               </button>
             </div>
@@ -718,18 +751,18 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
           <!-- Tool Tab 2: Transformations -->
           <div class="editor-tool-section">
-            <h4 class="editor-section-title">🔄 Rotation &amp; Miroir</h4>
+            <h4 class="editor-section-title" data-i18n="editor.transform_title">🔄 Rotation &amp; Miroir</h4>
             <div class="editor-tool-grid">
-              <button type="button" id="editorRotateCcwBtn" class="editor-tool-btn" title="Rotation 90° Anti-horaire">
+              <button type="button" id="editorRotateCcwBtn" class="editor-tool-btn" title="Rotation 90° Anti-horaire" data-i18n="editor.rotate_left">
                 ⟲ 90° Gauche
               </button>
-              <button type="button" id="editorRotateCwBtn" class="editor-tool-btn" title="Rotation 90° Horaire">
+              <button type="button" id="editorRotateCwBtn" class="editor-tool-btn" title="Rotation 90° Horaire" data-i18n="editor.rotate_right">
                 ⟳ 90° Droite
               </button>
-              <button type="button" id="editorFlipHBtn" class="editor-tool-btn" title="Miroir Horizontal">
+              <button type="button" id="editorFlipHBtn" class="editor-tool-btn" title="Miroir Horizontal" data-i18n="editor.flip_h">
                 ⇄ Miroir H
               </button>
-              <button type="button" id="editorFlipVBtn" class="editor-tool-btn" title="Miroir Vertical">
+              <button type="button" id="editorFlipVBtn" class="editor-tool-btn" title="Miroir Vertical" data-i18n="editor.flip_v">
                 ⇅ Miroir V
               </button>
             </div>
@@ -737,10 +770,10 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
           <!-- Tool Tab 3: Ajustements de Couleur -->
           <div class="editor-tool-section">
-            <h4 class="editor-section-title">☀️ Réglages &amp; Lumière</h4>
+            <h4 class="editor-section-title" data-i18n="editor.adjustments_title">☀️ Réglages &amp; Lumière</h4>
             <div class="editor-slider-group">
               <div class="editor-slider-header">
-                <label for="editorBrightnessSlider">Luminosité</label>
+                <label for="editorBrightnessSlider" data-i18n="editor.brightness">Luminosité</label>
                 <span id="editorBrightnessVal" class="slider-val">0%</span>
               </div>
               <input type="range" id="editorBrightnessSlider" min="-100" max="100" value="0" class="editor-slider">
@@ -748,7 +781,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
             <div class="editor-slider-group">
               <div class="editor-slider-header">
-                <label for="editorContrastSlider">Contraste</label>
+                <label for="editorContrastSlider" data-i18n="editor.contrast">Contraste</label>
                 <span id="editorContrastVal" class="slider-val">0%</span>
               </div>
               <input type="range" id="editorContrastSlider" min="-100" max="100" value="0" class="editor-slider">
@@ -756,7 +789,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
             <div class="editor-slider-group">
               <div class="editor-slider-header">
-                <label for="editorSaturationSlider">Saturation</label>
+                <label for="editorSaturationSlider" data-i18n="editor.saturation">Saturation</label>
                 <span id="editorSaturationVal" class="slider-val">0%</span>
               </div>
               <input type="range" id="editorSaturationSlider" min="-100" max="100" value="0" class="editor-slider">
@@ -765,13 +798,13 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
 
           <!-- Tool Tab 4: Filtres Rapides -->
           <div class="editor-tool-section">
-            <h4 class="editor-section-title">🎭 Filtres</h4>
+            <h4 class="editor-section-title" data-i18n="editor.filters_title">🎭 Filtres</h4>
             <div class="editor-filter-pills">
-              <button type="button" class="editor-filter-btn active" data-filter="none">Normal</button>
-              <button type="button" class="editor-filter-btn" data-filter="grayscale">Noir &amp; Blanc</button>
-              <button type="button" class="editor-filter-btn" data-filter="sepia">Sépia</button>
-              <button type="button" class="editor-filter-btn" data-filter="warm">Chaud / Vintage</button>
-              <button type="button" class="editor-filter-btn" data-filter="invert">Inversé</button>
+              <button type="button" class="editor-filter-btn active" data-filter="none" data-i18n="editor.filter_normal">Normal</button>
+              <button type="button" class="editor-filter-btn" data-filter="grayscale" data-i18n="editor.filter_grayscale">Noir &amp; Blanc</button>
+              <button type="button" class="editor-filter-btn" data-filter="sepia" data-i18n="editor.filter_sepia">Sépia</button>
+              <button type="button" class="editor-filter-btn" data-filter="warm" data-i18n="editor.filter_warm">Chaud / Vintage</button>
+              <button type="button" class="editor-filter-btn" data-filter="invert" data-i18n="editor.filter_invert">Inversé</button>
             </div>
           </div>
         </div>
@@ -783,11 +816,11 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="imageSaveChoiceModal" class="admin-modal" role="dialog" aria-modal="true" style="display: none;">
     <div class="admin-modal-content" style="max-width: 480px;">
       <div class="admin-modal-header">
-        <h3>💾 Enregistrer les Modifications</h3>
-        <button type="button" id="saveChoiceCloseBtn" class="lightbox-btn" title="Fermer">✕</button>
+        <h3 data-i18n="save_choice.title">💾 Enregistrer les Modifications</h3>
+        <button type="button" id="saveChoiceCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
-        <p style="color: var(--text-main); font-size: 0.9rem; margin-bottom: 1.25rem;">
+        <p style="color: var(--text-main); font-size: 0.9rem; margin-bottom: 1.25rem;" data-i18n="save_choice.subtitle">
           Comment souhaitez-vous enregistrer cette image modifiée ?
         </p>
 
@@ -795,25 +828,25 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <label class="save-choice-card">
             <input type="radio" name="saveImageModeRadio" value="copy" checked class="save-choice-radio">
             <div class="save-choice-text">
-              <strong>✨ Créer une nouvelle copie (Recommandé)</strong>
-              <span>Enregistre l'image éditée sous un nouveau nom (ex: <code id="saveChoiceCopyNamePreview">photo_edited.jpg</code>) et préserve l'original.</span>
+              <strong data-i18n="save_choice.copy_title">✨ Créer une nouvelle copie (Recommandé)</strong>
+              <span data-i18n="save_choice.copy_desc">Enregistre l'image éditée sous un nouveau nom et préserve l'original.</span>
             </div>
           </label>
 
           <label class="save-choice-card">
             <input type="radio" name="saveImageModeRadio" value="overwrite" class="save-choice-radio">
             <div class="save-choice-text">
-              <strong>⚠️ Remplacer le fichier original</strong>
-              <span>Écrase directement le fichier source sur le serveur et régénère immédiatement sa miniature.</span>
+              <strong data-i18n="save_choice.overwrite_title">⚠️ Remplacer le fichier original</strong>
+              <span data-i18n="save_choice.overwrite_desc">Écrase directement le fichier source sur le serveur et régénère immédiatement sa miniature.</span>
             </div>
           </label>
         </div>
 
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-          <button type="button" id="saveChoiceCancelBtn" class="pill-btn" style="justify-content: center;">
+          <button type="button" id="saveChoiceCancelBtn" class="pill-btn" style="justify-content: center;" data-i18n="common.cancel">
             Annuler
           </button>
-          <button type="button" id="saveChoiceConfirmBtn" class="pill-btn active" style="justify-content: center;">
+          <button type="button" id="saveChoiceConfirmBtn" class="pill-btn active" style="justify-content: center;" data-i18n="save_choice.confirm">
             ✓ Confirmer l'enregistrement
           </button>
         </div>
@@ -830,7 +863,7 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
         <span class="footer-tech">PHP 8+ &amp; Vanilla JS</span>
       </div>
       <div class="footer-links">
-        <button type="button" id="openCookieSettingsBtn" class="footer-link-btn" title="Gérer vos préférences de confidentialité et cookies">
+        <button type="button" id="openCookieSettingsBtn" class="footer-link-btn" title="Gérer vos préférences de confidentialité et cookies" data-i18n-title="cookie.footer_link" data-i18n="cookie.footer_link">
           🍪 Préférences Cookies
         </button>
       </div>
@@ -840,23 +873,23 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <!-- RGPD / ePrivacy Cookie Consent Floating Toast Banner -->
   <div id="cookieConsentBanner" class="cookie-banner" role="region" aria-label="Gestion des cookies et confidentialité" style="display: none;">
     <div class="cookie-banner-content">
-      <div class="cookie-banner-header">
+      <div class="cookie-banner-text">
         <div class="cookie-banner-icon">🍪</div>
-        <div class="cookie-banner-title-group">
-          <h4 class="cookie-banner-title">Respect de votre vie privée</h4>
-          <p class="cookie-banner-desc">
-            SimpleGallery utilise uniquement des <strong>cookies essentiels</strong> (sécurité, session administrateur et CSRF) et le stockage local (vos favoris ❤️ et vos préférences d'affichage). Zéro traceur publicitaire ou commercial.
+        <div>
+          <h4 class="cookie-banner-title" data-i18n="cookie.banner_title">Respect de votre vie privée</h4>
+          <p class="cookie-banner-desc" data-i18n="cookie.banner_desc">
+            SimpleGallery utilise uniquement des cookies essentiels et le stockage local pour vos préférences. Zéro traceur publicitaire.
           </p>
         </div>
       </div>
       <div class="cookie-banner-actions">
-        <button type="button" id="cookieAcceptAllBtn" class="cookie-btn cookie-btn-primary">
+        <button type="button" id="cookieAcceptAllBtn" class="cookie-btn cookie-btn-primary" data-i18n="cookie.accept_all">
           ✓ Tout accepter
         </button>
-        <button type="button" id="cookieRejectNonEssentialBtn" class="cookie-btn cookie-btn-secondary">
+        <button type="button" id="cookieRejectNonEssentialBtn" class="cookie-btn cookie-btn-secondary" data-i18n="cookie.reject_non_essential">
           Essentiels uniquement
         </button>
-        <button type="button" id="cookieCustomizeBtn" class="cookie-btn cookie-btn-ghost">
+        <button type="button" id="cookieCustomizeBtn" class="cookie-btn cookie-btn-ghost" data-i18n="cookie.customize">
           ⚙️ Personnaliser
         </button>
       </div>
@@ -867,12 +900,12 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
   <div id="cookieSettingsModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="cookieModalTitle" style="display: none;">
     <div class="admin-modal-content cookie-modal-card">
       <div class="admin-modal-header">
-        <h3 id="cookieModalTitle">🍪 Préférences de Confidentialité &amp; Cookies</h3>
-        <button type="button" id="cookieSettingsCloseBtn" class="lightbox-btn" title="Fermer (Échap)">✕</button>
+        <h3 id="cookieModalTitle" data-i18n="cookie.modal_title">🍪 Gestion des Préférences &amp; Cookies</h3>
+        <button type="button" id="cookieSettingsCloseBtn" class="lightbox-btn" title="Fermer (Échap)" data-i18n-title="common.close">✕</button>
       </div>
       <div class="admin-modal-body">
-        <p class="cookie-modal-intro">
-          Vous pouvez choisir les fonctionnalités utilisant du stockage local et des cookies sur cette galerie. Vos choix sont conservés localement sur votre appareil.
+        <p class="cookie-modal-intro" data-i18n="cookie.modal_desc">
+          Personnalisez ci-dessous vos choix en matière de cookies et stockage local.
         </p>
 
         <div class="cookie-options-list">
@@ -880,10 +913,10 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <div class="cookie-option-card">
             <div class="cookie-option-info">
               <div class="cookie-option-title-row">
-                <span class="cookie-option-name">1. Cookies Strictement Nécessaires</span>
-                <span class="cookie-badge cookie-badge-required">Toujours actif</span>
+                <span class="cookie-option-name" data-i18n="cookie.opt_necessary_title">1. Cookies Strictement Nécessaires</span>
+                <span class="cookie-badge cookie-badge-required" data-i18n="cookie.opt_necessary_badge">Toujours actif</span>
               </div>
-              <p class="cookie-option-desc">
+              <p class="cookie-option-desc" data-i18n="cookie.opt_necessary_desc">
                 Indispensables au fonctionnement sécurisé de la galerie : maintien de la session d'administration, protection contre les attaques CSRF et accès aux dossiers protégés par mot de passe.
               </p>
             </div>
@@ -896,11 +929,11 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <div class="cookie-option-card">
             <div class="cookie-option-info">
               <div class="cookie-option-title-row">
-                <span class="cookie-option-name">2. Préférences d'Affichage &amp; Favoris</span>
-                <span class="cookie-badge cookie-badge-optional">Optionnel</span>
+                <span class="cookie-option-name" data-i18n="cookie.opt_pref_title">2. Préférences d'Affichage &amp; Favoris</span>
+                <span class="cookie-badge cookie-badge-optional" data-i18n="cookie.opt_pref_badge">Optionnel</span>
               </div>
-              <p class="cookie-option-desc">
-                Permet à votre navigateur d'enregistrer localement (localStorage) vos photos coups de cœur (favoris ❤️) et votre mode de vue préféré (Polaroid / Grille).
+              <p class="cookie-option-desc" data-i18n="cookie.opt_pref_desc">
+                Permet à votre navigateur d'enregistrer localement vos favoris ❤️ et votre mode de vue préféré.
               </p>
             </div>
             <div class="cookie-toggle-wrap">
@@ -912,10 +945,10 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           <div class="cookie-option-card">
             <div class="cookie-option-info">
               <div class="cookie-option-title-row">
-                <span class="cookie-option-name">3. Typographies &amp; Cartographie (CDN)</span>
-                <span class="cookie-badge cookie-badge-optional">Optionnel</span>
+                <span class="cookie-option-name" data-i18n="cookie.opt_cdn_title">3. Typographies &amp; Cartographie (CDN)</span>
+                <span class="cookie-badge cookie-badge-optional" data-i18n="cookie.opt_cdn_badge">Optionnel</span>
               </div>
-              <p class="cookie-option-desc">
+              <p class="cookie-option-desc" data-i18n="cookie.opt_cdn_desc">
                 Chargement des polices stylisées Google Fonts et des cartes interactives OpenStreetMap / Leaflet sans pistage publicitaire.
               </p>
             </div>
@@ -925,17 +958,15 @@ if ($path && substr($path, -1) !== '/' && !pathinfo($path, PATHINFO_EXTENSION)) 
           </div>
         </div>
 
-        <div class="cookie-modal-footer">
-          <button type="button" id="cookieSaveCustomBtn" class="pill-btn active" style="justify-content: center;">
+        <div class="cookie-modal-actions">
+          <button type="button" id="cookieSavePreferencesBtn" class="cookie-btn cookie-btn-primary" style="width: 100%; justify-content: center;" data-i18n="cookie.save_preferences">
             Enregistrer mes choix
-          </button>
-          <button type="button" id="cookieModalAcceptAllBtn" class="pill-btn" style="justify-content: center; background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); border-color: var(--accent-primary);">
-            Tout accepter
           </button>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="js/gallery.js"></script>
 </body>
 </html>

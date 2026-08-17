@@ -79,6 +79,7 @@ class SimpleGallery {
     this.isSmartGpsEnabled = true;
 
     this.initElements();
+    this.initI18n();
     this.bindEvents();
     this.initPipPlayer();
     this.initAdvancedSearch();
@@ -281,7 +282,14 @@ class SimpleGallery {
       saveChoiceCloseBtn: document.getElementById('saveChoiceCloseBtn'),
       saveChoiceCancelBtn: document.getElementById('saveChoiceCancelBtn'),
       saveChoiceConfirmBtn: document.getElementById('saveChoiceConfirmBtn'),
-      saveChoiceCopyNamePreview: document.getElementById('saveChoiceCopyNamePreview')
+      saveChoiceCopyNamePreview: document.getElementById('saveChoiceCopyNamePreview'),
+
+      // Language Selector Elements (i18n)
+      langSelectorContainer: document.getElementById('langSelectorContainer'),
+      langSelectorBtn: document.getElementById('langSelectorBtn'),
+      currentLangFlag: document.getElementById('currentLangFlag'),
+      currentLangCode: document.getElementById('currentLangCode'),
+      langDropdownMenu: document.getElementById('langDropdownMenu')
     };
   }
 
@@ -888,16 +896,16 @@ class SimpleGallery {
       if (overrides.description) {
         bannerHtml = `💬 <span style="flex:1;">${this.escapeHtml(overrides.description)}</span>`;
       } else if (this.state.isAdmin) {
-        bannerHtml = `💬 <span style="flex:1;color:var(--text-muted);font-style:italic;">No description banner set (.desc)</span>`;
+        bannerHtml = `💬 <span style="flex:1;color:var(--text-muted);font-style:italic;">${this.escapeHtml(this.t('folder_desc.empty'))}</span>`;
       } else if (isProtectedUnlocked) {
-        bannerHtml = `🔓 <span style="flex:1;color:var(--text-muted);">Session ouverte (Dossier protégé)</span>`;
+        bannerHtml = `🔓 <span style="flex:1;color:var(--text-muted);">${this.escapeHtml(this.t('folder_desc.unlocked_session'))}</span>`;
       }
 
       if (this.state.isAdmin) {
-        bannerHtml += ` <button class="edit-dotfile-btn edit-banner-btn" title="Edit description (.desc)">✏️ Edit Banner</button>`;
+        bannerHtml += ` <button class="edit-dotfile-btn edit-banner-btn" title="${this.escapeHtml(this.t('folder_desc.edit_title'))}">${this.escapeHtml(this.t('folder_desc.edit_btn'))}</button>`;
       }
       if (isProtectedUnlocked) {
-        bannerHtml += ` <button class="edit-dotfile-btn relock-btn" title="Re-lock this folder for the session">🔒 Lock Folder</button>`;
+        bannerHtml += ` <button class="edit-dotfile-btn relock-btn" title="${this.escapeHtml(this.t('folder_desc.relock_title'))}">${this.escapeHtml(this.t('folder_desc.relock_btn'))}</button>`;
       }
 
       this.el.folderDescBanner.innerHTML = bannerHtml;
@@ -992,11 +1000,11 @@ class SimpleGallery {
     if (!this.el.sortOrderBtn || !this.el.sortOrderIcon) return;
     if (this.state.sortOrder === 'asc') {
       this.el.sortOrderIcon.textContent = '⇧';
-      this.el.sortOrderBtn.title = 'Ordre : Croissant (A-Z, Plus ancien d\'abord, Plus petit d\'abord)';
+      this.el.sortOrderBtn.title = this.t('sort.order_desc');
       this.el.sortOrderBtn.classList.add('active');
     } else {
       this.el.sortOrderIcon.textContent = '⇩';
-      this.el.sortOrderBtn.title = 'Ordre : Décroissant (Z-A, Plus récent d\'abord, Plus grand d\'abord)';
+      this.el.sortOrderBtn.title = this.t('sort.order_asc');
       this.el.sortOrderBtn.classList.remove('active');
     }
   }
@@ -1219,9 +1227,13 @@ class SimpleGallery {
   }
 
   updateStats() {
-    const fileCount = this.state.filteredFiles.length;
-    const folderCount = this.state.directories.length;
-    this.el.galleryStats.textContent = `${folderCount} folders, ${fileCount} files`;
+    if (!this.el.galleryStats) return;
+    const fileCount = this.state.filteredFiles ? this.state.filteredFiles.length : 0;
+    const folderCount = this.state.directories ? this.state.directories.length : 0;
+    this.el.galleryStats.textContent = this.t('stats.summary', {
+      folders: folderCount,
+      files: fileCount
+    });
   }
 
   updateFolderMapButton() {
@@ -1236,7 +1248,8 @@ class SimpleGallery {
       return;
     }
 
-    const label = magicCount > 0 ? `🗺️ Carte GPS (${nativeCount}+${magicCount}✨)` : `🗺️ Carte GPS (${nativeCount})`;
+    const baseLabel = this.t('map.btn_label');
+    const label = magicCount > 0 ? `${baseLabel} (${nativeCount}+${magicCount}✨)` : `${baseLabel} (${nativeCount})`;
     this.el.folderMapBtn.innerHTML = label;
     this.el.folderMapBtn.style.display = 'inline-flex';
   }
@@ -1247,10 +1260,10 @@ class SimpleGallery {
     this.el.emptyState.style.display = 'block';
     this.el.emptyState.innerHTML = `
       <div class="empty-state-icon">🔒</div>
-      <h3>Protected Folder</h3>
-      <p>This folder is password protected. Enter the password to explore its contents.</p>
+      <h3>${this.escapeHtml(this.t('stats.folder_locked'))}</h3>
+      <p>${this.escapeHtml(this.t('stats.folder_locked_desc'))}</p>
       <button class="pill-btn active" style="margin-top: 1rem;" onclick="window.galleryApp.openFolderUnlockModal('${encodeURIComponent(dirPath)}')">
-        Unlock Folder
+        ${this.escapeHtml(this.t('stats.folder_unlock_action'))}
       </button>
     `;
   }
@@ -1262,8 +1275,8 @@ class SimpleGallery {
     const isCustomError = !!msg && msg !== 'Accès refusé';
     this.el.emptyState.innerHTML = `
       <div class="empty-state-icon">${isCustomError ? '⚠️' : '👁️‍🗨️'}</div>
-      <h3>${this.escapeHtml(isCustomError ? 'Erreur d\'accès' : 'Dossier Privé')}</h3>
-      <p>${this.escapeHtml(msg || 'Ce dossier est masqué et réservé à l\'administrateur.')}</p>
+      <h3>${this.escapeHtml(isCustomError ? this.t('stats.access_error') : this.t('stats.folder_private'))}</h3>
+      <p>${this.escapeHtml(msg || this.t('stats.folder_private_desc'))}</p>
     `;
   }
 
@@ -1280,8 +1293,8 @@ class SimpleGallery {
         this.el.mediaGrid.style.display = 'none';
         this.el.emptyState.innerHTML = `
           <div class="empty-state-icon">🤍</div>
-          <h3>Aucun favori dans ce dossier</h3>
-          <p>Cliquez sur l'icône cœur 🤍 d'un média pour l'ajouter à vos favoris.</p>
+          <h3>${this.escapeHtml(this.t('stats.no_favorites_title'))}</h3>
+          <p>${this.escapeHtml(this.t('stats.no_favorites_desc'))}</p>
         `;
         return;
       }
@@ -1290,8 +1303,8 @@ class SimpleGallery {
         this.el.mediaGrid.style.display = 'none';
         this.el.emptyState.innerHTML = `
           <div class="empty-state-icon">📂</div>
-          <h3>No media files found</h3>
-          <p>Copy photos, videos, or audio into this folder to get started!</p>
+          <h3>${this.escapeHtml(this.t('stats.empty'))}</h3>
+          <p>${this.escapeHtml(this.t('stats.drag_drop_hint'))}</p>
         `;
         return;
       }
@@ -1694,7 +1707,7 @@ class SimpleGallery {
   renderExifData(exif) {
     if (!this.el.exifPanelBody) return;
     if (!exif) {
-      this.el.exifPanelBody.innerHTML = '<p style="color:var(--text-muted);font-style:italic;">Aucune métadonnée EXIF trouvée.</p>';
+      this.el.exifPanelBody.innerHTML = `<p style="color:var(--text-muted);font-style:italic;">${this.escapeHtml(this.t('exif.none'))}</p>`;
       return;
     }
 
@@ -1703,7 +1716,7 @@ class SimpleGallery {
     if (exif.camera) {
       html += `
         <div class="exif-group">
-          <div class="exif-label">Appareil Photo</div>
+          <div class="exif-label">${this.escapeHtml(this.t('exif.camera'))}</div>
           <div class="exif-camera-box">📷 ${this.escapeHtml(exif.camera)}</div>
         </div>
       `;
@@ -1712,7 +1725,7 @@ class SimpleGallery {
     if (exif.datetime) {
       html += `
         <div class="exif-group">
-          <div class="exif-label">Date & Heure de Prise de Vue</div>
+          <div class="exif-label">${this.escapeHtml(this.t('exif.datetime'))}</div>
           <div class="exif-value">📅 ${this.escapeHtml(exif.datetime)}</div>
         </div>
       `;
@@ -1721,12 +1734,12 @@ class SimpleGallery {
     if (exif.fnumber || exif.shutter_speed || exif.iso || exif.focal) {
       html += `
         <div class="exif-group">
-          <div class="exif-label">Paramètres d'Exposition</div>
+          <div class="exif-label">${this.escapeHtml(this.t('exif.exposure'))}</div>
           <div class="exif-grid">
-            ${exif.fnumber ? `<div><span class="exif-label">Ouverture</span><div class="exif-value">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
-            ${exif.shutter_speed ? `<div><span class="exif-label">Vitesse</span><div class="exif-value">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
-            ${exif.iso ? `<div><span class="exif-label">ISO</span><div class="exif-value">${this.escapeHtml(exif.iso)}</div></div>` : ''}
-            ${exif.focal ? `<div><span class="exif-label">Focale</span><div class="exif-value">${this.escapeHtml(exif.focal)}</div></div>` : ''}
+            ${exif.fnumber ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.aperture'))}</span><div class="exif-value">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
+            ${exif.shutter_speed ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.shutter'))}</span><div class="exif-value">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
+            ${exif.iso ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.iso'))}</span><div class="exif-value">${this.escapeHtml(exif.iso)}</div></div>` : ''}
+            ${exif.focal ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.focal'))}</span><div class="exif-value">${this.escapeHtml(exif.focal)}</div></div>` : ''}
           </div>
         </div>
       `;
@@ -1735,11 +1748,11 @@ class SimpleGallery {
     if (exif.artist || exif.software || exif.description) {
       html += `
         <div class="exif-group">
-          <div class="exif-label">Auteur & Software</div>
+          <div class="exif-label">${this.escapeHtml(this.t('exif.author_software'))}</div>
           <div class="exif-value" style="font-size:0.85rem; line-height:1.4;">
-            ${exif.artist ? `<div>👤 <strong>Auteur :</strong> ${this.escapeHtml(exif.artist)}</div>` : ''}
-            ${exif.software ? `<div>💻 <strong>Logiciel :</strong> ${this.escapeHtml(exif.software)}</div>` : ''}
-            ${exif.description ? `<div>📝 <strong>Description :</strong> ${this.escapeHtml(exif.description)}</div>` : ''}
+            ${exif.artist ? `<div>👤 <strong>${this.escapeHtml(this.t('exif.artist'))}</strong> ${this.escapeHtml(exif.artist)}</div>` : ''}
+            ${exif.software ? `<div>💻 <strong>${this.escapeHtml(this.t('exif.software'))}</strong> ${this.escapeHtml(exif.software)}</div>` : ''}
+            ${exif.description ? `<div>📝 <strong>${this.escapeHtml(this.t('exif.description'))}</strong> ${this.escapeHtml(exif.description)}</div>` : ''}
           </div>
         </div>
       `;
@@ -1749,19 +1762,19 @@ class SimpleGallery {
       const currentFilePath = this.state.filteredFiles[this.state.lightboxIndex]?.path;
       html += `
         <div class="exif-group" style="margin-top:0.5rem;">
-          <div class="exif-label">Géolocalisation GPS</div>
+          <div class="exif-label">${this.escapeHtml(this.t('exif.gps_title'))}</div>
           <div class="exif-value" style="font-size:0.85rem;color:var(--text-muted); margin-bottom:6px;">
             Lat: ${exif.gps.lat}°, Lng: ${exif.gps.lng}°
           </div>
           <div id="exifMiniMap" class="exif-mini-map"></div>
           <button type="button" class="btn-toggle" style="width:100%; justify-content:center; margin-top:6px;" onclick="window.galleryApp.openMapModal('${this.escapeHtml(currentFilePath || '')}')">
-            🗺️ Explorer sur la grande carte
+            ${this.escapeHtml(this.t('exif.open_map'))}
           </button>
         </div>
       `;
     }
 
-    this.el.exifPanelBody.innerHTML = html || '<p style="color:var(--text-muted);font-style:italic;">Aucune métadonnée EXIF disponible.</p>';
+    this.el.exifPanelBody.innerHTML = html || `<p style="color:var(--text-muted);font-style:italic;">${this.escapeHtml(this.t('exif.none'))}</p>`;
 
     if (exif && exif.gps && typeof L !== 'undefined') {
       setTimeout(() => {
@@ -2375,7 +2388,7 @@ class SimpleGallery {
       if (count > 0) {
         this.el.selectionToolbar.style.display = 'flex';
         if (this.el.selectionToolbarCount) {
-          this.el.selectionToolbarCount.textContent = `${count} élément${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+          this.el.selectionToolbarCount.textContent = this.t('selection.selected_count', { count });
         }
       } else {
         this.el.selectionToolbar.style.display = 'none';
@@ -2582,9 +2595,9 @@ class SimpleGallery {
 
     if (this.el.deleteConfirmMessage) {
       if (itemType === 'folder') {
-        this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer le dossier <strong>"${this.escapeHtml(itemName)}"</strong> ?<br/><br/><span style="color:#ef4444;font-weight:600;">⚠️ Attention : Ce dossier et tout son contenu seront définitivement supprimés !</span>`;
+        this.el.deleteConfirmMessage.innerHTML = this.t('delete_confirm.prompt_folder', { name: this.escapeHtml(itemName) });
       } else {
-        this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer définitivement le fichier <strong>"${this.escapeHtml(itemName)}"</strong> ?`;
+        this.el.deleteConfirmMessage.innerHTML = this.t('delete_confirm.prompt_file', { name: this.escapeHtml(itemName) });
       }
     }
 
@@ -2909,7 +2922,7 @@ class SimpleGallery {
     }
     if (badge) {
       badge.innerText = folderCount > 0 ? `${folderCount}` : `${totalCount}`;
-      badge.style.display = totalCount > 0 ? 'inline-block' : 'none';
+      badge.style.display = totalCount > 0 ? 'inline-flex' : 'none';
     }
     if (this.el.toggleFavoritesBtn) {
       this.el.toggleFavoritesBtn.classList.toggle('active', this.state.showFavoritesOnly);
@@ -3166,41 +3179,41 @@ class SimpleGallery {
     const perms = this.state.userPermissions || {};
 
     container.innerHTML = `
-      <h4 style="margin:16px 0 8px 0; color:var(--text-main); font-size:0.95rem;">🛡️ Matrice de Droits Invités</h4>
+      <h4 style="margin:16px 0 8px 0; color:var(--text-main); font-size:0.95rem;">${this.escapeHtml(this.t('admin.perms_title'))}</h4>
       <form id="adminPermissionsForm">
         <div class="permissions-matrix-grid">
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_upload" ${perms.can_upload ? 'checked' : ''} />
-            <span>📤 Upload de fichiers</span>
+            <span>${this.escapeHtml(this.t('admin.perm_upload'))}</span>
           </label>
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_delete" ${perms.can_delete ? 'checked' : ''} />
-            <span>🗑️ Suppression d'éléments</span>
+            <span>${this.escapeHtml(this.t('admin.perm_delete'))}</span>
           </label>
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_move" ${perms.can_move ? 'checked' : ''} />
-            <span>🖐️ Déplacement d'éléments</span>
+            <span>${this.escapeHtml(this.t('admin.perm_move'))}</span>
           </label>
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_comment" ${perms.can_comment ? 'checked' : ''} />
-            <span>✏️ Édition des légendes</span>
+            <span>${this.escapeHtml(this.t('admin.perm_comment'))}</span>
           </label>
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_create_folder" ${perms.can_create_folder ? 'checked' : ''} />
-            <span>📁+ Création de dossiers</span>
+            <span>${this.escapeHtml(this.t('admin.perm_create_folder'))}</span>
           </label>
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_download_archive" ${perms.can_download_archive ? 'checked' : ''} />
-            <span>📦 Téléchargement d'archives</span>
+            <span>${this.escapeHtml(this.t('admin.perm_download_archive'))}</span>
           </label>
           <label class="perm-checkbox-card">
             <input type="checkbox" name="can_download_item" ${perms.can_download_item !== false ? 'checked' : ''} />
-            <span>⬇️ Téléchargement direct des médias seuls</span>
+            <span>${this.escapeHtml(this.t('admin.perm_download_item'))}</span>
           </label>
         </div>
         <div id="adminPermSaveMsg" class="admin-error-msg" style="display:none; margin-top:8px;"></div>
         <button type="submit" class="pill-btn active" style="margin-top:12px; width:100%; justify-content:center; background:#6366f1; color:white;">
-          💾 Enregistrer la matrice de droits
+          ${this.escapeHtml(this.t('admin.perm_save_btn'))}
         </button>
       </form>
     `;
@@ -3232,7 +3245,7 @@ class SimpleGallery {
             if (msgEl) {
               msgEl.style.display = 'block';
               msgEl.style.color = '#4ade80';
-              msgEl.innerText = 'Matrice de droits mise à jour avec succès !';
+              msgEl.innerText = this.t('admin.perm_save_success');
             }
             this.loadDirectory(this.state.currentPath);
           }
@@ -3496,18 +3509,18 @@ class SimpleGallery {
 
       let sourceBadgeHtml = '';
       if (item.gps_source === 'interpolated') {
-        sourceBadgeHtml = `<div class="map-popup-magic-badge">✨ Position estimée (+${item.delta_min_a} min après « ${this.escapeHtml(item.anchor_a)} »)</div>`;
+        sourceBadgeHtml = `<div class="map-popup-magic-badge">${this.escapeHtml(this.t('map.popup_interpolated', { min: item.delta_min_a, name: item.anchor_a }))}</div>`;
       } else if (item.gps_source === 'extrapolated') {
-        sourceBadgeHtml = `<div class="map-popup-magic-badge">✨ Position estimée (proche de « ${this.escapeHtml(item.anchor_name)} »)</div>`;
+        sourceBadgeHtml = `<div class="map-popup-magic-badge">${this.escapeHtml(this.t('map.popup_extrapolated', { name: item.anchor_name }))}</div>`;
       } else {
-        sourceBadgeHtml = `<div class="map-popup-date" style="color:#4ade80; font-weight:600; font-size:0.75rem; margin-bottom:2px;">📍 Coordonnées GPS réelles</div>`;
+        sourceBadgeHtml = `<div class="map-popup-date" style="color:#4ade80; font-weight:600; font-size:0.75rem; margin-bottom:2px;">${this.escapeHtml(this.t('map.popup_real'))}</div>`;
       }
 
       const popupContent = `
         <div class="map-popup-card">
           <div class="map-popup-img-wrap" onclick="window.galleryApp.openLightboxByPath('${this.escapeHtml(file.path)}')">
             <img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" />
-            <div class="map-popup-play-overlay">🔍 Voir</div>
+            <div class="map-popup-play-overlay">${this.escapeHtml(this.t('map.popup_view'))}</div>
           </div>
           <div class="map-popup-info">
             ${sourceBadgeHtml}
@@ -3515,7 +3528,7 @@ class SimpleGallery {
             ${file.exif?.datetime ? `<div class="map-popup-date">📅 ${this.escapeHtml(file.exif.datetime)}</div>` : ''}
             ${file.comment ? `<div class="map-popup-comment">💬 ${this.escapeHtml(file.comment)}</div>` : ''}
             <button type="button" class="map-popup-btn" onclick="window.galleryApp.openLightboxByPath('${this.escapeHtml(file.path)}')">
-              🖼️ Ouvrir dans la visionneuse
+              ${this.escapeHtml(this.t('map.popup_open_viewer'))}
             </button>
           </div>
         </div>
@@ -4312,6 +4325,214 @@ class SimpleGallery {
       this.showLoading(false);
       alert('⚠️ Erreur réseau lors de la sauvegarde : ' + err.message);
     }
+  }
+
+  // =============================================================
+  // 17. INTERNATIONALIZATION & LOCALES ENGINE (i18n)
+  // =============================================================
+
+  initI18n() {
+    let initialConfig = { locales: {}, default: 'fr', translations: {} };
+    const scriptEl = document.getElementById('initialLocalesConfig');
+    if (scriptEl && scriptEl.textContent) {
+      try {
+        initialConfig = JSON.parse(scriptEl.textContent);
+      } catch (e) {
+        console.warn('Failed to parse initialLocalesConfig payload', e);
+      }
+    }
+
+    this.state.availableLocales = initialConfig.locales || {};
+    this.state.translationsCache = {};
+
+    let storedLocale = null;
+    try {
+      storedLocale = localStorage.getItem('sg_locale');
+    } catch (e) {}
+
+    const initialLang = (storedLocale && this.state.availableLocales[storedLocale])
+      ? storedLocale
+      : (initialConfig.default || 'fr');
+
+    this.state.currentLocale = initialLang;
+    this.state.translations = initialConfig.translations || {};
+    this.state.translationsCache[initialConfig.default || 'fr'] = initialConfig.translations || {};
+
+    // Bind language selector button
+    if (this.el.langSelectorBtn) {
+      this.el.langSelectorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleLangDropdown();
+      });
+    }
+
+    // Bind language options
+    const optionBtns = document.querySelectorAll('.lang-option-btn');
+    optionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetLang = btn.dataset.lang;
+        if (targetLang) {
+          this.setLocale(targetLang);
+          this.closeLangDropdown();
+        }
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (this.el.langSelectorContainer && !this.el.langSelectorContainer.contains(e.target)) {
+        this.closeLangDropdown();
+      }
+    });
+
+    // If storedLocale is different from initial server default, load stored translations
+    if (storedLocale && storedLocale !== (initialConfig.default || 'fr') && this.state.availableLocales[storedLocale]) {
+      this.setLocale(storedLocale);
+    } else {
+      this.applyTranslations();
+    }
+  }
+
+  toggleLangDropdown() {
+    if (!this.el.langDropdownMenu) return;
+    const isVisible = this.el.langDropdownMenu.style.display === 'flex';
+    if (isVisible) {
+      this.closeLangDropdown();
+    } else {
+      this.el.langDropdownMenu.style.display = 'flex';
+    }
+  }
+
+  closeLangDropdown() {
+    if (this.el.langDropdownMenu) {
+      this.el.langDropdownMenu.style.display = 'none';
+    }
+  }
+
+  getFlagHtml(code, fallback = '🌐') {
+    const clean = String(code || '').toLowerCase().trim();
+    const meta = this.state.availableLocales ? this.state.availableLocales[clean] : null;
+    if (meta && meta.flag_svg) {
+      return meta.flag_svg;
+    }
+    const emoji = (meta && meta.flag) ? meta.flag : fallback;
+    return `<span class="flag-emoji">${this.escapeHtml(emoji)}</span>`;
+  }
+
+  t(key, replacements = {}) {
+    let str = this.state.translations[key] || key;
+    if (typeof str === 'string' && replacements && typeof replacements === 'object') {
+      Object.entries(replacements).forEach(([k, val]) => {
+        str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), val);
+      });
+    }
+    return str;
+  }
+
+  async setLocale(code) {
+    if (!this.state.availableLocales[code]) return;
+    this.state.currentLocale = code;
+
+    // Check memory cache first
+    if (this.state.translationsCache[code]) {
+      this.state.translations = this.state.translationsCache[code];
+      this.finishLocaleChange(code);
+    } else {
+      try {
+        const res = await fetch(`locales/${encodeURIComponent(code)}.json?t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          this.state.translations = json.translations || {};
+          this.state.translationsCache[code] = this.state.translations;
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch locale ${code}`, e);
+      }
+      this.finishLocaleChange(code);
+    }
+  }
+
+  finishLocaleChange(code) {
+    if (this.isPreferencesStorageAllowed()) {
+      try {
+        localStorage.setItem('sg_locale', code);
+      } catch (e) {}
+    }
+
+    // Update HTML lang attribute
+    document.documentElement.lang = code;
+
+    // Update language selector trigger button
+    const meta = this.state.availableLocales[code];
+    if (meta) {
+      if (this.el.currentLangFlag) this.el.currentLangFlag.innerHTML = this.getFlagHtml(code, meta.flag);
+      if (this.el.currentLangCode) this.el.currentLangCode.textContent = (meta.code || code).toUpperCase();
+    }
+
+    // Update active class on dropdown options
+    document.querySelectorAll('.lang-option-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === code);
+    });
+
+    // Apply translations across DOM
+    this.applyTranslations();
+
+    // Re-render folder overrides (description banner, etc.)
+    if (this.state.overrides) {
+      this.applyDotfileOverrides(this.state.overrides);
+    }
+
+    // Re-render stats, media (empty state, favorites, etc.) & admin UI with new language
+    if (this.state.filteredFiles) {
+      this.updateStats();
+      this.updateFolderMapButton();
+      this.updateFavoritesCountUI();
+      this.renderMedia();
+
+      // If Lightbox is active, update its dynamic EXIF / Favorites / Actions strings
+      if (this.state.lightboxIndex !== null && this.state.filteredFiles[this.state.lightboxIndex]) {
+        const file = this.state.filteredFiles[this.state.lightboxIndex];
+        this.updateLightboxFavBtn(file.path);
+        if (file.exif) {
+          this.renderExifData(file.exif);
+        }
+      }
+    }
+    this.updateAdminUI();
+  }
+
+  applyTranslations() {
+    // 1. Text and HTML elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      const trans = this.t(key);
+      if (trans && trans !== key) {
+        if (trans.includes('<') && trans.includes('>')) {
+          el.innerHTML = trans;
+        } else {
+          el.textContent = trans;
+        }
+      }
+    });
+
+    // 2. Tooltips with data-i18n-title
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.dataset.i18nTitle;
+      const trans = this.t(key);
+      if (trans && trans !== key) {
+        el.setAttribute('title', trans);
+      }
+    });
+
+    // 3. Inputs with data-i18n-placeholder
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.dataset.i18nPlaceholder;
+      const trans = this.t(key);
+      if (trans && trans !== key) {
+        el.setAttribute('placeholder', trans);
+      }
+    });
   }
 }
 

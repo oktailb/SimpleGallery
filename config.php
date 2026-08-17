@@ -102,7 +102,7 @@ function update_admin_password_in_config(string $new_password): bool {
 }
 
 // Files and folders to ignore in indexing
-$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'includes', 'css', 'js', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh'];
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'includes', 'css', 'js', 'locales', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh'];
 
 
 

@@ -30,10 +30,32 @@ if (in_array($action, $mutating_actions, true)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Jeton de sécurité CSRF invalide ou manquant. Veuillez rafraîchir la page.'
+            'error'   => __t('api.err_csrf')
         ]);
         exit;
     }
+}
+
+if ($action === 'get_locales') {
+    $locales = get_available_locales($real_base_dir);
+    $detected = detect_browser_locale($locales, 'fr');
+    echo json_encode([
+        'success'   => true,
+        'locales'   => $locales,
+        'detected'  => $detected
+    ]);
+    exit;
+}
+
+if ($action === 'get_locale') {
+    $code = $_GET['code'] ?? $raw_body['code'] ?? 'fr';
+    $translations = load_locale_translations($real_base_dir, $code);
+    echo json_encode([
+        'success'      => true,
+        'code'         => $code,
+        'translations' => $translations
+    ]);
+    exit;
 }
 
 if ($action === 'login') {
@@ -937,15 +959,15 @@ if ($action === 'delete_item') {
         invalidate_dir_cache($parent_dir, $real_base_dir, $thumbnail_dir);
         echo json_encode([
             'success' => true,
-            'message' => "L'élément '{$item_name}' a été supprimé avec succès."
+            'message' => __t('api.success_deleted', ['name' => $item_name])
         ]);
     } else {
         $last_err = error_get_last();
-        $detail = $last_err ? $last_err['message'] : 'Vérifiez les permissions de fichier sur le serveur.';
+        $detail = $last_err ? $last_err['message'] : 'Permissions';
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'error'   => 'Échec de la suppression : ' . $detail
+            'error'   => __t('api.err_delete_failed', ['detail' => $detail])
         ]);
     }
     exit;
@@ -956,7 +978,7 @@ if ($action === 'edit_image') {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Droits administrateur requis pour éditer une image.'
+            'error'   => __t('api.err_admin_required')
         ]);
         exit;
     }
@@ -967,27 +989,27 @@ if ($action === 'edit_image') {
 
     if (empty($target_param)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Chemin de l\'image non spécifié.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_invalid_path')]);
         exit;
     }
 
     if (empty($image_data)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Données d\'image manquantes.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_missing_image_data')]);
         exit;
     }
 
     $target_file = sanitize_file_path($target_param, $real_base_dir);
     if ($target_file === null || !is_file($target_file) || is_path_ignored($target_file, $real_base_dir, $ignore_list)) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Fichier image introuvable ou accès refusé.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_invalid_path')]);
         exit;
     }
 
     $ext = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
     if (!in_array($ext, $media_types['image'], true) || in_array($ext, ['php', 'phtml', 'phar', 'svg'], true)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Format de fichier non pris en charge pour l\'édition.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_unsupported_format')]);
         exit;
     }
 
@@ -997,12 +1019,12 @@ if ($action === 'edit_image') {
         $decoded_image = base64_decode($data_substr);
         if ($decoded_image === false) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Données d\'image base64 invalides.']);
+            echo json_encode(['success' => false, 'error' => __t('api.err_invalid_image_data')]);
             exit;
         }
     } else {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Format d\'encodage base64 non reconnu.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_invalid_image_data')]);
         exit;
     }
 
@@ -1011,7 +1033,7 @@ if ($action === 'edit_image') {
         $check_info = @getimagesizefromstring($decoded_image);
         if ($check_info === false) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Les données transmises ne constituent pas une image valide.']);
+            echo json_encode(['success' => false, 'error' => __t('api.err_invalid_image_data')]);
             exit;
         }
     }
@@ -1019,7 +1041,7 @@ if ($action === 'edit_image') {
     $parent_dir = dirname($target_file);
     if (!is_writable($parent_dir)) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'Permissions d\'écriture insuffisantes dans le dossier cible.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_write_permission')]);
         exit;
     }
 
@@ -1062,7 +1084,7 @@ if ($action === 'edit_image') {
 
         echo json_encode([
             'success'        => true,
-            'message'        => $is_copy ? "Copie '{$saved_filename}' enregistrée avec succès." : "Image '{$saved_filename}' mise à jour avec succès.",
+            'message'        => $is_copy ? __t('api.success_copy_saved', ['name' => $saved_filename]) : __t('api.success_image_updated', ['name' => $saved_filename]),
             'save_mode'      => $save_mode,
             'is_copy'        => $is_copy,
             'file_name'      => $saved_filename,
@@ -1073,7 +1095,7 @@ if ($action === 'edit_image') {
         exit;
     } else {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Échec de l\'écriture du fichier image sur le serveur.']);
+        echo json_encode(['success' => false, 'error' => __t('api.err_file_write_failed')]);
         exit;
     }
 }

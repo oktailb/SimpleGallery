@@ -77,6 +77,7 @@ class GeneralUnitTestSuite {
         $this->testMp4ExtractorFallback();
         $this->testCookieConsentConfiguration();
         $this->testImageEditorBackend();
+        $this->testI18nEngineAndLocales();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS FONCTIONNELS\n";
@@ -335,6 +336,57 @@ class GeneralUnitTestSuite {
 
         if (file_exists($test_image_file)) @unlink($test_image_file);
         if (file_exists($copy_path)) @unlink($copy_path);
+    }
+
+    /**
+     * 10. i18n Locales Discovery & Engine Test
+     */
+    private function testI18nEngineAndLocales(): void {
+        echo "\n🌐 [10/10] Test du Moteur d'Internationalisation (i18n) & Découverte...\n";
+
+        $locales = get_available_locales($this->base_dir);
+        $this->assert("Découverte automatique des locales non vide", !empty($locales));
+        $this->assert("Locale 'fr' présente dans les locales", isset($locales['fr']));
+        $this->assert("Locale 'en' présente dans les locales", isset($locales['en']));
+        $this->assert("Drapeau de la locale 'fr' est 🇫🇷", ($locales['fr']['flag'] ?? '') === '🇫🇷');
+        $this->assert("Drapeau de la locale 'en' est 🇬🇧", ($locales['en']['flag'] ?? '') === '🇬🇧');
+
+        // Test browser locale detection
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'fr-FR,fr;q=0.9,en-US;q=0.8';
+        $detected_fr = detect_browser_locale($locales, 'fr');
+        $this->assert("Détection de la langue du navigateur (FR)", $detected_fr === 'fr');
+
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en-US,en;q=0.9';
+        $detected_en = detect_browser_locale($locales, 'fr');
+        $this->assert("Détection de la langue du navigateur (EN)", $detected_en === 'en');
+
+        // Test loading translations
+        $fr_trans = load_locale_translations($this->base_dir, 'fr');
+        $this->assert("Traductions FR chargées avec succès", !empty($fr_trans) && isset($fr_trans['app.title']));
+        $this->assert("Traduction FR de 'nav.root' = 'Accueil'", ($fr_trans['nav.root'] ?? '') === 'Accueil');
+
+        $en_trans = load_locale_translations($this->base_dir, 'en');
+        $this->assert("Traductions EN chargées avec succès", !empty($en_trans) && isset($en_trans['app.title']));
+        $this->assert("Traduction EN de 'nav.root' = 'Home'", ($en_trans['nav.root'] ?? '') === 'Home');
+
+        // Test adding a dynamic third locale file
+        $temp_es_file = $this->base_dir . '/locales/tmp_test_es.json';
+        file_put_contents($temp_es_file, json_encode([
+            '_meta' => ['code' => 'tmp_test_es', 'name' => 'Español Test', 'flag' => '🇪🇸'],
+            'translations' => ['app.title' => 'SimpleGallery ES']
+        ]));
+
+        // Test global __t helper function
+        $msg_fr = __t('api.err_admin_required', [], 'fr', $this->base_dir);
+        $this->assert("Traduction PHP __t FR correcte", $msg_fr === 'Droits administrateur requis pour cette action.');
+
+        $msg_en = __t('api.err_admin_required', [], 'en', $this->base_dir);
+        $this->assert("Traduction PHP __t EN correcte", $msg_en === 'Admin rights required for this action.');
+
+        $msg_repl = __t('stats.summary', ['folders' => 3, 'files' => 12], 'en', $this->base_dir);
+        $this->assert("Interpolation de variables __t correcte", $msg_repl === '3 folders • 12 files');
+
+        if (file_exists($temp_es_file)) @unlink($temp_es_file);
     }
 }
 

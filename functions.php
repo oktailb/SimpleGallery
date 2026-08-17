@@ -1004,3 +1004,156 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
     $scan_directory($start_dir);
     return $results;
 }
+
+/**
+ * -------------------------------------------------------------
+ * INTERNATIONALIZATION & LOCALES DISCOVERY ENGINE (i18n)
+ * -------------------------------------------------------------
+ */
+
+/**
+ * Scan locales/ directory and return all discovered locales with metadata.
+ * Format: [ 'fr' => ['code' => 'fr', 'name' => 'Français', 'flag' => '🇫🇷'], ... ]
+ */
+function get_available_locales(string $base_dir): array {
+    $locales_dir = rtrim($base_dir, '/\\') . '/locales';
+    $locales = [];
+
+    if (!is_dir($locales_dir)) {
+        return $locales;
+    }
+
+    $files = @scandir($locales_dir);
+    if ($files === false) return $locales;
+
+    foreach ($files as $file) {
+        if ($file[0] === '.' || substr(strtolower($file), -5) !== '.json') continue;
+        $full_path = $locales_dir . '/' . $file;
+        $code = strtolower(pathinfo($file, PATHINFO_FILENAME));
+        
+        $content = @file_get_contents($full_path);
+        if (!$content) continue;
+        $data = @json_decode($content, true);
+        if (!is_array($data)) continue;
+
+        $meta = $data['_meta'] ?? [];
+        $locales[$code] = [
+            'code'     => $meta['code'] ?? $code,
+            'name'     => $meta['name'] ?? ucfirst($code),
+            'flag'     => $meta['flag'] ?? '🌐',
+            'flag_svg' => !empty($meta['flag_svg']) ? $meta['flag_svg'] : null
+        ];
+    }
+
+    return $locales;
+}
+
+/**
+ * Returns flag HTML generically from locale metadata (SVG vector if provided, otherwise emoji/fallback).
+ * Accepts either a locale info array OR a locale code.
+ */
+function get_locale_flag_html($locale_or_code, string $fallback = '🌐', array $available_locales = []): string {
+    if (is_array($locale_or_code)) {
+        if (!empty($locale_or_code['flag_svg'])) {
+            return $locale_or_code['flag_svg'];
+        }
+        $flag = $locale_or_code['flag'] ?? $fallback;
+        return '<span class="flag-emoji">' . htmlspecialchars($flag, ENT_QUOTES, 'UTF-8') . '</span>';
+    }
+
+    $code = strtolower(trim((string)$locale_or_code));
+    if (!empty($available_locales[$code])) {
+        return get_locale_flag_html($available_locales[$code], $fallback);
+    }
+
+    return '<span class="flag-emoji">' . htmlspecialchars($fallback, ENT_QUOTES, 'UTF-8') . '</span>';
+}
+
+/**
+ * Detect best matching locale based on browser HTTP_ACCEPT_LANGUAGE.
+ */
+function detect_browser_locale(array $available_locales, string $default = 'fr'): string {
+    if (empty($available_locales)) return $default;
+
+    $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+    if (!empty($accept)) {
+        $parts = explode(',', $accept);
+        foreach ($parts as $part) {
+            $lang_tag = explode(';', $part)[0];
+            $lang_tag = trim($lang_tag);
+            $primary_lang = strtolower(explode('-', $lang_tag)[0]);
+            
+            if (isset($available_locales[$primary_lang])) {
+                return $primary_lang;
+            }
+        }
+    }
+
+    if (isset($available_locales[$default])) {
+        return $default;
+    }
+    $keys = array_keys($available_locales);
+    return !empty($keys) ? $keys[0] : $default;
+}
+
+/**
+ * Load translations array for a specific locale code.
+ */
+function load_locale_translations(string $base_dir, string $code): array {
+    $clean_code = preg_replace('/[^a-z0-9_-]/i', '', strtolower($code));
+    $file = rtrim($base_dir, '/\\') . '/locales/' . $clean_code . '.json';
+    if (!is_file($file)) return [];
+    
+    $content = @file_get_contents($file);
+    if (!$content) return [];
+    $data = @json_decode($content, true);
+    if (!is_array($data)) return [];
+
+    return $data['translations'] ?? [];
+}
+
+/**
+ * Global helper function to translate keys in PHP backend.
+ */
+function __t(string $key, array $replacements = [], ?string $locale = null, string $base_dir = ''): string {
+    static $translations_cache = [];
+    
+    if (empty($base_dir)) {
+        global $real_base_dir;
+        $base_dir = $real_base_dir ?? dirname(__DIR__);
+    }
+
+    if ($locale === null) {
+        $locales = get_available_locales($base_dir);
+        $req_lang = $_SERVER['HTTP_X_LANG'] ?? $_GET['lang'] ?? $_POST['lang'] ?? null;
+        if ($req_lang && isset($locales[strtolower($req_lang)])) {
+            $locale = strtolower($req_lang);
+        } else {
+            $locale = detect_browser_locale($locales, 'fr');
+        }
+    }
+
+    if (!isset($translations_cache[$locale])) {
+        $translations_cache[$locale] = load_locale_translations($base_dir, $locale);
+    }
+
+    $msg = $translations_cache[$locale][$key] ?? null;
+    if ($msg === null) {
+        if ($locale !== 'fr') {
+            if (!isset($translations_cache['fr'])) {
+                $translations_cache['fr'] = load_locale_translations($base_dir, 'fr');
+            }
+            $msg = $translations_cache['fr'][$key] ?? $key;
+        } else {
+            $msg = $key;
+        }
+    }
+
+    foreach ($replacements as $k => $v) {
+        $msg = str_replace('{' . $k . '}', (string)$v, $msg);
+    }
+
+    return $msg;
+}
+
+
