@@ -3812,6 +3812,89 @@ body.no-direct-download audio {
   border-radius: 4px;
 }
 
+/* -------------------------------------------------------------
+ * 17. FIXED BOTTOM APPLICATION FOOTER
+ * ------------------------------------------------------------- */
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-card, rgba(15, 23, 42, 0.92));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  z-index: 800;
+  padding: 0.4rem 1.25rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.footer-container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.footer-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.footer-github-link {
+  color: var(--text-main);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.footer-github-link:hover {
+  color: var(--accent-primary, #6366f1);
+  transform: translateY(-1px);
+}
+
+.footer-separator {
+  margin: 0 0.35rem;
+  opacity: 0.4;
+}
+
+.footer-tech {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.footer-links {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-link-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.footer-link-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
 
 
 

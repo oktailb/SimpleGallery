@@ -260,10 +260,10 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
         </div>
 
         <button id="lightboxExifBtn" class="lightbox-btn" title="Détails EXIF (I)" data-i18n-title="lightbox.exif" style="display: none;">
-          <span data-i18n="lightbox.exif_btn">ℹ️ EXIF</span>
+          ℹ️
         </button>
         <button id="lightboxEditImageBtn" class="lightbox-btn" title="Éditer l'image (Recadrage, Rotation, Filtres - Mode Admin)" data-i18n-title="lightbox.edit_image" style="display: none;">
-          🎨 <span data-i18n="lightbox.edit_image_btn">Éditer</span>
+          🎨
         </button>
         <button id="lightboxEditCommentBtn" class="lightbox-btn" title="Éditer la légende (.comment)" data-i18n-title="lightbox.edit_comment" style="display: none;">
           ✏️
@@ -858,9 +858,11 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <footer class="app-footer">
     <div class="footer-container">
       <div class="footer-info">
-        <span>📸 <?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></span>
+        <a href="https://github.com/oktailb/SimpleGallery" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="SimpleGallery on GitHub">
+          📸 <strong><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></strong>
+        </a>
         <span class="footer-separator">•</span>
-        <span class="footer-tech">PHP 8+ &amp; Vanilla JS</span>
+        <span class="footer-tech">PHP &amp; Vanilla JS</span>
       </div>
       <div class="footer-links">
         <button type="button" id="openCookieSettingsBtn" class="footer-link-btn" title="Gérer vos préférences de confidentialité et cookies" data-i18n-title="cookie.footer_link" data-i18n="cookie.footer_link">
