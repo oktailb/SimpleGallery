@@ -9,6 +9,7 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
 
 require_once __DIR__ . '/includes/exif.php';
 require_once __DIR__ . '/includes/binaries.php';
+require_once __DIR__ . '/includes/metadata/MetadataManager.php';
 
 /**
  * Safely starts PHP session with secure cookie parameters

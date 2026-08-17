@@ -78,6 +78,7 @@ class GeneralUnitTestSuite {
         $this->testCookieConsentConfiguration();
         $this->testImageEditorBackend();
         $this->testI18nEngineAndLocales();
+        $this->testUnifiedMetadataExtractors();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS FONCTIONNELS\n";
@@ -313,12 +314,18 @@ class GeneralUnitTestSuite {
 
         // Create a 10x10 sample truecolor JPEG image
         $test_image_file = $this->test_dir . '/sample_photo.jpg';
-        $im = @imagecreatetruecolor(10, 10);
-        if ($im) {
-            $red = imagecolorallocate($im, 255, 0, 0);
-            imagefill($im, 0, 0, $red);
-            imagejpeg($im, $test_image_file);
-            imagedestroy($im);
+        if (function_exists('imagecreatetruecolor')) {
+            $im = @imagecreatetruecolor(10, 10);
+            if ($im) {
+                $red = imagecolorallocate($im, 255, 0, 0);
+                imagefill($im, 0, 0, $red);
+                imagejpeg($im, $test_image_file);
+            }
+        }
+        if (!file_exists($test_image_file)) {
+            // Minimal valid 1x1 JPEG binary fallback
+            $jpeg_min = "\xFF\xD8\xFF\xE0\x00\x10\x4A\x46\x49\x46\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xFF\xDB\x00\x43\x00\xFF\xC0\x00\x0B\x08\x00\x01\x00\x01\x01\x01\x11\x00\xFF\xC4\x00\x14\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xDA\x00\x08\x01\x01\x00\x00\x3F\x00\x7F\xFF\xD9";
+            file_put_contents($test_image_file, $jpeg_min);
         }
 
         $this->assert("Image de test sample_photo.jpg créée avec succès", file_exists($test_image_file));
@@ -387,6 +394,41 @@ class GeneralUnitTestSuite {
         $this->assert("Interpolation de variables __t correcte", $msg_repl === '3 folders • 12 files');
 
         if (file_exists($temp_es_file)) @unlink($temp_es_file);
+    }
+
+    /**
+     * 11. Unified Multi-Format Metadata Extractors Test
+     */
+    private function testUnifiedMetadataExtractors(): void {
+        echo "\nℹ️ [11/11] Test des Extracteurs de Métadonnées Multi-Formats...\n";
+
+        // 1. Test Text/Document Metadata
+        $doc_path = $this->test_dir . '/sample_doc.txt';
+        file_put_contents($doc_path, "Ligne 1: Bonjour le monde\nLigne 2: Test SimpleGallery 2026\nLigne 3: Fin de fichier");
+        $meta_doc = get_file_unified_metadata($doc_path, 'sample_doc.txt', 'doc', 'txt');
+
+        $this->assert("Extraction métadonnées générales TXT", isset($meta_doc['general']['filename']) && $meta_doc['general']['filename'] === 'sample_doc.txt');
+        $this->assert("Comptage des lignes TXT (3 lignes)", ($meta_doc['specific']['doc']['lines_count'] ?? 0) === 3);
+
+        // 2. Test Image Aspect Ratio computation
+        $ratio_169 = compute_aspect_ratio(1920, 1080);
+        $this->assert("Calcul Ratio 1920x1080 => 16:9", $ratio_169 === '16:9');
+        $ratio_43 = compute_aspect_ratio(4032, 3024);
+        $this->assert("Calcul Ratio 4032x3024 => 4:3", $ratio_43 === '4:3');
+        $ratio_11 = compute_aspect_ratio(1000, 1000);
+        $this->assert("Calcul Ratio 1000x1000 => 1:1", $ratio_11 === '1:1');
+
+        // 3. Test Audio duration formatting helper
+        $dur_fmt = format_media_duration(125.4);
+        $this->assert("Formatage durée audio 125.4s => 02:05", $dur_fmt === '02:05');
+        $dur_fmt_hr = format_media_duration(3665);
+        $this->assert("Formatage durée longue 3665s => 01:01:05", $dur_fmt_hr === '01:01:05');
+
+        // 4. Test API get_metadata action resolution with sanitize_file_path
+        $api_code = @file_get_contents($this->base_dir . '/api.php');
+        $this->assert("api.php utilise sanitize_file_path pour get_metadata", strpos($api_code, "sanitize_file_path(\$file_param") !== false);
+
+        if (file_exists($doc_path)) @unlink($doc_path);
     }
 }
 

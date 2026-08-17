@@ -223,7 +223,9 @@ class SimpleGallery {
       pipWidget: document.getElementById('pip-player-widget'),
       pipTitle: document.getElementById('pipTitle'),
       pipMediaContainer: document.getElementById('pipMediaContainer'),
+      pipInfoPanel: document.getElementById('pipInfoPanel'),
       pipHeader: document.getElementById('pipHeader'),
+      pipInfoBtn: document.getElementById('pipInfoBtn'),
       pipMinimizeBtn: document.getElementById('pipMinimizeBtn'),
       pipCloseBtn: document.getElementById('pipCloseBtn'),
 
@@ -1625,13 +1627,10 @@ class SimpleGallery {
 
     this.resetZoom();
 
-    if (file.exif) {
-      if (this.el.lightboxExifBtn) this.el.lightboxExifBtn.style.display = 'inline-flex';
-      this.renderExifData(file.exif);
-    } else {
-      if (this.el.lightboxExifBtn) this.el.lightboxExifBtn.style.display = 'none';
-      this.toggleExifPanel(false);
+    if (this.el.lightboxExifBtn) {
+      this.el.lightboxExifBtn.style.display = 'inline-flex';
     }
+    this.loadUnifiedMetadata(file);
 
     const isEditableImage = this.state.isAdmin && file.category === 'image' && file.extension !== 'svg';
     if (this.el.lightboxEditImageBtn) {
@@ -1702,79 +1701,378 @@ class SimpleGallery {
     const isVisible = this.el.lightboxExifPanel.style.display === 'block';
     const targetState = show !== undefined ? show : !isVisible;
     this.el.lightboxExifPanel.style.display = targetState ? 'block' : 'none';
+
+    if (targetState && this.state.lightboxIndex !== null) {
+      const file = this.state.filteredFiles[this.state.lightboxIndex];
+      if (file) this.loadUnifiedMetadata(file);
+    }
+  }
+
+  async loadUnifiedMetadata(file) {
+    if (!this.el.exifPanelBody || !file) return;
+
+    if (!this.state.metadataCache) {
+      this.state.metadataCache = {};
+    }
+
+    // Immediate preview of known general stats
+    if (!this.state.metadataCache[file.path]) {
+      const initialMeta = {
+        general: {
+          filename: file.name,
+          path: file.path,
+          filesize: file.size,
+          filesize_formatted: file.size_formatted,
+          mtime: file.mtime,
+          mtime_formatted: new Date(file.mtime * 1000).toLocaleString(),
+          category: file.category,
+          extension: file.extension,
+          mime_type: (file.category === 'image' ? `image/${file.extension}` : (file.category === 'video' ? `video/${file.extension}` : null))
+        },
+        specific: {},
+        exif: file.exif || null
+      };
+      this.renderUnifiedMetadata(file, initialMeta, true);
+
+      try {
+        const res = await fetch(`api.php?action=get_metadata&file=${encodeURIComponent(file.path)}`);
+        const json = await res.json();
+        if (json.success && json.metadata) {
+          this.state.metadataCache[file.path] = json.metadata;
+          // Re-render if current lightbox file is still the same
+          if (this.state.lightboxIndex !== null && this.state.filteredFiles[this.state.lightboxIndex]?.path === file.path) {
+            this.renderUnifiedMetadata(file, json.metadata, false);
+          }
+        }
+      } catch (err) {
+        console.warn('Metadata fetch failed:', err);
+      }
+    } else {
+      this.renderUnifiedMetadata(file, this.state.metadataCache[file.path], false);
+    }
   }
 
   renderExifData(exif) {
-    if (!this.el.exifPanelBody) return;
-    if (!exif) {
-      this.el.exifPanelBody.innerHTML = `<p style="color:var(--text-muted);font-style:italic;">${this.escapeHtml(this.t('exif.none'))}</p>`;
-      return;
+    const file = (this.state.lightboxIndex !== null) ? this.state.filteredFiles[this.state.lightboxIndex] : null;
+    if (file) {
+      this.loadUnifiedMetadata(file);
     }
+  }
+
+  renderUnifiedMetadata(file, meta, isLoading = false) {
+    if (!this.el.exifPanelBody) return;
+
+    const general = meta.general || {
+      filename: file.name,
+      path: file.path,
+      filesize_formatted: file.size_formatted,
+      mtime_formatted: new Date(file.mtime * 1000).toLocaleString(),
+      category: file.category,
+      extension: file.extension
+    };
+    const specific = meta.specific || {};
+    const exif = meta.exif || file.exif || null;
 
     let html = '';
 
-    if (exif.camera) {
-      html += `
-        <div class="exif-group">
-          <div class="exif-label">${this.escapeHtml(this.t('exif.camera'))}</div>
-          <div class="exif-camera-box">📷 ${this.escapeHtml(exif.camera)}</div>
+    // 1. General Info Card (Always present)
+    html += `
+      <div class="meta-section-card">
+        <div class="meta-section-title">
+          <span>${this.escapeHtml(this.t('meta.general_title'))}</span>
+          <span class="meta-badge">${this.escapeHtml(general.extension || file.extension)}</span>
         </div>
-      `;
-    }
-
-    if (exif.datetime) {
-      html += `
-        <div class="exif-group">
-          <div class="exif-label">${this.escapeHtml(this.t('exif.datetime'))}</div>
-          <div class="exif-value">📅 ${this.escapeHtml(exif.datetime)}</div>
+        <div class="meta-row">
+          <span class="meta-row-label">${this.escapeHtml(this.t('meta.filename'))}</span>
+          <span class="meta-row-value">${this.escapeHtml(general.filename || file.name)}</span>
         </div>
-      `;
-    }
-
-    if (exif.fnumber || exif.shutter_speed || exif.iso || exif.focal) {
-      html += `
-        <div class="exif-group">
-          <div class="exif-label">${this.escapeHtml(this.t('exif.exposure'))}</div>
-          <div class="exif-grid">
-            ${exif.fnumber ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.aperture'))}</span><div class="exif-value">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
-            ${exif.shutter_speed ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.shutter'))}</span><div class="exif-value">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
-            ${exif.iso ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.iso'))}</span><div class="exif-value">${this.escapeHtml(exif.iso)}</div></div>` : ''}
-            ${exif.focal ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.focal'))}</span><div class="exif-value">${this.escapeHtml(exif.focal)}</div></div>` : ''}
+        <div class="meta-row">
+          <span class="meta-row-label">${this.escapeHtml(this.t('meta.filesize'))}</span>
+          <span class="meta-row-value">${this.escapeHtml(general.filesize_formatted || file.size_formatted)}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-row-label">${this.escapeHtml(this.t('meta.mtime'))}</span>
+          <span class="meta-row-value">${this.escapeHtml(general.mtime_formatted || new Date(file.mtime * 1000).toLocaleString())}</span>
+        </div>
+        ${general.mime_type ? `
+          <div class="meta-row">
+            <span class="meta-row-label">${this.escapeHtml(this.t('meta.mime'))}</span>
+            <span class="meta-row-value" style="font-family:monospace; font-size:0.75rem;">${this.escapeHtml(general.mime_type)}</span>
           </div>
+        ` : ''}
+      </div>
+    `;
+
+    // 2. Specific Properties Cards
+    // A. Image Properties
+    if (specific.image) {
+      const img = specific.image;
+      html += `
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('meta.image_title'))}</div>
+          ${img.resolution ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.resolution'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(img.resolution)}</span>
+            </div>
+          ` : ''}
+          ${img.aspect_ratio ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.aspect_ratio'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(img.aspect_ratio)}</span>
+            </div>
+          ` : ''}
+          ${img.megapixels ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.megapixels'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(img.megapixels)}</span>
+            </div>
+          ` : ''}
+          ${img.color_depth ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.color_depth'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(img.color_depth)}</span>
+            </div>
+          ` : ''}
+          ${img.is_animated ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.animation'))}</span>
+              <span class="meta-row-value" style="color:#38bdf8;">${this.escapeHtml(this.t('meta.animated_yes', { count: img.frames_count }))}</span>
+            </div>
+          ` : ''}
         </div>
       `;
     }
 
-    if (exif.artist || exif.software || exif.description) {
+    // B. Video Properties
+    if (specific.video) {
+      const vid = specific.video;
       html += `
-        <div class="exif-group">
-          <div class="exif-label">${this.escapeHtml(this.t('exif.author_software'))}</div>
-          <div class="exif-value" style="font-size:0.85rem; line-height:1.4;">
-            ${exif.artist ? `<div>👤 <strong>${this.escapeHtml(this.t('exif.artist'))}</strong> ${this.escapeHtml(exif.artist)}</div>` : ''}
-            ${exif.software ? `<div>💻 <strong>${this.escapeHtml(this.t('exif.software'))}</strong> ${this.escapeHtml(exif.software)}</div>` : ''}
-            ${exif.description ? `<div>📝 <strong>${this.escapeHtml(this.t('exif.description'))}</strong> ${this.escapeHtml(exif.description)}</div>` : ''}
-          </div>
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('meta.video_title'))}</div>
+          ${vid.resolution ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.resolution'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(vid.resolution)} ${vid.aspect_ratio ? `(${this.escapeHtml(vid.aspect_ratio)})` : ''}</span>
+            </div>
+          ` : ''}
+          ${vid.duration_formatted ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.duration'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(vid.duration_formatted)}</span>
+            </div>
+          ` : ''}
+          ${vid.codec ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.codec'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(vid.codec)}</span>
+            </div>
+          ` : ''}
         </div>
       `;
     }
 
-    if (exif.gps) {
-      const currentFilePath = this.state.filteredFiles[this.state.lightboxIndex]?.path;
+    // C. Audio Properties
+    if (specific.audio) {
+      const aud = specific.audio;
       html += `
-        <div class="exif-group" style="margin-top:0.5rem;">
-          <div class="exif-label">${this.escapeHtml(this.t('exif.gps_title'))}</div>
-          <div class="exif-value" style="font-size:0.85rem;color:var(--text-muted); margin-bottom:6px;">
-            Lat: ${exif.gps.lat}°, Lng: ${exif.gps.lng}°
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('meta.audio_title'))}</div>
+          ${aud.duration_formatted ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.duration'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.duration_formatted)}</span>
+            </div>
+          ` : ''}
+          ${aud.channels ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.channels'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.channels)}</span>
+            </div>
+          ` : ''}
+          ${aud.sample_rate ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.sample_rate'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.sample_rate)}</span>
+            </div>
+          ` : ''}
+          ${aud.bitrate ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.bitrate'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.bitrate)}</span>
+            </div>
+          ` : ''}
+          ${aud.title ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.title_tag'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.title)}</span>
+            </div>
+          ` : ''}
+          ${aud.artist ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.artist_tag'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.artist)}</span>
+            </div>
+          ` : ''}
+          ${aud.album ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.album_tag'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(aud.album)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // D. Document Properties
+    if (specific.doc) {
+      const doc = specific.doc;
+      html += `
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('meta.doc_title'))}</div>
+          ${doc.pages ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.pages'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.pages)}</span>
+            </div>
+          ` : ''}
+          ${doc.pdf_version ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.pdf_version'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.pdf_version)}</span>
+            </div>
+          ` : ''}
+          ${doc.author ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.author'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.author)}</span>
+            </div>
+          ` : ''}
+          ${doc.creator ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.creator'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.creator)}</span>
+            </div>
+          ` : ''}
+          ${doc.lines_count ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.lines'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.lines_count)}</span>
+            </div>
+          ` : ''}
+          ${doc.words_count ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.words'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.words_count)}</span>
+            </div>
+          ` : ''}
+          ${doc.encoding ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.encoding'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(doc.encoding)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // E. Archive Properties
+    if (specific.archive) {
+      const arch = specific.archive;
+      html += `
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('meta.archive_title'))}</div>
+          ${arch.files_count !== null ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.files_count'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(arch.files_count)}</span>
+            </div>
+          ` : ''}
+          ${arch.uncompressed_size_formatted ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.uncompressed_size'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(arch.uncompressed_size_formatted)}</span>
+            </div>
+          ` : ''}
+          ${arch.compression_ratio ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.compression_ratio'))}</span>
+              <span class="meta-row-value" style="color:#4ade80;">${this.escapeHtml(arch.compression_ratio)}</span>
+            </div>
+          ` : ''}
+          ${(arch.files_sample && arch.files_sample.length > 0) ? `
+            <div style="margin-top:4px;">
+              <span class="meta-row-label">${this.escapeHtml(this.t('meta.preview_files'))}</span>
+              <div class="meta-sample-list">
+                ${arch.files_sample.map(f => `
+                  <div class="meta-sample-item">
+                    <span>${f.is_dir ? '📁' : '📄'} ${this.escapeHtml(f.name)}</span>
+                    <span>${this.escapeHtml(f.size_formatted)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // 3. EXIF Metadata Section (If image with camera / exposure data)
+    if (exif && (exif.camera || exif.datetime || exif.fnumber || exif.shutter_speed || exif.iso || exif.focal || exif.artist || exif.software)) {
+      html += `
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('exif.title'))}</div>
+          ${exif.camera ? `
+            <div class="exif-camera-box">📷 ${this.escapeHtml(exif.camera)}</div>
+          ` : ''}
+          ${exif.datetime ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('exif.datetime'))}</span>
+              <span class="meta-row-value">📅 ${this.escapeHtml(exif.datetime)}</span>
+            </div>
+          ` : ''}
+          ${(exif.fnumber || exif.shutter_speed || exif.iso || exif.focal) ? `
+            <div class="exif-grid">
+              ${exif.fnumber ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.aperture'))}</span><div class="exif-value">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
+              ${exif.shutter_speed ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.shutter'))}</span><div class="exif-value">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
+              ${exif.iso ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.iso'))}</span><div class="exif-value">${this.escapeHtml(exif.iso)}</div></div>` : ''}
+              ${exif.focal ? `<div><span class="exif-label">${this.escapeHtml(this.t('exif.focal'))}</span><div class="exif-value">${this.escapeHtml(exif.focal)}</div></div>` : ''}
+            </div>
+          ` : ''}
+          ${exif.artist ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('exif.artist'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(exif.artist)}</span>
+            </div>
+          ` : ''}
+          ${exif.software ? `
+            <div class="meta-row">
+              <span class="meta-row-label">${this.escapeHtml(this.t('exif.software'))}</span>
+              <span class="meta-row-value">${this.escapeHtml(exif.software)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // 4. GPS Geolocation & Map Section
+    if (exif && exif.gps) {
+      html += `
+        <div class="meta-section-card">
+          <div class="meta-section-title">${this.escapeHtml(this.t('exif.gps_title'))}</div>
+          <div class="meta-row">
+            <span class="meta-row-label">Coordonnées</span>
+            <span class="meta-row-value" style="font-family:monospace; font-size:0.775rem;">${exif.gps.lat}°, ${exif.gps.lng}°</span>
           </div>
           <div id="exifMiniMap" class="exif-mini-map"></div>
-          <button type="button" class="btn-toggle" style="width:100%; justify-content:center; margin-top:6px;" onclick="window.galleryApp.openMapModal('${this.escapeHtml(currentFilePath || '')}')">
+          <button type="button" class="btn-toggle" style="width:100%; justify-content:center; margin-top:4px;" onclick="window.galleryApp.openMapModal('${this.escapeHtml(file.path || '')}')">
             ${this.escapeHtml(this.t('exif.open_map'))}
           </button>
         </div>
       `;
     }
 
-    this.el.exifPanelBody.innerHTML = html || `<p style="color:var(--text-muted);font-style:italic;">${this.escapeHtml(this.t('exif.none'))}</p>`;
+    this.el.exifPanelBody.innerHTML = html;
 
     if (exif && exif.gps && typeof L !== 'undefined') {
       setTimeout(() => {
@@ -2422,7 +2720,43 @@ class SimpleGallery {
 
     const onMouseDown = (e) => {
       if (e.button !== 0) return;
-      if (e.target.closest('.polaroid-card, .grid-card, .folder-card, button, input, select, textarea, a, .admin-modal, .lightbox-modal, .search-modal-card, .selection-toolbar')) {
+
+      const ignoredSelector = [
+        '#pip-player-widget',
+        '.pip-header',
+        '.pip-media-content',
+        '.pip-info-panel',
+        '#mapModal',
+        '.map-modal-card',
+        '.leaflet-container',
+        '.leaflet-pane',
+        '.leaflet-control',
+        '.polaroid-card',
+        '.grid-card',
+        '.folder-card',
+        'button',
+        'input',
+        'select',
+        'textarea',
+        'a',
+        'header',
+        'footer',
+        'nav',
+        '.app-header',
+        '.app-footer',
+        '.admin-modal',
+        '.lightbox-modal',
+        '.search-modal-card',
+        '.selection-toolbar',
+        '.cookie-consent-banner',
+        '.cookie-settings-modal',
+        '.folder-settings-modal',
+        '.image-editor-modal',
+        '.save-choice-modal',
+        '.modal'
+      ].join(', ');
+
+      if (e.target.closest(ignoredSelector)) {
         return;
       }
 
@@ -2967,6 +3301,16 @@ class SimpleGallery {
   }
 
   initPipPlayer() {
+    if (this.el.pipInfoBtn && this.el.pipInfoPanel) {
+      this.el.pipInfoBtn.addEventListener('click', () => {
+        const isVisible = this.el.pipInfoPanel.style.display === 'flex';
+        this.el.pipInfoPanel.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible && this.state.currentPipFile) {
+          this.renderPipMetadata(this.state.currentPipFile);
+        }
+      });
+    }
+
     if (this.el.pipMinimizeBtn && this.el.pipWidget) {
       this.el.pipMinimizeBtn.addEventListener('click', () => {
         this.el.pipWidget.classList.toggle('minimized');
@@ -2983,6 +3327,7 @@ class SimpleGallery {
       let startX, startY, startLeft, startTop;
       this.el.pipHeader.addEventListener('mousedown', (e) => {
         if (e.target.tagName === 'BUTTON') return;
+        e.stopPropagation();
         isDraggingPip = true;
         startX = e.clientX;
         startY = e.clientY;
@@ -3005,11 +3350,106 @@ class SimpleGallery {
     }
   }
 
+  async renderPipMetadata(file) {
+    if (!this.el.pipInfoPanel || !file) return;
+
+    if (!this.state.metadataCache) {
+      this.state.metadataCache = {};
+    }
+
+    const renderHtml = (meta) => {
+      const general = meta.general || {
+        filename: file.name,
+        filesize_formatted: file.size_formatted,
+        mtime_formatted: new Date(file.mtime * 1000).toLocaleString(),
+        category: file.category,
+        extension: file.extension
+      };
+      const specific = meta.specific || {};
+
+      let html = `
+        <div class="meta-section-card">
+          <div class="meta-section-title">
+            <span>${this.escapeHtml(this.t('meta.general_title'))}</span>
+            <span class="meta-badge">${this.escapeHtml(general.extension || file.extension)}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">${this.escapeHtml(this.t('meta.filename'))}</span>
+            <span class="meta-row-value">${this.escapeHtml(general.filename || file.name)}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-row-label">${this.escapeHtml(this.t('meta.filesize'))}</span>
+            <span class="meta-row-value">${this.escapeHtml(general.filesize_formatted || file.size_formatted)}</span>
+          </div>
+        </div>
+      `;
+
+      if (specific.video) {
+        const vid = specific.video;
+        html += `
+          <div class="meta-section-card">
+            <div class="meta-section-title">${this.escapeHtml(this.t('meta.video_title'))}</div>
+            ${vid.resolution ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.resolution'))}</span><span class="meta-row-value">${this.escapeHtml(vid.resolution)}</span></div>` : ''}
+            ${vid.duration_formatted ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.duration'))}</span><span class="meta-row-value">${this.escapeHtml(vid.duration_formatted)}</span></div>` : ''}
+            ${vid.codec ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.codec'))}</span><span class="meta-row-value">${this.escapeHtml(vid.codec)}</span></div>` : ''}
+          </div>
+        `;
+      }
+
+      if (specific.audio) {
+        const aud = specific.audio;
+        html += `
+          <div class="meta-section-card">
+            <div class="meta-section-title">${this.escapeHtml(this.t('meta.audio_title'))}</div>
+            ${aud.duration_formatted ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.duration'))}</span><span class="meta-row-value">${this.escapeHtml(aud.duration_formatted)}</span></div>` : ''}
+            ${aud.channels ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.channels'))}</span><span class="meta-row-value">${this.escapeHtml(aud.channels)}</span></div>` : ''}
+            ${aud.sample_rate ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.sample_rate'))}</span><span class="meta-row-value">${this.escapeHtml(aud.sample_rate)}</span></div>` : ''}
+            ${aud.title ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.title_tag'))}</span><span class="meta-row-value">${this.escapeHtml(aud.title)}</span></div>` : ''}
+            ${aud.artist ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.artist_tag'))}</span><span class="meta-row-value">${this.escapeHtml(aud.artist)}</span></div>` : ''}
+            ${aud.album ? `<div class="meta-row"><span class="meta-row-label">${this.escapeHtml(this.t('meta.album_tag'))}</span><span class="meta-row-value">${this.escapeHtml(aud.album)}</span></div>` : ''}
+          </div>
+        `;
+      }
+
+      this.el.pipInfoPanel.innerHTML = html;
+    };
+
+    if (this.state.metadataCache[file.path]) {
+      renderHtml(this.state.metadataCache[file.path]);
+    } else {
+      renderHtml({
+        general: {
+          filename: file.name,
+          filesize_formatted: file.size_formatted,
+          mtime_formatted: new Date(file.mtime * 1000).toLocaleString(),
+          category: file.category,
+          extension: file.extension
+        },
+        specific: {}
+      });
+
+      try {
+        const res = await fetch(`api.php?action=get_metadata&file=${encodeURIComponent(file.path)}`);
+        const json = await res.json();
+        if (json.success && json.metadata) {
+          this.state.metadataCache[file.path] = json.metadata;
+          if (this.state.currentPipFile?.path === file.path) {
+            renderHtml(json.metadata);
+          }
+        }
+      } catch (err) {
+        console.warn('PiP metadata fetch failed:', err);
+      }
+    }
+  }
+
   openPipPlayer(file) {
     if (!this.el.pipWidget || !this.el.pipMediaContainer) return;
+    this.state.currentPipFile = file;
     if (this.el.pipTitle) this.el.pipTitle.innerText = file.comment || file.name;
     this.el.pipWidget.style.display = 'flex';
     this.el.pipWidget.classList.remove('minimized');
+    if (this.el.pipInfoPanel) this.el.pipInfoPanel.style.display = 'none';
 
     const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item !== false : true);
     const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
@@ -3025,6 +3465,8 @@ class SimpleGallery {
     if (!this.el.pipWidget) return;
     this.el.pipWidget.style.display = 'none';
     if (this.el.pipMediaContainer) this.el.pipMediaContainer.innerHTML = '';
+    if (this.el.pipInfoPanel) this.el.pipInfoPanel.style.display = 'none';
+    this.state.currentPipFile = null;
   }
 
   openSearchModal() {

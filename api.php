@@ -58,6 +58,31 @@ if ($action === 'get_locale') {
     exit;
 }
 
+if ($action === 'get_metadata') {
+    $file_param = $_GET['file'] ?? $raw_body['file'] ?? '';
+    $file_full = sanitize_file_path($file_param, $real_base_dir);
+    if ($file_full === null || !is_file($file_full)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Fichier introuvable ou accès refusé.'
+        ]);
+        exit;
+    }
+
+    $ext = strtolower(pathinfo($file_full, PATHINFO_EXTENSION));
+    $category = get_media_category($ext, $media_types);
+    $rel_path = get_relative_path($file_full, $real_base_dir);
+
+    $meta = get_file_unified_metadata($file_full, $rel_path, $category, $ext);
+
+    echo json_encode([
+        'success'  => true,
+        'metadata' => $meta
+    ]);
+    exit;
+}
+
 if ($action === 'login') {
     if (!check_rate_limit('admin_login')) {
         http_response_code(429);

@@ -18,6 +18,22 @@ function find_binary_executable($binary_names, array $extra_paths = []): ?string
     $names = is_array($binary_names) ? $binary_names : [$binary_names];
 
     foreach ($names as $name) {
+        if (($name === 'php' || $name === 'php.exe') && defined('PHP_BINARY') && PHP_BINARY && file_exists(PHP_BINARY)) {
+            return PHP_BINARY;
+        }
+
+        $php_dir = defined('PHP_BINARY') && PHP_BINARY ? dirname(PHP_BINARY) : null;
+        $win_paths = [
+            'C:/php/' . $name . '.exe',
+            'C:/php/' . $name,
+            'C:/xampp/php/' . $name . '.exe',
+            'C:/xampp/php/' . $name
+        ];
+        if ($php_dir) {
+            $win_paths[] = $php_dir . '/' . $name . '.exe';
+            $win_paths[] = $php_dir . '/' . $name;
+        }
+
         $common_paths = array_merge(
             [
                 '/usr/bin/' . $name,
@@ -26,13 +42,14 @@ function find_binary_executable($binary_names, array $extra_paths = []): ?string
                 '/opt/homebrew/bin/' . $name,
                 '/snap/bin/' . $name
             ],
+            $win_paths,
             array_map(function($p) use ($name) {
                 return rtrim($p, '/') . '/' . $name;
             }, $extra_paths)
         );
 
         foreach ($common_paths as $path) {
-            if (file_exists($path) && is_executable($path)) {
+            if (file_exists($path) && (is_executable($path) || (defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows' && is_file($path)))) {
                 return $path;
             }
         }

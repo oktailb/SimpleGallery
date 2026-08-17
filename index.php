@@ -301,7 +301,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <!-- Lightbox EXIF Drawer Panel -->
     <div id="lightboxExifPanel" class="lightbox-exif-panel" style="display: none;">
       <div class="exif-panel-header">
-        <h4 data-i18n="lightbox.exif_panel_title">📷 Métadonnées EXIF</h4>
+        <h4 data-i18n="lightbox.exif_panel_title">ℹ️ Propriétés du fichier</h4>
         <button id="closeExifPanelBtn" class="lightbox-btn" style="padding:0.2rem 0.5rem;" title="Fermer" data-i18n-title="common.close">✕</button>
       </div>
       <div id="exifPanelBody" class="exif-panel-body"></div>
@@ -526,12 +526,16 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <div id="pipHeader" class="pip-header">
       <span id="pipTitle" class="pip-title" data-i18n="pip.title">Lecture multimédia...</span>
       <div class="pip-controls">
+        <button id="pipInfoBtn" class="pip-btn" title="Informations &amp; Propriétés (I)" data-i18n-title="lightbox.metadata_btn">ℹ️</button>
         <button id="pipMinimizeBtn" class="pip-btn" title="Réduire / Agrandir" data-i18n-title="pip.minimize">🗕</button>
         <button id="pipCloseBtn" class="pip-btn" title="Fermer le lecteur" data-i18n-title="pip.close">✕</button>
       </div>
     </div>
     <div id="pipMediaContainer" class="pip-media-content">
       <!-- Dynamically inserted audio or video tag -->
+    </div>
+    <div id="pipInfoPanel" class="pip-info-panel" style="display: none;">
+      <!-- Dynamically filled with media properties -->
     </div>
   </div>
 
