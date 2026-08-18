@@ -83,6 +83,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="js/viewers/AudioViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/AudioViewerPlugin.js'); ?>" defer></script>
   <script src="js/viewers/DocViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/DocViewerPlugin.js'); ?>" defer></script>
   <script src="js/viewers/ArchiveViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/ArchiveViewerPlugin.js'); ?>" defer></script>
+  <script src="js/viewers/VideoWallViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/VideoWallViewerPlugin.js'); ?>" defer></script>
 
   <!-- Core Client Application -->
   <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>

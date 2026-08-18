@@ -88,7 +88,8 @@ $media_types = [
     'video'   => ['mp4', 'webm', 'ogv', 'mov', 'mkv', 'avi'],
     'audio'   => ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'],
     'doc'     => ['pdf', 'txt', 'md', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
-    'archive' => ['zip', 'tar', 'gz', 'bz2', 'rar', '7z']
+    'archive' => ['zip', 'tar', 'gz', 'bz2', 'rar', '7z'],
+    'videowall' => ['vwall', 'videowall']
 ];
 
 // Admin Authentication Configuration (loaded from .admin_password_hash file or legacy string)
