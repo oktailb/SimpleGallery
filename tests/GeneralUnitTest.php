@@ -449,6 +449,21 @@ class GeneralUnitTestSuite {
         $this->assert("Parseur MP4 pur PHP extrait la durée (15s)", ($parsed_mp4['duration'] ?? 0) == 15);
         $this->assert("Parseur MP4 pur PHP extrait la résolution (1920x1080)", ($parsed_mp4['width'] ?? 0) === 1920 && ($parsed_mp4['height'] ?? 0) === 1080);
 
+        // 6. Test Pure PHP ZIP Parser (EOCD and Central Directory Records)
+        $zip_pure_test = $this->test_dir . '/test_pure.zip';
+        $z = new ZipArchive();
+        if ($z->open($zip_pure_test, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+            $z->addFromString('doc1.txt', 'Content for first document');
+            $z->addFromString('images/pic.png', 'Fake PNG binary payload data');
+            $z->close();
+        }
+
+        $pure_zip_res = parse_zip_pure_php($zip_pure_test);
+        $this->assert("Parseur ZIP pur PHP (EOCD) détecte les 2 fichiers", ($pure_zip_res['files_count'] ?? 0) === 2);
+        $this->assert("Parseur ZIP pur PHP calcule la taille décompressée", ($pure_zip_res['uncompressed_size'] ?? 0) > 0);
+        $this->assert("Parseur ZIP pur PHP extrait l'échantillon de fichiers", count($pure_zip_res['files_sample'] ?? []) === 2);
+
+        if (file_exists($zip_pure_test)) @unlink($zip_pure_test);
         if (file_exists($mp4_test)) @unlink($mp4_test);
         if (file_exists($doc_path)) @unlink($doc_path);
     }
