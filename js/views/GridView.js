@@ -10,6 +10,7 @@
     icon: '🔲',
     nameKey: 'view.grid',
     containerClass: 'modern-grid',
+    cssPath: 'css/views/grid.css',
 
     /**
      * Renders a single item for the Grid layout

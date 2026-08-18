@@ -10,6 +10,7 @@
     icon: '📑',
     nameKey: 'view.list',
     containerClass: 'list-table-view',
+    cssPath: 'css/views/list.css',
 
     /**
      * Optional custom container wrapper for list headers and rows

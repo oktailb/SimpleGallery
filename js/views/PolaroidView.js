@@ -10,6 +10,7 @@
     icon: '🖼️',
     nameKey: 'view.polaroid',
     containerClass: 'polaroid-grid',
+    cssPath: 'css/views/polaroid.css',
 
     /**
      * Renders a single item for the Polaroid layout

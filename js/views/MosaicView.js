@@ -10,6 +10,7 @@
     icon: '🧱',
     nameKey: 'view.mosaic',
     containerClass: 'mosaic-grid',
+    cssPath: 'css/views/mosaic.css',
 
     /**
      * Renders a single item for the Mosaic layout
