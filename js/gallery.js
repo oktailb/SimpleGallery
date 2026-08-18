@@ -44,7 +44,11 @@ class SimpleGallery {
         can_download_archive: true,
         can_download_item: true
       },
-      availableArchives: {}
+      availableArchives: {},
+      currentLocale: 'fr',
+      translations: {},
+      translationsCache: {},
+      availableLocales: {}
     };
 
     // Zoom, Pan & Rotate Explorer State
@@ -80,6 +84,7 @@ class SimpleGallery {
 
     this.initElements();
     this.initI18n();
+    this.updateViewSwitcherUI();
     this.bindEvents();
     this.initPipPlayer();
     this.initAdvancedSearch();
@@ -103,8 +108,11 @@ class SimpleGallery {
       sortSelect: document.getElementById('sortSelect'),
       sortOrderBtn: document.getElementById('sortOrderBtn'),
       sortOrderIcon: document.getElementById('sortOrderIcon'),
-      viewPolaroidBtn: document.getElementById('viewPolaroidBtn'),
-      viewGridBtn: document.getElementById('viewGridBtn'),
+      viewSelectorContainer: document.getElementById('viewSelectorContainer'),
+      viewSelectorBtn: document.getElementById('viewSelectorBtn'),
+      currentViewIcon: document.getElementById('currentViewIcon'),
+      currentViewLabel: document.getElementById('currentViewLabel'),
+      viewDropdownMenu: document.getElementById('viewDropdownMenu'),
       filterPills: document.getElementById('filterPills'),
       galleryStats: document.getElementById('galleryStats'),
       loadingState: document.getElementById('loadingState'),
@@ -334,8 +342,30 @@ class SimpleGallery {
       this.el.sortOrderBtn.addEventListener('click', () => this.toggleSortOrder());
     }
 
-    this.el.viewPolaroidBtn.addEventListener('click', () => this.setViewMode('polaroid'));
-    this.el.viewGridBtn.addEventListener('click', () => this.setViewMode('grid'));
+    if (this.el.viewSelectorBtn) {
+      this.el.viewSelectorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleViewDropdown();
+      });
+    }
+
+    const viewOptionBtns = document.querySelectorAll('.view-option-btn');
+    viewOptionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mode = btn.dataset.viewMode;
+        if (mode) {
+          this.setViewMode(mode);
+          this.closeViewDropdown();
+        }
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (this.el.viewSelectorContainer && !this.el.viewSelectorContainer.contains(e.target)) {
+        this.closeViewDropdown();
+      }
+    });
 
     this.el.filterPills.addEventListener('click', (e) => {
       const pill = e.target.closest('.pill-btn');
@@ -960,13 +990,51 @@ class SimpleGallery {
   }
 
   setViewMode(mode) {
-    this.state.viewMode = mode;
+    const plugin = (window.GalleryViewRegistry && window.GalleryViewRegistry.get(mode)) ? window.GalleryViewRegistry.get(mode) : null;
+    const targetMode = plugin ? plugin.id : mode;
+    this.state.viewMode = targetMode;
     if (this.isPreferencesStorageAllowed()) {
-      localStorage.setItem('gallery_view_mode', mode);
+      localStorage.setItem('gallery_view_mode', targetMode);
     }
-    this.el.viewPolaroidBtn.classList.toggle('active', mode === 'polaroid');
-    this.el.viewGridBtn.classList.toggle('active', mode === 'grid');
+    this.updateViewSwitcherUI();
     this.renderMedia();
+  }
+
+  updateViewSwitcherUI() {
+    const viewPlugin = (window.GalleryViewRegistry && window.GalleryViewRegistry.get(this.state.viewMode))
+      || { id: this.state.viewMode, icon: '🖼️', nameKey: 'view.' + this.state.viewMode };
+
+    if (this.el.currentViewIcon) {
+      this.el.currentViewIcon.textContent = viewPlugin.icon || '🖼️';
+    }
+    if (this.el.currentViewLabel) {
+      this.el.currentViewLabel.textContent = this.t(viewPlugin.nameKey || ('view.' + viewPlugin.id));
+      this.el.currentViewLabel.setAttribute('data-i18n', viewPlugin.nameKey || ('view.' + viewPlugin.id));
+    }
+
+    const container = this.el.viewDropdownMenu || document.getElementById('viewDropdownMenu');
+    if (container) {
+      container.querySelectorAll('[data-view-mode]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.viewMode === this.state.viewMode);
+      });
+    }
+  }
+
+  toggleViewDropdown() {
+    if (!this.el.viewDropdownMenu) return;
+    const isVisible = this.el.viewDropdownMenu.style.display === 'flex';
+    if (isVisible) {
+      this.closeViewDropdown();
+    } else {
+      this.el.viewDropdownMenu.style.display = 'flex';
+      if (this.el.langDropdownMenu) this.closeLangDropdown();
+    }
+  }
+
+  closeViewDropdown() {
+    if (this.el.viewDropdownMenu) {
+      this.el.viewDropdownMenu.style.display = 'none';
+    }
   }
 
   toggleSortOrder() {
@@ -1313,7 +1381,7 @@ class SimpleGallery {
     }
 
     this.el.emptyState.style.display = 'none';
-    this.el.mediaGrid.style.display = 'grid';
+    this.el.mediaGrid.style.display = '';
 
     const isDraggable = this.state.isAdmin ? 'true' : 'false';
     const handleClass = this.state.isAdmin ? 'drag-handle' : '';
@@ -1326,112 +1394,30 @@ class SimpleGallery {
       });
     }
 
-    if (this.state.viewMode === 'polaroid') {
-      this.el.mediaGrid.className = 'polaroid-grid';
-      this.el.mediaGrid.innerHTML = list.map((file, idx) => {
-        let frameClass = 'polaroid-card';
-        if (file.category === 'video') frameClass += ' film-strip-card';
-        if (file.category === 'audio') frameClass += ' audio-cassette-card';
-        if (['doc', 'archive', 'other'].includes(file.category)) frameClass += ' doc-file-card';
+    const context = {
+      t: this.t.bind(this),
+      escapeHtml: this.escapeHtml.bind(this),
+      isAdmin: this.state.isAdmin,
+      userRights: this.state.userRights,
+      favorites: this.state.favorites,
+      smartLocationsMap: smartLocationsMap,
+      isDraggable: isDraggable,
+      handleClass: handleClass
+    };
 
-        let overlayHtml = '';
-        if (file.category === 'video') {
-          overlayHtml = '<div class="video-play-overlay">▶</div>';
-        } else if (file.category === 'audio') {
-          overlayHtml = '<div class="audio-play-overlay">🎵</div>';
-        }
+    const viewPlugin = (window.GalleryViewRegistry && window.GalleryViewRegistry.get(this.state.viewMode))
+      || (window.GalleryViewRegistry && window.GalleryViewRegistry.get('polaroid'));
 
-        let gpsBadge = '';
-        if (file.exif && file.exif.gps) {
-          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate'))}">📍 GPS</button>`;
-        } else if (smartLocationsMap.has(file.path)) {
-          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
-        }
-
-        const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
-        const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
-        const isFav = this.state.favorites.includes(file.path);
-
-        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="${this.escapeHtml(this.t('card.delete_item'))}">🗑️</button>` : '';
-        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${this.escapeHtml(isFav ? this.t('lightbox.favorite_remove') : this.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="${this.escapeHtml(this.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>` : '';
-
-        let mediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
-
-        return `
-          <div class="${frameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
-            ${deleteBtnHtml}
-            <div class="polaroid-img-wrapper">
-              ${mediaPreviewHtml}
-              ${favBtnHtml}
-              ${pipCardBtn}
-              ${overlayHtml}
-            </div>
-            <div class="polaroid-caption">
-              <span>${this.escapeHtml(file.comment || file.name)}</span>
-              ${canComment ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="${this.escapeHtml(this.t('card.edit_comment'))}">✏️</button>` : ''}
-            </div>
-            <div class="polaroid-subcaption">
-              <span>${file.size_formatted}</span>
-              ${gpsBadge}
-            </div>
-          </div>
-        `;
-      }).join('');
-    } else {
-      this.el.mediaGrid.className = 'modern-grid';
-      this.el.mediaGrid.innerHTML = list.map((file, idx) => {
-        let gridFrameClass = 'grid-card';
-        if (file.category === 'video') gridFrameClass += ' film-strip-grid-card';
-        if (file.category === 'audio') gridFrameClass += ' audio-cassette-grid-card';
-        if (['doc', 'archive', 'other'].includes(file.category)) gridFrameClass += ' doc-file-grid-card';
-
-        let overlayHtml = '';
-        if (file.category === 'video') {
-          overlayHtml = '<div class="video-play-overlay">▶</div>';
-        } else if (file.category === 'audio') {
-          overlayHtml = '<div class="audio-play-overlay">🎵</div>';
-        }
-
-        let gpsBadge = '';
-        if (file.exif && file.exif.gps) {
-          gpsBadge = `<button type="button" class="gps-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate'))}">📍 GPS</button>`;
-        } else if (smartLocationsMap.has(file.path)) {
-          gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${this.escapeHtml(file.path)}" title="${this.escapeHtml(this.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
-        }
-
-        const canDelete = this.state.userRights ? this.state.userRights.can_delete : this.state.isAdmin;
-        const canComment = this.state.userRights ? this.state.userRights.can_comment : this.state.isAdmin;
-        const isFav = this.state.favorites.includes(file.path);
-
-        const deleteBtnHtml = canDelete ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${this.escapeHtml(file.name)}" data-type="file" title="${this.escapeHtml(this.t('card.delete_item'))}">🗑️</button>` : '';
-        const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${this.escapeHtml(isFav ? this.t('lightbox.favorite_remove') : this.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-        const pipCardBtn = ['video', 'audio'].includes(file.category) ? `<button class="pip-card-btn" data-index="${idx}" title="${this.escapeHtml(this.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>` : '';
-
-        let gridMediaPreviewHtml = `<img src="${file.thumb_url}" alt="${this.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
-
-        return `
-          <div class="${gridFrameClass} ${handleClass}" data-index="${idx}" draggable="${isDraggable}">
-            ${deleteBtnHtml}
-            <div class="grid-img-wrapper">
-              ${gridMediaPreviewHtml}
-              ${favBtnHtml}
-              ${pipCardBtn}
-              ${overlayHtml}
-            </div>
-            <div class="grid-info">
-              <div class="grid-title">
-                <span>${this.escapeHtml(file.comment || file.name)}</span>
-                ${this.state.isAdmin ? `<button class="edit-media-comment-btn" data-filename="${this.escapeHtml(file.name)}" data-comment="${this.escapeHtml(file.comment || '')}" title="Edit legend (.comment)">✏️</button>` : ''}
-              </div>
-              <div class="grid-subinfo">
-                <span>${file.extension.toUpperCase()} • ${file.size_formatted}</span>
-                ${gpsBadge}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
+    if (viewPlugin) {
+      this.el.mediaGrid.className = viewPlugin.containerClass || 'polaroid-grid';
+      if (typeof viewPlugin.renderContainer === 'function') {
+        this.el.mediaGrid.innerHTML = viewPlugin.renderContainer(list, context);
+      } else if (typeof viewPlugin.renderItem === 'function') {
+        this.el.mediaGrid.innerHTML = list.map((file, idx) => viewPlugin.renderItem(file, idx, context)).join('');
+      }
+      if (typeof viewPlugin.onMounted === 'function') {
+        viewPlugin.onMounted(this.el.mediaGrid, context);
+      }
     }
 
     this.el.mediaGrid.querySelectorAll('.gps-badge[data-path]').forEach(btn => {
@@ -4863,7 +4849,7 @@ class SimpleGallery {
   }
 
   t(key, replacements = {}) {
-    let str = this.state.translations[key] || key;
+    let str = (this.state && this.state.translations && this.state.translations[key]) ? this.state.translations[key] : key;
     if (typeof str === 'string' && replacements && typeof replacements === 'object') {
       Object.entries(replacements).forEach(([k, val]) => {
         str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), val);
@@ -4919,6 +4905,7 @@ class SimpleGallery {
 
     // Apply translations across DOM
     this.applyTranslations();
+    this.updateViewSwitcherUI();
 
     // Re-render folder overrides (description banner, etc.)
     if (this.state.overrides) {

@@ -69,6 +69,12 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     }
   </style>
 
+  <!-- Gallery View Plugins & Core Client Application -->
+  <script src="js/views/GalleryViewRegistry.js?v=<?php echo filemtime(__DIR__ . '/js/views/GalleryViewRegistry.js'); ?>" defer></script>
+  <script src="js/views/PolaroidView.js?v=<?php echo filemtime(__DIR__ . '/js/views/PolaroidView.js'); ?>" defer></script>
+  <script src="js/views/GridView.js?v=<?php echo filemtime(__DIR__ . '/js/views/GridView.js'); ?>" defer></script>
+  <script src="js/views/MosaicView.js?v=<?php echo filemtime(__DIR__ . '/js/views/MosaicView.js'); ?>" defer></script>
+  <script src="js/views/ListView.js?v=<?php echo filemtime(__DIR__ . '/js/views/ListView.js'); ?>" defer></script>
   <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>
 
 </head>
@@ -130,13 +136,27 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
             </div>
           </div>
 
-          <div class="control-btn-group">
-            <button id="viewPolaroidBtn" class="btn-toggle active" title="Vue Polaroid" data-i18n-title="view.polaroid">
-              <span>🖼️</span> <span data-i18n="view.polaroid">Polaroid</span>
+          <!-- View Mode Selector Dropdown -->
+          <div class="view-selector-container" id="viewSelectorContainer">
+            <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="Mode d'affichage" data-i18n-title="view.switch_mode">
+              <span id="currentViewIcon">🖼️</span>
+              <span id="currentViewLabel" data-i18n="view.polaroid">Polaroid</span>
+              <span class="view-dropdown-arrow">▾</span>
             </button>
-            <button id="viewGridBtn" class="btn-toggle" title="Vue Grille" data-i18n-title="view.grid">
-              <span>🔲</span> <span data-i18n="view.grid">Grille</span>
-            </button>
+            <div id="viewDropdownMenu" class="view-dropdown-menu" style="display: none;">
+              <button type="button" class="view-option-btn active" data-view-mode="polaroid">
+                <span>🖼️</span> <span data-i18n="view.polaroid">Polaroid</span>
+              </button>
+              <button type="button" class="view-option-btn" data-view-mode="grid">
+                <span>🔲</span> <span data-i18n="view.grid">Grille</span>
+              </button>
+              <button type="button" class="view-option-btn" data-view-mode="mosaic">
+                <span>🧱</span> <span data-i18n="view.mosaic">Mosaïque</span>
+              </button>
+              <button type="button" class="view-option-btn" data-view-mode="list">
+                <span>📑</span> <span data-i18n="view.list">Liste</span>
+              </button>
+            </div>
           </div>
 
           <button id="createFolderBtn" class="btn-toggle" title="Créer un nouveau sous-dossier" data-i18n-title="nav.create_folder" style="display: none;">
@@ -972,7 +992,5 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
       </div>
     </div>
   </div>
-
-  <script src="js/gallery.js"></script>
 </body>
 </html>
