@@ -69,12 +69,22 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     }
   </style>
 
-  <!-- Gallery View Plugins & Core Client Application -->
+  <!-- Gallery View Plugins (Explorer Layouts) -->
   <script src="js/views/GalleryViewRegistry.js?v=<?php echo filemtime(__DIR__ . '/js/views/GalleryViewRegistry.js'); ?>" defer></script>
   <script src="js/views/PolaroidView.js?v=<?php echo filemtime(__DIR__ . '/js/views/PolaroidView.js'); ?>" defer></script>
   <script src="js/views/GridView.js?v=<?php echo filemtime(__DIR__ . '/js/views/GridView.js'); ?>" defer></script>
   <script src="js/views/MosaicView.js?v=<?php echo filemtime(__DIR__ . '/js/views/MosaicView.js'); ?>" defer></script>
   <script src="js/views/ListView.js?v=<?php echo filemtime(__DIR__ . '/js/views/ListView.js'); ?>" defer></script>
+
+  <!-- Media Viewer Plugins (File Viewers: Lightbox, PiP, Docs, Archives) -->
+  <script src="js/viewers/MediaViewerRegistry.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/MediaViewerRegistry.js'); ?>" defer></script>
+  <script src="js/viewers/ImageViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/ImageViewerPlugin.js'); ?>" defer></script>
+  <script src="js/viewers/VideoViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/VideoViewerPlugin.js'); ?>" defer></script>
+  <script src="js/viewers/AudioViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/AudioViewerPlugin.js'); ?>" defer></script>
+  <script src="js/viewers/DocViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/DocViewerPlugin.js'); ?>" defer></script>
+  <script src="js/viewers/ArchiveViewerPlugin.js?v=<?php echo filemtime(__DIR__ . '/js/viewers/ArchiveViewerPlugin.js'); ?>" defer></script>
+
+  <!-- Core Client Application -->
   <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>
 
 </head>

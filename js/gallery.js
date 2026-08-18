@@ -1595,25 +1595,32 @@ class SimpleGallery {
         if (this.state.selectedPaths.size > 0) {
           if (!this.state.selectedPaths.has(file.path)) {
             this.clearSelection();
-            if (file && (file.category === 'audio' || file.category === 'video')) {
-              this.openPipPlayer(file);
-            } else {
-              this.openLightbox(index);
-            }
+            this.openMedia(file, index);
           }
           return;
         }
 
-        if (file && (file.category === 'audio' || file.category === 'video')) {
-          this.openPipPlayer(file);
-        } else {
-          this.openLightbox(index);
-        }
+        this.openMedia(file, index);
       });
     });
   }
 
+  openMedia(file, index) {
+    if (!file) return;
+    if (window.MediaViewerRegistry) {
+      window.MediaViewerRegistry.open(file, { index }, this);
+    } else {
+      this.openLightbox(index);
+    }
+  }
+
   openLightbox(index) {
+    if (index < 0 || index >= this.state.filteredFiles.length) return;
+    const file = this.state.filteredFiles[index];
+    this.openMedia(file, index);
+  }
+
+  openLightboxCore(index) {
     if (index < 0 || index >= this.state.filteredFiles.length) return;
     this.state.lightboxIndex = index;
     const file = this.state.filteredFiles[index];
@@ -3518,6 +3525,18 @@ class SimpleGallery {
   }
 
   openPipPlayer(file) {
+    if (!file) return;
+    if (window.MediaViewerRegistry) {
+      const viewer = window.MediaViewerRegistry.findViewer(file);
+      if (viewer && viewer.supportsPip) {
+        viewer.open(file, { target: 'pip' }, this);
+        return;
+      }
+    }
+    this.openPipPlayerCore(file);
+  }
+
+  openPipPlayerCore(file) {
     if (!this.el.pipWidget || !this.el.pipMediaContainer) return;
     this.state.currentPipFile = file;
     if (this.el.pipTitle) this.el.pipTitle.innerText = file.comment || file.name;

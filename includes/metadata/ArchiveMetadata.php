@@ -84,7 +84,7 @@ function parse_zip_pure_php(string $file_path): ?array {
         $total_compressed += (int)$c_size;
         $total_uncompressed += (int)$u_size;
 
-        if (count($sample_files) < 15 && $filename !== '') {
+        if (count($sample_files) < 500 && $filename !== '') {
             $is_dir = (substr($filename, -1) === '/');
             $sample_files[] = [
                 'name'           => $filename,
@@ -110,6 +110,7 @@ function parse_zip_pure_php(string $file_path): ?array {
         'uncompressed_size'          => $total_uncompressed,
         'uncompressed_size_formatted'=> function_exists('format_bytes') ? format_bytes($total_uncompressed) : $total_uncompressed . ' B',
         'compression_ratio'          => $ratio . '%',
+        'files'                      => $sample_files,
         'files_sample'               => $sample_files
     ];
 }
@@ -135,7 +136,7 @@ function parse_zip_metadata(string $file_path): ?array {
                     $total_uncompressed += (int)($stat['size'] ?? 0);
                     $total_compressed += (int)($stat['comp_size'] ?? 0);
 
-                    if (count($sample_files) < 15) {
+                    if (count($sample_files) < 500) {
                         $is_dir = (substr($stat['name'], -1) === '/');
                         $sample_files[] = [
                             'name'           => $stat['name'],
@@ -159,6 +160,7 @@ function parse_zip_metadata(string $file_path): ?array {
                 'uncompressed_size'          => $total_uncompressed,
                 'uncompressed_size_formatted'=> function_exists('format_bytes') ? format_bytes($total_uncompressed) : $total_uncompressed . ' B',
                 'compression_ratio'          => $ratio . '%',
+                'files'                      => $sample_files,
                 'files_sample'               => $sample_files
             ];
         }
@@ -194,7 +196,7 @@ function parse_tar_pure_php(string $file_path): ?array {
         $total_uncompressed += (int)$size;
         $num_files++;
 
-        if (count($sample_files) < 15 && $filename !== '') {
+        if (count($sample_files) < 500 && $filename !== '') {
             $is_dir = ($typeflag === '5' || substr($filename, -1) === '/');
             $sample_files[] = [
                 'name'           => $filename,
@@ -219,6 +221,7 @@ function parse_tar_pure_php(string $file_path): ?array {
             'uncompressed_size'          => $total_uncompressed,
             'uncompressed_size_formatted'=> function_exists('format_bytes') ? format_bytes($total_uncompressed) : $total_uncompressed . ' B',
             'compression_ratio'          => '0%',
+            'files'                      => $sample_files,
             'files_sample'               => $sample_files
         ];
     }
