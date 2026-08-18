@@ -383,7 +383,7 @@ class SimpleGallery {
       const canDownloadItem = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_item !== false : true);
       if (!canDownloadItem) {
         const target = e.target;
-        if (target.tagName === 'IMG' || target.tagName === 'VIDEO' || target.tagName === 'AUDIO' || target.closest('.polaroid-card, .grid-card, .lightbox-content')) {
+        if (target.tagName === 'IMG' || target.tagName === 'VIDEO' || target.tagName === 'AUDIO' || target.closest('.polaroid-card, .grid-card, .mosaic-card, .list-table-row, [data-index], .lightbox-content')) {
           e.preventDefault();
           return false;
         }
@@ -2147,25 +2147,21 @@ class SimpleGallery {
     }
 
     const container = this.el.lightboxContent || img.parentElement;
-    if (!container) return;
+    const containerWidth = (container && container.clientWidth) ? container.clientWidth : window.innerWidth;
+    const containerHeight = (container && container.clientHeight) ? container.clientHeight : window.innerHeight;
 
-    const containerWidth = container.clientWidth || window.innerWidth;
-    const containerHeight = container.clientHeight || window.innerHeight;
-
-    const currentScale = scale || 1;
-    const rect = img.getBoundingClientRect();
-    const unscaledW = (rect.width > 0) ? (rect.width / currentScale) : (img.offsetWidth || containerWidth);
-    const unscaledH = (rect.height > 0) ? (rect.height / currentScale) : (img.offsetHeight || containerHeight);
-
+    const imgW = img.offsetWidth || containerWidth;
+    const imgH = img.offsetHeight || containerHeight;
     const isRotated = (rotation % 180 !== 0);
-    const effUnscaledW = isRotated ? unscaledH : unscaledW;
-    const effUnscaledH = isRotated ? unscaledW : unscaledH;
+    const effW = isRotated ? imgH : imgW;
+    const effH = isRotated ? imgW : imgH;
 
-    const scaledW = effUnscaledW * scale;
-    const scaledH = effUnscaledH * scale;
+    const scaledW = effW * scale;
+    const scaledH = effH * scale;
 
-    const maxPanX = Math.max(0, (scaledW - containerWidth) / 2);
-    const maxPanY = Math.max(0, (scaledH - containerHeight) / 2);
+    // Generous pan limits allowing exploration of any overflowing or zoomed media
+    const maxPanX = Math.max((scaledW - containerWidth) / 2, (containerWidth * (scale - 1)) / 2, (effW * (scale - 1)) / 2) + 80;
+    const maxPanY = Math.max((scaledH - containerHeight) / 2, (containerHeight * (scale - 1)) / 2, (effH * (scale - 1)) / 2) + 80;
 
     this.zoomState.translateX = Math.min(maxPanX, Math.max(-maxPanX, this.zoomState.translateX));
     this.zoomState.translateY = Math.min(maxPanY, Math.max(-maxPanY, this.zoomState.translateY));
@@ -2201,7 +2197,7 @@ class SimpleGallery {
     this.zoomState.startY = e.clientY - this.zoomState.translateY;
 
     const img = document.getElementById('lightboxExplorerImg');
-    if (img) img.classList.add('dragging');
+    if (img) img.classList.add('is-panning');
   }
 
   startTouchDrag(e) {
@@ -2311,7 +2307,10 @@ class SimpleGallery {
 
     this.zoomState.isDragging = false;
     const img = document.getElementById('lightboxExplorerImg');
-    if (img) img.classList.remove('dragging');
+    if (img) {
+      img.classList.remove('is-panning');
+      img.classList.remove('dragging');
+    }
   }
 
   updateExplorerTransform(withTransition = true) {
@@ -2751,7 +2750,11 @@ class SimpleGallery {
         '.leaflet-control',
         '.polaroid-card',
         '.grid-card',
+        '.mosaic-card',
+        '.list-table-row',
+        '.list-table-header',
         '.folder-card',
+        '[data-index]',
         'button',
         'input',
         'select',

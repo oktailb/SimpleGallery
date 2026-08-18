@@ -1260,6 +1260,7 @@ body {
   image-orientation: from-image;
 }
 
+.explorer-img.is-panning,
 .explorer-img.dragging {
   cursor: grabbing !important;
 }
@@ -2201,10 +2202,11 @@ kbd {
   cursor: grabbing !important;
 }
 
-.dragging,
 .polaroid-card.dragging,
 .grid-card.dragging,
-.folder-card.dragging {
+.mosaic-card.dragging,
+.folder-card.dragging,
+.list-table-row.dragging {
   opacity: 0.35 !important;
   transform: scale(0.95) !important;
   filter: grayscale(30%) !important;
