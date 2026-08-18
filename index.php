@@ -547,7 +547,8 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
       <span id="pipTitle" class="pip-title" data-i18n="pip.title">Lecture multimédia...</span>
       <div class="pip-controls">
         <button id="pipInfoBtn" class="pip-btn" title="Informations &amp; Propriétés (I)" data-i18n-title="lightbox.metadata_btn">ℹ️</button>
-        <button id="pipMinimizeBtn" class="pip-btn" title="Réduire / Agrandir" data-i18n-title="pip.minimize">🗕</button>
+        <button id="pipExpandBtn" class="pip-btn" title="Plein écran (Agrandir)" data-i18n-title="pip.expand">⛶</button>
+        <button id="pipMinimizeBtn" class="pip-btn" title="Masquer / Réduire" data-i18n-title="pip.minimize">🗕</button>
         <button id="pipCloseBtn" class="pip-btn" title="Fermer le lecteur" data-i18n-title="pip.close">✕</button>
       </div>
     </div>

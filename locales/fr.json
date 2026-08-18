@@ -221,7 +221,9 @@
     "upload.status_prep": "Préparation des fichiers...",
 
     "pip.title": "Lecture multimédia...",
-    "pip.minimize": "Réduire / Agrandir",
+    "pip.expand": "Plein écran / Agrandir",
+    "pip.restore": "Réduire la fenêtre",
+    "pip.minimize": "Masquer / Réduire",
     "pip.close": "Fermer le lecteur",
 
     "cookie.banner_title": "Respect de votre vie privée",

@@ -221,7 +221,9 @@
     "upload.status_prep": "Preparing files...",
 
     "pip.title": "Media playback...",
-    "pip.minimize": "Minimize / Maximize",
+    "pip.expand": "Fullscreen / Maximize",
+    "pip.restore": "Restore window",
+    "pip.minimize": "Minimize / Collapse",
     "pip.close": "Close player",
 
     "cookie.banner_title": "Privacy & Cookies",

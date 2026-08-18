@@ -220,8 +220,10 @@
     "upload.progress_title": "📤 アップロード中...",
     "upload.status_prep": "ファイルを準備中...",
 
-    "pip.title": "メディア再生中...",
-    "pip.minimize": "最小化 / 復元",
+    "pip.title": "メディア再生...",
+    "pip.expand": "全画面 / 拡大",
+    "pip.restore": "元のサイズに戻す",
+    "pip.minimize": "最小化 / 折りたたむ",
     "pip.close": "プレーヤーを閉じる",
 
     "cookie.banner_title": "プライバシーについて",

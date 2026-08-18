@@ -234,6 +234,7 @@ class SimpleGallery {
       pipInfoPanel: document.getElementById('pipInfoPanel'),
       pipHeader: document.getElementById('pipHeader'),
       pipInfoBtn: document.getElementById('pipInfoBtn'),
+      pipExpandBtn: document.getElementById('pipExpandBtn'),
       pipMinimizeBtn: document.getElementById('pipMinimizeBtn'),
       pipCloseBtn: document.getElementById('pipCloseBtn'),
 
@@ -738,6 +739,10 @@ class SimpleGallery {
 
       if (!this.el.lightbox.classList.contains('open')) {
         if (e.key === 'Escape') {
+          if (this.el.pipWidget && this.el.pipWidget.classList.contains('expanded')) {
+            this.togglePipExpanded(false);
+            return;
+          }
           if (this.state.selectedPaths.size > 0) {
             this.clearSelection();
             return;
@@ -1590,7 +1595,7 @@ class SimpleGallery {
         if (this.state.selectedPaths.size > 0) {
           if (!this.state.selectedPaths.has(file.path)) {
             this.clearSelection();
-            if (file && file.category === 'audio') {
+            if (file && (file.category === 'audio' || file.category === 'video')) {
               this.openPipPlayer(file);
             } else {
               this.openLightbox(index);
@@ -1599,7 +1604,7 @@ class SimpleGallery {
           return;
         }
 
-        if (file && file.category === 'audio') {
+        if (file && (file.category === 'audio' || file.category === 'video')) {
           this.openPipPlayer(file);
         } else {
           this.openLightbox(index);
@@ -1667,14 +1672,14 @@ class SimpleGallery {
     if (file.category === 'image') {
       html = `<img id="lightboxExplorerImg" src="${file.file_url}" alt="${this.escapeHtml(file.name)}" class="explorer-img" draggable="false" />`;
     } else if (file.category === 'video') {
+      this.openPipPlayer(file);
       html = `
-        <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
-          <video controls ${controlsListAttr} autoplay name="media" style="max-width:100%; max-height:75vh;">
-            <source src="${file.file_url}" type="video/${file.extension === 'mov' ? 'mp4' : file.extension}">
-            Your browser does not support playing this video.
-          </video>
-          <button id="lightboxPipTransferBtn" class="pill-btn active" style="margin-top:12px; background:#6366f1; color:#fff; border:none; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
-            🗗 Passer en lecteur flottant PiP (Continuer la navigation)
+        <div class="lightbox-audio-card" style="display:flex; flex-direction:column; align-items:center;">
+          <div style="font-size:4rem;">🎬</div>
+          <h3>${this.escapeHtml(file.name)}</h3>
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-top:4px;">Lecture vidéo démarrée en lecteur flottant PiP 🎬</p>
+          <button id="lightboxPipTransferBtn" class="pill-btn active" style="margin-top:16px; background:#6366f1; color:#fff; border:none; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
+            🗗 Relancer le lecteur flottant PiP
           </button>
         </div>
       `;
@@ -3332,11 +3337,21 @@ class SimpleGallery {
       });
     }
 
+    if (this.el.pipExpandBtn && this.el.pipWidget) {
+      this.el.pipExpandBtn.addEventListener('click', () => {
+        this.togglePipExpanded();
+      });
+    }
+
     if (this.el.pipMinimizeBtn && this.el.pipWidget) {
       this.el.pipMinimizeBtn.addEventListener('click', () => {
+        if (this.el.pipWidget.classList.contains('expanded')) {
+          this.togglePipExpanded(false);
+        }
         this.el.pipWidget.classList.toggle('minimized');
       });
     }
+
     if (this.el.pipCloseBtn) {
       this.el.pipCloseBtn.addEventListener('click', () => {
         this.closePipPlayer();
@@ -3346,8 +3361,15 @@ class SimpleGallery {
     if (this.el.pipHeader && this.el.pipWidget) {
       let isDraggingPip = false;
       let startX, startY, startLeft, startTop;
+
+      this.el.pipHeader.addEventListener('dblclick', (e) => {
+        if (e.target.closest('button')) return;
+        this.togglePipExpanded();
+      });
+
       this.el.pipHeader.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'BUTTON') return;
+        if (e.target.closest('button')) return;
+        if (this.el.pipWidget.classList.contains('expanded')) return;
         e.stopPropagation();
         isDraggingPip = true;
         startX = e.clientX;
@@ -3360,14 +3382,45 @@ class SimpleGallery {
         this.el.pipWidget.style.left = `${startLeft}px`;
         this.el.pipWidget.style.top = `${startTop}px`;
       });
+
       window.addEventListener('mousemove', (e) => {
-        if (!isDraggingPip) return;
+        if (!isDraggingPip || this.el.pipWidget.classList.contains('expanded')) return;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
         this.el.pipWidget.style.left = `${startLeft + dx}px`;
         this.el.pipWidget.style.top = `${startTop + dy}px`;
       });
+
       window.addEventListener('mouseup', () => { isDraggingPip = false; });
+    }
+
+    if (this.el.pipMediaContainer) {
+      this.el.pipMediaContainer.addEventListener('dblclick', (e) => {
+        if (e.target.tagName === 'VIDEO') {
+          this.togglePipExpanded();
+        }
+      });
+    }
+  }
+
+  togglePipExpanded(forceState) {
+    if (!this.el.pipWidget) return;
+    const isExpanded = this.el.pipWidget.classList.contains('expanded');
+    const targetState = forceState !== undefined ? forceState : !isExpanded;
+
+    if (targetState) {
+      this.el.pipWidget.classList.remove('minimized');
+      this.el.pipWidget.classList.add('expanded');
+      if (this.el.pipExpandBtn) {
+        this.el.pipExpandBtn.innerText = '🗗';
+        this.el.pipExpandBtn.title = this.t('pip.restore') || 'Réduire la fenêtre';
+      }
+    } else {
+      this.el.pipWidget.classList.remove('expanded');
+      if (this.el.pipExpandBtn) {
+        this.el.pipExpandBtn.innerText = '⛶';
+        this.el.pipExpandBtn.title = this.t('pip.expand') || 'Plein écran / Agrandir';
+      }
     }
   }
 
@@ -3476,7 +3529,7 @@ class SimpleGallery {
     const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
 
     if (file.category === 'video') {
-      this.el.pipMediaContainer.innerHTML = `<video src="${file.file_url}" controls ${controlsListAttr} autoplay style="width:100%;max-height:200px;"></video>`;
+      this.el.pipMediaContainer.innerHTML = `<video src="${file.file_url}" controls ${controlsListAttr} autoplay playsinline style="width:100%;height:100%;object-fit:contain;"></video>`;
     } else if (file.category === 'audio') {
       this.el.pipMediaContainer.innerHTML = `<div style="padding:16px; width:100%; text-align:center;"><div style="font-size:2rem;margin-bottom:8px;">🎵</div><audio src="${file.file_url}" controls ${controlsListAttr} autoplay style="width:100%;"></audio></div>`;
     }
@@ -3484,9 +3537,14 @@ class SimpleGallery {
 
   closePipPlayer() {
     if (!this.el.pipWidget) return;
+    this.el.pipWidget.classList.remove('expanded');
     this.el.pipWidget.style.display = 'none';
     if (this.el.pipMediaContainer) this.el.pipMediaContainer.innerHTML = '';
     if (this.el.pipInfoPanel) this.el.pipInfoPanel.style.display = 'none';
+    if (this.el.pipExpandBtn) {
+      this.el.pipExpandBtn.innerText = '⛶';
+      this.el.pipExpandBtn.title = this.t('pip.expand') || 'Plein écran / Agrandir';
+    }
     this.state.currentPipFile = null;
   }
 
@@ -4069,7 +4127,12 @@ class SimpleGallery {
     this.closeMapModal();
     const idx = this.state.filteredFiles.findIndex(f => f.path === filePath);
     if (idx !== -1) {
-      this.openLightbox(idx);
+      const file = this.state.filteredFiles[idx];
+      if (file && (file.category === 'audio' || file.category === 'video')) {
+        this.openPipPlayer(file);
+      } else {
+        this.openLightbox(idx);
+      }
     }
   }
 
