@@ -78,6 +78,8 @@
     "view.filter_audio": "Audio",
     "view.filter_docs": "Documents",
     "view.filter_archives": "Archives",
+    "view.no_filter_results": "Aucun média correspondant",
+    "view.no_filter_results_desc": "Aucun fichier de ce type n'a été trouvé dans ce dossier.",
 
     "stats.loading": "Chargement...",
     "stats.indexing": "Indexation des fichiers médias...",

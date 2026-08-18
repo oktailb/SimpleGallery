@@ -78,6 +78,8 @@
     "view.filter_audio": "音声",
     "view.filter_docs": "ドキュメント",
     "view.filter_archives": "アーカイブ",
+    "view.no_filter_results": "該当するメディアがありません",
+    "view.no_filter_results_desc": "このフォルダにはこの種類のファイルがありません。",
 
     "stats.loading": "読み込み中...",
     "stats.indexing": "メディアファイルをインデックス中...",

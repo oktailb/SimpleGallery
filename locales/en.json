@@ -78,6 +78,8 @@
     "view.filter_audio": "Audio",
     "view.filter_docs": "Documents",
     "view.filter_archives": "Archives",
+    "view.no_filter_results": "No matching media",
+    "view.no_filter_results_desc": "No files of this category were found in this folder.",
 
     "stats.loading": "Loading...",
     "stats.indexing": "Indexing folder media...",

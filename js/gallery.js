@@ -369,11 +369,8 @@ class SimpleGallery {
 
     this.el.filterPills.addEventListener('click', (e) => {
       const pill = e.target.closest('.pill-btn');
-      if (pill) {
-        this.el.filterPills.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-        pill.classList.add('active');
-        this.state.filterCategory = pill.dataset.category;
-        this.applyFilterAndRender();
+      if (pill && pill.dataset.category) {
+        this.setFilterCategory(pill.dataset.category);
       }
     });
 
@@ -882,6 +879,11 @@ class SimpleGallery {
       this.renderBreadcrumbs(json.breadcrumbs);
       this.renderFolders(json.directories);
       this.updateFavoritesCountUI();
+
+      // Reset category filter when navigating to a new directory
+      this.state.filterCategory = 'all';
+      this.updateFilterPillsUI();
+
       this.applyFilterAndRender();
 
     } catch (err) {
@@ -1035,6 +1037,19 @@ class SimpleGallery {
     if (this.el.viewDropdownMenu) {
       this.el.viewDropdownMenu.style.display = 'none';
     }
+  }
+
+  setFilterCategory(category) {
+    this.state.filterCategory = category || 'all';
+    this.updateFilterPillsUI();
+    this.applyFilterAndRender();
+  }
+
+  updateFilterPillsUI() {
+    if (!this.el.filterPills) return;
+    this.el.filterPills.querySelectorAll('.pill-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.category === this.state.filterCategory);
+    });
   }
 
   toggleSortOrder() {
@@ -1368,6 +1383,19 @@ class SimpleGallery {
         `;
         return;
       }
+      if (this.state.filterCategory !== 'all' && this.state.files.length > 0) {
+        this.el.emptyState.style.display = 'block';
+        this.el.mediaGrid.style.display = 'none';
+        this.el.emptyState.innerHTML = `
+          <div class="empty-state-icon">🔍</div>
+          <h3>${this.escapeHtml(this.t('view.no_filter_results'))}</h3>
+          <p>${this.escapeHtml(this.t('view.no_filter_results_desc'))}</p>
+          <button type="button" class="pill-btn active" style="margin-top: 1rem;" onclick="window.galleryApp.setFilterCategory('all')">
+            ${this.escapeHtml(this.t('view.filter_all'))}
+          </button>
+        `;
+        return;
+      }
       if (this.state.directories.length === 0) {
         this.el.emptyState.style.display = 'block';
         this.el.mediaGrid.style.display = 'none';
@@ -1378,6 +1406,10 @@ class SimpleGallery {
         `;
         return;
       }
+      this.el.emptyState.style.display = 'none';
+      this.el.mediaGrid.style.display = 'none';
+      this.el.mediaGrid.innerHTML = '';
+      return;
     }
 
     this.el.emptyState.style.display = 'none';

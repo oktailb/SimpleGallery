@@ -3215,7 +3215,8 @@ body.no-direct-download audio {
 
 /* Multi-Selection & Rectangular Marquee Selection Styles */
 .polaroid-card.selected,
-.grid-card.selected {
+.grid-card.selected,
+.mosaic-card.selected {
   outline: 3px solid #6366f1 !important;
   box-shadow: 0 0 18px rgba(99, 102, 241, 0.5) !important;
   transform: translateY(-2px);
@@ -3223,7 +3224,8 @@ body.no-direct-download audio {
 }
 
 .polaroid-card.selected::before,
-.grid-card.selected::before {
+.grid-card.selected::before,
+.mosaic-card.selected::before {
   content: '✓';
   position: absolute;
   top: 8px;
@@ -3240,6 +3242,35 @@ body.no-direct-download audio {
   font-size: 0.8rem;
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.list-table-row.selected {
+  background: rgba(99, 102, 241, 0.22) !important;
+  border-color: rgba(99, 102, 241, 0.6) !important;
+  box-shadow: inset 4px 0 0 #6366f1, 0 0 12px rgba(99, 102, 241, 0.2) !important;
+}
+
+.list-table-row.selected .list-col-preview {
+  position: relative;
+}
+
+.list-table-row.selected .list-col-preview::after {
+  content: '✓';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  background: #6366f1;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.65rem;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* Rectangular Marquee Lasso Selection Box */
