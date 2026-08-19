@@ -1129,7 +1129,8 @@
         window.sys.openMaps({
           files: this.state.filteredFiles,
           currentPath: this.state.currentPath,
-          focusPath: focusPath
+          focusPath: focusPath,
+          singleItem: !!focusPath
         });
         return;
       }

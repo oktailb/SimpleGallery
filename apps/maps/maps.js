@@ -1,6 +1,7 @@
 /**
  * SimpleGallery 2026 - Maps & GPS Route Explorer App
  * Modular WebOS Map Application with Leaflet, Multi-layer Tiles, Chronological Trajectory & Smart Timeline AI Deduction.
+ * Supports both Folder Mode (entire folder with trajectory) and Single Item Mode (single photo centered with open billboard).
  */
 (function(window) {
   'use strict';
@@ -16,6 +17,8 @@
       this.tileLayers = {};
       this.currentFiles = [];
       this.currentFocusPath = null;
+      this.mode = 'folder'; // 'folder' | 'single'
+      this.singleFile = null;
       this.windowId = 'webos-maps-window';
 
       this.init();
@@ -189,15 +192,25 @@
      */
     open(options = {}) {
       const files = options.files || (window.explorerApp && window.explorerApp.state && window.explorerApp.state.filteredFiles) || [];
-      const focusPath = options.focusPath || null;
+      const focusPath = options.focusPath || (options.file ? options.file.path : null);
+      const isSingleItem = options.singleItem === true || (!!options.file && !options.files) || (!!focusPath && options.singleItem !== false);
+
       this.currentFiles = files;
       this.currentFocusPath = focusPath;
+      this.mode = isSingleItem ? 'single' : 'folder';
+      this.singleFile = options.file || (focusPath ? files.find(f => f.path === focusPath) : null);
 
       if (!window.WindowManager) return;
 
-      const appTitle = (window.sys && window.sys.appManager)
+      const baseAppTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('maps')
         : (this.t('map.title') || "Exploration Cartographique & Trajet GPS");
+
+      const appTitle = (this.mode === 'single' && this.singleFile)
+        ? `${baseAppTitle} : ${this.singleFile.name}`
+        : baseAppTitle;
+
+      const fileName = (this.mode === 'single' && this.singleFile) ? this.singleFile.name : '';
 
       const defaultW = Math.min(1080, Math.max(540, Math.round(window.innerWidth * 0.85)));
       const defaultH = Math.min(740, Math.max(400, Math.round(window.innerHeight * 0.80)));
@@ -206,20 +219,23 @@
         <div class="webos-map-window">
           <div class="map-toolbar-inner">
             <div class="map-title-group">
-              <div class="map-title-text">🗺️ ${this.escapeHtml(appTitle)}</div>
+              <div class="map-title-text" id="mapsWinTitleText">🗺️ ${this.escapeHtml(appTitle)}</div>
               <span id="mapsWinCountBadge" class="map-count-badge">Calcul en cours...</span>
             </div>
-            <div class="map-controls-group">
+            <div class="map-controls-group" id="mapsWinControlsGroup">
               <div class="map-layer-selector">
                 <button type="button" class="map-layer-btn ${this.currentLayer === 'dark' ? 'active' : ''}" data-layer="dark" title="${this.escapeHtml(this.t('map.layer_dark') || 'Fond sombre')}">🌙 Sombre</button>
                 <button type="button" class="map-layer-btn ${this.currentLayer === 'streets' ? 'active' : ''}" data-layer="streets" title="${this.escapeHtml(this.t('map.layer_streets') || 'Plan de rues')}">🗺️ Rues</button>
                 <button type="button" class="map-layer-btn ${this.currentLayer === 'satellite' ? 'active' : ''}" data-layer="satellite" title="${this.escapeHtml(this.t('map.layer_satellite') || 'Vue Satellite')}">🛰️ Satellite</button>
               </div>
-              <button type="button" id="mapsWinSmartGpsBtn" class="map-ctrl-btn ${this.isSmartGpsEnabled ? 'active' : ''}" title="${this.escapeHtml(this.t('map.smart_deduction') || 'Déduction GPS intelligente')}">
+              <button type="button" id="mapsWinSmartGpsBtn" class="map-ctrl-btn ${this.isSmartGpsEnabled ? 'active' : ''}" style="${this.mode === 'single' ? 'display:none;' : ''}" title="${this.escapeHtml(this.t('map.smart_deduction') || 'Déduction GPS intelligente')}">
                 <span>${this.escapeHtml(this.t('map.smart_deduction') || '✨ Déduction auto')}</span> (<span id="mapsWinSmartCount">0</span>)
               </button>
-              <button type="button" id="mapsWinRouteBtn" class="map-ctrl-btn ${this.isRouteVisible ? 'active' : ''}" title="${this.escapeHtml(this.t('map.route') || 'Tracé du parcours')}">
+              <button type="button" id="mapsWinRouteBtn" class="map-ctrl-btn ${this.isRouteVisible ? 'active' : ''}" style="${this.mode === 'single' ? 'display:none;' : ''}" title="${this.escapeHtml(this.t('map.route') || 'Tracé du parcours')}">
                 〰️ ${this.escapeHtml(this.t('map.route') || 'Trajet')}
+              </button>
+              <button type="button" id="mapsWinShowAllBtn" class="map-ctrl-btn" style="${this.mode === 'single' && this.currentFiles.length > 1 ? '' : 'display:none;'}" title="Afficher l'ensemble des photos géolocalisées du dossier">
+                📁 Voir tout le dossier
               </button>
               <button type="button" id="mapsWinRecenterBtn" class="map-ctrl-btn" title="${this.escapeHtml(this.t('map.recenter') || 'Recentrer la carte')}">
                 🎯 ${this.escapeHtml(this.t('map.recenter') || 'Recentrer')}
@@ -233,7 +249,8 @@
       const win = window.WindowManager.createWindow({
         id: this.windowId,
         appId: 'maps',
-        appName: appTitle,
+        appName: baseAppTitle,
+        fileName: fileName,
         title: appTitle,
         icon: '🗺️',
         width: defaultW,
@@ -253,6 +270,11 @@
         }
       });
 
+      // Update window title if already exists
+      if (win) {
+        window.WindowManager.setTitle(this.windowId, appTitle);
+      }
+
       setTimeout(() => {
         this.initMapCanvas();
         this.renderMapContent();
@@ -260,17 +282,48 @@
       }, 60);
     }
 
+    switchToFolderMode() {
+      this.mode = 'folder';
+      this.currentFocusPath = null;
+      this.singleFile = null;
+
+      const baseAppTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('maps')
+        : (this.t('map.title') || "Exploration Cartographique & Trajet GPS");
+
+      window.WindowManager.setTitle(this.windowId, baseAppTitle);
+      const titleTextEl = document.getElementById('mapsWinTitleText');
+      if (titleTextEl) titleTextEl.textContent = `🗺️ ${baseAppTitle}`;
+
+      const smartBtn = document.getElementById('mapsWinSmartGpsBtn');
+      const routeBtn = document.getElementById('mapsWinRouteBtn');
+      const showAllBtn = document.getElementById('mapsWinShowAllBtn');
+      if (smartBtn) smartBtn.style.display = '';
+      if (routeBtn) routeBtn.style.display = '';
+      if (showAllBtn) showAllBtn.style.display = 'none';
+
+      this.renderMapContent();
+      this.bindMenuBar();
+    }
+
     bindMenuBar() {
       if (!window.MenuBarManager) return;
       window.MenuBarManager.registerAppMenu('maps', (container) => {
+        const isSingle = this.mode === 'single';
+        const activeItemTitle = (isSingle && this.singleFile) ? this.singleFile.name : (this.t('map.title') || 'Carte GPS');
+
         container.innerHTML = `
           <div class="app-menu-left">
-            <span class="app-menu-pill active" style="font-weight:600;">🗺️ ${this.escapeHtml(this.t('map.title') || 'Carte GPS')}</span>
+            <span class="app-menu-pill active" style="font-weight:600;">🗺️ ${this.escapeHtml(activeItemTitle)}</span>
             <button type="button" class="app-menu-pill" id="menuMapsLayerDark">🌙 Sombre</button>
             <button type="button" class="app-menu-pill" id="menuMapsLayerStreets">🗺️ Rues</button>
             <button type="button" class="app-menu-pill" id="menuMapsLayerSat">🛰️ Satellite</button>
-            <button type="button" class="app-menu-pill ${this.isSmartGpsEnabled ? 'active' : ''}" id="menuMapsToggleSmart">${this.escapeHtml(this.t('map.smart_deduction') || '✨ Déduction auto')}</button>
-            <button type="button" class="app-menu-pill ${this.isRouteVisible ? 'active' : ''}" id="menuMapsToggleRoute">〰️ ${this.escapeHtml(this.t('map.route') || 'Trajet')}</button>
+            ${!isSingle ? `
+              <button type="button" class="app-menu-pill ${this.isSmartGpsEnabled ? 'active' : ''}" id="menuMapsToggleSmart">${this.escapeHtml(this.t('map.smart_deduction') || '✨ Déduction auto')}</button>
+              <button type="button" class="app-menu-pill ${this.isRouteVisible ? 'active' : ''}" id="menuMapsToggleRoute">〰️ ${this.escapeHtml(this.t('map.route') || 'Trajet')}</button>
+            ` : (this.currentFiles.length > 1 ? `
+              <button type="button" class="app-menu-pill" id="menuMapsShowAllBtn">📁 Voir tout le dossier</button>
+            ` : '')}
           </div>
           <div class="app-menu-right">
             <button type="button" class="app-menu-pill" id="menuMapsRecenter">🎯 ${this.escapeHtml(this.t('map.recenter') || 'Recentrer')}</button>
@@ -283,6 +336,7 @@
         const btnSat = container.querySelector('#menuMapsLayerSat');
         const btnSmart = container.querySelector('#menuMapsToggleSmart');
         const btnRoute = container.querySelector('#menuMapsToggleRoute');
+        const btnShowAll = container.querySelector('#menuMapsShowAllBtn');
         const btnRecenter = container.querySelector('#menuMapsRecenter');
         const btnFs = container.querySelector('#menuMapsFsBtn');
 
@@ -291,6 +345,7 @@
         if (btnSat) btnSat.onclick = () => this.setTileLayer('satellite');
         if (btnSmart) btnSmart.onclick = () => this.toggleSmartGps();
         if (btnRoute) btnRoute.onclick = () => this.toggleRoute();
+        if (btnShowAll) btnShowAll.onclick = () => this.switchToFolderMode();
         if (btnRecenter) btnRecenter.onclick = () => this.recenterMap();
         if (btnFs) btnFs.onclick = () => window.WindowManager.toggleMaximize(this.windowId);
       });
@@ -385,14 +440,35 @@
     renderMapContent() {
       if (!this.leafletMap || !this.markersLayer) return;
 
-      const mapped = this.computeSmartGpsLocations(this.currentFiles, this.isSmartGpsEnabled);
+      const allMapped = this.computeSmartGpsLocations(this.currentFiles, this.isSmartGpsEnabled);
+      let mapped = allMapped;
+
+      // In Single Item Mode, filter down to the single photo
+      if (this.mode === 'single' && this.currentFocusPath) {
+        mapped = allMapped.filter(i => i.file.path === this.currentFocusPath);
+        // Fallback: If not in allMapped but singleFile has direct GPS coordinates
+        if (mapped.length === 0 && this.singleFile && this.singleFile.exif?.gps?.lat && this.singleFile.exif?.gps?.lng) {
+          mapped = [{
+            file: this.singleFile,
+            gps_source: 'native',
+            lat: this.singleFile.exif.gps.lat,
+            lng: this.singleFile.exif.gps.lng,
+            time: (this.singleFile.effective_mtime || this.singleFile.mtime || 0) * 1000
+          }];
+        }
+      }
+
       const nativeCount = mapped.filter(i => i.gps_source === 'native').length;
       const magicCount = mapped.filter(i => i.gps_source !== 'native').length;
 
       const badgeEl = document.getElementById('mapsWinCountBadge');
       if (badgeEl) {
-        const extra = magicCount > 0 ? ` + ${magicCount} estimée(s)` : '';
-        badgeEl.textContent = `${nativeCount}${extra} photo(s) géolocalisée(s)`;
+        if (this.mode === 'single') {
+          badgeEl.textContent = magicCount > 0 ? '✨ 1 photo (position estimée)' : '📍 1 photo géolocalisée';
+        } else {
+          const extra = magicCount > 0 ? ` + ${magicCount} estimée(s)` : '';
+          badgeEl.textContent = `${nativeCount}${extra} photo(s) géolocalisée(s)`;
+        }
       }
 
       const smartCountEl = document.getElementById('mapsWinSmartCount');
@@ -418,7 +494,7 @@
         const isFocused = this.currentFocusPath === file.path;
         const isMagic = item.gps_source !== 'native';
 
-        const markerClass = `marker-bubble ${isFocused ? 'highlight' : ''} ${isMagic ? 'magic' : ''}`;
+        const markerClass = `marker-bubble ${(isFocused || this.mode === 'single') ? 'highlight' : ''} ${isMagic ? 'magic' : ''}`;
         const sparkle = isMagic ? `<div class="marker-magic-sparkle" title="Position déduite par horodatage">✨</div>` : '';
         const pointer = isMagic ? `marker-pointer magic-pointer` : `marker-pointer`;
 
@@ -465,7 +541,9 @@
 
         marker.bindPopup(popupHtml, {
           className: 'sg-leaflet-popup',
-          maxWidth: 240
+          maxWidth: 240,
+          autoClose: false,
+          closeOnClick: false
         });
 
         marker.on('popupopen', () => {
@@ -483,13 +561,13 @@
 
         this.markersLayer.addLayer(marker);
 
-        if (isFocused) {
+        if (isFocused || this.mode === 'single') {
           focusMarker = marker;
         }
       });
 
-      // Render Chronological Route Line
-      if (latLngs.length > 1) {
+      // Render Chronological Route Line only in Folder Mode with > 1 photo
+      if (this.mode === 'folder' && latLngs.length > 1) {
         this.routeLayer = window.L.polyline(latLngs, {
           color: '#6366f1',
           weight: 4,
@@ -504,10 +582,12 @@
         }
       }
 
-      // Center view
+      // Center view and automatically open billboard/popup
       if (focusMarker) {
         this.leafletMap.setView(focusMarker.getLatLng(), 16);
-        setTimeout(() => focusMarker.openPopup(), 200);
+        setTimeout(() => {
+          focusMarker.openPopup();
+        }, 150);
       } else if (latLngs.length > 0) {
         this.recenterMap();
       }
@@ -528,6 +608,10 @@
       // Route Toggle
       const routeBtn = document.getElementById('mapsWinRouteBtn');
       if (routeBtn) routeBtn.onclick = () => this.toggleRoute();
+
+      // Show All Button (Single Item Mode -> Folder Mode)
+      const showAllBtn = document.getElementById('mapsWinShowAllBtn');
+      if (showAllBtn) showAllBtn.onclick = () => this.switchToFolderMode();
 
       // Recenter
       const recenterBtn = document.getElementById('mapsWinRecenterBtn');

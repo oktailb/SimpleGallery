@@ -530,7 +530,8 @@
               <span class="meta-row-label">Coordonnées</span>
               <span class="meta-row-value" style="font-family:monospace; font-size:0.775rem;">${exif.gps.lat}°, ${exif.gps.lng}°</span>
             </div>
-            <div id="exifMiniMap-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="height:160px;width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.1);"></div>
+            <div id="exifMiniMap-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="height:160px;width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;" title="Cliquez pour agrandir dans l'application Cartes"></div>
+            <button type="button" class="app-menu-pill" id="openFullMapBtn-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="margin-top:8px;width:100%;justify-content:center;background:#6366f1;color:#fff;border:none;padding:6px;border-radius:8px;cursor:pointer;font-size:0.775rem;">🗺️ Ouvrir dans l'application Cartes</button>
           </div>
         `;
       }
@@ -557,6 +558,23 @@
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
           L.marker([exif.gps.lat, exif.gps.lng]).addTo(miniMap);
+
+          const openMapsAction = () => {
+            const entry = this.openInspectors.get(cleanPathId);
+            const fileObj = entry ? entry.file : null;
+            if (window.sys && window.sys.openMaps && fileObj) {
+              window.sys.openMaps({
+                file: fileObj,
+                singleItem: true,
+                focusPath: fileObj.path,
+                files: (window.explorerApp && window.explorerApp.state && window.explorerApp.state.filteredFiles) || [fileObj]
+              });
+            }
+          };
+
+          mapEl.onclick = openMapsAction;
+          const fullBtn = document.getElementById(`openFullMapBtn-${cleanPathId.split('_').pop()}`) || document.querySelector(`[id^="openFullMapBtn-"]`);
+          if (fullBtn) fullBtn.onclick = openMapsAction;
         }, 100);
       }
     }
