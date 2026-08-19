@@ -1123,10 +1123,23 @@
       let isSelecting = false;
       let startX = 0, startY = 0;
       let marqueeEl = null;
+      let initialSelectedPaths = new Set();
 
       document.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button, input, a, select, .explorer-header-bar, .admin-modal, .selection-toolbar, .webos-window')) return;
+        if (e.button !== 0) return;
+        // Don't start marquee lasso if clicking on an interactive element, card, or window
+        if (e.target.closest('button, input, a, select, .explorer-header-bar, .admin-modal, .selection-toolbar, .webos-window, .folder-card, .polaroid-card, .grid-card, .list-table-row, .mosaic-card, [data-index], .media-card, .sidebar, .menubar, #topMenuBar')) {
+          return;
+        }
         if (!this.el.mediaGrid) return;
+
+        const hasModifier = e.shiftKey || e.ctrlKey || e.metaKey;
+        if (!hasModifier) {
+          this.clearSelection();
+          initialSelectedPaths = new Set();
+        } else {
+          initialSelectedPaths = new Set(this.state.selectedPaths);
+        }
 
         isSelecting = true;
         startX = e.pageX;
@@ -1138,6 +1151,11 @@
           marqueeEl.style.display = 'none';
           document.body.appendChild(marqueeEl);
         }
+      });
+
+      document.addEventListener('dragstart', () => {
+        isSelecting = false;
+        if (marqueeEl) marqueeEl.style.display = 'none';
       });
 
       document.addEventListener('mousemove', (e) => {
@@ -1156,6 +1174,8 @@
           marqueeEl.style.height = `${height}px`;
 
           const marqueeRect = marqueeEl.getBoundingClientRect();
+          const currentSelection = new Set(initialSelectedPaths);
+
           this.el.mediaGrid.querySelectorAll('[data-index]').forEach(card => {
             const cardRect = card.getBoundingClientRect();
             const intersects = !(
@@ -1167,12 +1187,12 @@
 
             const idx = parseInt(card.dataset.index, 10);
             const file = this.state.filteredFiles[idx];
-            if (file) {
-              if (intersects) {
-                this.state.selectedPaths.add(file.path);
-              }
+            if (file && intersects) {
+              currentSelection.add(file.path);
             }
           });
+
+          this.state.selectedPaths = currentSelection;
           this.updateSelectionUI();
         }
       });
