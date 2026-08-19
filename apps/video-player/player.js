@@ -156,53 +156,95 @@
     syncIntervalId: null,
 
     async open(file, options, ctx) {
-      if (!ctx || !ctx.el) return false;
+      if (!ctx) return false;
       const index = (typeof options.index === 'number') ? options.index : ctx.state.filteredFiles.findIndex(f => f.path === file.path);
       if (index === -1) return false;
 
       this.cleanup();
-      ctx.state.lightboxIndex = index;
+      const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
+      const winId = `vwall-${cleanPathId}`;
 
-      if (!ctx.state.isLightboxHistoryPushed) {
-        history.pushState({ lightbox: true }, '');
-        ctx.state.isLightboxHistoryPushed = true;
+      // 1. WebOS Window Manager Mode (Primary)
+      if (window.WindowManager) {
+        const defaultW = Math.min(960, Math.max(540, Math.round(window.innerWidth * 0.80)));
+        const defaultH = Math.min(640, Math.max(380, Math.round(window.innerHeight * 0.75)));
+
+        const win = window.WindowManager.createWindow({
+          id: winId,
+          appId: 'videowall',
+          appName: 'Mur Vidéo Synchronisé',
+          fileName: file.name,
+          title: `Mur Vidéo : ${file.name}`,
+          icon: '🎬',
+          width: defaultW,
+          height: defaultH,
+          content: `
+            <div class="webos-vwall-container" id="vwallWinContent-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;background:#06080d;position:relative;overflow:hidden;">
+              <div style="color:#cbd5e1;font-size:1.1rem;display:flex;align-items:center;justify-content:center;height:100%;gap:10px;" id="vwallLoading-${cleanPathId}">
+                <div style="font-size:2rem;animation:spin 1s infinite linear;">⚙️</div>
+                Chargement de la configuration du mur vidéo...
+              </div>
+            </div>
+          `,
+          onClose: () => {
+            this.cleanup();
+          },
+          onFocus: () => {
+            if (window.MenuBarManager) {
+              window.MenuBarManager.registerAppMenu('videowall', (container) => {
+                container.innerHTML = `
+                  <div class="app-menu-left">
+                    <span class="app-menu-pill active" style="font-weight:600;">🎬 ${ctx.escapeHtml(file.name)}</span>
+                    <button type="button" class="app-menu-pill" id="menuVwPlayBtn">▶ Lecture / Pause</button>
+                    <span class="app-menu-pill" style="opacity:0.8;">⚡ Synchronisé</span>
+                  </div>
+                  <div class="app-menu-right">
+                    <button type="button" class="app-menu-pill" id="menuVwFsBtn">⛶ Plein Écran</button>
+                  </div>
+                `;
+                const pb = container.querySelector('#menuVwPlayBtn');
+                const fs = container.querySelector('#menuVwFsBtn');
+                if (pb) pb.onclick = () => {
+                  const masterBtn = document.getElementById('vwallMasterPlayBtn');
+                  if (masterBtn) masterBtn.click();
+                };
+                if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
+              });
+              window.MenuBarManager.setActiveApp('videowall');
+            }
+          }
+        });
+
+        try {
+          const res = await fetch(file.file_url);
+          const iniText = await res.text();
+          const config = this.parseIniConfig(iniText);
+          const targetContainer = document.getElementById(`vwallWinContent-${cleanPathId}`);
+          if (targetContainer) {
+            targetContainer.innerHTML = '';
+            this.renderVideoWallToContainer(targetContainer, file, config, ctx);
+          }
+        } catch (err) {
+          const targetContainer = document.getElementById(`vwallWinContent-${cleanPathId}`);
+          if (targetContainer) {
+            targetContainer.innerHTML = `<div style="color:#ef4444;padding:2rem;text-align:center;">Erreur de chargement: ${err.message}</div>`;
+          }
+        }
+        return true;
       }
 
+      // 2. Legacy Fallback
+      if (!ctx.el) return false;
+      ctx.state.lightboxIndex = index;
       ctx.el.lightboxTitle.textContent = `🎬 Mur Vidéo: ${file.name}`;
-      ctx.el.lightboxMeta.textContent = `${file.size_formatted} • Mur Vidéo Synchronisé`;
-
-      if (ctx.el.lightboxDownloadBtn) ctx.el.lightboxDownloadBtn.style.display = 'none';
-      if (ctx.el.lightboxDeleteBtn) ctx.el.lightboxDeleteBtn.style.display = ctx.state.isAdmin ? 'inline-flex' : 'none';
-      if (ctx.el.imageExplorerControls) ctx.el.imageExplorerControls.style.display = 'none';
-      if (ctx.el.lightboxEditImageBtn) ctx.el.lightboxEditImageBtn.style.display = 'none';
-      if (ctx.el.lightboxExifBtn) ctx.el.lightboxExifBtn.style.display = 'none';
-
-      ctx.el.lightboxContent.innerHTML = `
-        <div class="videowall-modal-content">
-          <div style="color:#cbd5e1;font-size:1.1rem;display:flex;align-items:center;gap:10px;">
-            <div class="empty-state-icon" style="font-size:2rem;animation:spin 1s infinite linear;">⚙️</div>
-            Chargement de la configuration du mur vidéo...
-          </div>
-        </div>
-      `;
-
+      ctx.el.lightboxContent.innerHTML = `<div class="videowall-modal-content">Chargement...</div>`;
       ctx.el.lightbox.classList.add('open');
-
       try {
         const res = await fetch(file.file_url);
         const iniText = await res.text();
         const config = this.parseIniConfig(iniText);
-
         this.renderVideoWall(file, config, ctx);
-      } catch (err) {
-        console.error('Failed to load video wall configuration:', err);
-        ctx.el.lightboxContent.innerHTML = `
-          <div class="videowall-modal-content">
-            <div style="color:#ef4444;font-size:1rem;">Erreur de chargement de la configuration: ${err.message}</div>
-          </div>
-        `;
-      }
-
+      } catch (err) {}
       return true;
     },
 
@@ -294,7 +336,11 @@
       return this.resolveAssetUrl(`${secName}.mp4`, vwallFile);
     },
 
-    renderVideoWall(file, config, ctx) {
+    renderVideoWallToContainer(targetContainer, file, config, ctx) {
+      this.renderVideoWall(file, config, ctx, targetContainer);
+    },
+
+    renderVideoWall(file, config, ctx, customContainer = null) {
       const { globals, sections } = config;
       const baseW = parseFloat(globals.width) || 1920;
       const baseH = parseFloat(globals.height) || 1080;
@@ -384,8 +430,8 @@
         `;
       }
 
-      ctx.el.lightboxContent.innerHTML = `
-        <div class="videowall-modal-content">
+      const wallHtml = `
+        <div class="videowall-modal-content" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
           <div class="videowall-stage" id="videowallStage" style="aspect-ratio: ${baseW} / ${baseH};">
             <div class="videowall-canvas" id="videowallCanvas">
               ${screensHtml}
@@ -423,6 +469,12 @@
           </div>
         </div>
       `;
+
+      if (customContainer) {
+        customContainer.innerHTML = wallHtml;
+      } else if (ctx.el && ctx.el.lightboxContent) {
+        ctx.el.lightboxContent.innerHTML = wallHtml;
+      }
 
       this.initSyncEngine(screensData, resyncThreshold, resyncInterval, ctx);
     },

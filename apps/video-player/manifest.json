@@ -15,7 +15,8 @@
     "mov",
     "m4v",
     "mkv",
-    "vwall"
+    "vwall",
+    "videowall"
   ],
   "entry": {
     "js": "player.js",

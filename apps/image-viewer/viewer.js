@@ -50,10 +50,10 @@
     },
 
     /**
-     * Opens an image file in the Lightbox explorer
+     * Opens an image file in a WebOS Floating Window
      */
     open(file, options, ctx) {
-      if (!ctx || !ctx.el) return false;
+      if (!ctx) return false;
       const index = (typeof options.index === 'number') ? options.index : ctx.state.filteredFiles.findIndex(f => f.path === file.path);
       if (index === -1) return false;
 
@@ -61,154 +61,133 @@
       this.currentFile = file;
       this.currentIndex = index;
 
-      ctx.state.lightboxIndex = index;
+      const isEditableImage = ctx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
+      const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
+      const winId = `image-${cleanPathId}`;
 
-      // Update Lightbox UI Header
-      if (!ctx.state.isLightboxHistoryPushed) {
-        history.pushState({ lightbox: true }, '');
-        ctx.state.isLightboxHistoryPushed = true;
-      }
-
-      ctx.el.lightboxTitle.textContent = `Visionneuse d'Image : ${file.name}`;
-      ctx.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
-      
-      const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item : true);
-      if (ctx.el.lightboxDownloadBtn) {
-        ctx.el.lightboxDownloadBtn.href = file.file_url;
-        ctx.el.lightboxDownloadBtn.setAttribute('download', file.name);
-        ctx.el.lightboxDownloadBtn.style.display = canDownloadItem ? 'inline-flex' : 'none';
-      }
-
-      if (ctx.el.lightboxDeleteBtn) {
-        ctx.el.lightboxDeleteBtn.style.display = ctx.state.isAdmin ? 'inline-flex' : 'none';
-      }
-
-      ctx.updateLightboxFavBtn(file.path);
-
-      if (ctx.el.lightboxComment) {
-        if (file.comment) {
-          ctx.el.lightboxComment.textContent = `💬 ${file.comment}`;
-          ctx.el.lightboxComment.style.display = 'block';
-        } else {
-          ctx.el.lightboxComment.style.display = 'none';
-        }
-      }
-
-      // Reset Explorer Zoom
+      // Reset zoom state for this view
       this.resetZoom();
 
-      // Show Controls
-      if (ctx.el.lightboxExifBtn) ctx.el.lightboxExifBtn.style.display = 'inline-flex';
-      ctx.loadUnifiedMetadata(file);
+      if (window.WindowManager) {
+        const defaultW = Math.min(920, Math.max(480, Math.round(window.innerWidth * 0.75)));
+        const defaultH = Math.min(640, Math.max(360, Math.round(window.innerHeight * 0.70)));
 
-      // Register Image Viewer tools in Top Contextual MenuBar
-      const isEditableImage = ctx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
-      if (window.MenuBarManager) {
-        window.MenuBarManager.registerAppMenu('image-viewer', (container) => {
-          container.innerHTML = `
-            <div class="app-menu-left">
-              <span class="app-menu-pill active" style="font-weight:600;">🖼️ Image : ${ctx.escapeHtml(file.name)}</span>
-              <button type="button" class="app-menu-pill" id="menuImgZoomInBtn">➕ Zoom +</button>
-              <button type="button" class="app-menu-pill" id="menuImgZoomOutBtn">➖ Zoom -</button>
-              <button type="button" class="app-menu-pill" id="menuImgResetBtn">🔄 Réinitialiser</button>
-              <button type="button" class="app-menu-pill" id="menuImgRotateBtn">⟳ Rotation 90°</button>
-              ${isEditableImage ? `<button type="button" class="app-menu-pill" id="menuImgEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">🎨 Retoucher l'image</button>` : ''}
+        const win = window.WindowManager.createWindow({
+          id: winId,
+          appId: 'image-viewer',
+          appName: "Visionneuse d'Image",
+          fileName: file.name,
+          title: `Visionneuse d'Image : ${file.name}`,
+          icon: '🖼️',
+          width: defaultW,
+          height: defaultH,
+          content: `
+            <div class="webos-image-window-content" id="imgWinContent-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#090a0f;">
+              <div class="image-viewer-container" id="imageViewerContainer-${cleanPathId}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:grab;">
+                <img id="imgExplorer-${cleanPathId}" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" style="max-width:100%;max-height:100%;object-fit:contain;user-select:none;transition:transform 0.15s cubic-bezier(0.2,0,0,1);" draggable="false" />
+              </div>
+              <div class="image-floating-toolbar" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(15,23,42,0.85);backdrop-filter:blur(16px);padding:4px 10px;border-radius:9999px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:10;">
+                <button type="button" class="image-explorer-btn" id="imgZoomIn-${cleanPathId}" title="Zoom In (+)">➕</button>
+                <button type="button" class="image-explorer-btn" id="imgZoomOut-${cleanPathId}" title="Zoom Out (-)">➖</button>
+                <button type="button" class="image-explorer-btn" id="imgReset-${cleanPathId}" title="Réinitialiser (1:1)">🔄</button>
+                <button type="button" class="image-explorer-btn" id="imgRotate-${cleanPathId}" title="Rotation 90°">⟳</button>
+                <span id="imgZoomBadge-${cleanPathId}" style="font-size:0.75rem;font-weight:700;color:#f8fafc;padding:0 4px;">100%</span>
+                ${isEditableImage ? `<button type="button" class="image-explorer-btn" id="imgEdit-${cleanPathId}" style="background:var(--accent-primary,#6366f1);color:#fff;border-radius:12px;padding:0 8px;width:auto;font-size:0.75rem;font-weight:600;" title="Retoucher l'image">🎨 Retoucher</button>` : ''}
+              </div>
             </div>
-            <div class="app-menu-right">
-              <button type="button" class="app-menu-pill" onclick="if(window.galleryApp) window.galleryApp.closeLightbox();">✕ Fermer</button>
-            </div>
-          `;
-          const zi = container.querySelector('#menuImgZoomInBtn');
-          const zo = container.querySelector('#menuImgZoomOutBtn');
-          const rz = container.querySelector('#menuImgResetBtn');
-          const ro = container.querySelector('#menuImgRotateBtn');
-          const ed = container.querySelector('#menuImgEditBtn');
-          if (zi) zi.onclick = () => this.adjustZoom(0.3);
-          if (zo) zo.onclick = () => this.adjustZoom(-0.3);
-          if (rz) rz.onclick = () => this.resetZoom();
-          if (ro) ro.onclick = () => this.rotateImage();
-          if (ed) ed.onclick = () => this.openImageEditor(file, ctx);
+          `,
+          onFocus: () => {
+            if (window.MenuBarManager) {
+              window.MenuBarManager.registerAppMenu('image-viewer', (container) => {
+                container.innerHTML = `
+                  <div class="app-menu-left">
+                    <span class="app-menu-pill active" style="font-weight:600;">🖼️ ${ctx.escapeHtml(file.name)}</span>
+                    <button type="button" class="app-menu-pill" id="menuImgZoomInBtn">➕ Zoom +</button>
+                    <button type="button" class="app-menu-pill" id="menuImgZoomOutBtn">➖ Zoom -</button>
+                    <button type="button" class="app-menu-pill" id="menuImgResetBtn">🔄 1:1</button>
+                    <button type="button" class="app-menu-pill" id="menuImgRotateBtn">⟳ Rotation 90°</button>
+                    ${isEditableImage ? `<button type="button" class="app-menu-pill" id="menuImgEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">🎨 Retoucher l'image</button>` : ''}
+                  </div>
+                  <div class="app-menu-right">
+                    <button type="button" class="app-menu-pill" id="menuImgFsBtn">⛶ Plein Écran</button>
+                  </div>
+                `;
+                const zi = container.querySelector('#menuImgZoomInBtn');
+                const zo = container.querySelector('#menuImgZoomOutBtn');
+                const rz = container.querySelector('#menuImgResetBtn');
+                const ro = container.querySelector('#menuImgRotateBtn');
+                const ed = container.querySelector('#menuImgEditBtn');
+                const fs = container.querySelector('#menuImgFsBtn');
+                if (zi) zi.onclick = () => this.adjustZoom(0.3, cleanPathId);
+                if (zo) zo.onclick = () => this.adjustZoom(-0.3, cleanPathId);
+                if (rz) rz.onclick = () => this.resetZoom(cleanPathId);
+                if (ro) ro.onclick = () => this.rotateImage(cleanPathId);
+                if (ed) ed.onclick = () => this.openImageEditor(file, ctx);
+                if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
+              });
+              window.MenuBarManager.setActiveApp('image-viewer');
+            }
+          }
         });
-        window.MenuBarManager.setActiveApp('image-viewer');
+
+        this.bindWindowImageEvents(win, file, cleanPathId, ctx);
+        return true;
       }
 
-      // Render Application Controls into Lightbox Action Bar
-      const appActions = document.getElementById('lightboxAppActions');
-      if (appActions) {
-        appActions.innerHTML = `
-          <div id="imageExplorerControls" class="image-explorer-controls" style="display: flex; gap: 0.4rem;">
-            <button id="lightboxZoomInBtn" class="lightbox-btn" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_in') || 'Zoom In (+)')}">➕</button>
-            <button id="lightboxZoomOutBtn" class="lightbox-btn" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_out') || 'Zoom Out (-)')}">➖</button>
-            <button id="lightboxResetZoomBtn" class="lightbox-btn" title="${ctx.escapeHtml(ctx.t('lightbox.reset_zoom') || 'Reset Zoom (0)')}">🔄</button>
-            <button id="lightboxRotateBtn" class="lightbox-btn" title="${ctx.escapeHtml(ctx.t('lightbox.rotate') || 'Rotate 90° (R)')}">⟳</button>
-            <span id="zoomBadge" class="zoom-badge">100%</span>
-            ${isEditableImage ? `<button id="lightboxEditImageBtn" class="lightbox-btn" title="${ctx.escapeHtml(ctx.t('lightbox.edit_image') || 'Éditer l\'image (Recadrage, Rotation, Filtres)')}">🎨</button>` : ''}
-          </div>
-        `;
-        const editBtn = document.getElementById('lightboxEditImageBtn');
-        if (editBtn) editBtn.onclick = () => this.openImageEditor(file, ctx);
-      }
-
-      // Render Image Content
+      // Legacy fallback
+      ctx.state.lightboxIndex = index;
+      ctx.el.lightboxTitle.textContent = `Visionneuse d'Image : ${file.name}`;
       ctx.el.lightboxContent.innerHTML = `
         <div class="image-viewer-container" id="imageViewerContainer">
           <img id="lightboxExplorerImg" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" draggable="false" />
         </div>
       `;
-
       this.bindExplorerEvents(ctx);
       ctx.el.lightbox.classList.add('open');
       return true;
     },
 
-    // -------------------------------------------------------------
-    // INTERACTIVE ZOOM, PAN, & ROTATION ENGINE
-    // -------------------------------------------------------------
-    bindExplorerEvents(ctx) {
-      const img = document.getElementById('lightboxExplorerImg');
-      const container = document.getElementById('imageViewerContainer') || ctx.el.lightboxContent;
+    bindWindowImageEvents(win, file, cleanPathId, ctx) {
+      const img = document.getElementById(`imgExplorer-${cleanPathId}`);
+      const container = document.getElementById(`imageViewerContainer-${cleanPathId}`);
       if (!img || !container) return;
 
-      // Mouse Drag / Pan
-      container.onmousedown = (e) => this.startDrag(e);
-      window.onmousemove = (e) => this.doDrag(e);
-      window.onmouseup = (e) => this.endDrag(e);
+      const zoomInBtn = document.getElementById(`imgZoomIn-${cleanPathId}`);
+      const zoomOutBtn = document.getElementById(`imgZoomOut-${cleanPathId}`);
+      const resetBtn = document.getElementById(`imgReset-${cleanPathId}`);
+      const rotateBtn = document.getElementById(`imgRotate-${cleanPathId}`);
+      const editBtn = document.getElementById(`imgEdit-${cleanPathId}`);
 
-      // Touch Drag / Pan
-      container.ontouchstart = (e) => this.startTouchDrag(e);
-      window.ontouchmove = (e) => this.doTouchDrag(e);
-      window.ontouchend = (e) => this.endDrag(e);
+      if (zoomInBtn) zoomInBtn.onclick = () => this.adjustZoom(0.3, cleanPathId);
+      if (zoomOutBtn) zoomOutBtn.onclick = () => this.adjustZoom(-0.3, cleanPathId);
+      if (resetBtn) resetBtn.onclick = () => this.resetZoom(cleanPathId);
+      if (rotateBtn) rotateBtn.onclick = () => this.rotateImage(cleanPathId);
+      if (editBtn) editBtn.onclick = () => this.openImageEditor(file, ctx);
 
-      // Mouse Wheel Zoom
+      // Pan Drag
+      container.onmousedown = (e) => this.startDrag(e, cleanPathId);
+      window.addEventListener('mousemove', (e) => this.doDrag(e, cleanPathId));
+      window.addEventListener('mouseup', (e) => this.endDrag(e, cleanPathId));
+
+      // Wheel Zoom
       container.onwheel = (e) => {
         e.preventDefault();
         const delta = e.deltaY < 0 ? 0.25 : -0.25;
-        this.adjustZoom(delta);
+        this.adjustZoom(delta, cleanPathId);
       };
 
-      // Double click to toggle Zoom
+      // Double Click Zoom
       img.ondblclick = (e) => {
         e.stopPropagation();
         if (this.zoomState.scale > 1) {
-          this.resetZoom();
+          this.resetZoom(cleanPathId);
         } else {
-          this.adjustZoom(1.5);
+          this.adjustZoom(1.5, cleanPathId);
         }
       };
-
-      // Toolbar Buttons
-      const zoomInBtn = document.getElementById('lightboxZoomInBtn');
-      const zoomOutBtn = document.getElementById('lightboxZoomOutBtn');
-      const resetBtn = document.getElementById('lightboxResetZoomBtn');
-      const rotateBtn = document.getElementById('lightboxRotateBtn');
-
-      if (zoomInBtn) zoomInBtn.onclick = () => this.adjustZoom(0.3);
-      if (zoomOutBtn) zoomOutBtn.onclick = () => this.adjustZoom(-0.3);
-      if (resetBtn) resetBtn.onclick = () => this.resetZoom();
-      if (rotateBtn) rotateBtn.onclick = () => this.rotateImage();
     },
 
-    resetZoom() {
+    resetZoom(cleanPathId = null) {
       this.zoomState = {
         scale: 1,
         translateX: 0,
@@ -218,11 +197,11 @@
         startX: 0,
         startY: 0
       };
-      this.updateExplorerTransform(true);
+      this.updateExplorerTransform(true, cleanPathId);
     },
 
-    clampTranslate() {
-      const img = document.getElementById('lightboxExplorerImg');
+    clampTranslate(cleanPathId = null) {
+      const img = (cleanPathId && document.getElementById(`imgExplorer-${cleanPathId}`)) || document.querySelector('.webos-window.active .explorer-img') || document.getElementById('lightboxExplorerImg');
       if (!img) return;
 
       const { scale, rotation } = this.zoomState;
@@ -232,7 +211,7 @@
         return;
       }
 
-      const container = document.getElementById('imageViewerContainer') || img.parentElement;
+      const container = (cleanPathId && document.getElementById(`imageViewerContainer-${cleanPathId}`)) || img.parentElement;
       const containerWidth = container ? container.clientWidth : window.innerWidth;
       const containerHeight = container ? container.clientHeight : window.innerHeight;
 
@@ -252,7 +231,7 @@
       this.zoomState.translateY = Math.min(maxPanY, Math.max(-maxPanY, this.zoomState.translateY));
     },
 
-    adjustZoom(delta) {
+    adjustZoom(delta, cleanPathId = null) {
       let newScale = Math.min(Math.max(1, this.zoomState.scale + delta), 5);
       newScale = Math.round(newScale * 100) / 100;
 
@@ -262,73 +241,56 @@
       }
 
       this.zoomState.scale = newScale;
-      this.clampTranslate();
-      this.updateExplorerTransform(true);
+      this.clampTranslate(cleanPathId);
+      this.updateExplorerTransform(true, cleanPathId);
     },
 
-    rotateImage() {
+    rotateImage(cleanPathId = null) {
       this.zoomState.rotation = (this.zoomState.rotation + 90) % 360;
-      this.clampTranslate();
-      this.updateExplorerTransform(true);
+      this.clampTranslate(cleanPathId);
+      this.updateExplorerTransform(true, cleanPathId);
     },
 
-    startDrag(e) {
+    startDrag(e, cleanPathId = null) {
       if (this.zoomState.scale <= 1) return;
-      if (e.target.closest('button, input, a, .lightbox-header, .lightbox-nav-btn, .image-explorer-controls')) return;
+      if (e.target.closest('button, input, a, .image-floating-toolbar, .webos-window-header')) return;
       e.preventDefault();
 
       this.zoomState.isDragging = true;
       this.zoomState.startX = e.clientX - this.zoomState.translateX;
       this.zoomState.startY = e.clientY - this.zoomState.translateY;
 
-      const img = document.getElementById('lightboxExplorerImg');
+      const img = (cleanPathId && document.getElementById(`imgExplorer-${cleanPathId}`)) || document.querySelector('.webos-window.active .explorer-img') || document.getElementById('lightboxExplorerImg');
       if (img) img.classList.add('is-panning');
     },
 
-    startTouchDrag(e) {
-      if (e.touches.length === 1 && this.zoomState.scale > 1) {
-        this.zoomState.isDragging = true;
-        this.zoomState.startX = e.touches[0].clientX - this.zoomState.translateX;
-        this.zoomState.startY = e.touches[0].clientY - this.zoomState.translateY;
-      }
-    },
-
-    doDrag(e) {
+    doDrag(e, cleanPathId = null) {
       if (!this.zoomState.isDragging) return;
       e.preventDefault();
       this.zoomState.translateX = e.clientX - this.zoomState.startX;
       this.zoomState.translateY = e.clientY - this.zoomState.startY;
-      this.clampTranslate();
-      this.updateExplorerTransform(false);
+      this.clampTranslate(cleanPathId);
+      this.updateExplorerTransform(false, cleanPathId);
     },
 
-    doTouchDrag(e) {
-      if (!this.zoomState.isDragging || e.touches.length !== 1) return;
-      e.preventDefault();
-      this.zoomState.translateX = e.touches[0].clientX - this.zoomState.startX;
-      this.zoomState.translateY = e.touches[0].clientY - this.zoomState.startY;
-      this.clampTranslate();
-      this.updateExplorerTransform(false);
-    },
-
-    endDrag() {
+    endDrag(e, cleanPathId = null) {
       if (!this.zoomState.isDragging) return;
       this.zoomState.isDragging = false;
-      const img = document.getElementById('lightboxExplorerImg');
+      const img = (cleanPathId && document.getElementById(`imgExplorer-${cleanPathId}`)) || document.querySelector('.webos-window.active .explorer-img') || document.getElementById('lightboxExplorerImg');
       if (img) img.classList.remove('is-panning');
-      this.updateExplorerTransform(true);
+      this.updateExplorerTransform(true, cleanPathId);
     },
 
-    updateExplorerTransform(withTransition = true) {
-      const img = document.getElementById('lightboxExplorerImg');
+    updateExplorerTransform(withTransition = true, cleanPathId = null) {
+      const img = (cleanPathId && document.getElementById(`imgExplorer-${cleanPathId}`)) || document.querySelector('.webos-window.active .explorer-img') || document.getElementById('lightboxExplorerImg');
       if (!img) return;
 
       img.style.transition = withTransition ? 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)' : 'none';
       img.style.transform = `translate(${this.zoomState.translateX}px, ${this.zoomState.translateY}px) scale(${this.zoomState.scale}) rotate(${this.zoomState.rotation}deg)`;
 
-      const zoomBadge = document.getElementById('zoomBadge');
-      if (zoomBadge) {
-        zoomBadge.textContent = `${Math.round(this.zoomState.scale * 100)}%`;
+      const badge = (cleanPathId && document.getElementById(`imgZoomBadge-${cleanPathId}`)) || document.querySelector('.webos-window.active [id^="imgZoomBadge"]') || document.getElementById('zoomBadge');
+      if (badge) {
+        badge.textContent = `${Math.round(this.zoomState.scale * 100)}%`;
       }
     },
 

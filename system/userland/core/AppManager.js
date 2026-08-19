@@ -51,6 +51,7 @@ class AppManager {
         if (cat === 'audio') return this.apps.get('audio-player');
         if (cat === 'doc') return this.apps.get('doc-viewer');
         if (cat === 'archive') return this.apps.get('archive-manager');
+        if (cat === 'videowall') return this.apps.get('video-player');
         return null;
     }
 
