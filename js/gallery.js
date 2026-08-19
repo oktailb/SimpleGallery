@@ -302,6 +302,14 @@
       }
     }
 
+    openMapModal(focusPath) {
+      if (window.sys && window.sys.openMaps) {
+        const files = (window.explorerApp && window.explorerApp.state && window.explorerApp.state.filteredFiles) || [];
+        const currentPath = (window.explorerApp && window.explorerApp.state && window.explorerApp.state.currentPath) || '';
+        window.sys.openMaps({ files, currentPath, focusPath });
+      }
+    }
+
     openAdminModal() {
       const modal = document.getElementById('adminModal') || this.el.adminModal;
       if (!modal) return;

@@ -218,6 +218,11 @@
               <span>❤️</span><span id="favCountBadge" class="fav-count-badge" style="${this.state.favorites.length > 0 ? 'display:inline-flex;' : 'display:none;'}">${this.state.favorites.length}</span>
             </button>
 
+            <!-- GPS Map Button -->
+            <button type="button" id="menuFolderMapBtn" class="btn-toggle" style="display: none;" title="${this.escapeHtml(this.t('nav.map') || 'Carte GPS')}">
+              <span>🗺️</span>
+            </button>
+
             <!-- Archive Dropdown -->
             <div class="archive-dropdown-container" id="archiveDropdownContainer" style="${(this.state.userRights && this.state.userRights.can_download_archive === false && !this.state.isAdmin) ? 'display:none;' : 'display:inline-flex;'}">
               <button id="downloadArchiveBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.download_archive') || 'Télécharger archive')}">
@@ -315,6 +320,11 @@
 
       if (toggleFavBtn) {
         toggleFavBtn.onclick = () => this.toggleFavoritesFilter();
+      }
+
+      const menuMapBtn = document.getElementById('menuFolderMapBtn');
+      if (menuMapBtn) {
+        menuMapBtn.onclick = () => this.openMapModal();
       }
 
       if (dlArchiveBtn) {
@@ -875,11 +885,13 @@
     }
 
     updateStats() {
-      if (!this.el.galleryStats) return;
-      this.el.galleryStats.textContent = this.t('stats.summary', {
-        folders: this.state.directories.length,
-        files: this.state.filteredFiles.length
-      });
+      if (this.el.galleryStats) {
+        this.el.galleryStats.textContent = this.t('stats.summary', {
+          folders: this.state.directories.length,
+          files: this.state.filteredFiles.length
+        });
+      }
+      this.updateFolderMapButton();
     }
 
     // -------------------------------------------------------------
@@ -1071,10 +1083,13 @@
     }
 
     // -------------------------------------------------------------
-    // GPS MAP & SMART SMART GPS
+    // GPS MAP & SMART TIMELINE GPS
     // -------------------------------------------------------------
     computeSmartGpsLocations(files) {
       if (!files || files.length === 0) return [];
+      if (window.sys && typeof window.sys.computeSmartGpsLocations === 'function') {
+        return window.sys.computeSmartGpsLocations(files, this.isSmartGpsEnabled);
+      }
       const result = [];
       files.forEach(f => {
         if (f.exif && f.exif.gps && typeof f.exif.gps.lat === 'number' && typeof f.exif.gps.lng === 'number') {
@@ -1091,17 +1106,33 @@
     }
 
     updateFolderMapButton() {
-      if (!this.el.folderMapBtn) return;
       const mapped = this.computeSmartGpsLocations(this.state.filteredFiles);
-      if (mapped.length === 0) {
-        this.el.folderMapBtn.style.display = 'none';
-        return;
+      const count = mapped.length;
+
+      if (this.el.folderMapBtn) {
+        if (count === 0) {
+          this.el.folderMapBtn.style.display = 'none';
+        } else {
+          this.el.folderMapBtn.innerHTML = `🗺️ ${this.escapeHtml(this.t('nav.map') || 'Carte GPS')} (${count})`;
+          this.el.folderMapBtn.style.display = 'inline-flex';
+        }
       }
-      this.el.folderMapBtn.innerHTML = `🗺️ ${this.t('nav.map') || 'Carte GPS'} (${mapped.length})`;
-      this.el.folderMapBtn.style.display = 'inline-flex';
+
+      const menuMapBtn = document.getElementById('menuFolderMapBtn');
+      if (menuMapBtn) {
+        menuMapBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+      }
     }
 
     openMapModal(focusPath = null) {
+      if (window.sys && typeof window.sys.openMaps === 'function') {
+        window.sys.openMaps({
+          files: this.state.filteredFiles,
+          currentPath: this.state.currentPath,
+          focusPath: focusPath
+        });
+        return;
+      }
       if (!this.el.mapModal) return;
       this.el.mapModal.style.display = 'flex';
       this.initLeafletMap(focusPath);

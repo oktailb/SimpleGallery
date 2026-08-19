@@ -1,0 +1,26 @@
+{
+  "id": "maps",
+  "name": "Maps & GPS Route Explorer",
+  "version": "2.0.0",
+  "icon": "🗺️",
+  "author": "SimpleGallery Team",
+  "category": "utility",
+  "locales": {
+    "fr": {
+      "title": "Exploration Cartographique & Trajets GPS",
+      "description": "Visualisation cartographique OpenStreetMap/Leaflet, trajets chronologiques et déduction GPS intelligente des photos"
+    },
+    "en": {
+      "title": "Maps & GPS Route Explorer",
+      "description": "Interactive Leaflet & OpenStreetMap visualization, chronological GPS routes, and smart timeline GPS deduction"
+    },
+    "ja": {
+      "title": "マップ＆GPSルートエクスプローラー",
+      "description": "インタラクティブなLeafletマップ、時系列GPS移動ルート、タイムスタンプによるスマート位置推定"
+    }
+  },
+  "entry": {
+    "js": "maps.js",
+    "css": "maps.css"
+  }
+}
