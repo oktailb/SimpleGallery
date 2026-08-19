@@ -98,7 +98,8 @@
         createFolderModal: document.getElementById('createFolderModal'),
         createFolderCloseBtn: document.getElementById('createFolderCloseBtn'),
         createFolderForm: document.getElementById('createFolderForm'),
-        newFolderNameInput: document.getElementById('newFolderNameInput'),
+        newFolderNameInput: document.getElementById('createFolderNameInput') || document.getElementById('newFolderNameInput'),
+        createFolderError: document.getElementById('createFolderError'),
         deleteConfirmModal: document.getElementById('deleteConfirmModal'),
         deleteConfirmCloseBtn: document.getElementById('deleteConfirmCloseBtn'),
         deleteCancelBtn: document.getElementById('deleteCancelBtn'),
@@ -1408,8 +1409,10 @@
     // ADMIN EXPLORER MODALS
     // -------------------------------------------------------------
     openCreateFolderModal() {
-      if (!this.state.isAdmin || !this.el.createFolderModal) return;
-      this.el.createFolderModal.style.display = 'block';
+      const canCreate = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_create_folder);
+      if (!canCreate || !this.el.createFolderModal) return;
+      if (this.el.createFolderError) this.el.createFolderError.style.display = 'none';
+      this.el.createFolderModal.style.display = 'flex';
       this.el.createFolderModal.classList.add('open');
       if (this.el.newFolderNameInput) {
         this.el.newFolderNameInput.value = '';
@@ -1438,6 +1441,7 @@
         const payload = {
           action: 'create_folder',
           dir: this.state.currentPath,
+          folder_name: name,
           name: name,
           csrf_token: csrfToken
         };

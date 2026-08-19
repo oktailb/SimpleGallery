@@ -719,7 +719,7 @@ if ($action === 'create_folder') {
     }
 
     $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
-    $folder_name = trim((string)($raw_body['folder_name'] ?? $_POST['folder_name'] ?? ''));
+    $folder_name = trim((string)($raw_body['folder_name'] ?? $raw_body['name'] ?? $_POST['folder_name'] ?? $_POST['name'] ?? ''));
 
     $target_dir = sanitize_path($dir_param, $real_base_dir);
     if ($target_dir === null || !is_dir($target_dir)) {
