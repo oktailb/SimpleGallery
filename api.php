@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -541,7 +541,137 @@ if ($action === 'update_dotfile') {
     exit;
 }
 
-if ($action === 'upload_file') {
+if ($action === 'save_comment') {
+    if (!has_permission('can_comment', $real_base_dir)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Permission d\'édition des légendes refusée']);
+        exit;
+    }
+
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $filename = trim((string)($raw_body['filename'] ?? $_POST['filename'] ?? ''));
+    $comment = trim((string)($raw_body['comment'] ?? $_POST['comment'] ?? ''));
+
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Dossier introuvable ou accès refusé']);
+        exit;
+    }
+
+    if ($filename === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Nom du fichier requis']);
+        exit;
+    }
+
+    $filename = basename($filename);
+    $comments = load_dir_comments($target_dir);
+    if ($comment === '') {
+        unset($comments[$filename]);
+    } else {
+        $comments[$filename] = $comment;
+    }
+
+    $saved = save_dir_comments($target_dir, $comments);
+    if ($saved) {
+        invalidate_dir_cache($target_dir, $real_base_dir, $thumbnail_dir);
+        echo json_encode([
+            'success' => true,
+            'message' => 'Légende enregistrée avec succès',
+            'filename' => $filename,
+            'comment' => $comment
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Échec de l\'écriture du fichier de commentaires']);
+    }
+    exit;
+}
+
+if ($action === 'save_folder_settings') {
+    if (!is_admin_logged_in()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Droits administrateur requis']);
+        exit;
+    }
+
+    $dir_param = $raw_body['dir'] ?? $_POST['dir'] ?? $_GET['dir'] ?? '';
+    $title = trim((string)($raw_body['title'] ?? $_POST['title'] ?? ''));
+    $desc = trim((string)($raw_body['description'] ?? $_POST['description'] ?? ''));
+    $bg = trim((string)($raw_body['background'] ?? $_POST['background'] ?? ''));
+    $access_mode = trim((string)($raw_body['access_mode'] ?? $_POST['access_mode'] ?? 'public'));
+    $password = trim((string)($raw_body['password'] ?? $_POST['password'] ?? ''));
+
+    $target_dir = sanitize_path($dir_param, $real_base_dir);
+    if ($target_dir === null || !is_dir($target_dir)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Dossier introuvable ou accès refusé']);
+        exit;
+    }
+
+    // Title
+    $title_file = $target_dir . '/.title';
+    if ($title === '') {
+        if (file_exists($title_file)) @unlink($title_file);
+    } else {
+        @file_put_contents($title_file, $title . "\n");
+    }
+
+    // Description
+    $desc_file = $target_dir . '/.desc';
+    $desc_file2 = $target_dir . '/.description';
+    if ($desc === '') {
+        if (file_exists($desc_file)) @unlink($desc_file);
+        if (file_exists($desc_file2)) @unlink($desc_file2);
+    } else {
+        if (file_exists($desc_file2)) @unlink($desc_file2);
+        @file_put_contents($desc_file, $desc . "\n");
+    }
+
+    // Background
+    $bg_file = $target_dir . '/.bg';
+    if ($bg === '') {
+        if (file_exists($bg_file)) @unlink($bg_file);
+    } else {
+        @file_put_contents($bg_file, $bg . "\n");
+    }
+
+    // Access Mode
+    $private_file = $target_dir . '/.private';
+    $password_file = $target_dir . '/.password';
+    $public_file = $target_dir . '/.public';
+
+    if ($access_mode === 'public') {
+        if (file_exists($private_file)) @unlink($private_file);
+        if (file_exists($password_file)) @unlink($password_file);
+        if (basename($target_dir) === 'private') {
+            @file_put_contents($public_file, "1\n");
+        } else {
+            if (file_exists($public_file)) @unlink($public_file);
+        }
+    } elseif ($access_mode === 'private') {
+        if (file_exists($password_file)) @unlink($password_file);
+        if (file_exists($public_file)) @unlink($public_file);
+        @file_put_contents($private_file, "1\n");
+    } elseif ($access_mode === 'password') {
+        if (file_exists($private_file)) @unlink($private_file);
+        if (file_exists($public_file)) @unlink($public_file);
+        if ($password !== '') {
+            $hash = password_hash($password, PASSWORD_BCRYPT);
+            @file_put_contents($password_file, $hash . "\n");
+        }
+    }
+
+    invalidate_dir_cache($target_dir, $real_base_dir, $thumbnail_dir);
+    echo json_encode([
+        'success' => true,
+        'message' => 'Paramètres du dossier enregistrés avec succès'
+    ]);
+    exit;
+}
+
+if ($action === 'upload_file' || $action === 'upload_media') {
     if (!has_permission('can_upload', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([

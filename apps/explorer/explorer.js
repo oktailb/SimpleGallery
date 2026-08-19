@@ -1550,24 +1550,41 @@
       if (!this.pendingCommentFilename || !this.el.mediaCommentInput) return;
       const comment = this.el.mediaCommentInput.value.trim();
 
-      try {
-        const formData = new FormData();
-        formData.append('action', 'save_comment');
-        formData.append('dir', this.state.currentPath);
-        formData.append('filename', this.pendingCommentFilename);
-        formData.append('comment', comment);
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
 
-        const res = await fetch('api.php', { method: 'POST', body: formData });
+      try {
+        const payload = {
+          action: 'save_comment',
+          dir: this.state.currentPath,
+          filename: this.pendingCommentFilename,
+          comment: comment,
+          csrf_token: csrfToken
+        };
+
+        const res = await fetch('api.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
         const json = await res.json();
         if (json.success) {
           this.closeMediaCommentModal();
           this.showToast('Légende enregistrée', 'success');
-          this.loadDirectory(this.state.currentPath);
+          await this.loadDirectory(this.state.currentPath);
         } else {
-          this.showToast(json.error || 'Erreur d\'enregistrement', 'error');
+          this.showToast('⚠️ ' + (json.error || 'Erreur d\'enregistrement'), 'error');
         }
       } catch (err) {
-        this.showToast(`Erreur: ${err.message}`, 'error');
+        this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
       }
     }
 
@@ -1576,8 +1593,11 @@
       this.pendingUnlockDirPath = dirPath;
       if (this.el.folderPasswordInput) this.el.folderPasswordInput.value = '';
       if (this.el.folderUnlockError) this.el.folderUnlockError.style.display = 'none';
-      this.el.folderUnlockModal.style.display = 'block';
+      this.el.folderUnlockModal.style.display = 'flex';
       this.el.folderUnlockModal.classList.add('open');
+      if (this.el.folderPasswordInput) {
+        setTimeout(() => this.el.folderPasswordInput.focus(), 50);
+      }
     }
 
     closeFolderUnlockModal() {
@@ -1591,19 +1611,36 @@
       if (!this.pendingUnlockDirPath || !this.el.folderPasswordInput) return;
       const password = this.el.folderPasswordInput.value;
 
-      try {
-        const formData = new FormData();
-        formData.append('action', 'unlock_folder');
-        formData.append('dir', this.pendingUnlockDirPath);
-        formData.append('password', password);
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
 
-        const res = await fetch('api.php', { method: 'POST', body: formData });
+      try {
+        const payload = {
+          action: 'unlock_folder',
+          dir: this.pendingUnlockDirPath,
+          password: password,
+          csrf_token: csrfToken
+        };
+
+        const res = await fetch('api.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
         const json = await res.json();
         if (json.success) {
           const unlockedPath = this.pendingUnlockDirPath;
           this.closeFolderUnlockModal();
           this.showToast('Dossier déverrouillé', 'success');
-          this.navigateTo(unlockedPath);
+          await this.navigateTo(unlockedPath);
         } else {
           if (this.el.folderUnlockError) {
             this.el.folderUnlockError.textContent = json.error || 'Mot de passe incorrect';
@@ -1611,7 +1648,7 @@
           }
         }
       } catch (err) {
-        this.showToast(`Erreur: ${err.message}`, 'error');
+        this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
       }
     }
 
@@ -1625,7 +1662,7 @@
       if (this.el.folderPasswordGroup) {
         this.el.folderPasswordGroup.style.display = (overrides.access_mode === 'password') ? 'block' : 'none';
       }
-      this.el.folderSettingsModal.style.display = 'block';
+      this.el.folderSettingsModal.style.display = 'flex';
       this.el.folderSettingsModal.classList.add('open');
     }
 
@@ -1636,52 +1673,128 @@
     }
 
     async saveFolderSettings() {
-      try {
-        const formData = new FormData();
-        formData.append('action', 'save_folder_settings');
-        formData.append('dir', this.state.currentPath);
-        if (this.el.dotfileTitleInput) formData.append('title', this.el.dotfileTitleInput.value.trim());
-        if (this.el.dotfileDescInput) formData.append('description', this.el.dotfileDescInput.value.trim());
-        if (this.el.dotfileBgInput) formData.append('background', this.el.dotfileBgInput.value.trim());
-        if (this.el.dotfileAccessModeSelect) formData.append('access_mode', this.el.dotfileAccessModeSelect.value);
-        if (this.el.dotfilePasswordInput) formData.append('password', this.el.dotfilePasswordInput.value);
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
 
-        const res = await fetch('api.php', { method: 'POST', body: formData });
+      try {
+        const payload = {
+          action: 'save_folder_settings',
+          dir: this.state.currentPath,
+          title: this.el.dotfileTitleInput ? this.el.dotfileTitleInput.value.trim() : '',
+          description: this.el.dotfileDescInput ? this.el.dotfileDescInput.value.trim() : '',
+          background: this.el.dotfileBgInput ? this.el.dotfileBgInput.value.trim() : '',
+          access_mode: this.el.dotfileAccessModeSelect ? this.el.dotfileAccessModeSelect.value : 'public',
+          password: this.el.dotfilePasswordInput ? this.el.dotfilePasswordInput.value : '',
+          csrf_token: csrfToken
+        };
+
+        const res = await fetch('api.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
         const json = await res.json();
         if (json.success) {
           this.closeFolderSettingsModal();
-          this.showToast('Paramètres du dossier enregistrés', 'success');
-          this.loadDirectory(this.state.currentPath);
+          this.showToast(json.message || 'Paramètres du dossier enregistrés', 'success');
+          await this.loadDirectory(this.state.currentPath);
         } else {
-          this.showToast(json.error || 'Erreur d\'enregistrement', 'error');
+          this.showToast('⚠️ ' + (json.error || 'Erreur d\'enregistrement'), 'error');
         }
       } catch (err) {
-        this.showToast(`Erreur: ${err.message}`, 'error');
+        this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
       }
     }
 
-    async handleUploadFiles(files) {
+    async handleUploadFiles(files, targetDir = null) {
       if (!files || files.length === 0) return;
+      const destination = (targetDir !== null && typeof targetDir === 'string') ? targetDir : this.state.currentPath;
+
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
+
       const formData = new FormData();
-      formData.append('action', 'upload_media');
-      formData.append('dir', this.state.currentPath);
+      formData.append('action', 'upload_file');
+      formData.append('dir', destination);
+      formData.append('csrf_token', csrfToken);
+
       for (let i = 0; i < files.length; i++) {
         formData.append('files[]', files[i]);
       }
 
-      this.showToast(`Téléversement de ${files.length} fichier(s)...`, 'info');
-      try {
-        const res = await fetch('api.php', { method: 'POST', body: formData });
-        const json = await res.json();
-        if (json.success) {
-          this.showToast('Fichiers téléversés avec succès', 'success');
-          this.loadDirectory(this.state.currentPath);
-        } else {
-          this.showToast(json.error || 'Erreur lors du téléversement', 'error');
+      const progressModal = document.getElementById('uploadProgressModal');
+      const progressBar = document.getElementById('uploadProgressBar');
+      const progressStatus = document.getElementById('uploadProgressStatus');
+
+      if (progressModal) {
+        if (progressBar) {
+          progressBar.style.width = '0%';
+          progressBar.textContent = '0%';
         }
-      } catch (err) {
-        this.showToast(`Erreur: ${err.message}`, 'error');
+        if (progressStatus) {
+          progressStatus.textContent = `Téléversement de ${files.length} fichier(s)...`;
+        }
+        progressModal.style.display = 'flex';
+        progressModal.classList.add('open');
+      } else {
+        this.showToast(`Téléversement de ${files.length} fichier(s)...`, 'info');
       }
+
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'api.php', true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && progressBar) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${percent}%`;
+          }
+        };
+
+        xhr.onload = async () => {
+          if (progressModal) {
+            progressModal.style.display = 'none';
+            progressModal.classList.remove('open');
+          }
+          try {
+            const json = JSON.parse(xhr.responseText);
+            if (json.success) {
+              this.showToast(json.message || 'Fichiers téléversés avec succès', 'success');
+              await this.loadDirectory(this.state.currentPath);
+            } else {
+              this.showToast('⚠️ ' + (json.error || 'Erreur lors du téléversement'), 'error');
+            }
+          } catch (err) {
+            this.showToast(`⚠️ Erreur serveur (${xhr.status})`, 'error');
+          }
+          resolve();
+        };
+
+        xhr.onerror = () => {
+          if (progressModal) {
+            progressModal.style.display = 'none';
+            progressModal.classList.remove('open');
+          }
+          this.showToast('⚠️ Erreur réseau lors du téléversement', 'error');
+          resolve();
+        };
+
+        xhr.send(formData);
+      });
     }
 
     renderProtectedState(dirPath) {
@@ -1714,6 +1827,41 @@
     // -------------------------------------------------------------
     bindEvents() {
       window.addEventListener('popstate', () => this.handleUrlChange());
+
+      // Window File Drag & Drop Upload
+      window.addEventListener('dragover', (e) => {
+        const canUpload = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_upload);
+        if (canUpload && e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files') && !this.state.draggingPaths) {
+          e.preventDefault();
+          if (this.el.dropZoneOverlay) {
+            this.el.dropZoneOverlay.style.display = 'flex';
+          }
+        }
+      });
+
+      window.addEventListener('dragleave', (e) => {
+        if (e.relatedTarget === null || e.clientX === 0 || e.clientY === 0) {
+          if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'none';
+        }
+      });
+
+      if (this.el.dropZoneOverlay) {
+        this.el.dropZoneOverlay.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        this.el.dropZoneOverlay.addEventListener('dragleave', (e) => {
+          if (!this.el.dropZoneOverlay.contains(e.relatedTarget)) {
+            this.el.dropZoneOverlay.style.display = 'none';
+          }
+        });
+        this.el.dropZoneOverlay.addEventListener('drop', (e) => {
+          e.preventDefault();
+          this.el.dropZoneOverlay.style.display = 'none';
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            this.handleUploadFiles(e.dataTransfer.files, this.state.currentPath);
+          }
+        });
+      }
 
       document.addEventListener('click', (e) => {
         const viewContainer = document.getElementById('viewSelectorContainer');
