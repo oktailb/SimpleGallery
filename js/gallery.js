@@ -423,23 +423,23 @@ class SimpleGallery {
 
   bindExplorerHeaderEvents() {
     if (this.el.searchInput) {
-      this.el.searchInput.addEventListener('input', (e) => {
+      this.el.searchInput.oninput = (e) => {
         this.state.searchQuery = e.target.value.toLowerCase();
         if (this.el.searchClearBtn) {
           this.el.searchClearBtn.style.display = e.target.value ? 'flex' : 'none';
         }
         this.applyFilterAndRender();
-      });
+      };
     }
 
     if (this.el.searchClearBtn) {
-      this.el.searchClearBtn.addEventListener('click', () => {
+      this.el.searchClearBtn.onclick = () => {
         this.exitSearch();
-      });
+      };
     }
 
     if (this.el.sortSelect) {
-      this.el.sortSelect.addEventListener('change', (e) => {
+      this.el.sortSelect.onchange = (e) => {
         this.state.sortBy = e.target.value;
         if (['date', 'exif_date', 'size'].includes(e.target.value)) {
           this.state.sortOrder = 'desc';
@@ -449,75 +449,76 @@ class SimpleGallery {
         this.saveFolderSort(this.state.currentPath, this.state.sortBy, this.state.sortOrder);
         this.updateSortOrderUI();
         this.applyFilterAndRender();
-      });
+      };
     }
 
     if (this.el.sortOrderBtn) {
-      this.el.sortOrderBtn.addEventListener('click', () => this.toggleSortOrder());
+      this.el.sortOrderBtn.onclick = () => this.toggleSortOrder();
     }
 
     if (this.el.viewSelectorBtn) {
-      this.el.viewSelectorBtn.addEventListener('click', (e) => {
+      this.el.viewSelectorBtn.onclick = (e) => {
         e.stopPropagation();
         this.toggleViewDropdown();
-      });
+      };
     }
 
     if (this.el.viewDropdownMenu) {
       this.el.viewDropdownMenu.querySelectorAll('.view-option-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.onclick = (e) => {
           e.stopPropagation();
           const mode = btn.dataset.viewMode;
           if (mode) {
             this.setViewMode(mode);
             this.closeViewDropdown();
           }
-        });
+        };
       });
     }
 
     if (this.el.toggleFavoritesBtn) {
-      this.el.toggleFavoritesBtn.addEventListener('click', () => this.toggleFavoritesFilter());
+      this.el.toggleFavoritesBtn.onclick = () => this.toggleFavoritesFilter();
     }
 
     if (this.el.downloadArchiveBtn) {
-      this.el.downloadArchiveBtn.addEventListener('click', (e) => {
+      this.el.downloadArchiveBtn.onclick = (e) => {
         e.stopPropagation();
         this.toggleArchiveMenu();
-      });
+      };
     }
 
     if (this.el.createFolderBtn) {
-      this.el.createFolderBtn.addEventListener('click', () => this.openCreateFolderModal());
+      this.el.createFolderBtn.onclick = () => this.openCreateFolderModal();
     }
 
     if (this.el.uploadMediaBtn) {
-      this.el.uploadMediaBtn.addEventListener('click', () => {
+      this.el.uploadMediaBtn.onclick = () => {
         if (this.el.uploadFileInput) this.el.uploadFileInput.click();
-      });
+      };
     }
 
     if (this.el.uploadFileInput) {
-      this.el.uploadFileInput.addEventListener('change', (e) => {
+      this.el.uploadFileInput.onchange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
           this.handleUploadFiles(e.target.files);
         }
-      });
+      };
     }
 
     if (this.el.folderSettingsBtn) {
-      this.el.folderSettingsBtn.addEventListener('click', () => this.openFolderSettingsModal());
+      this.el.folderSettingsBtn.onclick = () => this.openFolderSettingsModal();
     }
   }
 
   bindEvents() {
     window.addEventListener('popstate', () => this.handleUrlChange());
 
-    this.bindExplorerHeaderEvents();
-
     document.addEventListener('click', (e) => {
       if (this.el.viewSelectorContainer && !this.el.viewSelectorContainer.contains(e.target)) {
         this.closeViewDropdown();
+      }
+      if (this.el.langSelectorContainer && !this.el.langSelectorContainer.contains(e.target)) {
+        this.closeLangDropdown();
       }
     });
 
