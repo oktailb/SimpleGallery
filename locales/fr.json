@@ -163,6 +163,14 @@
     "meta.compression_ratio": "Gain de compression",
     "meta.preview_files": "Aperçu des fichiers :",
 
+    "archive.filter_placeholder": "🔍 Filtrer les fichiers...",
+    "archive.compressed_size": "Taille compressée",
+    "archive.analyzing": "Analyse de l'archive...",
+    "archive.reading": "Lecture des fichiers de l'archive...",
+    "archive.no_matching_files": "Aucun fichier trouvé correspondant au filtre.",
+    "archive.download_complete": "📥 Télécharger l'archive complète",
+    "archive.unavailable_online": "Les détails internes de cette archive ne sont pas disponibles directement en ligne.",
+
     "exif.none": "Aucune métadonnée EXIF disponible.",
     "exif.title": "📷 Métadonnées EXIF",
     "exif.camera": "Appareil Photo",

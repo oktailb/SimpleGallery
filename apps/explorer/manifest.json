@@ -2,9 +2,22 @@
   "id": "explorer",
   "name": "Gallery Explorer Views",
   "version": "2.0.0",
-  "description": "Explorateur multi-vues : Polaroid vintage, Grille moderne, Mosaïque fluide et Liste tabulaire",
   "icon": "🗂️",
   "category": "view",
+  "locales": {
+    "fr": {
+      "title": "Explorateur de Galerie",
+      "description": "Explorateur multi-vues : Polaroid vintage, Grille moderne, Mosaïque fluide et Liste tabulaire"
+    },
+    "en": {
+      "title": "Gallery Explorer Views",
+      "description": "Multi-view explorer: vintage Polaroid, modern Grid, fluid Mosaic and tabular List"
+    },
+    "ja": {
+      "title": "ギャラリーエクスプローラー",
+      "description": "マルチビューエクスプローラー：ポラロイド、グリッド、モザイク、リスト"
+    }
+  },
   "entry": {
     "js": "explorer.js",
     "css": "explorer.css",

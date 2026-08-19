@@ -1,0 +1,76 @@
+/**
+ * SimpleGallery 2026 - Explorer Modern Grid View Stylesheet (apps/explorer/views/grid/view.css)
+ */
+.modern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.25rem;
+}
+
+.grid-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.grid-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #0f1422;
+  position: relative;
+}
+
+.grid-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+  image-orientation: from-image;
+}
+
+.grid-card:hover .grid-img-wrapper img {
+  transform: scale(1.08);
+}
+
+.grid-info-overlay {
+  padding: 0.75rem;
+  background: rgba(15, 20, 34, 0.7);
+  backdrop-filter: blur(8px);
+}
+
+.grid-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.grid-size {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

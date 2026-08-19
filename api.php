@@ -189,6 +189,9 @@ if ($action === 'save_permissions') {
         exit;
     }
     $new_perms = $raw_body['permissions'] ?? $_POST['permissions'] ?? [];
+    if (is_string($new_perms)) {
+        $new_perms = json_decode($new_perms, true) ?: [];
+    }
     if (save_permissions_config($real_base_dir, $new_perms)) {
         echo json_encode(['success' => true, 'permissions' => load_permissions_config($real_base_dir)]);
         exit;

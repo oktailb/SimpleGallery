@@ -1,6 +1,6 @@
 <?php
 /**
- * SimpleGallery 2026 - Explorer App UI Template
+ * SimpleGallery 2026 - Explorer App UI Template & Modals
  * Injected automatically by the Kernel into the workspace.
  */
 ?>

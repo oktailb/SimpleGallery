@@ -1,0 +1,86 @@
+/**
+ * SimpleGallery 2026 - Explorer Fluid Mosaic View Stylesheet (apps/explorer/views/mosaic/view.css)
+ */
+.mosaic-grid,
+.fluid-mosaic-grid {
+  column-count: 4;
+  column-gap: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 1200px) { .mosaic-grid, .fluid-mosaic-grid { column-count: 3; } }
+@media (max-width: 768px) { .mosaic-grid, .fluid-mosaic-grid { column-count: 2; column-gap: 0.75rem; } }
+@media (max-width: 480px) { .mosaic-grid, .fluid-mosaic-grid { column-count: 1; } }
+
+.mosaic-card {
+  break-inside: avoid;
+  margin-bottom: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.mosaic-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.mosaic-img-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: #0f1422;
+}
+
+.mosaic-img-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  image-orientation: from-image;
+}
+
+.mosaic-card:hover .mosaic-img-wrapper img {
+  transform: scale(1.03);
+}
+
+.mosaic-info-overlay,
+.mosaic-hover-info {
+  padding: 0.65rem 0.85rem;
+  background: rgba(15, 20, 34, 0.7);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mosaic-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.mosaic-meta-row,
+.mosaic-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mosaic-size {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

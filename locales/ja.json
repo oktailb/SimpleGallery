@@ -163,6 +163,14 @@
     "meta.compression_ratio": "圧縮率",
     "meta.preview_files": "ファイル一覧（プレビュー）:",
 
+    "archive.filter_placeholder": "🔍 ファイルを検索...",
+    "archive.compressed_size": "圧縮サイズ",
+    "archive.analyzing": "アーカイブを解析中...",
+    "archive.reading": "アーカイブファイルを読み込み中...",
+    "archive.no_matching_files": "フィルターに一致するファイルは見つかりませんでした。",
+    "archive.download_complete": "📥 完全なアーカイブをダウンロード",
+    "archive.unavailable_online": "このアーカイブの内部詳細はオンラインでは利用できません。",
+
     "exif.none": "利用可能なEXIFメタデータはありません。",
     "exif.title": "📷 EXIFメタデータ",
     "exif.camera": "カメラ",

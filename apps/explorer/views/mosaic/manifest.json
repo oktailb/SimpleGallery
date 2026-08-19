@@ -1,0 +1,12 @@
+{
+  "id": "mosaic",
+  "name": "Mosaïque",
+  "nameKey": "view.mosaic",
+  "icon": "🧱",
+  "version": "1.0.0",
+  "description": "Mosaïque fluide justifiée (masonry) avec panneaux de métadonnées au survol",
+  "entry": {
+    "js": "view.js",
+    "css": "view.css"
+  }
+}

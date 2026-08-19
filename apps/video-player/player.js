@@ -29,12 +29,16 @@
 
       // 1. WebOS Window Manager Mode (Primary)
       if (window.WindowManager) {
+        const appTitle = (window.sys && window.sys.appManager) 
+          ? window.sys.appManager.getAppTitle('video-player') 
+          : (ctx.t('apps.video-player.title') || "Lecteur Vidéo");
+
         const win = window.WindowManager.createWindow({
           id: winId,
           appId: 'video-player',
-          appName: 'Lecteur Vidéo',
+          appName: appTitle,
           fileName: file.name,
-          title: `Lecteur Vidéo : ${file.name}`,
+          title: `${appTitle} : ${file.name}`,
           icon: '🎬',
           width: 720,
           height: 480,
@@ -168,13 +172,16 @@
       if (window.WindowManager) {
         const defaultW = Math.min(960, Math.max(540, Math.round(window.innerWidth * 0.80)));
         const defaultH = Math.min(640, Math.max(380, Math.round(window.innerHeight * 0.75)));
+        const appTitle = (window.sys && window.sys.appManager) 
+          ? window.sys.appManager.getAppTitle('videowall') 
+          : (ctx.t('apps.video-player.title') || "Mur Vidéo Synchronisé");
 
         const win = window.WindowManager.createWindow({
           id: winId,
           appId: 'videowall',
-          appName: 'Mur Vidéo Synchronisé',
+          appName: appTitle,
           fileName: file.name,
-          title: `Mur Vidéo : ${file.name}`,
+          title: `${appTitle} : ${file.name}`,
           icon: '🎬',
           width: defaultW,
           height: defaultH,

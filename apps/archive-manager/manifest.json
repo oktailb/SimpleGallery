@@ -6,6 +6,20 @@
   "icon": "📦",
   "author": "SimpleGallery Team",
   "category": "manager",
+  "locales": {
+    "fr": {
+      "title": "Gestionnaire d'Archives",
+      "description": "Explorateur et inspecteur d'archives compressées (ZIP, TAR, GZ, 7Z, RAR) avec listing interactif du contenu"
+    },
+    "en": {
+      "title": "Archive Inspector & Extractor",
+      "description": "Archive inspector and extractor (ZIP, TAR, GZ, 7Z, RAR) with interactive file listing"
+    },
+    "ja": {
+      "title": "アーカイブマネージャー",
+      "description": "圧縮アーカイブ（ZIP、TAR、GZ、7Z、RAR）の閲覧および展開ツール"
+    }
+  },
   "mimeTypes": [
     "application/zip",
     "application/x-tar",

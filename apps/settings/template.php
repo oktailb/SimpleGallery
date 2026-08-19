@@ -25,19 +25,61 @@
         </form>
       </div>
       <div id="adminActiveState" style="display: none;">
-        <p style="margin-bottom: 1rem; color: var(--text-main); font-weight: 500;" data-i18n="admin.active_notice">
-          🛡️ Mode Administrateur activé !
+        <p class="admin-active-notice" style="margin-bottom: 1.25rem; color: #94a3b8; font-size: 0.875rem; line-height: 1.4;" data-i18n="admin.active_notice">
+          Mode Administrateur activé. Vous pouvez créer des dossiers, uploader, éditer les images et gérer les permissions.
         </p>
-        <form id="changePasswordForm" style="margin-bottom: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-          <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main);" data-i18n="admin.change_password">Changer le mot de passe</h4>
-          <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="Nouveau mot de passe..." data-i18n-placeholder="admin.new_password_placeholder" required minlength="4" />
-          <button type="submit" class="pill-btn" style="width: 100%; margin-top: 0.5rem; justify-content: center;" data-i18n="admin.save_new_password">
-            Mettre à jour
+
+        <div class="admin-section" style="margin-bottom: 1.25rem;">
+          <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 600; color: #f8fafc;" data-i18n="admin.change_password">Changer le mot de passe</h4>
+          <form id="changePasswordForm">
+            <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="Nouveau mot de passe..." data-i18n-placeholder="admin.new_password_placeholder" required minlength="4" />
+            <button type="submit" class="pill-btn" style="width: 100%; margin-top: 0.5rem; justify-content: center; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);" data-i18n="admin.save_new_password">
+              Mettre à jour
+            </button>
+            <div id="adminChangePassMsg" class="admin-success-msg" style="display: none; margin-top: 0.5rem;"></div>
+          </form>
+        </div>
+
+        <div class="permissions-matrix-section">
+          <div class="permissions-matrix-title">
+            <span data-i18n="admin.perms_title">🛡️ Matrice des Droits Invités</span>
+          </div>
+          <div class="permissions-matrix-grid">
+            <label class="permission-item-card" for="perm_can_upload">
+              <input type="checkbox" id="perm_can_upload" />
+              <span data-i18n="admin.perm_upload">📤 Upload de fichiers</span>
+            </label>
+            <label class="permission-item-card" for="perm_can_delete">
+              <input type="checkbox" id="perm_can_delete" />
+              <span data-i18n="admin.perm_delete">🗑️ Suppression d'éléments</span>
+            </label>
+            <label class="permission-item-card" for="perm_can_move">
+              <input type="checkbox" id="perm_can_move" />
+              <span data-i18n="admin.perm_move">🖐️ Déplacement d'éléments</span>
+            </label>
+            <label class="permission-item-card" for="perm_can_comment">
+              <input type="checkbox" id="perm_can_comment" />
+              <span data-i18n="admin.perm_comment">✏️ Édition des légendes</span>
+            </label>
+            <label class="permission-item-card" for="perm_can_create_folder">
+              <input type="checkbox" id="perm_can_create_folder" />
+              <span data-i18n="admin.perm_create_folder">📁+ Création de dossiers</span>
+            </label>
+            <label class="permission-item-card" for="perm_can_download_archive">
+              <input type="checkbox" id="perm_can_download_archive" />
+              <span data-i18n="admin.perm_download_archive">📦 Téléchargement d'archives</span>
+            </label>
+            <label class="permission-item-card" for="perm_can_download_item" style="grid-column: span 2;">
+              <input type="checkbox" id="perm_can_download_item" />
+              <span data-i18n="admin.perm_download_item">⬇️ Téléchargement direct des médias seuls</span>
+            </label>
+          </div>
+          <button type="button" id="savePermissionsBtn" class="save-permissions-btn" data-i18n="admin.perm_save_btn">
+            💾 Enregistrer la matrice de droits
           </button>
-          <div id="adminChangePassMsg" class="admin-success-msg" style="display: none; margin-top: 0.5rem;"></div>
-        </form>
-        <div id="adminPermissionsContainer"></div>
-        <button id="adminLogoutBtn" class="pill-btn" style="width: 100%; margin-top: 1rem; justify-content: center; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);" data-i18n="admin.logout_btn">
+        </div>
+
+        <button id="adminLogoutBtn" type="button" class="admin-logout-btn" data-i18n="admin.logout_btn">
           Déconnexion
         </button>
       </div>

@@ -1,0 +1,12 @@
+{
+  "id": "grid",
+  "name": "Grille",
+  "nameKey": "view.grid",
+  "icon": "🔲",
+  "version": "1.0.0",
+  "description": "Grille carrée moderne avec overlays d'informations et transitions soignées",
+  "entry": {
+    "js": "view.js",
+    "css": "view.css"
+  }
+}

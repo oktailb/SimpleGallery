@@ -1,0 +1,12 @@
+{
+  "id": "list",
+  "name": "Liste",
+  "nameKey": "view.list",
+  "icon": "📑",
+  "version": "1.0.0",
+  "description": "Vue tabulaire détaillée avec colonnes de tri, type, taille et date de modification",
+  "entry": {
+    "js": "view.js",
+    "css": "view.css"
+  }
+}

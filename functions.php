@@ -1121,9 +1121,12 @@ function load_locale_translations(string $base_dir, string $code): array {
     $content = @file_get_contents($file);
     if (!$content) return [];
     $data = @json_decode($content, true);
-    if (!is_array($data)) return [];
+    $base_translations = (isset($data['translations']) && is_array($data['translations'])) ? $data['translations'] : [];
+    $app_translations = class_exists('\SimpleGallery\Kernel\PluginDiscovery') 
+        ? \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations(__DIR__, $clean_code) 
+        : [];
 
-    return $data['translations'] ?? [];
+    return array_merge($base_translations, $app_translations);
 }
 
 /**

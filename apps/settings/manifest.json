@@ -3,6 +3,20 @@
   "name": "System & Folder Settings",
   "version": "2.0.0",
   "icon": "⚙️",
+  "locales": {
+    "fr": {
+      "title": "Paramètres Système & Dossiers",
+      "description": "Panneau d'administration, permissions, gestion des dotfiles et thèmes visuels"
+    },
+    "en": {
+      "title": "System & Folder Settings",
+      "description": "Admin panel, permissions, dotfiles management, and visual themes"
+    },
+    "ja": {
+      "title": "システム＆フォルダ設定",
+      "description": "管理パネル、権限、ドットファイル管理、ビジュアルテーマ"
+    }
+  },
   "entry": {
     "js": "settings.js",
     "css": "settings.css",

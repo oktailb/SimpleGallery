@@ -2,10 +2,23 @@
   "id": "audio-player",
   "name": "Floating Audio Player",
   "version": "2.0.0",
-  "description": "Lecteur audio flottant haute qualité (MP3, FLAC, WAV, AAC, M4A, OGG) avec visualiseur et contrôle du volume",
   "icon": "🎵",
   "author": "SimpleGallery Team",
   "category": "player",
+  "locales": {
+    "fr": {
+      "title": "Lecteur Audio Flottant",
+      "description": "Lecteur audio flottant haute qualité (MP3, FLAC, WAV, AAC, M4A, OGG) avec visualiseur et contrôle du volume"
+    },
+    "en": {
+      "title": "Floating Audio Player",
+      "description": "High quality floating audio player (MP3, FLAC, WAV, AAC, M4A, OGG) with visualizer and volume control"
+    },
+    "ja": {
+      "title": "フローティング音楽プレーヤー",
+      "description": "高品質フローティングオーディオプレーヤー (MP3, FLAC, WAV, AAC, M4A, OGG)"
+    }
+  },
   "mimeTypes": [
     "audio/*"
   ],

@@ -7,308 +7,7 @@
   'use strict';
 
   // -------------------------------------------------------------
-  // 1. POLAROID VIEW PLUGIN
-  // -------------------------------------------------------------
-  const PolaroidViewPlugin = {
-    id: 'polaroid',
-    icon: '🖼️',
-    nameKey: 'view.polaroid',
-    containerClass: 'polaroid-grid',
-    cssPath: 'apps/explorer/explorer.css',
-
-    renderItem(file, idx, ctx) {
-      let frameClass = 'polaroid-card';
-      if (file.category === 'video') {
-        frameClass += ' film-strip-card';
-      } else if (file.category === 'audio') {
-        frameClass += ' audio-cassette-card';
-      } else if (file.category !== 'image') {
-        frameClass += ' doc-file-card';
-      }
-
-      let overlayHtml = '';
-      if (file.category === 'video') {
-        overlayHtml = '<div class="video-play-overlay">▶</div>';
-      } else if (file.category === 'audio') {
-        overlayHtml = '<div class="audio-play-overlay">🎵</div>';
-      }
-
-      let gpsBadge = '';
-      if (file.exif && file.exif.gps) {
-        gpsBadge = `<button type="button" class="gps-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate'))}">📍 GPS</button>`;
-      } else if (ctx.smartLocationsMap && ctx.smartLocationsMap.has(file.path)) {
-        gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
-      }
-
-      const canDelete = ctx.userRights ? ctx.userRights.can_delete : ctx.isAdmin;
-      const canComment = ctx.userRights ? ctx.userRights.can_comment : ctx.isAdmin;
-      const isFav = ctx.favorites && ctx.favorites.includes(file.path);
-
-      const deleteBtnHtml = canDelete
-        ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${ctx.escapeHtml(file.name)}" data-type="file" title="${ctx.escapeHtml(ctx.t('card.delete_item'))}">🗑️</button>`
-        : '';
-      const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${ctx.escapeHtml(isFav ? ctx.t('lightbox.favorite_remove') : ctx.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-      const pipCardBtn = ['video', 'audio'].includes(file.category)
-        ? `<button class="pip-card-btn" data-index="${idx}" title="${ctx.escapeHtml(ctx.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>`
-        : '';
-
-      const mediaPreviewHtml = `<img src="${file.thumb_url}" alt="${ctx.escapeHtml(file.name)}" loading="lazy" draggable="false" />`;
-
-      return `
-        <div class="${frameClass} ${ctx.handleClass || ''}" data-index="${idx}" draggable="${ctx.isDraggable || 'false'}">
-          ${deleteBtnHtml}
-          <div class="polaroid-img-wrapper">
-            ${mediaPreviewHtml}
-            ${favBtnHtml}
-            ${pipCardBtn}
-            ${overlayHtml}
-          </div>
-          <div class="polaroid-caption">
-            <span>${ctx.escapeHtml(file.comment || file.name)}</span>
-            ${canComment ? `<button class="edit-media-comment-btn" data-filename="${ctx.escapeHtml(file.name)}" data-comment="${ctx.escapeHtml(file.comment || '')}" title="${ctx.escapeHtml(ctx.t('card.edit_comment'))}">✏️</button>` : ''}
-          </div>
-          <div class="polaroid-subcaption">
-            <span>${file.size_formatted || ''}</span>
-            ${gpsBadge}
-          </div>
-        </div>
-      `;
-    }
-  };
-
-  // -------------------------------------------------------------
-  // 2. MODERN GRID VIEW PLUGIN
-  // -------------------------------------------------------------
-  const GridViewPlugin = {
-    id: 'grid',
-    icon: '🔲',
-    nameKey: 'view.grid',
-    containerClass: 'modern-grid',
-    cssPath: 'apps/explorer/explorer.css',
-
-    renderItem(file, idx, ctx) {
-      let gridFrameClass = 'grid-card';
-      if (file.category === 'video') {
-        gridFrameClass += ' film-strip-grid-card';
-      } else if (file.category === 'audio') {
-        gridFrameClass += ' audio-cassette-grid-card';
-      } else if (file.category !== 'image') {
-        gridFrameClass += ' doc-file-grid-card';
-      }
-
-      let overlayHtml = '';
-      if (file.category === 'video') {
-        overlayHtml = '<div class="video-play-overlay">▶</div>';
-      } else if (file.category === 'audio') {
-        overlayHtml = '<div class="audio-play-overlay">🎵</div>';
-      }
-
-      let gpsBadge = '';
-      if (file.exif && file.exif.gps) {
-        gpsBadge = `<button type="button" class="gps-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate'))}">📍 GPS</button>`;
-      } else if (ctx.smartLocationsMap && ctx.smartLocationsMap.has(file.path)) {
-        gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
-      }
-
-      const canDelete = ctx.userRights ? ctx.userRights.can_delete : ctx.isAdmin;
-      const canComment = ctx.userRights ? ctx.userRights.can_comment : ctx.isAdmin;
-      const isFav = ctx.favorites && ctx.favorites.includes(file.path);
-
-      const deleteBtnHtml = canDelete
-        ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${ctx.escapeHtml(file.name)}" data-type="file" title="${ctx.escapeHtml(ctx.t('card.delete_item'))}">🗑️</button>`
-        : '';
-      const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${ctx.escapeHtml(isFav ? ctx.t('lightbox.favorite_remove') : ctx.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-      const pipCardBtn = ['video', 'audio'].includes(file.category)
-        ? `<button class="pip-card-btn" data-index="${idx}" title="${ctx.escapeHtml(ctx.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>`
-        : '';
-
-      return `
-        <div class="${gridFrameClass} ${ctx.handleClass || ''}" data-index="${idx}" draggable="${ctx.isDraggable || 'false'}">
-          ${deleteBtnHtml}
-          <div class="grid-img-wrapper">
-            <img src="${file.thumb_url}" alt="${ctx.escapeHtml(file.name)}" loading="lazy" draggable="false" />
-            ${favBtnHtml}
-            ${pipCardBtn}
-            ${overlayHtml}
-          </div>
-          <div class="grid-info-overlay">
-            <div class="grid-title">${ctx.escapeHtml(file.comment || file.name)}</div>
-            <div class="grid-meta">
-              <span>${file.size_formatted || ''}</span>
-              ${gpsBadge}
-              ${canComment ? `<button class="edit-media-comment-btn" data-filename="${ctx.escapeHtml(file.name)}" data-comment="${ctx.escapeHtml(file.comment || '')}" title="${ctx.escapeHtml(ctx.t('card.edit_comment'))}">✏️</button>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-  };
-
-  // -------------------------------------------------------------
-  // 3. FLUID MOSAIC VIEW PLUGIN
-  // -------------------------------------------------------------
-  const MosaicViewPlugin = {
-    id: 'mosaic',
-    icon: '🧱',
-    nameKey: 'view.mosaic',
-    containerClass: 'fluid-mosaic-grid',
-    cssPath: 'apps/explorer/explorer.css',
-
-    renderItem(file, idx, ctx) {
-      let overlayHtml = '';
-      if (file.category === 'video') {
-        overlayHtml = '<div class="video-play-overlay">▶</div>';
-      } else if (file.category === 'audio') {
-        overlayHtml = '<div class="audio-play-overlay">🎵</div>';
-      }
-
-      let mosaicCardClass = 'mosaic-card';
-      if (file.category === 'video') {
-        mosaicCardClass += ' film-strip-mosaic-card';
-      } else if (file.category === 'audio') {
-        mosaicCardClass += ' audio-cassette-mosaic-card';
-      } else if (file.category !== 'image') {
-        mosaicCardClass += ' doc-file-mosaic-card';
-      }
-
-      let gpsBadge = '';
-      if (file.exif && file.exif.gps) {
-        gpsBadge = `<button type="button" class="gps-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate'))}">📍 GPS</button>`;
-      } else if (ctx.smartLocationsMap && ctx.smartLocationsMap.has(file.path)) {
-        gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
-      }
-
-      const canDelete = ctx.userRights ? ctx.userRights.can_delete : ctx.isAdmin;
-      const canComment = ctx.userRights ? ctx.userRights.can_comment : ctx.isAdmin;
-      const isFav = ctx.favorites && ctx.favorites.includes(file.path);
-
-      const deleteBtnHtml = canDelete
-        ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${ctx.escapeHtml(file.name)}" data-type="file" title="${ctx.escapeHtml(ctx.t('card.delete_item'))}">🗑️</button>`
-        : '';
-      const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${ctx.escapeHtml(isFav ? ctx.t('lightbox.favorite_remove') : ctx.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-      const pipCardBtn = ['video', 'audio'].includes(file.category)
-        ? `<button class="pip-card-btn" data-index="${idx}" title="${ctx.escapeHtml(ctx.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>`
-        : '';
-
-      return `
-        <div class="${mosaicCardClass} ${ctx.handleClass || ''}" data-index="${idx}" draggable="${ctx.isDraggable || 'false'}">
-          ${deleteBtnHtml}
-          <div class="mosaic-img-wrapper">
-            <img src="${file.thumb_url}" alt="${ctx.escapeHtml(file.name)}" loading="lazy" draggable="false" />
-            ${favBtnHtml}
-            ${pipCardBtn}
-            ${overlayHtml}
-          </div>
-          <div class="mosaic-hover-info">
-            <div class="mosaic-title">${ctx.escapeHtml(file.comment || file.name)}</div>
-            <div class="mosaic-meta">
-              <span>${file.size_formatted || ''}</span>
-              ${gpsBadge}
-              ${canComment ? `<button class="edit-media-comment-btn" data-filename="${ctx.escapeHtml(file.name)}" data-comment="${ctx.escapeHtml(file.comment || '')}" title="${ctx.escapeHtml(ctx.t('card.edit_comment'))}">✏️</button>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-  };
-
-  // -------------------------------------------------------------
-  // 4. TABULAR LIST VIEW PLUGIN
-  // -------------------------------------------------------------
-  const ListViewPlugin = {
-    id: 'list',
-    icon: '📑',
-    nameKey: 'view.list',
-    containerClass: 'tabular-list-container',
-    cssPath: 'apps/explorer/explorer.css',
-
-    renderContainer(files, ctx) {
-      const rows = files.map((file, idx) => this.renderItem(file, idx, ctx)).join('');
-      return `
-        <div class="list-table-wrapper">
-          <div class="list-table-header">
-            <div class="list-col-preview" data-i18n="list.preview">Aperçu</div>
-            <div class="list-col-name" data-i18n="list.name">Nom &amp; Description</div>
-            <div class="list-col-category" data-i18n="list.type">Type</div>
-            <div class="list-col-size" data-i18n="list.size">Taille</div>
-            <div class="list-col-date" data-i18n="list.date">Date de modification</div>
-            <div class="list-col-actions" data-i18n="list.actions">Actions</div>
-          </div>
-          <div class="list-table-body">
-            ${rows}
-          </div>
-        </div>
-      `;
-    },
-
-    renderItem(file, idx, ctx) {
-      let categoryIcon = '📄';
-      if (file.category === 'image') categoryIcon = '🖼️';
-      else if (file.category === 'video') categoryIcon = '🎬';
-      else if (file.category === 'audio') categoryIcon = '🎵';
-      else if (file.category === 'archive') categoryIcon = '📦';
-
-      let gpsBadge = '';
-      if (file.exif && file.exif.gps) {
-        gpsBadge = `<button type="button" class="gps-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate'))}">📍 GPS</button>`;
-      } else if (ctx.smartLocationsMap && ctx.smartLocationsMap.has(file.path)) {
-        gpsBadge = `<button type="button" class="gps-badge magic-badge" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(ctx.t('card.gps_locate_deduced'))}">✨ GPS</button>`;
-      }
-
-      const canDelete = ctx.userRights ? ctx.userRights.can_delete : ctx.isAdmin;
-      const canComment = ctx.userRights ? ctx.userRights.can_comment : ctx.isAdmin;
-      const isFav = ctx.favorites && ctx.favorites.includes(file.path);
-
-      const deleteBtnHtml = canDelete
-        ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${ctx.escapeHtml(file.name)}" data-type="file" title="${ctx.escapeHtml(ctx.t('card.delete_item'))}">🗑️</button>`
-        : '';
-      const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${ctx.escapeHtml(isFav ? ctx.t('lightbox.favorite_remove') : ctx.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
-      const pipCardBtn = ['video', 'audio'].includes(file.category)
-        ? `<button class="pip-card-btn" data-index="${idx}" title="${ctx.escapeHtml(ctx.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>`
-        : '';
-
-      const dateFormatted = file.mtime_formatted || (file.mtime ? new Date(file.mtime * 1000).toLocaleDateString() : '—');
-
-      return `
-        <div class="list-table-row ${ctx.handleClass || ''}" data-index="${idx}" draggable="${ctx.isDraggable || 'false'}">
-          <div class="list-col-preview">
-            <img src="${file.thumb_url}" alt="${ctx.escapeHtml(file.name)}" loading="lazy" draggable="false" />
-          </div>
-          <div class="list-col-name">
-            <div class="list-item-main-title">${ctx.escapeHtml(file.name)}</div>
-            ${file.comment ? `<div class="list-item-sub-comment">${ctx.escapeHtml(file.comment)}</div>` : ''}
-          </div>
-          <div class="list-col-category">
-            <span class="list-category-badge">${categoryIcon} ${ctx.escapeHtml(file.category)}</span>
-          </div>
-          <div class="list-col-size">
-            <span>${file.size_formatted || '—'}</span>
-          </div>
-          <div class="list-col-date">
-            <span>${dateFormatted}</span>
-          </div>
-          <div class="list-col-actions" onclick="event.stopPropagation()">
-            ${gpsBadge}
-            ${canComment ? `<button class="edit-media-comment-btn" data-filename="${ctx.escapeHtml(file.name)}" data-comment="${ctx.escapeHtml(file.comment || '')}" title="${ctx.escapeHtml(ctx.t('card.edit_comment'))}">✏️</button>` : ''}
-            ${pipCardBtn}
-            ${favBtnHtml}
-            ${deleteBtnHtml}
-          </div>
-        </div>
-      `;
-    }
-  };
-
-  // Register view plugins
-  if (window.GalleryViewRegistry) {
-    window.GalleryViewRegistry.register(PolaroidViewPlugin);
-    window.GalleryViewRegistry.register(GridViewPlugin);
-    window.GalleryViewRegistry.register(MosaicViewPlugin);
-    window.GalleryViewRegistry.register(ListViewPlugin);
-  }
-
-  // -------------------------------------------------------------
-  // 5. EXPLORER CORE APPLICATION CLASS
+  // EXPLORER CORE APPLICATION CLASS
   // -------------------------------------------------------------
   class ExplorerApp {
     constructor() {
@@ -437,7 +136,15 @@
     }
 
     t(key, params = {}) {
-      if (window.I18nEngine) return window.I18nEngine.t(key, params);
+      if (window.desktop && typeof window.desktop.t === 'function') {
+        return window.desktop.t(key, params);
+      }
+      if (window.sys && window.sys.i18n && typeof window.sys.i18n.t === 'function') {
+        return window.sys.i18n.t(key, params);
+      }
+      if (window.I18nEngine && typeof window.I18nEngine.t === 'function') {
+        return window.I18nEngine.t(key, params);
+      }
       return key;
     }
 
@@ -481,8 +188,8 @@
             <div class="search-box">
               <span class="search-icon">🔍</span>
               <input type="text" id="searchInput" class="search-input" placeholder="${this.escapeHtml(this.t('nav.search_placeholder') || 'Rechercher des médias...')}" value="${this.escapeHtml(this.state.searchQuery || '')}" aria-label="Rechercher des médias">
-              <button type="button" id="searchClearBtn" class="search-clear-btn" title="Effacer" style="${this.state.searchQuery ? 'display:inline-flex;' : 'display:none;'}">✕</button>
-              <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="${this.escapeHtml(this.t('nav.search_advanced') || 'Recherche avancée')}">
+              <button type="button" id="searchClearBtn" class="search-clear-btn" title="${this.escapeHtml(this.t('nav.search_clear') || 'Effacer la recherche')}" style="${this.state.searchQuery ? 'display:inline-flex;' : 'display:none;'}">✕</button>
+              <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="${this.escapeHtml(this.t('nav.search_advanced') || 'Options de recherche avancée')}">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
                   <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
@@ -500,7 +207,7 @@
                 <option value="date" ${this.state.sortBy === 'date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.mtime') || 'Date modif')}</option>
                 <option value="size" ${this.state.sortBy === 'size' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.size') || 'Taille')}</option>
               </select>
-              <button id="sortOrderBtn" class="btn-toggle" title="Inverser l'ordre">
+              <button id="sortOrderBtn" class="btn-toggle" title="${this.escapeHtml(this.t('sort.order_asc') || 'Inverser l\'ordre')}">
                 <span id="sortOrderIcon" style="font-size:1.1rem;font-weight:bold;">${this.state.sortOrder === 'asc' ? '⇧' : '⇩'}</span>
               </button>
             </div>
@@ -511,7 +218,7 @@
             </button>
 
             <!-- Archive Dropdown -->
-            <div class="archive-dropdown-container">
+            <div class="archive-dropdown-container" id="archiveDropdownContainer" style="${(this.state.userRights && this.state.userRights.can_download_archive === false && !this.state.isAdmin) ? 'display:none;' : 'display:inline-flex;'}">
               <button id="downloadArchiveBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.download_archive') || 'Télécharger archive')}">
                 <span>⇲</span> ▾
               </button>
@@ -520,28 +227,29 @@
 
             <!-- View Mode Selector Dropdown -->
             <div class="view-selector-container" id="viewSelectorContainer">
-              <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="Mode d'affichage">
+              <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="${this.escapeHtml(this.t('view.switch_mode') || 'Mode d\'affichage')}">
                 <span id="currentViewIcon">${this.getViewModeIcon(this.state.viewMode)}</span>
                 <span id="currentViewLabel">${this.getViewModeLabel(this.state.viewMode)}</span>
                 <span class="view-dropdown-arrow">▾</span>
               </button>
               <div id="viewDropdownMenu" class="view-dropdown-menu" style="display: none;">
-                <button type="button" class="view-option-btn ${this.state.viewMode === 'polaroid' ? 'active' : ''}" data-view-mode="polaroid"><span>🖼️</span> <span>Polaroid</span></button>
-                <button type="button" class="view-option-btn ${this.state.viewMode === 'grid' ? 'active' : ''}" data-view-mode="grid"><span>🔲</span> <span>Grille</span></button>
-                <button type="button" class="view-option-btn ${this.state.viewMode === 'mosaic' ? 'active' : ''}" data-view-mode="mosaic"><span>🧱</span> <span>Mosaïque</span></button>
-                <button type="button" class="view-option-btn ${this.state.viewMode === 'list' ? 'active' : ''}" data-view-mode="list"><span>📑</span> <span>Liste</span></button>
+                ${((window.GalleryViewRegistry && window.GalleryViewRegistry.getAll()) || []).map(v => `
+                  <button type="button" class="view-option-btn ${this.state.viewMode === v.id ? 'active' : ''}" data-view-mode="${v.id}">
+                    <span>${v.icon || '🖼️'}</span> <span>${this.escapeHtml(this.t(v.nameKey) || v.name || v.id)}</span>
+                  </button>
+                `).join('')}
               </div>
             </div>
 
-            <!-- Admin Folder Actions -->
-            <button id="createFolderBtn" class="btn-toggle" title="Créer un sous-dossier" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <!-- Folder & Upload Actions -->
+            <button id="createFolderBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.create_folder') || 'Créer un nouveau sous-dossier')}" style="${(this.state.isAdmin || (this.state.userRights && this.state.userRights.can_create_folder)) ? 'display:inline-flex;' : 'display:none;'}">
               <span>📁+</span>
             </button>
-            <button id="uploadMediaBtn" class="btn-toggle" title="Uploader des médias" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <button id="uploadMediaBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.upload_media') || 'Uploader des médias')}" style="${(this.state.isAdmin || (this.state.userRights && this.state.userRights.can_upload)) ? 'display:inline-flex;' : 'display:none;'}">
               <span>📤</span>
             </button>
             <input type="file" id="uploadFileInput" multiple style="display: none;" />
-            <button id="folderSettingsBtn" class="btn-toggle" title="Paramètres du dossier" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <button id="folderSettingsBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.folder_settings') || 'Paramètres du dossier')}" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
               <span>⚙</span>
             </button>
           </div>
@@ -622,18 +330,7 @@
         };
       }
 
-      if (viewDropdownMenu) {
-        viewDropdownMenu.querySelectorAll('.view-option-btn').forEach(btn => {
-          btn.onclick = (e) => {
-            e.stopPropagation();
-            const mode = btn.dataset.viewMode;
-            if (mode) {
-              this.setViewMode(mode);
-              this.closeViewDropdown();
-            }
-          };
-        });
-      }
+      this.updateViewDropdownUI();
 
       if (createFolderBtn) createFolderBtn.onclick = () => this.openCreateFolderModal();
       if (uploadMediaBtn) uploadMediaBtn.onclick = () => { if (uploadFileInput) uploadFileInput.click(); };
@@ -647,25 +344,48 @@
       if (folderSettingsBtn) folderSettingsBtn.onclick = () => this.openFolderSettingsModal();
     }
 
+    updateViewDropdownUI() {
+      const menu = document.getElementById('viewDropdownMenu');
+      const icon = document.getElementById('currentViewIcon');
+      const label = document.getElementById('currentViewLabel');
+      if (icon) icon.textContent = this.getViewModeIcon(this.state.viewMode);
+      if (label) label.textContent = this.getViewModeLabel(this.state.viewMode);
+
+      if (!menu) return;
+      const views = (window.GalleryViewRegistry && window.GalleryViewRegistry.getAll()) || [];
+      if (views.length === 0) return;
+
+      menu.innerHTML = views.map(v => `
+        <button type="button" class="view-option-btn ${this.state.viewMode === v.id ? 'active' : ''}" data-view-mode="${v.id}">
+          <span>${v.icon || '🖼️'}</span> <span>${this.escapeHtml(this.t(v.nameKey) || v.name || v.id)}</span>
+        </button>
+      `).join('');
+
+      menu.querySelectorAll('.view-option-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const mode = btn.dataset.viewMode;
+          if (mode) {
+            this.setViewMode(mode);
+            this.closeViewDropdown();
+          }
+        };
+      });
+    }
+
     getViewModeIcon(mode) {
-      switch (mode) {
-        case 'grid': return '🔲';
-        case 'mosaic': return '🧱';
-        case 'list': return '📑';
-        default: return '🖼️';
-      }
+      const plugin = window.GalleryViewRegistry && window.GalleryViewRegistry.get(mode);
+      return plugin ? (plugin.icon || '🖼️') : '🖼️';
     }
 
     getViewModeLabel(mode) {
-      switch (mode) {
-        case 'grid': return this.t('view.grid') || 'Grille';
-        case 'mosaic': return this.t('view.mosaic') || 'Mosaïque';
-        case 'list': return this.t('view.list') || 'Liste';
-        default: return this.t('view.polaroid') || 'Polaroid';
-      }
+      const plugin = window.GalleryViewRegistry && window.GalleryViewRegistry.get(mode);
+      if (plugin && plugin.nameKey) return this.t(plugin.nameKey) || plugin.name || plugin.id;
+      return mode;
     }
 
     toggleViewDropdown() {
+      this.updateViewDropdownUI();
       const menu = document.getElementById('viewDropdownMenu');
       if (!menu) return;
       const isVisible = menu.style.display === 'flex';
@@ -683,18 +403,7 @@
         localStorage.setItem('gallery_view_mode', mode);
       } catch (e) {}
 
-      const icon = document.getElementById('currentViewIcon');
-      const label = document.getElementById('currentViewLabel');
-      if (icon) icon.textContent = this.getViewModeIcon(mode);
-      if (label) label.textContent = this.getViewModeLabel(mode);
-
-      const menu = document.getElementById('viewDropdownMenu');
-      if (menu) {
-        menu.querySelectorAll('.view-option-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.viewMode === mode);
-        });
-      }
-
+      this.updateViewDropdownUI();
       this.renderMedia();
     }
 
@@ -975,7 +684,8 @@
       };
 
       const viewPlugin = (window.GalleryViewRegistry && window.GalleryViewRegistry.get(this.state.viewMode))
-        || (window.GalleryViewRegistry && window.GalleryViewRegistry.get('polaroid'));
+        || (window.GalleryViewRegistry && window.GalleryViewRegistry.get('polaroid'))
+        || (window.GalleryViewRegistry && window.GalleryViewRegistry.getAll()[0]);
 
       if (viewPlugin) {
         this.el.mediaGrid.className = viewPlugin.containerClass || 'polaroid-grid';
@@ -1279,7 +989,35 @@
       menu.classList.toggle('open');
     }
 
+    updateHeaderActionButtons() {
+      const canDownloadArchive = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_download_archive !== false : true);
+      const canUpload = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_upload === true : false);
+      const canCreateFolder = this.state.isAdmin || (this.state.userRights ? this.state.userRights.can_create_folder === true : false);
+      const isAdmin = this.state.isAdmin;
+
+      const archiveContainer = document.getElementById('archiveDropdownContainer');
+      if (archiveContainer) {
+        archiveContainer.style.display = canDownloadArchive ? 'inline-flex' : 'none';
+      }
+
+      const createFolderBtn = document.getElementById('createFolderBtn');
+      if (createFolderBtn) {
+        createFolderBtn.style.display = canCreateFolder ? 'inline-flex' : 'none';
+      }
+
+      const uploadMediaBtn = document.getElementById('uploadMediaBtn');
+      if (uploadMediaBtn) {
+        uploadMediaBtn.style.display = canUpload ? 'inline-flex' : 'none';
+      }
+
+      const folderSettingsBtn = document.getElementById('folderSettingsBtn');
+      if (folderSettingsBtn) {
+        folderSettingsBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+      }
+    }
+
     updateArchiveMenuUI() {
+      this.updateHeaderActionButtons();
       const menu = document.getElementById('archiveMenu');
       if (!menu) return;
       const currentDir = encodeURIComponent(this.state.currentPath || '');

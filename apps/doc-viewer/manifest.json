@@ -6,6 +6,20 @@
   "icon": "📄",
   "author": "SimpleGallery Team",
   "category": "viewer",
+  "locales": {
+    "fr": {
+      "title": "Visionneuse de Documents & PDF",
+      "description": "Visualiseur de documents universel (PDF, Markdown avec rendu texte, code source et fichiers bureautiques)"
+    },
+    "en": {
+      "title": "Document & PDF Viewer",
+      "description": "Universal document viewer (PDF, Markdown rendered text, source code and office files)"
+    },
+    "ja": {
+      "title": "ドキュメント＆PDFビューアー",
+      "description": "ユニバーサルドキュメントビューアー（PDF、Markdown、ソースコード、オフィスファイル）"
+    }
+  },
   "mimeTypes": [
     "application/pdf",
     "text/*",

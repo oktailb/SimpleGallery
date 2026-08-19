@@ -1,0 +1,122 @@
+/**
+ * SimpleGallery 2026 - Explorer Tabular List View Stylesheet (apps/explorer/views/list/view.css)
+ */
+.list-table-view,
+.tabular-list-container {
+  width: 100%;
+  display: block !important;
+}
+
+.list-table-wrapper {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.list-table-header {
+  display: grid;
+  grid-template-columns: 54px 2.5fr 110px 100px 140px 130px;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.list-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-table-row {
+  display: grid;
+  grid-template-columns: 54px 2.5fr 110px 100px 140px 130px;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.list-table-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+}
+
+.list-table-row:last-child {
+  border-bottom: none;
+}
+
+.list-col-preview img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+}
+
+.list-item-main-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.list-item-sub-comment {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.list-category-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: capitalize;
+}
+
+.list-col-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .list-table-header, .list-table-row {
+    grid-template-columns: 48px 2fr 90px 110px;
+  }
+  .list-col-category, .list-col-date {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .list-table-header, .list-table-row {
+    grid-template-columns: 44px 1fr 100px;
+  }
+  .list-col-size {
+    display: none;
+  }
+}

@@ -26,12 +26,16 @@
 
       // 1. WebOS Window Manager Mode (Primary)
       if (window.WindowManager) {
+        const appTitle = (window.sys && window.sys.appManager) 
+          ? window.sys.appManager.getAppTitle('audio-player') 
+          : (ctx.t('apps.audio-player.title') || "Lecteur Audio");
+
         const win = window.WindowManager.createWindow({
           id: winId,
           appId: 'audio-player',
-          appName: 'Lecteur Audio',
+          appName: appTitle,
           fileName: file.name,
-          title: `Lecteur Audio : ${file.name}`,
+          title: `${appTitle} : ${file.name}`,
           icon: '🎵',
           width: 480,
           height: 220,

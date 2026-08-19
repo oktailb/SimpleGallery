@@ -2,10 +2,23 @@
   "id": "image-viewer",
   "name": "Image Lightbox Viewer",
   "version": "2.0.0",
-  "description": "Explorateur d'images ultra-haute fidélité avec zoom progressif, pan tactile, rotation et studio de retouche",
   "icon": "🖼️",
   "author": "SimpleGallery Team",
   "category": "viewer",
+  "locales": {
+    "fr": {
+      "title": "Visionneuse d'Images & Retouche",
+      "description": "Explorateur d'images ultra-haute fidélité avec zoom progressif, pan tactile, rotation et studio de retouche"
+    },
+    "en": {
+      "title": "Image Lightbox Viewer",
+      "description": "Ultra-high fidelity image explorer with progressive zoom, touch pan, rotation and editing studio"
+    },
+    "ja": {
+      "title": "画像ビューアー＆編集スタジオ",
+      "description": "プログレッシブズーム、タッチパン、回転、レタッチスタジオを備えた高精細画像ビューアー"
+    }
+  },
   "mimeTypes": [
     "image/*"
   ],
@@ -30,8 +43,8 @@
   "capabilities": [
     "zoom",
     "pan",
-    "rotate",
-    "exif",
-    "edit-filters"
+    "fullscreen",
+    "image-editor",
+    "exif-viewer"
   ]
 }

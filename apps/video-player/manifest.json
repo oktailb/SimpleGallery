@@ -2,10 +2,23 @@
   "id": "video-player",
   "name": "Video & Video Wall Player",
   "version": "2.0.0",
-  "description": "Lecteur vidéo haute performance avec mode PiP flottant et mur vidéo multi-écrans synchronisé",
   "icon": "🎬",
   "author": "SimpleGallery Team",
   "category": "viewer",
+  "locales": {
+    "fr": {
+      "title": "Lecteur Vidéo & Mur Vidéo",
+      "description": "Lecteur vidéo haute performance avec mode PiP flottant et mur vidéo multi-écrans synchronisé"
+    },
+    "en": {
+      "title": "Video & Video Wall Player",
+      "description": "High-performance video player with floating PiP and synchronized multi-screen video wall"
+    },
+    "ja": {
+      "title": "動画＆ビデオウォールプレーヤー",
+      "description": "高性能動画プレーヤー（フローティングPiPおよび同期マルチスクリーンビデオウォール）"
+    }
+  },
   "mimeTypes": [
     "video/*"
   ],

@@ -71,13 +71,16 @@
       if (window.WindowManager) {
         const defaultW = Math.min(920, Math.max(480, Math.round(window.innerWidth * 0.75)));
         const defaultH = Math.min(640, Math.max(360, Math.round(window.innerHeight * 0.70)));
+        const appTitle = (window.sys && window.sys.appManager) 
+          ? window.sys.appManager.getAppTitle('image-viewer') 
+          : (ctx.t('apps.image-viewer.title') || "Visionneuse d'Images");
 
         const win = window.WindowManager.createWindow({
           id: winId,
           appId: 'image-viewer',
-          appName: "Visionneuse d'Image",
+          appName: appTitle,
           fileName: file.name,
-          title: `Visionneuse d'Image : ${file.name}`,
+          title: `${appTitle} : ${file.name}`,
           icon: '🖼️',
           width: defaultW,
           height: defaultH,
@@ -87,12 +90,12 @@
                 <img id="imgExplorer-${cleanPathId}" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" style="max-width:100%;max-height:100%;object-fit:contain;user-select:none;transition:transform 0.15s cubic-bezier(0.2,0,0,1);" draggable="false" />
               </div>
               <div class="image-floating-toolbar" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(15,23,42,0.85);backdrop-filter:blur(16px);padding:4px 10px;border-radius:9999px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:10;">
-                <button type="button" class="image-explorer-btn" id="imgZoomIn-${cleanPathId}" title="Zoom In (+)">➕</button>
-                <button type="button" class="image-explorer-btn" id="imgZoomOut-${cleanPathId}" title="Zoom Out (-)">➖</button>
-                <button type="button" class="image-explorer-btn" id="imgReset-${cleanPathId}" title="Réinitialiser (1:1)">🔄</button>
-                <button type="button" class="image-explorer-btn" id="imgRotate-${cleanPathId}" title="Rotation 90°">⟳</button>
+                <button type="button" class="image-explorer-btn" id="imgZoomIn-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_in') || 'Zoom avant (+)')}">➕</button>
+                <button type="button" class="image-explorer-btn" id="imgZoomOut-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_out') || 'Zoom arrière (-)')}">➖</button>
+                <button type="button" class="image-explorer-btn" id="imgReset-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.reset_zoom') || 'Réinitialiser (0)')}">🔄</button>
+                <button type="button" class="image-explorer-btn" id="imgRotate-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.rotate') || 'Pivoter 90° (R)')}">⟳</button>
                 <span id="imgZoomBadge-${cleanPathId}" style="font-size:0.75rem;font-weight:700;color:#f8fafc;padding:0 4px;">100%</span>
-                ${isEditableImage ? `<button type="button" class="image-explorer-btn" id="imgEdit-${cleanPathId}" style="background:var(--accent-primary,#6366f1);color:#fff;border-radius:12px;padding:0 8px;width:auto;font-size:0.75rem;font-weight:600;" title="Retoucher l'image">🎨 Retoucher</button>` : ''}
+                ${isEditableImage ? `<button type="button" class="image-explorer-btn" id="imgEdit-${cleanPathId}" style="background:var(--accent-primary,#6366f1);color:#fff;border-radius:12px;padding:0 8px;width:auto;font-size:0.75rem;font-weight:600;" title="${ctx.escapeHtml(ctx.t('lightbox.edit_image') || 'Éditer l\'image')}">🎨 ${ctx.escapeHtml(ctx.t('lightbox.edit_image_btn') || 'Éditer')}</button>` : ''}
               </div>
             </div>
           `,
@@ -102,14 +105,14 @@
                 container.innerHTML = `
                   <div class="app-menu-left">
                     <span class="app-menu-pill active" style="font-weight:600;">🖼️ ${ctx.escapeHtml(file.name)}</span>
-                    <button type="button" class="app-menu-pill" id="menuImgZoomInBtn">➕ Zoom +</button>
-                    <button type="button" class="app-menu-pill" id="menuImgZoomOutBtn">➖ Zoom -</button>
-                    <button type="button" class="app-menu-pill" id="menuImgResetBtn">🔄 1:1</button>
-                    <button type="button" class="app-menu-pill" id="menuImgRotateBtn">⟳ Rotation 90°</button>
-                    ${isEditableImage ? `<button type="button" class="app-menu-pill" id="menuImgEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">🎨 Retoucher l'image</button>` : ''}
+                    <button type="button" class="app-menu-pill" id="menuImgZoomInBtn">➕ ${ctx.escapeHtml(ctx.t('lightbox.zoom_in') || 'Zoom +')}</button>
+                    <button type="button" class="app-menu-pill" id="menuImgZoomOutBtn">➖ ${ctx.escapeHtml(ctx.t('lightbox.zoom_out') || 'Zoom -')}</button>
+                    <button type="button" class="app-menu-pill" id="menuImgResetBtn">🔄 ${ctx.escapeHtml(ctx.t('lightbox.reset_zoom') || '1:1')}</button>
+                    <button type="button" class="app-menu-pill" id="menuImgRotateBtn">⟳ ${ctx.escapeHtml(ctx.t('lightbox.rotate') || 'Rotation 90°')}</button>
+                    ${isEditableImage ? `<button type="button" class="app-menu-pill" id="menuImgEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">🎨 ${ctx.escapeHtml(ctx.t('lightbox.edit_image_btn') || 'Éditer')}</button>` : ''}
                   </div>
                   <div class="app-menu-right">
-                    <button type="button" class="app-menu-pill" id="menuImgFsBtn">⛶ Plein Écran</button>
+                    <button type="button" class="app-menu-pill" id="menuImgFsBtn">⛶ ${ctx.escapeHtml(ctx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
                   </div>
                 `;
                 const zi = container.querySelector('#menuImgZoomInBtn');

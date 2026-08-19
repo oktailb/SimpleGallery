@@ -55,14 +55,36 @@ class AppManager {
         return null;
     }
 
-    async openFile(file, context = {}) {
-        const app = this.getAppForFile(file);
-        if (app && app.instance && typeof app.instance.open === 'function') {
-            window.sys.events.emit('app:before_open', { appId: app.manifest.id, file });
-            return await app.instance.open(file, context);
-        } else {
-            console.warn(`[AppManager] No application available to open file:`, file);
+    getAppTitle(appId) {
+        const entry = this.apps.get(appId);
+        const manifest = entry ? entry.manifest : null;
+        const currentLocale = (window.desktop && window.desktop.state && window.desktop.state.currentLocale) || document.documentElement.lang || 'fr';
+        
+        if (manifest && manifest.locales && manifest.locales[currentLocale] && manifest.locales[currentLocale].title) {
+            return manifest.locales[currentLocale].title;
         }
+        
+        const key = `apps.${appId}.title`;
+        const trans = window.desktop ? window.desktop.t(key) : (window.I18nEngine ? window.I18nEngine.t(key) : key);
+        if (trans && trans !== key) return trans;
+        
+        return (manifest && manifest.name) || appId;
+    }
+
+    getAppDescription(appId) {
+        const entry = this.apps.get(appId);
+        const manifest = entry ? entry.manifest : null;
+        const currentLocale = (window.desktop && window.desktop.state && window.desktop.state.currentLocale) || document.documentElement.lang || 'fr';
+        
+        if (manifest && manifest.locales && manifest.locales[currentLocale] && manifest.locales[currentLocale].description) {
+            return manifest.locales[currentLocale].description;
+        }
+        
+        const key = `apps.${appId}.description`;
+        const trans = window.desktop ? window.desktop.t(key) : (window.I18nEngine ? window.I18nEngine.t(key) : key);
+        if (trans && trans !== key) return trans;
+        
+        return (manifest && manifest.description) || '';
     }
 }
 

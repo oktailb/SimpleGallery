@@ -76,12 +76,16 @@
           `;
         }
 
+        const appTitle = (window.sys && window.sys.appManager) 
+          ? window.sys.appManager.getAppTitle('doc-viewer') 
+          : (ctx.t('apps.doc-viewer.title') || "Lecteur de Documents");
+
         const win = window.WindowManager.createWindow({
           id: winId,
-          appId: 'generic-doc',
-          appName: 'Lecteur de Documents',
+          appId: 'doc-viewer',
+          appName: appTitle,
           fileName: file.name,
-          title: `Lecteur de Documents : ${file.name}`,
+          title: `${appTitle} : ${file.name}`,
           icon: '📄',
           width: defaultW,
           height: defaultH,

@@ -35,7 +35,14 @@ class I18nEngine {
         }
         return text;
     }
+
+    setTranslations(code, translations) {
+        this.currentLocale = code;
+        this.translations = translations || {};
+    }
 }
 
 window.sys = window.sys || {};
 window.sys.i18n = new I18nEngine();
+window.I18nEngine = window.sys.i18n;
+

@@ -1,0 +1,12 @@
+{
+  "id": "polaroid",
+  "name": "Polaroid",
+  "nameKey": "view.polaroid",
+  "icon": "🖼️",
+  "version": "1.0.0",
+  "description": "Affichage vintage style photo Polaroid avec cadre blanc, légendes et pellicules 35mm vidéo",
+  "entry": {
+    "js": "view.js",
+    "css": "view.css"
+  }
+}

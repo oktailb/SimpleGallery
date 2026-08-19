@@ -85,7 +85,18 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <?php
   use SimpleGallery\Kernel\PluginDiscovery;
   $discovered_apps = PluginDiscovery::getDiscoveredApps(__DIR__);
+  $discovered_views = PluginDiscovery::getDiscoveredViews(__DIR__);
   ?>
+
+  <!-- Auto-Discovered Explorer Views (apps/explorer/views/<name>/manifest.json) -->
+  <?php foreach ($discovered_views as $view_info): ?>
+    <?php if (!empty($view_info['css_entry'])): ?>
+      <link rel="stylesheet" href="<?php echo htmlspecialchars($view_info['css_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $view_info['css_entry']); ?>">
+    <?php endif; ?>
+    <?php if (!empty($view_info['js_entry'])): ?>
+      <script src="<?php echo htmlspecialchars($view_info['js_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $view_info['js_entry']); ?>" defer></script>
+    <?php endif; ?>
+  <?php endforeach; ?>
 
   <!-- Auto-Discovered Modular Applications (apps/<name>/manifest.json) -->
   <?php foreach ($discovered_apps as $app_info): ?>
@@ -96,6 +107,16 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
       <script src="<?php echo htmlspecialchars($app_info['js_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $app_info['js_entry']); ?>" defer></script>
     <?php endif; ?>
   <?php endforeach; ?>
+
+  <script>
+    window.SG_I18N_CONFIG = <?php echo json_encode([
+      'locales'      => $available_locales,
+      'default'      => $default_locale,
+      'translations' => $initial_translations
+    ], JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+    window.CSRF_TOKEN = <?php echo json_encode(get_csrf_token()); ?>;
+    window.IS_ADMIN = <?php echo is_admin_logged_in() ? 'true' : 'false'; ?>;
+  </script>
 
   <!-- Core Client Application -->
   <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>
