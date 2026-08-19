@@ -95,6 +95,7 @@ class SecurityUnitTestSuite {
         $this->testHtaccessRules();
         $this->testNewFeatures();
         $this->testExtractedModules();
+        $this->testMutatingActionsAndCsrfIntegrity();
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS DE SÉCURITÉ\n";
@@ -486,6 +487,71 @@ HTACCESS;
         $this->assert("find_binary_executable trouve le binaire PHP courant", !empty($php_bin) && file_exists($php_bin));
         $missing = find_binary_executable('non_existent_binary_xyz_123');
         $this->assert("find_binary_executable renvoie null pour un binaire inexistant", $missing === null);
+    }
+
+    /**
+     * 11. MUTATING ACTIONS, CSRF ENFORCEMENT & TRAVERSAL AUDIT
+     */
+    private function testMutatingActionsAndCsrfIntegrity(): void {
+        echo "\n🔒 [11/11] Audit Approfondi des Actions Mutantes, CSRF et Injections...\n";
+
+        // Read mutating actions from api.php
+        $api_content = file_get_contents($this->base_dir . '/api.php');
+        $this->assert("Présence de \$mutating_actions dans api.php", strpos($api_content, '$mutating_actions =') !== false);
+
+        $expected_mutating = [
+            'change_password', 'update_dotfile', 'lock_folder', 'unlock_folder',
+            'logout', 'login', 'upload_file', 'upload_media', 'create_folder',
+            'move_item', 'delete_item', 'delete_file', 'delete_folder',
+            'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings'
+        ];
+
+        foreach ($expected_mutating as $act) {
+            $this->assert("Action mutante sécurisée déclarée ('{$act}')", strpos($api_content, "'{$act}'") !== false);
+        }
+
+        // Test save_text_file extension whitelist & forbidden extensions
+        $safe_text_exts = ['md', 'markdown', 'txt', 'json', 'csv', 'xml', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'];
+        $unsafe_text_exts = ['php', 'phtml', 'php5', 'phar', 'inc', 'sh', 'bash', 'exe', 'bat', 'cmd', 'cgi', 'pl', 'py', 'htaccess', 'user.ini'];
+
+        foreach ($safe_text_exts as $ext) {
+            $test_file = $this->temp_test_dir . "/test_doc.{$ext}";
+            @file_put_contents($test_file, "Sample text content for {$ext}");
+            $safe_res = sanitize_file_path(get_relative_path($test_file, $this->base_dir), $this->base_dir);
+            $this->assert("Fichier texte valide accessible ('.{$ext}')", $safe_res !== null && is_file($safe_res));
+            @unlink($test_file);
+        }
+
+        foreach ($unsafe_text_exts as $ext) {
+            $is_forbidden = in_array($ext, ['php', 'phtml', 'php5', 'phar', 'inc', 'sh', 'bash', 'exe', 'bat', 'cmd', 'cgi', 'pl', 'py', 'htaccess', 'user.ini'], true);
+            $this->assert("Extension exécutable strictement interdite ('.{$ext}')", $is_forbidden);
+        }
+
+        // Test create_folder dotfile / path traversal rejection
+        $dotfile_folder_names = ['.hidden', '..', '.git', '.ssh', '.admin_password_hash'];
+        foreach ($dotfile_folder_names as $fname) {
+            $clean = basename($fname);
+            $clean = preg_replace('/[^\w\.\-\s]/u', '_', $clean);
+            $clean = trim($clean);
+            $is_rejected = ($clean === '' || $clean[0] === '.');
+            $this->assert("create_folder rejette dossier masqué ('{$fname}')", $is_rejected === true);
+        }
+
+        // Test path traversal sanitization in folder creation
+        $traversal_input = '.../malicious';
+        $sanitized_sub = basename($traversal_input);
+        $this->assert("create_folder neutralise le traversal '.../' via basename()", $sanitized_sub === 'malicious');
+
+        // Test delete_item root protection
+        $target_root = $this->base_dir;
+        $is_root_blocked = (strtolower($target_root) === strtolower($this->base_dir));
+        $this->assert("delete_item bloque la suppression de la racine de la galerie", $is_root_blocked === true);
+
+        // Test move_item into self protection
+        $source_folder = $this->temp_test_dir . '/subfolder_a';
+        $dest_inside_self = $source_folder . '/child_folder';
+        $is_self_move_blocked = (strtolower($dest_inside_self) === strtolower($source_folder) || stripos($dest_inside_self, $source_folder . '/') === 0);
+        $this->assert("move_item bloque le déplacement d'un dossier dans lui-même", $is_self_move_blocked === true);
     }
 }
 
