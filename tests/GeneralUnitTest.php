@@ -375,6 +375,23 @@ class GeneralUnitTestSuite {
         if (file_exists($test_image_file)) @unlink($test_image_file);
         if (file_exists($copy_path)) @unlink($copy_path);
         if (file_exists($orig_exif_file)) @unlink($orig_exif_file);
+
+        // Test Document WYSIWYG & Markdown save action
+        $doc_viewer_js = @file_get_contents($this->base_dir . '/apps/doc-viewer/viewer.js') ?: '';
+        $this->assert("doc-viewer intègre le chargeur Toast UI Editor", strpos($doc_viewer_js, 'loadToastUiEditor') !== false);
+        $this->assert("api.php déclare l'action save_text_file dans les actions mutantes", strpos($api_content, "'save_text_file'") !== false);
+        $this->assert("api.php implémente le gestionnaire d'action save_text_file", strpos($api_content, "\$action === 'save_text_file'") !== false);
+
+        // Test sample markdown saving
+        $test_md_file = $this->test_dir . '/notes.md';
+        file_put_contents($test_md_file, "# Initial Title\n\nSome text content");
+        $this->assert("Création fichier Markdown test", file_exists($test_md_file));
+
+        $updated_content = "# Updated Title\n\n* Updated with Toast UI Editor";
+        file_put_contents($test_md_file, $updated_content);
+        $this->assert("Sauvegarde contenu Markdown mis à jour", file_get_contents($test_md_file) === $updated_content);
+
+        if (file_exists($test_md_file)) @unlink($test_md_file);
     }
 
     /**
