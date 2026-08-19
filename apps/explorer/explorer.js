@@ -1828,40 +1828,67 @@
     bindEvents() {
       window.addEventListener('popstate', () => this.handleUrlChange());
 
-      // Window File Drag & Drop Upload
-      window.addEventListener('dragover', (e) => {
+      // Prevent default browser behavior (opening file) for unhandled drag & drop across entire window
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        window.addEventListener(eventName, (e) => {
+          e.preventDefault();
+        }, false);
+        document.addEventListener(eventName, (e) => {
+          e.preventDefault();
+        }, false);
+      });
+
+      let windowDragCounter = 0;
+
+      window.addEventListener('dragenter', (e) => {
+        e.preventDefault();
         const canUpload = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_upload);
         if (canUpload && e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files') && !this.state.draggingPaths) {
-          e.preventDefault();
+          windowDragCounter++;
           if (this.el.dropZoneOverlay) {
             this.el.dropZoneOverlay.style.display = 'flex';
           }
         }
       });
 
-      window.addEventListener('dragleave', (e) => {
-        if (e.relatedTarget === null || e.clientX === 0 || e.clientY === 0) {
-          if (this.el.dropZoneOverlay) this.el.dropZoneOverlay.style.display = 'none';
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const canUpload = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_upload);
+        if (canUpload && e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files') && !this.state.draggingPaths) {
+          e.dataTransfer.dropEffect = 'copy';
+          if (this.el.dropZoneOverlay && this.el.dropZoneOverlay.style.display !== 'flex') {
+            this.el.dropZoneOverlay.style.display = 'flex';
+          }
         }
       });
 
-      if (this.el.dropZoneOverlay) {
-        this.el.dropZoneOverlay.addEventListener('dragover', (e) => {
-          e.preventDefault();
-        });
-        this.el.dropZoneOverlay.addEventListener('dragleave', (e) => {
-          if (!this.el.dropZoneOverlay.contains(e.relatedTarget)) {
+      window.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        windowDragCounter--;
+        if (windowDragCounter <= 0 || e.clientX === 0 || e.clientY === 0 || e.relatedTarget === null) {
+          windowDragCounter = 0;
+          if (this.el.dropZoneOverlay) {
             this.el.dropZoneOverlay.style.display = 'none';
           }
-        });
-        this.el.dropZoneOverlay.addEventListener('drop', (e) => {
-          e.preventDefault();
+        }
+      });
+
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        windowDragCounter = 0;
+        if (this.el.dropZoneOverlay) {
           this.el.dropZoneOverlay.style.display = 'none';
-          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            this.handleUploadFiles(e.dataTransfer.files, this.state.currentPath);
+        }
+
+        const canUpload = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_upload);
+        if (canUpload && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0 && !this.state.draggingPaths) {
+          // If dropped on a specific subfolder or breadcrumb link, let their specific drop handlers process it
+          if (e.target && (e.target.closest('.folder-card') || e.target.closest('.crumb-item'))) {
+            return;
           }
-        });
-      }
+          this.handleUploadFiles(e.dataTransfer.files, this.state.currentPath);
+        }
+      });
 
       document.addEventListener('click', (e) => {
         const viewContainer = document.getElementById('viewSelectorContainer');

@@ -1621,14 +1621,15 @@ kbd {
   border: 4px dashed var(--accent-primary);
   margin: 1rem;
   border-radius: var(--radius-xl);
-  pointer-events: none;
+  pointer-events: auto;
   animation: fadeIn 0.2s ease;
 }
 
-.drop-zone-content {
+.drop-zone-content,
+.drop-zone-content * {
   text-align: center;
   color: var(--text-main);
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
 .drop-zone-icon {
