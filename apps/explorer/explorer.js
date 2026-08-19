@@ -103,6 +103,7 @@
         deleteConfirmCloseBtn: document.getElementById('deleteConfirmCloseBtn'),
         deleteCancelBtn: document.getElementById('deleteCancelBtn'),
         deleteConfirmActionBtn: document.getElementById('deleteConfirmActionBtn'),
+        deleteConfirmMessage: document.getElementById('deleteConfirmMessage'),
         deleteConfirmItemName: document.getElementById('deleteConfirmItemName'),
         deleteConfirmItemType: document.getElementById('deleteConfirmItemType'),
         mediaCommentModal: document.getElementById('mediaCommentModal'),
@@ -534,9 +535,41 @@
       }).join('');
 
       nav.querySelectorAll('a[data-path]').forEach(link => {
+        const destPath = link.dataset.path;
         link.onclick = (e) => {
           e.preventDefault();
-          this.navigateTo(link.dataset.path);
+          this.navigateTo(destPath);
+        };
+
+        // Breadcrumb as Drop Target
+        link.ondragover = (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        };
+        link.ondragenter = (e) => {
+          e.preventDefault();
+          link.classList.add('drag-over');
+        };
+        link.ondragleave = (e) => {
+          if (!link.contains(e.relatedTarget)) link.classList.remove('drag-over');
+        };
+        link.ondrop = async (e) => {
+          e.preventDefault();
+          link.classList.remove('drag-over');
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            this.handleUploadFiles(e.dataTransfer.files, destPath);
+            return;
+          }
+          let paths = this.state.draggingPaths;
+          if (!paths) {
+            try {
+              const text = e.dataTransfer.getData('text/plain');
+              if (text) paths = JSON.parse(text);
+            } catch (err) {}
+          }
+          if (paths && paths.length > 0) {
+            await this.moveItems(paths, destPath);
+          }
         };
       });
     }
@@ -550,11 +583,13 @@
         return;
       }
 
+      const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
+
       this.el.folderSection.style.display = 'block';
       this.el.foldersGrid.innerHTML = folders.map(folder => {
         const badge = folder.is_protected ? '<span class="folder-badge lock-badge">🔒</span>' : '';
-        const isDraggable = this.state.isAdmin ? 'true' : 'false';
-        const handleClass = this.state.isAdmin ? 'drag-handle' : '';
+        const isDraggable = canMove ? 'true' : 'false';
+        const handleClass = canMove ? 'drag-handle' : '';
         const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="${this.escapeHtml(this.t('folder.delete_title'))}">🗑️</button>` : '';
 
         return `
@@ -595,6 +630,57 @@
             this.openDeleteConfirmModal(delBtn.dataset.path, delBtn.dataset.name, 'folder');
           };
         }
+
+        // Folder as Drag Source
+        if (canMove) {
+          card.ondragstart = (e) => {
+            this.state.draggingPaths = [folderPath];
+            this.state.draggingItemPath = folderPath;
+            e.dataTransfer.setData('text/plain', JSON.stringify([folderPath]));
+            e.dataTransfer.effectAllowed = 'move';
+            card.classList.add('is-dragging');
+          };
+          card.ondragend = () => {
+            this.state.draggingPaths = null;
+            this.state.draggingItemPath = null;
+            document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+            document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+          };
+        }
+
+        // Folder as Drop Target
+        card.ondragover = (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        };
+        card.ondragenter = (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        };
+        card.ondragleave = (e) => {
+          if (!card.contains(e.relatedTarget)) card.classList.remove('drag-over');
+        };
+        card.ondrop = async (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            this.handleUploadFiles(e.dataTransfer.files, folderPath);
+            return;
+          }
+
+          let pathsToMove = this.state.draggingPaths;
+          if (!pathsToMove) {
+            try {
+              const data = e.dataTransfer.getData('text/plain');
+              if (data) pathsToMove = JSON.parse(data);
+            } catch (err) {}
+          }
+
+          if (pathsToMove && pathsToMove.length > 0) {
+            await this.moveItems(pathsToMove, folderPath);
+          }
+        };
       });
     }
 
@@ -689,6 +775,7 @@
         smartLocations.forEach(item => smartLocationsMap.set(item.file.path, item));
       }
 
+      const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
       const context = {
         t: this.t.bind(this),
         escapeHtml: this.escapeHtml.bind(this),
@@ -696,8 +783,8 @@
         userRights: this.state.userRights,
         favorites: this.state.favorites,
         smartLocationsMap: smartLocationsMap,
-        isDraggable: this.state.isAdmin ? 'true' : 'false',
-        handleClass: this.state.isAdmin ? 'drag-handle' : ''
+        isDraggable: canMove ? 'true' : 'false',
+        handleClass: canMove ? 'drag-handle' : ''
       };
 
       const viewPlugin = (window.GalleryViewRegistry && window.GalleryViewRegistry.get(this.state.viewMode))
@@ -718,6 +805,7 @@
 
     bindMediaCardEvents() {
       if (!this.el.mediaGrid) return;
+      const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
 
       this.el.mediaGrid.querySelectorAll('.gps-badge[data-path]').forEach(btn => {
         btn.onclick = (e) => {
@@ -754,6 +842,38 @@
 
         if (this.state.selectedPaths.has(file.path)) {
           card.classList.add('selected');
+        }
+
+        // Drag & Drop Source
+        if (canMove) {
+          card.ondragstart = (e) => {
+            let pathsToMove = [];
+            if (this.state.selectedPaths.has(file.path)) {
+              pathsToMove = Array.from(this.state.selectedPaths);
+            } else {
+              pathsToMove = [file.path];
+              this.state.selectedPaths.clear();
+              this.state.selectedPaths.add(file.path);
+              this.updateSelectionUI();
+            }
+
+            this.state.draggingPaths = pathsToMove;
+            this.state.draggingItemPath = file.path;
+            e.dataTransfer.setData('text/plain', JSON.stringify(pathsToMove));
+            e.dataTransfer.effectAllowed = 'move';
+
+            card.classList.add('is-dragging');
+            document.querySelectorAll('.media-card.selected, .polaroid-card.selected, .grid-card.selected, .list-row.selected').forEach(c => {
+              c.classList.add('is-dragging');
+            });
+          };
+
+          card.ondragend = () => {
+            this.state.draggingPaths = null;
+            this.state.draggingItemPath = null;
+            document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+            document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+          };
         }
 
         card.onclick = (e) => {
@@ -799,6 +919,54 @@
           this.openMedia(file, index);
         };
       });
+    }
+
+    async moveItems(sourcePaths, targetDir) {
+      if (!sourcePaths || sourcePaths.length === 0) return;
+      if (typeof targetDir !== 'string') return;
+
+      const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
+      if (!canMove) {
+        this.showToast('⚠️ Droits de déplacement manquants', 'error');
+        return;
+      }
+
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
+
+      try {
+        const payload = {
+          action: 'move_item',
+          source_paths: sourcePaths,
+          target_dir: targetDir,
+          csrf_token: csrfToken
+        };
+
+        const res = await fetch('api.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          this.clearSelection();
+          const targetName = targetDir ? targetDir.split('/').pop() : 'la racine';
+          this.showToast(json.message || `${sourcePaths.length} élément(s) déplacé(s) vers « ${targetName} »`, 'success');
+          await this.loadDirectory(this.state.currentPath);
+        } else {
+          this.showToast('⚠️ ' + (json.error || 'Erreur lors du déplacement'), 'error');
+        }
+      } catch (err) {
+        this.showToast(`⚠️ Erreur réseau : ${err.message}`, 'error');
+      }
     }
 
     openMedia(file, index) {
@@ -1240,23 +1408,40 @@
       const name = this.el.newFolderNameInput.value.trim();
       if (!name) return;
 
-      try {
-        const formData = new FormData();
-        formData.append('action', 'create_folder');
-        formData.append('dir', this.state.currentPath);
-        formData.append('name', name);
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
 
-        const res = await fetch('api.php', { method: 'POST', body: formData });
+      try {
+        const payload = {
+          action: 'create_folder',
+          dir: this.state.currentPath,
+          name: name,
+          csrf_token: csrfToken
+        };
+
+        const res = await fetch('api.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
         const json = await res.json();
         if (json.success) {
           this.closeCreateFolderModal();
           this.showToast(this.t('folder.create_success') || 'Dossier créé avec succès', 'success');
-          this.loadDirectory(this.state.currentPath);
+          await this.loadDirectory(this.state.currentPath);
         } else {
-          this.showToast(json.error || 'Erreur lors de la création', 'error');
+          this.showToast('⚠️ ' + (json.error || 'Erreur lors de la création'), 'error');
         }
       } catch (err) {
-        this.showToast(`Erreur: ${err.message}`, 'error');
+        this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
       }
     }
 
@@ -1264,9 +1449,13 @@
       this.pendingDeletePath = path;
       this.pendingDeleteType = type;
       if (!this.el.deleteConfirmModal) return;
+      const typeLabel = (type === 'folder') ? (this.t('delete_confirm.type_folder') || 'le dossier') : (this.t('delete_confirm.type_file') || 'le fichier');
+      if (this.el.deleteConfirmMessage) {
+        this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer définitivement ${typeLabel} <strong>« ${this.escapeHtml(name)} »</strong> ?`;
+      }
       if (this.el.deleteConfirmItemName) this.el.deleteConfirmItemName.textContent = name;
-      if (this.el.deleteConfirmItemType) this.el.deleteConfirmItemType.textContent = (type === 'folder') ? 'le dossier' : 'le fichier';
-      this.el.deleteConfirmModal.style.display = 'block';
+      if (this.el.deleteConfirmItemType) this.el.deleteConfirmItemType.textContent = typeLabel;
+      this.el.deleteConfirmModal.style.display = 'flex';
       this.el.deleteConfirmModal.classList.add('open');
     }
 
@@ -1280,24 +1469,40 @@
     async confirmDeleteItem() {
       if (!this.pendingDeletePath) return;
       const path = this.pendingDeletePath;
-      const type = this.pendingDeleteType;
+
+      const csrfToken = (this.state && this.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '';
 
       try {
-        const formData = new FormData();
-        formData.append('action', type === 'folder' ? 'delete_folder' : 'delete_file');
-        formData.append(type === 'folder' ? 'folder_path' : 'file_path', path);
+        const payload = {
+          action: 'delete_item',
+          target_path: path,
+          csrf_token: csrfToken
+        };
 
-        const res = await fetch('api.php', { method: 'POST', body: formData });
+        const res = await fetch('api.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
         const json = await res.json();
         if (json.success) {
           this.closeDeleteConfirmModal();
-          this.showToast('Élément supprimé avec succès', 'success');
-          this.loadDirectory(this.state.currentPath);
+          this.showToast(json.message || (this.t('api.success_deleted') || 'Élément supprimé avec succès'), 'success');
+          await this.loadDirectory(this.state.currentPath);
         } else {
-          this.showToast(json.error || 'Erreur lors de la suppression', 'error');
+          this.showToast('⚠️ ' + (json.error || 'Erreur lors de la suppression'), 'error');
         }
       } catch (err) {
-        this.showToast(`Erreur: ${err.message}`, 'error');
+        this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
       }
     }
 

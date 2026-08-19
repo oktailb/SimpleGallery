@@ -3732,6 +3732,26 @@ body.no-direct-download audio {
   display: inline-block;
 }
 
+/* Drag and drop move feedback */
+.folder-card.drag-over,
+.breadcrumb a.drag-over {
+  border-color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.25) !important;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6) !important;
+  transform: scale(1.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+.polaroid-card.is-dragging,
+.grid-card.is-dragging,
+.list-row.is-dragging,
+.mosaic-card.is-dragging,
+.folder-card.is-dragging {
+  opacity: 0.45 !important;
+  transform: scale(0.96) !important;
+  cursor: grabbing !important;
+}
+
 /* -------------------------------------------------------------
  * 16. LANGUAGE SELECTOR & i18n DROPDOWN
  * ------------------------------------------------------------- */

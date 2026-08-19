@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'save_permissions', 'edit_image', 'save_text_file'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -915,7 +915,7 @@ function recursive_delete_dir(string $dir): bool {
     return @rmdir($dir);
 }
 
-if ($action === 'delete_item') {
+if ($action === 'delete_item' || $action === 'delete_file' || $action === 'delete_folder') {
     if (!has_permission('can_delete', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([
@@ -925,7 +925,7 @@ if ($action === 'delete_item') {
         exit;
     }
 
-    $target_param = $raw_body['target_path'] ?? $_POST['target_path'] ?? $_GET['target_path'] ?? '';
+    $target_param = $raw_body['target_path'] ?? $raw_body['path'] ?? $raw_body['file_path'] ?? $raw_body['folder_path'] ?? $_POST['target_path'] ?? $_POST['path'] ?? $_POST['file_path'] ?? $_POST['folder_path'] ?? $_GET['target_path'] ?? '';
     if (empty($target_param)) {
         http_response_code(400);
         echo json_encode([
