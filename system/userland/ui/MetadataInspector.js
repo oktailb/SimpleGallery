@@ -10,6 +10,21 @@
   class MetadataInspector {
     constructor() {
       this.currentWinId = 'meta-inspector-window';
+      this.openInspectors = new Map();
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', () => this.refreshOpenInspectors());
+      }
+    }
+
+    refreshOpenInspectors() {
+      this.openInspectors.forEach(({ file, meta }, cleanPathId) => {
+        const bodyEl = document.getElementById(`metaInspectorBody-${cleanPathId}`);
+        if (bodyEl) {
+          bodyEl.innerHTML = this.buildHtml(file, meta);
+          this.initMiniMap(cleanPathId, meta.exif || file.exif);
+        }
+      });
     }
 
     t(key, replacements = {}) {
@@ -87,9 +102,14 @@
             icon: 'ℹ️',
             width: 460,
             height: 580,
-            content: renderBody(initialMeta, !metadataCache.has(file.path))
+            content: renderBody(initialMeta, !metadataCache.has(file.path)),
+            onClose: () => {
+              this.openInspectors.delete(cleanPathId);
+            }
           });
         }
+
+        this.openInspectors.set(cleanPathId, { file, meta: initialMeta });
 
         // Fetch Full Asynchronous Metadata
         if (!metadataCache.has(file.path)) {
@@ -98,6 +118,7 @@
             const json = await res.json();
             if (json.success && json.metadata) {
               metadataCache.set(file.path, json.metadata);
+              this.openInspectors.set(cleanPathId, { file, meta: json.metadata });
               const bodyEl = document.getElementById(`metaInspectorBody-${cleanPathId}`);
               if (bodyEl) {
                 bodyEl.innerHTML = this.buildHtml(file, json.metadata);
@@ -109,6 +130,7 @@
           }
         } else {
           const cachedMeta = metadataCache.get(file.path);
+          this.openInspectors.set(cleanPathId, { file, meta: cachedMeta });
           const bodyEl = document.getElementById(`metaInspectorBody-${cleanPathId}`);
           if (bodyEl) {
             bodyEl.innerHTML = this.buildHtml(file, cachedMeta);

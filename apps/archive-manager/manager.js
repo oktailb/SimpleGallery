@@ -47,12 +47,12 @@
               <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);gap:10px;">
                 <span style="font-size:0.9rem;font-weight:600;color:#f8fafc;">📦 ${ctx.escapeHtml(file.name)}</span>
                 <div style="display:flex;gap:10px;align-items:center;">
-                  <input type="text" id="archiveFilterInput-${cleanPathId}" placeholder="${ctx.escapeHtml(ctx.t('archive.filter_placeholder') || '🔍 Filtrer les fichiers...')}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:12px;padding:4px 10px;font-size:0.8rem;outline:none;" />
-                  ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:5px 12px;text-decoration:none;background:#6366f1;color:#fff;display:flex;align-items:center;gap:6px;border-radius:8px;">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
+                  <input type="text" id="archiveFilterInput-${cleanPathId}" data-i18n-placeholder="archive.filter_placeholder" placeholder="${ctx.escapeHtml(ctx.t('archive.filter_placeholder') || '🔍 Filtrer les fichiers...')}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:12px;padding:4px 10px;font-size:0.8rem;outline:none;" />
+                  ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:5px 12px;text-decoration:none;background:#6366f1;color:#fff;display:flex;align-items:center;gap:6px;border-radius:8px;"><span data-i18n="lightbox.download">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</span></a>` : ''}
                 </div>
               </div>
               <div id="archiveStats-${cleanPathId}" style="display:flex;gap:1.5rem;padding:8px 16px;background:rgba(255,255,255,0.015);border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.82rem;color:var(--text-muted,#94a3b8);">
-                <div>${ctx.escapeHtml(ctx.t('archive.compressed_size') || 'Taille compressée')} : <strong style="color:#f8fafc;">${file.size_formatted}</strong></div>
+                <div><span data-i18n="archive.compressed_size">${ctx.escapeHtml(ctx.t('archive.compressed_size') || 'Taille compressée')}</span> : <strong style="color:#f8fafc;">${file.size_formatted}</strong></div>
                 <div id="archiveStatUncompressed-${cleanPathId}">${ctx.escapeHtml(ctx.t('archive.analyzing') || 'Analyse de l\'archive...')}</div>
               </div>
               <div id="archiveFileList-${cleanPathId}" style="flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:4px;">

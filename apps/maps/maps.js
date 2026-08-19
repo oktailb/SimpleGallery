@@ -49,6 +49,15 @@
       window.sys = window.sys || {};
       window.sys.openMaps = (options) => this.open(options);
       window.sys.computeSmartGpsLocations = (files, enabled) => this.computeSmartGpsLocations(files, enabled);
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', () => {
+          if (this.leafletMap) {
+            this.renderMapContent();
+            this.bindMenuBar();
+          }
+        });
+      }
     }
 
     /**

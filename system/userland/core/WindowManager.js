@@ -36,6 +36,10 @@
           }
         }
       });
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', ({ code }) => this.onLocaleChanged(code));
+      }
     }
 
     /**
@@ -544,6 +548,46 @@
       const titleEl = win.element?.querySelector('.window-title-text');
       if (titleEl) titleEl.textContent = title;
       this.updateTaskbar();
+    }
+
+    onLocaleChanged(code) {
+      this.windows.forEach(win => {
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle(win.appId)
+          : win.appName;
+
+        win.appName = appTitle;
+        win.title = `${appTitle}${win.fileName ? ` : ${win.fileName}` : ''}`;
+
+        if (win.element) {
+          const titleEl = win.element.querySelector('.window-title-text');
+          if (titleEl) {
+            titleEl.textContent = win.title;
+          }
+        }
+
+        if (typeof win.onLocaleChanged === 'function') {
+          try {
+            win.onLocaleChanged(code);
+          } catch (e) {
+            console.error('[WindowManager] Error in win.onLocaleChanged', e);
+          }
+        }
+      });
+
+      this.updateTaskbar();
+
+      // Re-trigger onFocus on active window to update the active top contextual menubar
+      if (this.activeWindowId && this.windows.has(this.activeWindowId)) {
+        const activeWin = this.windows.get(this.activeWindowId);
+        if (typeof activeWin.onFocus === 'function') {
+          try {
+            activeWin.onFocus();
+          } catch (e) {
+            console.error('[WindowManager] Error refreshing active window onFocus', e);
+          }
+        }
+      }
     }
 
     escapeHtml(str) {

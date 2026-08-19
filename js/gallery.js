@@ -210,6 +210,16 @@
 
       this.applyTranslations();
 
+      // Emit global locale:changed event across userland event bus
+      if (window.sys && window.sys.events) {
+        window.sys.events.emit('locale:changed', { code, translations: this.state.translations });
+      }
+
+      // Notify WindowManager to refresh all open windows and taskbar labels
+      if (window.WindowManager && typeof window.WindowManager.onLocaleChanged === 'function') {
+        window.WindowManager.onLocaleChanged(code);
+      }
+
       // Notify running apps of locale change
       if (window.explorerApp) {
         if (typeof window.explorerApp.bindMenuBar === 'function') {
