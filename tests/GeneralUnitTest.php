@@ -286,6 +286,21 @@ class GeneralUnitTestSuite {
     }
 
     /**
+     * Helper to get full rendered UI template output including auto-discovered app templates
+     */
+    private function getRenderedIndex(): string {
+        $index_content = @file_get_contents($this->base_dir . '/index.php') ?: '';
+        $discovered_apps = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir);
+        $all_templates = '';
+        foreach ($discovered_apps as $app) {
+            if (!empty($app['template_entry']) && file_exists($this->base_dir . '/' . $app['template_entry'])) {
+                $all_templates .= "\n" . file_get_contents($this->base_dir . '/' . $app['template_entry']);
+            }
+        }
+        return $index_content . "\n" . $all_templates;
+    }
+
+    /**
      * 8. Cookie Consent Configuration & Template Meta Tag Test
      */
     private function testCookieConsentConfiguration(): void {
@@ -295,11 +310,11 @@ class GeneralUnitTestSuite {
         $this->assert("Variable \$enable_cookie_consent définie dans config.php", isset($enable_cookie_consent));
         $this->assert("Consentement des cookies activé par défaut", $enable_cookie_consent === true);
 
-        $index_content = @file_get_contents($this->base_dir . '/index.php');
-        $this->assert("index.php contient la balise meta cookie-consent-enabled", strpos($index_content, 'name="cookie-consent-enabled"') !== false);
-        $this->assert("index.php contient le bandeau cookieConsentBanner", strpos($index_content, 'id="cookieConsentBanner"') !== false);
-        $this->assert("index.php contient le modal cookieSettingsModal", strpos($index_content, 'id="cookieSettingsModal"') !== false);
-        $this->assert("index.php contient le pied de page app-footer", strpos($index_content, 'class="app-footer"') !== false);
+        $rendered_ui = $this->getRenderedIndex();
+        $this->assert("index.php contient la balise meta cookie-consent-enabled", strpos($rendered_ui, 'name="cookie-consent-enabled"') !== false);
+        $this->assert("Application settings fournit le bandeau cookieConsentBanner", strpos($rendered_ui, 'id="cookieConsentBanner"') !== false);
+        $this->assert("Application settings fournit le modal cookieSettingsModal", strpos($rendered_ui, 'id="cookieSettingsModal"') !== false);
+        $this->assert("index.php contient le pied de page app-footer", strpos($rendered_ui, 'class="app-footer"') !== false);
     }
 
     /**
@@ -308,10 +323,11 @@ class GeneralUnitTestSuite {
     private function testImageEditorBackend(): void {
         echo "\n🎨 [9/9] Test de l'Éditeur d'Images Admin (Backend & UI)...\n";
 
-        $index_content = @file_get_contents($this->base_dir . '/index.php');
-        $this->assert("index.php contient le bouton lightboxEditImageBtn", strpos($index_content, 'id="lightboxEditImageBtn"') !== false);
-        $this->assert("index.php contient le modal imageEditorModal", strpos($index_content, 'id="imageEditorModal"') !== false);
-        $this->assert("index.php contient le modal de choix de sauvegarde imageSaveChoiceModal", strpos($index_content, 'id="imageSaveChoiceModal"') !== false);
+        $rendered_ui = $this->getRenderedIndex();
+        $image_viewer_js = @file_get_contents($this->base_dir . '/apps/image-viewer/viewer.js') ?: '';
+        $this->assert("Application image-viewer fournit le contrôle lightboxEditImageBtn", (strpos($rendered_ui, 'id="lightboxEditImageBtn"') !== false || strpos($image_viewer_js, 'lightboxEditImageBtn') !== false));
+        $this->assert("Application image-viewer fournit le modal imageEditorModal", strpos($rendered_ui, 'id="imageEditorModal"') !== false);
+        $this->assert("Application image-viewer fournit le modal de choix de sauvegarde imageSaveChoiceModal", strpos($rendered_ui, 'id="imageSaveChoiceModal"') !== false);
 
         $api_content = @file_get_contents($this->base_dir . '/api.php');
         $this->assert("api.php déclare l'action edit_image dans les actions mutantes", strpos($api_content, "'edit_image'") !== false);
