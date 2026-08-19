@@ -90,6 +90,7 @@
      * Renders the menu bar for the active application
      */
     renderMenu(appId, contextData = {}) {
+      if (!this.container) this.init('appHeaderZone');
       if (!this.container) return;
       this.container.innerHTML = '';
 
@@ -104,4 +105,9 @@
   }
 
   window.MenuBarManager = new MenuBarManager();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.MenuBarManager.init('appHeaderZone'));
+  } else {
+    window.MenuBarManager.init('appHeaderZone');
+  }
 })(window);

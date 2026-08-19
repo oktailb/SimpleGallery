@@ -140,7 +140,9 @@
         ` : ''}
       `;
 
-      this.desktop.appendChild(el);
+      if (!this.desktop) this.init();
+      const mountPoint = this.desktop || document.getElementById('webosDesktop') || document.body;
+      mountPoint.appendChild(el);
 
       win.element = el;
       win.headerEl = el.querySelector('.window-header');
@@ -551,4 +553,9 @@
   }
 
   window.WindowManager = new WebOSWindowManager();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.WindowManager.init());
+  } else {
+    window.WindowManager.init();
+  }
 })(window);
