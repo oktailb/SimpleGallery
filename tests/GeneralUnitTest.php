@@ -325,7 +325,7 @@ class GeneralUnitTestSuite {
 
         $rendered_ui = $this->getRenderedIndex();
         $image_viewer_js = @file_get_contents($this->base_dir . '/apps/image-viewer/viewer.js') ?: '';
-        $this->assert("Application image-viewer fournit le contrôle lightboxEditImageBtn", (strpos($rendered_ui, 'id="lightboxEditImageBtn"') !== false || strpos($image_viewer_js, 'lightboxEditImageBtn') !== false));
+        $this->assert("Application image-viewer fournit le contrôle d'édition d'image", (strpos($rendered_ui, 'id="lightboxEditImageBtn"') !== false || strpos($image_viewer_js, 'imgEdit-') !== false || strpos($image_viewer_js, 'menuImgEditBtn') !== false));
         $this->assert("Application image-viewer fournit le modal imageEditorModal", strpos($rendered_ui, 'id="imageEditorModal"') !== false);
         $this->assert("Application image-viewer fournit le modal de choix de sauvegarde imageSaveChoiceModal", strpos($rendered_ui, 'id="imageSaveChoiceModal"') !== false);
 

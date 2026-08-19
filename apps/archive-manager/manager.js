@@ -67,18 +67,32 @@
                   <div class="app-menu-left">
                     <span class="app-menu-pill active" style="font-weight:600;">📦 ${ctx.escapeHtml(file.name)}</span>
                     ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
+                    <button type="button" class="app-menu-pill" id="menuArchInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
                   <div class="app-menu-right">
                     <button type="button" class="app-menu-pill" id="menuArchFsBtn">⛶ ${ctx.escapeHtml(ctx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
                   </div>
                 `;
+                const info = container.querySelector('#menuArchInfoBtn');
                 const fs = container.querySelector('#menuArchFsBtn');
+                if (info) info.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
                 if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
               });
               window.MenuBarManager.setActiveApp('archive-manager');
             }
           }
         });
+
+        // Shortcut I
+        const keyHandler = (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          if (e.key === 'i' || e.key === 'I') {
+            if (win.element && win.element.classList.contains('active')) {
+              if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file);
+            }
+          }
+        };
+        window.addEventListener('keydown', keyHandler);
 
         // Fetch Archive Metadata Asynchronously
         try {

@@ -76,6 +76,7 @@
         dropZoneOverlay: document.getElementById('dropZoneOverlay'),
         selectionToolbar: document.getElementById('selectionToolbar'),
         selectionToolbarCount: document.getElementById('selectionToolbarCount'),
+        selectionInfoBtn: document.getElementById('selectionInfoBtn'),
         selectionSelectAllBtn: document.getElementById('selectionSelectAllBtn'),
         selectionClearBtn: document.getElementById('selectionClearBtn'),
         // Modals
@@ -915,6 +916,24 @@
     }
 
     initMarqueeSelection() {
+      if (this.el.selectionSelectAllBtn) {
+        this.el.selectionSelectAllBtn.onclick = () => this.selectAll();
+      }
+      if (this.el.selectionClearBtn) {
+        this.el.selectionClearBtn.onclick = () => this.clearSelection();
+      }
+      if (this.el.selectionInfoBtn) {
+        this.el.selectionInfoBtn.onclick = () => {
+          if (this.state.selectedPaths.size > 0) {
+            const firstPath = Array.from(this.state.selectedPaths)[0];
+            const file = this.state.filteredFiles.find(f => f.path === firstPath);
+            if (file && window.sys && window.sys.showMetadata) {
+              window.sys.showMetadata(file);
+            }
+          }
+        };
+      }
+
       let isSelecting = false;
       let startX = 0, startY = 0;
       let marqueeEl = null;

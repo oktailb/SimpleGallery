@@ -62,18 +62,21 @@
                     <span class="app-menu-pill active" style="font-weight:600;">🎬 ${ctx.escapeHtml(file.name)}</span>
                     <button type="button" class="app-menu-pill" id="menuVidPlayPauseBtn">⏯️ Lecture / Pause</button>
                     <button type="button" class="app-menu-pill" id="menuVidMuteBtn">🔊 Muet</button>
+                    <button type="button" class="app-menu-pill" id="menuVidInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
                   <div class="app-menu-right">
-                    <button type="button" class="app-menu-pill" id="menuVidFullscreenBtn">⛶ Plein Écran</button>
+                    <button type="button" class="app-menu-pill" id="menuVidFullscreenBtn">⛶ ${ctx.escapeHtml(ctx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
                   </div>
                 `;
                 const vid = document.getElementById(`video-${cleanPathId}`);
                 if (vid) {
                   const ppBtn = container.querySelector('#menuVidPlayPauseBtn');
                   const muteBtn = container.querySelector('#menuVidMuteBtn');
+                  const infoBtn = container.querySelector('#menuVidInfoBtn');
                   const fsBtn = container.querySelector('#menuVidFullscreenBtn');
                   if (ppBtn) ppBtn.onclick = () => { if (vid.paused) vid.play(); else vid.pause(); };
                   if (muteBtn) muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? '🔇 Rétablir son' : '🔊 Muet'; };
+                  if (infoBtn) infoBtn.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
                   if (fsBtn) fsBtn.onclick = () => { if (vid.requestFullscreen) vid.requestFullscreen(); };
                 }
               });
@@ -81,6 +84,17 @@
             }
           }
         });
+
+        // Shortcut I
+        const keyHandler = (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          if (e.key === 'i' || e.key === 'I') {
+            if (win.element && win.element.classList.contains('active')) {
+              if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file);
+            }
+          }
+        };
+        window.addEventListener('keydown', keyHandler);
         return true;
       }
 

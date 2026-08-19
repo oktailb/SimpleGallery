@@ -7,6 +7,7 @@
 <!-- Floating Multi-Selection Action Toolbar -->
 <div id="selectionToolbar" class="selection-toolbar" style="display: none;">
   <span id="selectionToolbarCount">0 élément(s) sélectionné(s)</span>
+  <button id="selectionInfoBtn" type="button" class="selection-btn" data-i18n="lightbox.metadata_btn">ℹ️ Propriétés</button>
   <button id="selectionSelectAllBtn" type="button" class="selection-btn" data-i18n="selection.select_all">Tout sélectionner</button>
   <button id="selectionClearBtn" type="button" class="selection-btn" data-i18n="selection.clear">Désélectionner tout</button>
 </div>

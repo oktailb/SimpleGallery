@@ -95,6 +95,7 @@
                 <button type="button" class="image-explorer-btn" id="imgReset-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.reset_zoom') || 'Réinitialiser (0)')}">🔄</button>
                 <button type="button" class="image-explorer-btn" id="imgRotate-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.rotate') || 'Pivoter 90° (R)')}">⟳</button>
                 <span id="imgZoomBadge-${cleanPathId}" style="font-size:0.75rem;font-weight:700;color:#f8fafc;padding:0 4px;">100%</span>
+                <button type="button" class="image-explorer-btn" id="imgInfoBtn-${cleanPathId}" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Informations & Propriétés (I)')}">ℹ️</button>
                 ${isEditableImage ? `<button type="button" class="image-explorer-btn" id="imgEdit-${cleanPathId}" style="background:var(--accent-primary,#6366f1);color:#fff;border-radius:12px;padding:0 8px;width:auto;font-size:0.75rem;font-weight:600;" title="${ctx.escapeHtml(ctx.t('lightbox.edit_image') || 'Éditer l\'image')}">🎨 ${ctx.escapeHtml(ctx.t('lightbox.edit_image_btn') || 'Éditer')}</button>` : ''}
               </div>
             </div>
@@ -109,6 +110,7 @@
                     <button type="button" class="app-menu-pill" id="menuImgZoomOutBtn">➖ ${ctx.escapeHtml(ctx.t('lightbox.zoom_out') || 'Zoom -')}</button>
                     <button type="button" class="app-menu-pill" id="menuImgResetBtn">🔄 ${ctx.escapeHtml(ctx.t('lightbox.reset_zoom') || '1:1')}</button>
                     <button type="button" class="app-menu-pill" id="menuImgRotateBtn">⟳ ${ctx.escapeHtml(ctx.t('lightbox.rotate') || 'Rotation 90°')}</button>
+                    <button type="button" class="app-menu-pill" id="menuImgInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                     ${isEditableImage ? `<button type="button" class="app-menu-pill" id="menuImgEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">🎨 ${ctx.escapeHtml(ctx.t('lightbox.edit_image_btn') || 'Éditer')}</button>` : ''}
                   </div>
                   <div class="app-menu-right">
@@ -119,12 +121,14 @@
                 const zo = container.querySelector('#menuImgZoomOutBtn');
                 const rz = container.querySelector('#menuImgResetBtn');
                 const ro = container.querySelector('#menuImgRotateBtn');
+                const info = container.querySelector('#menuImgInfoBtn');
                 const ed = container.querySelector('#menuImgEditBtn');
                 const fs = container.querySelector('#menuImgFsBtn');
                 if (zi) zi.onclick = () => this.adjustZoom(0.3, cleanPathId);
                 if (zo) zo.onclick = () => this.adjustZoom(-0.3, cleanPathId);
                 if (rz) rz.onclick = () => this.resetZoom(cleanPathId);
                 if (ro) ro.onclick = () => this.rotateImage(cleanPathId);
+                if (info) info.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
                 if (ed) ed.onclick = () => this.openImageEditor(file, ctx);
                 if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
               });
@@ -159,13 +163,26 @@
       const zoomOutBtn = document.getElementById(`imgZoomOut-${cleanPathId}`);
       const resetBtn = document.getElementById(`imgReset-${cleanPathId}`);
       const rotateBtn = document.getElementById(`imgRotate-${cleanPathId}`);
+      const infoBtn = document.getElementById(`imgInfoBtn-${cleanPathId}`);
       const editBtn = document.getElementById(`imgEdit-${cleanPathId}`);
 
       if (zoomInBtn) zoomInBtn.onclick = () => this.adjustZoom(0.3, cleanPathId);
       if (zoomOutBtn) zoomOutBtn.onclick = () => this.adjustZoom(-0.3, cleanPathId);
       if (resetBtn) resetBtn.onclick = () => this.resetZoom(cleanPathId);
       if (rotateBtn) rotateBtn.onclick = () => this.rotateImage(cleanPathId);
+      if (infoBtn) infoBtn.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
       if (editBtn) editBtn.onclick = () => this.openImageEditor(file, ctx);
+
+      // Keyboard shortcut I for info
+      const keyHandler = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'i' || e.key === 'I') {
+          if (win.element && win.element.classList.contains('active')) {
+            if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file);
+          }
+        }
+      };
+      window.addEventListener('keydown', keyHandler);
 
       // Pan Drag
       container.onmousedown = (e) => this.startDrag(e, cleanPathId);

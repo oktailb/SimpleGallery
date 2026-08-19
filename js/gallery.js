@@ -294,6 +294,14 @@
       }
     }
 
+    openMetadataModal(file) {
+      if (window.sys && window.sys.showMetadata) {
+        window.sys.showMetadata(file);
+      } else if (window.MetadataInspector) {
+        window.MetadataInspector.open(file);
+      }
+    }
+
     openAdminModal() {
       const modal = document.getElementById('adminModal') || this.el.adminModal;
       if (!modal) return;

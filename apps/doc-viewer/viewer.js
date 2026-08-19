@@ -40,6 +40,7 @@
               <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.1);">
                 <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📄 ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;">
+                  <button type="button" id="docPdfInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
                   <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;">↗ Nouvel onglet</a>
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:#6366f1;border-radius:8px;">📥 Télécharger</a>` : ''}
                 </div>
@@ -53,6 +54,7 @@
               <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);">
                 <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📝 ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;">
+                  <button type="button" id="docTextInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
                   <button type="button" id="docWinCopyBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:#6366f1;color:#fff;border-radius:8px;">📋 Copier le texte</button>
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;">📥 Télécharger</a>` : ''}
                 </div>
@@ -67,7 +69,8 @@
                 <div style="font-size:3.5rem;margin-bottom:1rem;">📄</div>
                 <div style="font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:0.4rem;word-break:break-all;">${ctx.escapeHtml(file.name)}</div>
                 <div style="font-size:0.85rem;color:var(--text-muted,#94a3b8);margin-bottom:1.5rem;">${file.size_formatted} • Format ${ext.toUpperCase()}</div>
-                <div style="display:flex;gap:10px;justify-content:center;">
+                <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                  <button type="button" id="docCardInfoBtn-${cleanPathId}" class="app-menu-pill" style="padding:8px 16px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:10px;">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés')}</button>
                   <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;padding:8px 16px;background:rgba(255,255,255,0.12);color:#fff;border-radius:10px;">↗ Ouvrir le fichier</a>
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;padding:8px 16px;background:#6366f1;color:#fff;border-radius:10px;font-weight:600;">📥 Télécharger</a>` : ''}
                 </div>
@@ -92,24 +95,49 @@
           content: bodyHtml,
           onFocus: () => {
             if (window.MenuBarManager) {
-              window.MenuBarManager.registerAppMenu('generic-doc', (container) => {
+              window.MenuBarManager.registerAppMenu('doc-viewer', (container) => {
                 container.innerHTML = `
                   <div class="app-menu-left">
                     <span class="app-menu-pill active" style="font-weight:600;">📄 ${ctx.escapeHtml(file.name)}</span>
-                    <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ Nouvel onglet</a>
-                    ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 Télécharger</a>` : ''}
+                    <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${ctx.escapeHtml(ctx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
+                    ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
+                    <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
                   <div class="app-menu-right">
-                    <button type="button" class="app-menu-pill" id="menuDocFsBtn">⛶ Plein Écran</button>
+                    <button type="button" class="app-menu-pill" id="menuDocFsBtn">⛶ ${ctx.escapeHtml(ctx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
                   </div>
                 `;
+                const info = container.querySelector('#menuDocInfoBtn');
                 const fs = container.querySelector('#menuDocFsBtn');
+                if (info) info.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
                 if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
               });
-              window.MenuBarManager.setActiveApp('generic-doc');
+              window.MenuBarManager.setActiveApp('doc-viewer');
             }
           }
         });
+
+        // Bind in-window info buttons
+        setTimeout(() => {
+          const pdfInfo = document.getElementById(`docPdfInfoBtn-${cleanPathId}`);
+          const textInfo = document.getElementById(`docTextInfoBtn-${cleanPathId}`);
+          const cardInfo = document.getElementById(`docCardInfoBtn-${cleanPathId}`);
+          const onInfo = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
+          if (pdfInfo) pdfInfo.onclick = onInfo;
+          if (textInfo) textInfo.onclick = onInfo;
+          if (cardInfo) cardInfo.onclick = onInfo;
+        }, 50);
+
+        // Shortcut I
+        const keyHandler = (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          if (e.key === 'i' || e.key === 'I') {
+            if (win.element && win.element.classList.contains('active')) {
+              if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file);
+            }
+          }
+        };
+        window.addEventListener('keydown', keyHandler);
 
         // Load Text Asynchronously if applicable
         if (isText) {

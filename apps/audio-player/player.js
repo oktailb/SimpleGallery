@@ -61,20 +61,34 @@
                     <span class="app-menu-pill active" style="font-weight:600;">🎵 ${ctx.escapeHtml(file.name)}</span>
                     <button type="button" class="app-menu-pill" id="menuAudPlayPauseBtn">⏯️ Lecture / Pause</button>
                     <button type="button" class="app-menu-pill" id="menuAudMuteBtn">🔊 Muet</button>
+                    <button type="button" class="app-menu-pill" id="menuAudInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
                 `;
                 const aud = document.getElementById(`audio-${cleanPathId}`);
                 if (aud) {
                   const ppBtn = container.querySelector('#menuAudPlayPauseBtn');
                   const muteBtn = container.querySelector('#menuAudMuteBtn');
+                  const infoBtn = container.querySelector('#menuAudInfoBtn');
                   if (ppBtn) ppBtn.onclick = () => { if (aud.paused) aud.play(); else aud.pause(); };
                   if (muteBtn) muteBtn.onclick = () => { aud.muted = !aud.muted; muteBtn.textContent = aud.muted ? '🔇 Rétablir son' : '🔊 Muet'; };
+                  if (infoBtn) infoBtn.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
                 }
               });
               window.MenuBarManager.setActiveApp('audio-player');
             }
           }
         });
+
+        // Shortcut I
+        const keyHandler = (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          if (e.key === 'i' || e.key === 'I') {
+            if (win.element && win.element.classList.contains('active')) {
+              if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file);
+            }
+          }
+        };
+        window.addEventListener('keydown', keyHandler);
         return true;
       }
 
