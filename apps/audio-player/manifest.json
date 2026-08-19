@@ -1,0 +1,30 @@
+{
+  "id": "audio-player",
+  "name": "Floating Audio Player",
+  "version": "2.0.0",
+  "description": "Lecteur audio flottant haute qualité (MP3, FLAC, WAV, AAC, M4A, OGG) avec visualiseur et contrôle du volume",
+  "icon": "🎵",
+  "author": "SimpleGallery Team",
+  "category": "player",
+  "mimeTypes": [
+    "audio/*"
+  ],
+  "extensions": [
+    "mp3",
+    "wav",
+    "ogg",
+    "m4a",
+    "flac",
+    "aac",
+    "wma",
+    "opus"
+  ],
+  "entry": {
+    "js": "player.js",
+    "css": "player.css"
+  },
+  "capabilities": [
+    "pip",
+    "background-playback"
+  ]
+}

@@ -1,0 +1,13 @@
+/**
+ * Theme: Light Minimal
+ */
+:root[data-theme="light-minimal"], body[data-theme="light-minimal"] {
+  --bg-main: #f1f5f9;
+  --polaroid-bg: #ffffff;
+  --polaroid-text: #0f172a;
+  --polaroid-sub: #64748b;
+  --accent: #2563eb;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+}

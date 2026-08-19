@@ -1,0 +1,129 @@
+/**
+ * SimpleGallery 2026 - Document Viewer App Stylesheet
+ */
+
+.doc-viewer-modal-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.doc-pdf-container {
+  width: 90vw;
+  height: 80vh;
+  max-width: 1200px;
+  background: #1e293b;
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-pdf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.doc-pdf-iframe {
+  width: 100%;
+  flex: 1;
+  border: none;
+  background: #ffffff;
+}
+
+.doc-text-container {
+  width: 85vw;
+  height: 78vh;
+  max-width: 1100px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.doc-text-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(30, 41, 59, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  color: #f1f5f9;
+}
+
+.doc-text-body {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #090d16;
+}
+
+.doc-text-body code {
+  font-family: inherit;
+}
+
+.doc-viewer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xl, 16px);
+  backdrop-filter: blur(20px);
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.doc-viewer-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.doc-viewer-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.4rem;
+  word-break: break-word;
+}
+
+.doc-viewer-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 1.5rem;
+}
+
+.doc-viewer-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}

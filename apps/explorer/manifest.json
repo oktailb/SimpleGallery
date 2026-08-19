@@ -1,0 +1,19 @@
+{
+  "id": "explorer",
+  "name": "Gallery Explorer Views",
+  "version": "2.0.0",
+  "description": "Explorateur multi-vues : Polaroid vintage, Grille moderne, Mosaïque fluide et Liste tabulaire",
+  "icon": "🗂️",
+  "category": "view",
+  "entry": {
+    "js": "explorer.js",
+    "css": "explorer.css",
+    "template": "template.php"
+  },
+  "capabilities": [
+    "multi-views",
+    "advanced-search",
+    "gps-map-route",
+    "selection-toolbar"
+  ]
+}

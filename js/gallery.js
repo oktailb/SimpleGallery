@@ -636,7 +636,9 @@ class SimpleGallery {
     }
 
     // Lightbox Modal Controls
-    this.el.lightboxCloseBtn.addEventListener('click', () => this.closeLightbox());
+    if (this.el.lightboxCloseBtn) {
+      this.el.lightboxCloseBtn.addEventListener('click', () => this.closeLightbox());
+    }
     if (this.el.lightboxFullscreenBtn) {
       this.el.lightboxFullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
     }
@@ -646,8 +648,12 @@ class SimpleGallery {
     if (this.el.closeExifPanelBtn) {
       this.el.closeExifPanelBtn.addEventListener('click', () => this.toggleExifPanel(false));
     }
-    this.el.lightboxPrevBtn.addEventListener('click', () => this.navigateLightbox(-1));
-    this.el.lightboxNextBtn.addEventListener('click', () => this.navigateLightbox(1));
+    if (this.el.lightboxPrevBtn) {
+      this.el.lightboxPrevBtn.addEventListener('click', () => this.navigateLightbox(-1));
+    }
+    if (this.el.lightboxNextBtn) {
+      this.el.lightboxNextBtn.addEventListener('click', () => this.navigateLightbox(1));
+    }
     if (this.el.lightboxFavBtn) {
       this.el.lightboxFavBtn.addEventListener('click', () => {
         if (this.state.lightboxIndex !== null) {
@@ -657,45 +663,47 @@ class SimpleGallery {
       });
     }
 
-    // Image Explorer Toolbar Buttons
-    this.el.lightboxZoomInBtn.addEventListener('click', () => this.adjustZoom(0.3));
-    this.el.lightboxZoomOutBtn.addEventListener('click', () => this.adjustZoom(-0.3));
-    this.el.lightboxResetZoomBtn.addEventListener('click', () => this.resetZoom());
-    this.el.lightboxRotateBtn.addEventListener('click', () => this.rotateImage());
+    // Image Explorer Toolbar Buttons (if present in DOM)
+    if (this.el.lightboxZoomInBtn) this.el.lightboxZoomInBtn.addEventListener('click', () => this.adjustZoom(0.3));
+    if (this.el.lightboxZoomOutBtn) this.el.lightboxZoomOutBtn.addEventListener('click', () => this.adjustZoom(-0.3));
+    if (this.el.lightboxResetZoomBtn) this.el.lightboxResetZoomBtn.addEventListener('click', () => this.resetZoom());
+    if (this.el.lightboxRotateBtn) this.el.lightboxRotateBtn.addEventListener('click', () => this.rotateImage());
 
     // Mouse Wheel Zoom on Lightbox Media
-    this.el.lightboxContent.addEventListener('wheel', (e) => {
-      if (!this.isCurrentMediaImage()) return;
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.25 : -0.25;
-      this.adjustZoom(delta);
-    }, { passive: false });
+    if (this.el.lightboxContent) {
+      this.el.lightboxContent.addEventListener('wheel', (e) => {
+        if (!this.isCurrentMediaImage()) return;
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.25 : -0.25;
+        this.adjustZoom(delta);
+      }, { passive: false });
 
-    // Mouse Drag / Pan Events
-    this.el.lightboxContent.addEventListener('mousedown', (e) => this.startDrag(e));
-    window.addEventListener('mousemove', (e) => this.doDrag(e));
-    window.addEventListener('mouseup', (e) => this.endDrag(e));
+      // Mouse Drag / Pan Events
+      this.el.lightboxContent.addEventListener('mousedown', (e) => this.startDrag(e));
+      window.addEventListener('mousemove', (e) => this.doDrag(e));
+      window.addEventListener('mouseup', (e) => this.endDrag(e));
 
-    // Touch Drag, Swipe & Pinch-to-Zoom Events for Mobile
-    this.el.lightboxContent.addEventListener('touchstart', (e) => this.startTouchDrag(e), { passive: false });
-    window.addEventListener('touchmove', (e) => this.doTouchDrag(e), { passive: false });
-    window.addEventListener('touchend', (e) => this.endDrag(e));
+      // Touch Drag, Swipe & Pinch-to-Zoom Events for Mobile
+      this.el.lightboxContent.addEventListener('touchstart', (e) => this.startTouchDrag(e), { passive: false });
+      window.addEventListener('touchmove', (e) => this.doTouchDrag(e), { passive: false });
+      window.addEventListener('touchend', (e) => this.endDrag(e));
+
+      // Double Click to Toggle Zoom (1x <-> 2.5x)
+      this.el.lightboxContent.addEventListener('dblclick', (e) => {
+        if (!this.isCurrentMediaImage()) return;
+        e.preventDefault();
+        if (this.zoomState.scale > 1) {
+          this.resetZoom();
+        } else {
+          this.adjustZoom(1.5);
+        }
+      });
+    }
 
     // Mobile Hardware "Back" Button / History Popstate Listener
     window.addEventListener('popstate', (e) => {
       if (this.el.lightbox && this.el.lightbox.classList.contains('open')) {
         this.closeLightbox(false);
-      }
-    });
-
-    // Double Click to Toggle Zoom (1x <-> 2.5x)
-    this.el.lightboxContent.addEventListener('dblclick', (e) => {
-      if (!this.isCurrentMediaImage()) return;
-      e.preventDefault();
-      if (this.zoomState.scale > 1) {
-        this.resetZoom();
-      } else {
-        this.adjustZoom(1.5);
       }
     });
 

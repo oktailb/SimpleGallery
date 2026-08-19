@@ -1,0 +1,13 @@
+/**
+ * Theme: Cyberpunk Neon
+ */
+:root[data-theme="cyberpunk"], body[data-theme="cyberpunk"] {
+  --bg-main: #0d0221;
+  --polaroid-bg: #1d1135;
+  --polaroid-text: #00f5d4;
+  --polaroid-sub: #7b2cbf;
+  --accent: #ff007f;
+  --card-bg: rgba(255, 0, 127, 0.1);
+  --text-main: #00f5d4;
+  --text-muted: #b5179e;
+}

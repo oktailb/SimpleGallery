@@ -1,0 +1,18 @@
+{
+  "id": "settings",
+  "name": "System & Folder Settings",
+  "version": "2.0.0",
+  "icon": "⚙️",
+  "entry": {
+    "js": "settings.js",
+    "css": "settings.css",
+    "template": "template.php"
+  },
+  "capabilities": [
+    "admin_auth",
+    "dotfiles_editor",
+    "permissions_matrix",
+    "theme_switcher",
+    "cookie_consent"
+  ]
+}

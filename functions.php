@@ -7,6 +7,7 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
     define('SIMPLE_GALLERY_CORE', true);
 }
 
+require_once __DIR__ . '/system/boot/bootstrap.php';
 require_once __DIR__ . '/includes/exif.php';
 require_once __DIR__ . '/includes/binaries.php';
 require_once __DIR__ . '/includes/metadata/MetadataManager.php';
@@ -787,12 +788,18 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
  * Directory Cache Engine Helpers
  */
 function get_cache_storage_dir(string $base_dir, string $thumb_dir): string {
-    $cache_dir = $base_dir . '/' . $thumb_dir;
+    global $storage_cache_dir;
+    if (!empty($storage_cache_dir)) {
+        $cache_dir = $storage_cache_dir;
+    } else {
+        $parent = dirname($base_dir);
+        $cache_dir = (is_dir($parent) && is_writable($parent)) ? ($parent . '/' . $thumb_dir) : ($base_dir . '/' . $thumb_dir);
+    }
     if (!is_dir($cache_dir)) {
         @mkdir($cache_dir, 0755, true);
     }
     if (!is_dir($cache_dir) || !is_writable($cache_dir)) {
-        $cache_dir = sys_get_temp_dir() . '/simplegallery_thumbs';
+        $cache_dir = sys_get_temp_dir() . '/simplegallery_thumbnails';
         if (!is_dir($cache_dir)) {
             @mkdir($cache_dir, 0755, true);
         }
@@ -803,7 +810,7 @@ function get_cache_storage_dir(string $base_dir, string $thumb_dir): string {
 function get_dir_cache_file_path(string $dir_path, string $base_dir, string $thumb_dir): string {
     $storage = get_cache_storage_dir($base_dir, $thumb_dir);
     $rel = get_relative_path($dir_path, $base_dir);
-    $key = md5('dir_index_v6_utf8_sanitized_' . $rel);
+    $key = md5('dir_index_v8_rawstream_' . $rel);
     return $storage . '/cache_' . $key . '.json';
 }
 
@@ -995,7 +1002,7 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
                     'effective_mtime'=> $effective_mtime,
                     'exif'           => $exif,
                     'thumb_url'      => 'thumb.php?file=' . rawurlencode($rel_path),
-                    'file_url'       => encode_url_path($rel_path),
+                    'file_url'       => 'thumb.php?file=' . rawurlencode($rel_path) . '&raw=1',
                     'comment'        => $comment
                 ];
             }
@@ -1018,6 +1025,9 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
  */
 function get_available_locales(string $base_dir): array {
     $locales_dir = rtrim($base_dir, '/\\') . '/locales';
+    if (!is_dir($locales_dir)) {
+        $locales_dir = __DIR__ . '/locales';
+    }
     $locales = [];
 
     if (!is_dir($locales_dir)) {
@@ -1103,6 +1113,9 @@ function detect_browser_locale(array $available_locales, string $default = 'fr')
 function load_locale_translations(string $base_dir, string $code): array {
     $clean_code = preg_replace('/[^a-z0-9_-]/i', '', strtolower($code));
     $file = rtrim($base_dir, '/\\') . '/locales/' . $clean_code . '.json';
+    if (!is_file($file)) {
+        $file = __DIR__ . '/locales/' . $clean_code . '.json';
+    }
     if (!is_file($file)) return [];
     
     $content = @file_get_contents($file);

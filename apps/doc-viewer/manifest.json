@@ -1,0 +1,52 @@
+{
+  "id": "doc-viewer",
+  "name": "Document & PDF Viewer",
+  "version": "2.0.0",
+  "description": "Visualiseur de documents universel (PDF, Markdown avec rendu texte, code source et fichiers bureautiques)",
+  "icon": "📄",
+  "author": "SimpleGallery Team",
+  "category": "viewer",
+  "mimeTypes": [
+    "application/pdf",
+    "text/*",
+    "application/json",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.*"
+  ],
+  "extensions": [
+    "pdf",
+    "txt",
+    "md",
+    "markdown",
+    "json",
+    "csv",
+    "xml",
+    "html",
+    "js",
+    "css",
+    "php",
+    "py",
+    "sh",
+    "log",
+    "ini",
+    "sql",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+    "rtf",
+    "odt"
+  ],
+  "entry": {
+    "js": "viewer.js",
+    "css": "viewer.css"
+  },
+  "capabilities": [
+    "pdf-embed",
+    "text-reader",
+    "clipboard-copy",
+    "fullscreen"
+  ]
+}

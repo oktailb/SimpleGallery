@@ -1,0 +1,30 @@
+{
+  "id": "video-player",
+  "name": "Video & Video Wall Player",
+  "version": "2.0.0",
+  "description": "Lecteur vidéo haute performance avec mode PiP flottant et mur vidéo multi-écrans synchronisé",
+  "icon": "🎬",
+  "author": "SimpleGallery Team",
+  "category": "viewer",
+  "mimeTypes": [
+    "video/*"
+  ],
+  "extensions": [
+    "mp4",
+    "webm",
+    "mov",
+    "m4v",
+    "mkv",
+    "vwall"
+  ],
+  "entry": {
+    "js": "player.js",
+    "css": "player.css",
+    "template": "template.php"
+  },
+  "capabilities": [
+    "pip",
+    "video-wall-sync",
+    "multi-video"
+  ]
+}

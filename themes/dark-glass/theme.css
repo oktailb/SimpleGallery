@@ -1,0 +1,13 @@
+/**
+ * Theme: Dark Glassmorphism
+ */
+:root[data-theme="dark-glass"], body[data-theme="dark-glass"] {
+  --bg-main: #090d16;
+  --polaroid-bg: #182032;
+  --polaroid-text: #f1f5f9;
+  --polaroid-sub: #94a3b8;
+  --accent: #8b5cf6;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}

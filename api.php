@@ -974,7 +974,8 @@ if ($action === 'delete_item') {
         $delete_success = recursive_delete_dir($target_full);
     } else {
         $delete_success = @unlink($target_full);
-        $thumb_cache_file = $thumbnail_dir . '/' . md5(get_relative_path($target_full, $real_base_dir)) . '.jpg';
+        $thumb_cache_dir = get_cache_storage_dir($real_base_dir, $thumbnail_dir);
+        $thumb_cache_file = $thumb_cache_dir . '/' . md5(get_relative_path($target_full, $real_base_dir)) . '.jpg';
         if (file_exists($thumb_cache_file)) {
             @unlink($thumb_cache_file);
         }
@@ -1100,7 +1101,8 @@ if ($action === 'edit_image') {
         // If overwrite, also delete old cached thumbnail
         if (!$is_copy) {
             $rel = get_relative_path($dest_file, $real_base_dir);
-            $cache_key_jpg = $thumbnail_dir . '/' . md5($rel) . '.jpg';
+            $thumb_cache_dir = get_cache_storage_dir($real_base_dir, $thumbnail_dir);
+            $cache_key_jpg = $thumb_cache_dir . '/' . md5($rel) . '.jpg';
             if (file_exists($cache_key_jpg)) @unlink($cache_key_jpg);
         }
 
@@ -1115,7 +1117,7 @@ if ($action === 'edit_image') {
             'file_name'      => $saved_filename,
             'path'           => $saved_relative,
             'thumb_url'      => 'thumb.php?file=' . rawurlencode($saved_relative) . '&t=' . time(),
-            'file_url'       => encode_url_path($saved_relative) . '?t=' . time()
+            'file_url'       => 'thumb.php?file=' . rawurlencode($saved_relative) . '&raw=1&t=' . time()
         ]);
         exit;
     } else {
@@ -1372,7 +1374,7 @@ if ($cached_raw !== null) {
                     'effective_mtime'=> $effective_mtime,
                     'exif'           => $exif,
                     'thumb_url'      => 'thumb.php?file=' . rawurlencode($item_relative),
-                    'file_url'       => encode_url_path($item_relative),
+                    'file_url'       => 'thumb.php?file=' . rawurlencode($item_relative) . '&raw=1',
                     'comment'        => $comments[$item] ?? ''
                 ];
 

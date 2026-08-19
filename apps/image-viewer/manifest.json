@@ -1,0 +1,37 @@
+{
+  "id": "image-viewer",
+  "name": "Image Lightbox Viewer",
+  "version": "2.0.0",
+  "description": "Explorateur d'images ultra-haute fidélité avec zoom progressif, pan tactile, rotation et studio de retouche",
+  "icon": "🖼️",
+  "author": "SimpleGallery Team",
+  "category": "viewer",
+  "mimeTypes": [
+    "image/*"
+  ],
+  "extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+    "avif",
+    "svg",
+    "bmp",
+    "ico",
+    "heic",
+    "tiff"
+  ],
+  "entry": {
+    "js": "viewer.js",
+    "css": "viewer.css",
+    "template": "template.php"
+  },
+  "capabilities": [
+    "zoom",
+    "pan",
+    "rotate",
+    "exif",
+    "edit-filters"
+  ]
+}

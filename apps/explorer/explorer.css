@@ -1,0 +1,414 @@
+/**
+ * SimpleGallery 2026 - Explorer App Stylesheet
+ * Contains layouts: Polaroid, Grid, Mosaic, and List/Table views.
+ */
+
+/* =============================================================
+   1. POLAROID VIEW LAYOUT & CARDS
+   ============================================================= */
+.polaroid-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2.5rem;
+  padding: 1.5rem 0;
+}
+
+.polaroid-card {
+  background: var(--polaroid-bg, #fcfaf5);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(0, 0, 0, 0.02) 100%);
+  padding: 14px 14px 20px 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 0 1px 1px rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+.polaroid-card::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 76px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(2px);
+  border-left: 2px dashed rgba(0, 0, 0, 0.1);
+  border-right: 2px dashed rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+  z-index: 5;
+}
+
+.polaroid-card:nth-child(3n+1)::before { transform: translateX(-50%) rotate(2.5deg); }
+.polaroid-card:nth-child(3n+2)::before { transform: translateX(-50%) rotate(-1.8deg); }
+.polaroid-card:nth-child(4n+1) { transform: rotate(-2.5deg); }
+.polaroid-card:nth-child(4n+2) { transform: rotate(1.8deg); }
+.polaroid-card:nth-child(4n+3) { transform: rotate(-1.2deg); }
+.polaroid-card:nth-child(4n+4) { transform: rotate(2.4deg); }
+
+.polaroid-card:hover {
+  transform: rotate(0deg) translateY(-12px) scale(1.05) !important;
+  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.65), 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 25px rgba(99, 102, 241, 0.25);
+  z-index: 20;
+}
+
+.polaroid-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #121212;
+  overflow: hidden;
+  position: relative;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.polaroid-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+  image-orientation: from-image;
+}
+
+.polaroid-card:hover .polaroid-img-wrapper img {
+  transform: scale(1.05);
+}
+
+.polaroid-caption {
+  margin-top: 12px;
+  color: var(--polaroid-text, #1e293b);
+  text-align: center;
+  font-family: var(--font-handwriting, 'Caveat', cursive);
+  font-size: 1.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.polaroid-subcaption {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--polaroid-sub, #64748b);
+}
+
+/* Multi-selection on Polaroid */
+.polaroid-card.selected {
+  outline: 3px solid #6366f1 !important;
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.6) !important;
+  transform: rotate(0deg) scale(1.02) !important;
+}
+
+.polaroid-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+  z-index: 10;
+}
+
+/* =============================================================
+   2. GRID VIEW LAYOUT & CARDS
+   ============================================================= */
+.modern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.25rem;
+}
+
+.grid-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.grid-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #0f1422;
+  position: relative;
+}
+
+.grid-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+  image-orientation: from-image;
+}
+
+.grid-card:hover .grid-img-wrapper img {
+  transform: scale(1.08);
+}
+
+.grid-info-overlay {
+  padding: 0.75rem;
+  background: rgba(15, 20, 34, 0.7);
+  backdrop-filter: blur(8px);
+}
+
+.grid-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.grid-size {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* =============================================================
+   3. MOSAIC / MASONRY VIEW LAYOUT
+   ============================================================= */
+.mosaic-grid {
+  column-count: 4;
+  column-gap: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 1200px) { .mosaic-grid { column-count: 3; } }
+@media (max-width: 768px) { .mosaic-grid { column-count: 2; column-gap: 0.75rem; } }
+@media (max-width: 480px) { .mosaic-grid { column-count: 1; } }
+
+.mosaic-card {
+  break-inside: avoid;
+  margin-bottom: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.mosaic-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.mosaic-img-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: #0f1422;
+}
+
+.mosaic-img-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  image-orientation: from-image;
+}
+
+.mosaic-card:hover .mosaic-img-wrapper img {
+  transform: scale(1.03);
+}
+
+.mosaic-info-overlay {
+  padding: 0.65rem 0.85rem;
+  background: rgba(15, 20, 34, 0.7);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mosaic-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.mosaic-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mosaic-size {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* =============================================================
+   4. LIST / TABLE VIEW LAYOUT
+   ============================================================= */
+.list-table-view {
+  width: 100%;
+  display: block !important;
+}
+
+.list-table-wrapper {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.list-table-header {
+  display: grid;
+  grid-template-columns: 54px 2.5fr 110px 100px 140px 130px;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.list-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-table-row {
+  display: grid;
+  grid-template-columns: 54px 2.5fr 110px 100px 140px 130px;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.list-table-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+}
+
+.list-table-row:last-child {
+  border-bottom: none;
+}
+
+.list-col-preview img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+}
+
+.list-item-main-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.list-item-sub-comment {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.list-category-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: capitalize;
+}
+
+.list-col-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .list-table-header, .list-table-row {
+    grid-template-columns: 48px 2fr 90px 110px;
+  }
+  .list-col-category, .list-col-date {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .list-table-header, .list-table-row {
+    grid-template-columns: 44px 1fr 100px;
+  }
+  .list-col-size {
+    display: none;
+  }
+}

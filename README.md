@@ -1,6 +1,6 @@
 # SimpleGallery 🚀
 
-**SimpleGallery** est une galerie web ultra-légère, ultra-rapide et moderne conçue en **PHP 8+ / JavaScript Vanilla** (sans frameworks lourds ni dépendances complexes).
+**SimpleGallery** est une galerie web ultra-légère, ultra-rapide et moderne conçue en **PHP 7.2+ / PHP 8+ / JavaScript Vanilla** (sans frameworks lourds ni dépendances complexes).
 
 ![SimpleGallery Screenshot](screenshot.png)
 

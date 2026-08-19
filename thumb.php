@@ -43,8 +43,9 @@ function send_cached_file(string $file_path, string $content_type, int $max_age 
     exit;
 }
 
-function serve_direct_file(string $file_path, string $ext): void {
-    $mime_types = [
+function get_full_mime_type(string $ext): string {
+    $mimes = [
+        // Images
         'jpg'  => 'image/jpeg',
         'jpeg' => 'image/jpeg',
         'png'  => 'image/png',
@@ -52,11 +53,107 @@ function serve_direct_file(string $file_path, string $ext): void {
         'webp' => 'image/webp',
         'avif' => 'image/avif',
         'bmp'  => 'image/bmp',
-        'svg'  => 'image/svg+xml'
+        'svg'  => 'image/svg+xml',
+        // Videos
+        'mp4'  => 'video/mp4',
+        'webm' => 'video/webm',
+        'ogv'  => 'video/ogg',
+        'mov'  => 'video/quicktime',
+        'mkv'  => 'video/x-matroska',
+        'avi'  => 'video/x-msvideo',
+        // Audio
+        'mp3'  => 'audio/mpeg',
+        'wav'  => 'audio/wav',
+        'ogg'  => 'audio/ogg',
+        'm4a'  => 'audio/mp4',
+        'flac' => 'audio/flac',
+        'aac'  => 'audio/aac',
+        // Documents
+        'pdf'  => 'application/pdf',
+        'txt'  => 'text/plain; charset=utf-8',
+        'md'   => 'text/markdown; charset=utf-8',
+        'json' => 'application/json',
+        // Archives
+        'zip'  => 'application/zip',
+        'tar'  => 'application/x-tar',
+        'gz'   => 'application/gzip',
+        '7z'   => 'application/x-7z-compressed',
+        'rar'  => 'application/vnd.rar'
     ];
+    return $mimes[strtolower($ext)] ?? 'application/octet-stream';
+}
 
-    $content_type = $mime_types[$ext] ?? 'application/octet-stream';
-    send_cached_file($file_path, $content_type, 86400);
+function serve_raw_file(string $file_path, string $ext): void {
+    if (!file_exists($file_path) || !is_readable($file_path)) {
+        http_response_code(404);
+        die("File not found.");
+    }
+
+    $size = filesize($file_path);
+    $mtime = filemtime($file_path);
+    $etag = '"' . md5($file_path . '-' . $mtime . '-' . $size) . '"';
+    $content_type = get_full_mime_type($ext);
+
+    header('Content-Type: ' . $content_type);
+    header('Accept-Ranges: bytes');
+    header('Cache-Control: public, max-age=31536000');
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
+
+    if (strtolower($ext) === 'svg') {
+        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'none';");
+        header("X-Content-Type-Options: nosniff");
+    }
+
+    $if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : null;
+    $if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : null;
+    if (($if_none_match !== null && $if_none_match === $etag) || ($if_modified_since !== null && $if_modified_since >= $mtime)) {
+        http_response_code(304);
+        exit;
+    }
+
+    if (isset($_SERVER['HTTP_RANGE'])) {
+        $range = $_SERVER['HTTP_RANGE'];
+        if (preg_match('/bytes=(\d*)-(\d*)/i', $range, $matches)) {
+            $start = ($matches[1] !== '') ? (float)$matches[1] : 0;
+            $end = ($matches[2] !== '') ? (float)$matches[2] : ($size - 1);
+
+            if ($start > $end || $start >= $size) {
+                http_response_code(416);
+                header("Content-Range: bytes */$size");
+                exit;
+            }
+
+            $length = (int)($end - $start + 1);
+            http_response_code(206);
+            header("Content-Range: bytes $start-$end/$size");
+            header("Content-Length: $length");
+
+            $fp = fopen($file_path, 'rb');
+            if ($fp) {
+                fseek($fp, $start);
+                $buffer_size = 1024 * 64;
+                $bytes_sent = 0;
+                while (!feof($fp) && ($bytes_sent < $length) && (connection_status() === 0)) {
+                    $read_bytes = min($buffer_size, $length - $bytes_sent);
+                    $data = fread($fp, $read_bytes);
+                    echo $data;
+                    flush();
+                    $bytes_sent += strlen($data);
+                }
+                fclose($fp);
+            }
+            exit;
+        }
+    }
+
+    header('Content-Length: ' . $size);
+    readfile($file_path);
+    exit;
+}
+
+function serve_direct_file(string $file_path, string $ext): void {
+    serve_raw_file($file_path, $ext);
 }
 
 function render_svg_placeholder(string $category, string $ext, string $filename): void {
@@ -249,17 +346,13 @@ if (!is_dir_accessible(dirname($file_path), $real_base_dir)) {
     exit;
 }
 
+// Direct original raw media streaming (photos, videos, music, documents)
+if (!empty($_GET['raw'])) {
+    serve_raw_file($file_path, $ext);
+}
+
 // Setup thumbnail cache directory with fallback to sys_get_temp_dir()
-$cache_dir = $real_base_dir . '/' . $thumbnail_dir;
-if (!is_dir($cache_dir)) {
-    @mkdir($cache_dir, 0755, true);
-}
-if (!is_dir($cache_dir) || !is_writable($cache_dir)) {
-    $cache_dir = sys_get_temp_dir() . '/simplegallery_thumbs';
-    if (!is_dir($cache_dir)) {
-        @mkdir($cache_dir, 0755, true);
-    }
-}
+$cache_dir = get_cache_storage_dir($real_base_dir, $thumbnail_dir ?? '.thumbnails');
 
 // -------------------------------------------------------------
 // 1. VIDEO THUMBNAIL HANDLING (5-Stage Extraction Chain)

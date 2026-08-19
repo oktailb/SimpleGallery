@@ -11,11 +11,16 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
 require_once dirname(__DIR__) . '/config.php';
 
 class GeneralUnitTestSuite {
-    private string $base_dir;
-    private string $test_dir;
-    private int $passed = 0;
-    private int $failed = 0;
-    private array $results = [];
+    /** @var string */
+    private $base_dir;
+    /** @var string */
+    private $test_dir;
+    /** @var int */
+    private $passed = 0;
+    /** @var int */
+    private $failed = 0;
+    /** @var array */
+    private $results = [];
 
     public function __construct() {
         $this->base_dir = realpath(dirname(__DIR__)) ?: dirname(__DIR__);

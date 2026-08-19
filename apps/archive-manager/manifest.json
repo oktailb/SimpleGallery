@@ -1,0 +1,35 @@
+{
+  "id": "archive-manager",
+  "name": "Archive Inspector & Extractor",
+  "version": "2.0.0",
+  "description": "Explorateur et inspecteur d'archives compressées (ZIP, TAR, GZ, 7Z, RAR) avec listing interactif du contenu",
+  "icon": "📦",
+  "author": "SimpleGallery Team",
+  "category": "manager",
+  "mimeTypes": [
+    "application/zip",
+    "application/x-tar",
+    "application/gzip",
+    "application/x-7z-compressed",
+    "application/x-rar-compressed"
+  ],
+  "extensions": [
+    "zip",
+    "tar",
+    "gz",
+    "bz2",
+    "7z",
+    "rar",
+    "xz",
+    "tgz"
+  ],
+  "entry": {
+    "js": "manager.js",
+    "css": "manager.css"
+  },
+  "capabilities": [
+    "archive-inspect",
+    "filter-search",
+    "compression-ratio"
+  ]
+}

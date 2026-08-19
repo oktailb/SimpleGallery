@@ -1,0 +1,13 @@
+/**
+ * Theme: Polaroid Classic
+ */
+:root[data-theme="polaroid-classic"], body[data-theme="polaroid-classic"] {
+  --bg-main: #0f141c;
+  --polaroid-bg: #fcfaf5;
+  --polaroid-text: #1e293b;
+  --polaroid-sub: #64748b;
+  --accent: #6366f1;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
