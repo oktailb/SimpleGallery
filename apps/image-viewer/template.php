@@ -142,19 +142,25 @@
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem;">
-        <label class="save-choice-card">
+        <label class="save-choice-card active" id="saveChoiceCardCopy">
           <input type="radio" name="saveImageModeRadio" value="copy" checked class="save-choice-radio">
           <div class="save-choice-text">
-            <strong data-i18n="save_choice.copy_title">✨ Créer une nouvelle copie (Recommandé)</strong>
-            <span data-i18n="save_choice.copy_desc">Enregistre l'image éditée sous un nouveau nom et préserve l'original.</span>
+            <div>
+              <strong data-i18n="save_choice.copy_title">✨ Créer une nouvelle copie</strong>
+              <span id="saveChoiceCopyNamePreview" class="save-choice-preview-badge">photo_edited.jpg</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="save_choice.copy_desc">Enregistre l'image éditée sous un nouveau nom et conserve le fichier source intact.</span>
           </div>
         </label>
 
-        <label class="save-choice-card">
+        <label class="save-choice-card" id="saveChoiceCardOverwrite">
           <input type="radio" name="saveImageModeRadio" value="overwrite" class="save-choice-radio">
           <div class="save-choice-text">
-            <strong data-i18n="save_choice.overwrite_title">⚠️ Remplacer le fichier original</strong>
-            <span data-i18n="save_choice.overwrite_desc">Écrase directement le fichier source sur le serveur et régénère immédiatement sa miniature.</span>
+            <div>
+              <strong data-i18n="save_choice.overwrite_title">⚠️ Remplacer le fichier original</strong>
+              <span id="saveChoiceOverwriteNamePreview" class="save-choice-preview-badge" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-color: rgba(239, 68, 68, 0.4);">photo.jpg</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="save_choice.overwrite_desc">Écrase directement l'image originale sur le serveur et conserve les métadonnées EXIF.</span>
           </div>
         </label>
       </div>

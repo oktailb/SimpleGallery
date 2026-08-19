@@ -1093,7 +1093,13 @@ if ($action === 'edit_image') {
         $dest_file = $parent_dir . '/' . $candidate_name;
     }
 
-    $save_success = (@file_put_contents($dest_file, $decoded_image, LOCK_EX) !== false);
+    // Preserve original EXIF metadata if editing a JPEG image
+    $image_to_write = $decoded_image;
+    if (($ext === 'jpg' || $ext === 'jpeg') && function_exists('transfer_jpeg_exif')) {
+        $image_to_write = transfer_jpeg_exif($target_file, $decoded_image);
+    }
+
+    $save_success = (@file_put_contents($dest_file, $image_to_write, LOCK_EX) !== false);
 
     if ($save_success) {
         @chmod($dest_file, 0644);

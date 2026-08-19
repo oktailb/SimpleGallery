@@ -3680,6 +3680,58 @@ body.no-direct-download audio {
   -webkit-backdrop-filter: blur(14px);
 }
 
+.save-choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.save-choice-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.save-choice-card:has(input:checked),
+.save-choice-card.active {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #6366f1;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+}
+
+.save-choice-radio {
+  margin-top: 3px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.save-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.save-choice-preview-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  margin-left: 6px;
+  display: inline-block;
+}
+
 /* -------------------------------------------------------------
  * 16. LANGUAGE SELECTOR & i18n DROPDOWN
  * ------------------------------------------------------------- */

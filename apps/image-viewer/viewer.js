@@ -448,6 +448,16 @@
         };
       }
 
+      // Save mode radio visual state
+      const saveRadios = document.querySelectorAll('input[name="saveImageModeRadio"]');
+      saveRadios.forEach(radio => {
+        radio.onchange = () => {
+          document.querySelectorAll('.save-choice-card').forEach(card => card.classList.remove('active'));
+          const parentCard = radio.closest('.save-choice-card');
+          if (parentCard) parentCard.classList.add('active');
+        };
+      });
+
       const saveChoiceConfirmBtn = document.getElementById('saveChoiceConfirmBtn');
       if (saveChoiceConfirmBtn) {
         saveChoiceConfirmBtn.onclick = () => {
@@ -764,13 +774,16 @@
       if (!choiceModal) return;
 
       const file = this.editorState.file;
-      const preview = document.getElementById('saveChoiceCopyNamePreview');
-      if (file && preview) {
+      const previewCopy = document.getElementById('saveChoiceCopyNamePreview');
+      const previewOverwrite = document.getElementById('saveChoiceOverwriteNamePreview');
+
+      if (file) {
         const parts = file.name.split('.');
         const ext = parts.length > 1 ? '.' + parts.pop() : '';
         const base = parts.join('.');
         const cleanBase = base.replace(/_edited(_\d+)?$/i, '');
-        preview.textContent = `${cleanBase}_edited${ext}`;
+        if (previewCopy) previewCopy.textContent = `${cleanBase}_edited${ext}`;
+        if (previewOverwrite) previewOverwrite.textContent = file.name;
       }
 
       choiceModal.classList.add('open');

@@ -423,3 +423,49 @@ function extract_exif_data(string $file_path): ?array {
     write_exif_log("SUCCESS: Extracted EXIF for " . basename($file_path) . " -> " . json_encode($result));
     return $result;
 }
+
+/**
+ * Copies and preserves the EXIF (APP1) metadata segment from an original JPEG file into a newly edited JPEG binary.
+ */
+function transfer_jpeg_exif(string $orig_path, string $new_jpeg): string {
+    if (!is_file($orig_path)) return $new_jpeg;
+    $orig = @file_get_contents($orig_path, false, null, 0, 256 * 1024);
+    if (!$orig || strlen($orig) < 4 || substr($orig, 0, 2) !== "\xFF\xD8") return $new_jpeg;
+    if (strlen($new_jpeg) < 4 || substr($new_jpeg, 0, 2) !== "\xFF\xD8") return $new_jpeg;
+
+    $pos = 2;
+    $len = strlen($orig);
+    $exif_seg = null;
+
+    while ($pos < $len - 4) {
+        if (ord($orig[$pos]) !== 0xFF) break;
+        $marker = ord($orig[$pos + 1]);
+        if ($marker === 0xD8 || $marker === 0xD9 || ($marker >= 0xD0 && $marker <= 0xD7)) {
+            $pos += 2;
+            continue;
+        }
+        $seg_len = (ord($orig[$pos + 2]) << 8) + ord($orig[$pos + 3]);
+        if ($seg_len < 2 || $pos + 2 + $seg_len > $len) break;
+
+        if ($marker === 0xE1) {
+            $payload = substr($orig, $pos + 4, $seg_len - 2);
+            if (str_starts_with($payload, "Exif\0\0")) {
+                $exif_seg = substr($orig, $pos, $seg_len + 2);
+                break;
+            }
+        }
+        if ($marker === 0xDA) break;
+        $pos += 2 + $seg_len;
+    }
+
+    if (!$exif_seg) return $new_jpeg;
+
+    // Check if new_jpeg already has an APP0 marker, insert right after APP0; otherwise right after SOI
+    if (strlen($new_jpeg) >= 6 && ord($new_jpeg[2]) === 0xFF && ord($new_jpeg[3]) === 0xE0) {
+        $app0_len = (ord($new_jpeg[4]) << 8) + ord($new_jpeg[5]);
+        $insert_pos = 4 + $app0_len;
+        return substr($new_jpeg, 0, $insert_pos) . $exif_seg . substr($new_jpeg, $insert_pos);
+    } else {
+        return substr($new_jpeg, 0, 2) . $exif_seg . substr($new_jpeg, 2);
+    }
+}

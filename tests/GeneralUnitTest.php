@@ -362,8 +362,19 @@ class GeneralUnitTestSuite {
         $this->assert("Génération du nom de copie '_edited.jpg' valide", file_exists($copy_path));
         $this->assert("L'image originale est préservée lors d'une copie", filesize($test_image_file) > 0);
 
+        // Test EXIF segment preservation helper
+        $mock_exif_payload = "Exif\0\0MM\x00\x2A\x00\x00\x00\x08\x00\x00";
+        $mock_orig_jpeg = "\xFF\xD8\xFF\xE1" . pack('n', strlen($mock_exif_payload) + 2) . $mock_exif_payload . "\xFF\xDB\x00\x43\x00\xFF\xD9";
+        $orig_exif_file = $this->test_dir . '/orig_with_exif.jpg';
+        file_put_contents($orig_exif_file, $mock_orig_jpeg);
+
+        $new_canvas_jpeg = "\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xFF\xDB\x00\x43\x00\xFF\xD9";
+        $injected_jpeg = transfer_jpeg_exif($orig_exif_file, $new_canvas_jpeg);
+        $this->assert("transfer_jpeg_exif injecte le segment APP1 EXIF d'origine", strpos($injected_jpeg, "Exif\0\0") !== false);
+
         if (file_exists($test_image_file)) @unlink($test_image_file);
         if (file_exists($copy_path)) @unlink($copy_path);
+        if (file_exists($orig_exif_file)) @unlink($orig_exif_file);
     }
 
     /**
