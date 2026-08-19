@@ -16,7 +16,7 @@
     supportsPip: false,
     cssPath: 'apps/image-viewer/viewer.css',
 
-    // Internal State
+    // Internal Explorer State
     zoomState: {
       scale: 1,
       translateX: 0,
@@ -27,18 +27,26 @@
       startY: 0
     },
 
+    // Internal Canvas Studio State
     editorState: {
-      originalFile: null,
+      file: null,
+      imageObj: null,
+      sourceCanvas: document.createElement('canvas'),
       rotation: 0,
       flipH: false,
       flipV: false,
-      brightness: 100,
-      contrast: 100,
-      saturation: 100,
-      sepia: 0,
-      grayscale: 0,
-      blur: 0,
-      invert: 0
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      filter: 'none',
+      isCropping: false,
+      cropRatio: 'free',
+      cropBox: { x: 0, y: 0, w: 0, h: 0 },
+      isDraggingCrop: false,
+      activeCropHandle: null,
+      cropDragStart: { x: 0, y: 0 },
+      cropBoxStart: null,
+      isInitialized: false
     },
 
     /**
@@ -94,7 +102,7 @@
       ctx.loadUnifiedMetadata(file);
 
       // Render Application Controls into Lightbox Action Bar
-      const isEditableImage = ctx.state.isAdmin && file.category === 'image' && file.extension !== 'svg';
+      const isEditableImage = ctx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
       const appActions = document.getElementById('lightboxAppActions');
       if (appActions) {
         appActions.innerHTML = `
@@ -158,15 +166,15 @@
         }
       };
 
-      // Toolbar Zoom Buttons
-      const zoomInBtn = document.getElementById('lightboxZoomInBtn') || document.getElementById('explorerZoomInBtn');
-      const zoomOutBtn = document.getElementById('lightboxZoomOutBtn') || document.getElementById('explorerZoomOutBtn');
-      const zoomResetBtn = document.getElementById('lightboxResetZoomBtn') || document.getElementById('explorerZoomResetBtn');
-      const rotateBtn = document.getElementById('lightboxRotateBtn') || document.getElementById('explorerRotateBtn');
+      // Toolbar Buttons
+      const zoomInBtn = document.getElementById('lightboxZoomInBtn');
+      const zoomOutBtn = document.getElementById('lightboxZoomOutBtn');
+      const resetBtn = document.getElementById('lightboxResetZoomBtn');
+      const rotateBtn = document.getElementById('lightboxRotateBtn');
 
       if (zoomInBtn) zoomInBtn.onclick = () => this.adjustZoom(0.3);
       if (zoomOutBtn) zoomOutBtn.onclick = () => this.adjustZoom(-0.3);
-      if (zoomResetBtn) zoomResetBtn.onclick = () => this.resetZoom();
+      if (resetBtn) resetBtn.onclick = () => this.resetZoom();
       if (rotateBtn) rotateBtn.onclick = () => this.rotateImage();
     },
 
@@ -248,14 +256,10 @@
     },
 
     startTouchDrag(e) {
-      if (this.zoomState.scale <= 1) return;
-      if (e.touches.length === 1) {
+      if (e.touches.length === 1 && this.zoomState.scale > 1) {
         this.zoomState.isDragging = true;
         this.zoomState.startX = e.touches[0].clientX - this.zoomState.translateX;
         this.zoomState.startY = e.touches[0].clientY - this.zoomState.translateY;
-
-        const img = document.getElementById('lightboxExplorerImg');
-        if (img) img.classList.add('is-panning');
       }
     },
 
@@ -278,12 +282,11 @@
     },
 
     endDrag() {
+      if (!this.zoomState.isDragging) return;
       this.zoomState.isDragging = false;
       const img = document.getElementById('lightboxExplorerImg');
-      if (img) {
-        img.classList.remove('is-panning');
-        img.classList.remove('dragging');
-      }
+      if (img) img.classList.remove('is-panning');
+      this.updateExplorerTransform(true);
     },
 
     updateExplorerTransform(withTransition = true) {
@@ -293,189 +296,538 @@
       img.style.transition = withTransition ? 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)' : 'none';
       img.style.transform = `translate(${this.zoomState.translateX}px, ${this.zoomState.translateY}px) scale(${this.zoomState.scale}) rotate(${this.zoomState.rotation}deg)`;
 
-      const zoomResetBtn = document.getElementById('explorerZoomResetBtn');
-      if (zoomResetBtn) {
-        zoomResetBtn.textContent = `${Math.round(this.zoomState.scale * 100)}%`;
+      const zoomBadge = document.getElementById('zoomBadge');
+      if (zoomBadge) {
+        zoomBadge.textContent = `${Math.round(this.zoomState.scale * 100)}%`;
       }
     },
 
     // -------------------------------------------------------------
-    // IMAGE EDITOR & FILTER RETOUCH STUDIO
+    // CANVAS RETOUCHING STUDIO & CROP/FILTER ENGINE
     // -------------------------------------------------------------
     openImageEditor(file, ctx) {
       const modal = document.getElementById('imageEditorModal');
       if (!modal) return;
 
-      this.editorState = {
-        originalFile: file,
-        rotation: 0,
-        flipH: false,
-        flipV: false,
-        brightness: 100,
-        contrast: 100,
-        saturation: 100,
-        sepia: 0,
-        grayscale: 0,
-        blur: 0,
-        invert: 0
-      };
+      this.editorState.file = file;
+      const nameBadge = document.getElementById('editorImageNameBadge');
+      if (nameBadge) nameBadge.textContent = file.name;
 
-      const previewImg = document.getElementById('imageEditorPreviewImg');
-      if (previewImg) {
-        previewImg.src = file.file_url;
+      if (!this.editorState.isInitialized) {
+        this.initEditorControls(ctx);
+        this.editorState.isInitialized = true;
       }
 
-      this.bindEditorControls(ctx);
-      modal.classList.add('open');
+      ctx.showLoading(true);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.showLoading(false);
+        this.editorState.imageObj = img;
+        
+        // Initialize source canvas with original image resolution
+        const srcCanvas = this.editorState.sourceCanvas;
+        srcCanvas.width = img.naturalWidth;
+        srcCanvas.height = img.naturalHeight;
+        const sctx = srcCanvas.getContext('2d');
+        sctx.drawImage(img, 0, 0);
+
+        this.resetImageEditorState();
+        modal.classList.add('open');
+        this.renderEditorCanvas();
+      };
+
+      img.onerror = () => {
+        ctx.showLoading(false);
+        ctx.showToast(ctx.t('editor.load_error') || "⚠️ Impossible de charger l'image pour l'édition.", 'error');
+      };
+
+      img.src = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
     },
 
-    bindEditorControls(ctx) {
+    closeImageEditor() {
       const modal = document.getElementById('imageEditorModal');
       if (!modal) return;
+      modal.classList.remove('open');
+      this.closeSaveChoiceModal();
+    },
 
-      // Close button
+    initEditorControls(ctx) {
       const closeBtn = document.getElementById('imageEditorCloseBtn');
-      const cancelBtn = document.getElementById('imageEditorCancelBtn');
-      if (closeBtn) closeBtn.onclick = () => modal.classList.remove('open');
-      if (cancelBtn) cancelBtn.onclick = () => modal.classList.remove('open');
+      if (closeBtn) closeBtn.onclick = () => this.closeImageEditor();
 
-      // Sliders
-      const setupSlider = (id, prop, unit = '') => {
+      const resetAllBtn = document.getElementById('editorResetAllBtn');
+      if (resetAllBtn) resetAllBtn.onclick = () => this.resetImageEditor();
+
+      // Rotation & Flip Controls
+      const rotCcwBtn = document.getElementById('editorRotateCcwBtn');
+      const rotCwBtn = document.getElementById('editorRotateCwBtn');
+      const flipHBtn = document.getElementById('editorFlipHBtn');
+      const flipVBtn = document.getElementById('editorFlipVBtn');
+
+      if (rotCcwBtn) rotCcwBtn.onclick = () => this.rotateEditor(-90);
+      if (rotCwBtn) rotCwBtn.onclick = () => this.rotateEditor(90);
+      if (flipHBtn) flipHBtn.onclick = () => this.flipEditor('h');
+      if (flipVBtn) flipVBtn.onclick = () => this.flipEditor('v');
+
+      // Crop Toggle & Apply
+      const toggleCropBtn = document.getElementById('editorToggleCropBtn');
+      const applyCropBtn = document.getElementById('editorApplyCropBtn');
+      if (toggleCropBtn) toggleCropBtn.onclick = () => this.toggleCrop();
+      if (applyCropBtn) applyCropBtn.onclick = () => this.applyCrop();
+
+      // Crop Aspect Ratios
+      const ratioBtns = document.querySelectorAll('.crop-ratio-btn');
+      ratioBtns.forEach(btn => {
+        btn.onclick = () => {
+          ratioBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.editorState.cropRatio = btn.dataset.ratio || 'free';
+          if (!this.editorState.isCropping) {
+            this.toggleCrop(true);
+          } else {
+            this.initDefaultCropBox();
+            this.updateCropBoxDOM();
+          }
+        };
+      });
+
+      // Color Adjustments Sliders
+      const setupSlider = (id, prop, unit = '%') => {
         const slider = document.getElementById(id);
-        const valSpan = document.getElementById(`${id}Val`);
+        const valSpan = document.getElementById(`${id.replace('Slider', 'Val')}`);
         if (slider) {
-          slider.value = this.editorState[prop];
-          if (valSpan) valSpan.textContent = `${slider.value}${unit}`;
-          slider.oninput = () => {
-            this.editorState[prop] = parseFloat(slider.value);
-            if (valSpan) valSpan.textContent = `${slider.value}${unit}`;
-            this.applyEditorPreview();
+          slider.oninput = (e) => {
+            this.editorState[prop] = parseInt(e.target.value, 10);
+            if (valSpan) valSpan.textContent = `${this.editorState[prop]}${unit}`;
+            this.renderEditorCanvas();
           };
         }
       };
 
-      setupSlider('editorBrightness', 'brightness', '%');
-      setupSlider('editorContrast', 'contrast', '%');
-      setupSlider('editorSaturation', 'saturation', '%');
-      setupSlider('editorSepia', 'sepia', '%');
-      setupSlider('editorGrayscale', 'grayscale', '%');
-      setupSlider('editorBlur', 'blur', 'px');
-      setupSlider('editorInvert', 'invert', '%');
+      setupSlider('editorBrightnessSlider', 'brightness');
+      setupSlider('editorContrastSlider', 'contrast');
+      setupSlider('editorSaturationSlider', 'saturation');
 
-      // Transform buttons
-      const rotLeftBtn = document.getElementById('editorRotateLeftBtn');
-      const rotRightBtn = document.getElementById('editorRotateRightBtn');
-      const flipHBtn = document.getElementById('editorFlipHBtn');
-      const flipVBtn = document.getElementById('editorFlipVBtn');
-      const resetFiltersBtn = document.getElementById('editorResetFiltersBtn');
+      // Quick Filter Buttons
+      const filterBtns = document.querySelectorAll('.editor-filter-btn');
+      filterBtns.forEach(btn => {
+        btn.onclick = () => {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.editorState.filter = btn.dataset.filter || 'none';
+          this.renderEditorCanvas();
+        };
+      });
 
-      if (rotLeftBtn) rotLeftBtn.onclick = () => { this.editorState.rotation = (this.editorState.rotation - 90) % 360; this.applyEditorPreview(); };
-      if (rotRightBtn) rotRightBtn.onclick = () => { this.editorState.rotation = (this.editorState.rotation + 90) % 360; this.applyEditorPreview(); };
-      if (flipHBtn) flipHBtn.onclick = () => { this.editorState.flipH = !this.editorState.flipH; this.applyEditorPreview(); };
-      if (flipVBtn) flipVBtn.onclick = () => { this.editorState.flipV = !this.editorState.flipV; this.applyEditorPreview(); };
+      // Save Choice Trigger
+      const openSaveChoiceBtn = document.getElementById('editorOpenSaveChoiceBtn');
+      if (openSaveChoiceBtn) openSaveChoiceBtn.onclick = () => this.openSaveChoiceModal(ctx);
 
-      if (resetFiltersBtn) {
-        resetFiltersBtn.onclick = () => {
-          this.editorState.brightness = 100;
-          this.editorState.contrast = 100;
-          this.editorState.saturation = 100;
-          this.editorState.sepia = 0;
-          this.editorState.grayscale = 0;
-          this.editorState.blur = 0;
-          this.editorState.invert = 0;
-          this.editorState.rotation = 0;
-          this.editorState.flipH = false;
-          this.editorState.flipV = false;
-          this.applyEditorPreview();
+      const saveChoiceCloseBtn = document.getElementById('saveChoiceCloseBtn');
+      const saveChoiceCancelBtn = document.getElementById('saveChoiceCancelBtn');
+      if (saveChoiceCloseBtn) saveChoiceCloseBtn.onclick = () => this.closeSaveChoiceModal();
+      if (saveChoiceCancelBtn) saveChoiceCancelBtn.onclick = () => this.closeSaveChoiceModal();
+
+      const choiceModal = document.getElementById('imageSaveChoiceModal');
+      if (choiceModal) {
+        choiceModal.onclick = (e) => {
+          if (e.target === choiceModal) this.closeSaveChoiceModal();
         };
       }
 
-      // Save button -> Opens choice modal (Overwrite vs Copy)
-      const saveBtn = document.getElementById('imageEditorSaveBtn');
-      if (saveBtn) {
-        saveBtn.onclick = () => this.openSaveChoiceModal(ctx);
+      const saveChoiceConfirmBtn = document.getElementById('saveChoiceConfirmBtn');
+      if (saveChoiceConfirmBtn) {
+        saveChoiceConfirmBtn.onclick = () => {
+          const radio = document.querySelector('input[name="saveImageModeRadio"]:checked');
+          const saveMode = radio ? radio.value : 'copy';
+          this.saveEditedImage(saveMode, ctx);
+        };
+      }
+
+      // Crop Drag & Resize Interactions
+      this.initCropInteractions();
+    },
+
+    resetImageEditorState() {
+      this.editorState.rotation = 0;
+      this.editorState.flipH = false;
+      this.editorState.flipV = false;
+      this.editorState.brightness = 0;
+      this.editorState.contrast = 0;
+      this.editorState.saturation = 0;
+      this.editorState.filter = 'none';
+      this.editorState.isCropping = false;
+      this.editorState.cropRatio = 'free';
+
+      const bSlider = document.getElementById('editorBrightnessSlider');
+      const cSlider = document.getElementById('editorContrastSlider');
+      const sSlider = document.getElementById('editorSaturationSlider');
+      const bVal = document.getElementById('editorBrightnessVal');
+      const cVal = document.getElementById('editorContrastVal');
+      const sVal = document.getElementById('editorSaturationVal');
+
+      if (bSlider) bSlider.value = '0';
+      if (cSlider) cSlider.value = '0';
+      if (sSlider) sSlider.value = '0';
+      if (bVal) bVal.textContent = '0%';
+      if (cVal) cVal.textContent = '0%';
+      if (sVal) sVal.textContent = '0%';
+
+      document.querySelectorAll('.editor-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'none'));
+      document.querySelectorAll('.crop-ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+
+      const cropBox = document.getElementById('editorCropBox');
+      const toggleCropBtn = document.getElementById('editorToggleCropBtn');
+      if (cropBox) cropBox.style.display = 'none';
+      if (toggleCropBtn) toggleCropBtn.classList.remove('active');
+    },
+
+    resetImageEditor() {
+      if (!this.editorState.imageObj) return;
+      const srcCanvas = this.editorState.sourceCanvas;
+      srcCanvas.width = this.editorState.imageObj.naturalWidth;
+      srcCanvas.height = this.editorState.imageObj.naturalHeight;
+      const sctx = srcCanvas.getContext('2d');
+      sctx.drawImage(this.editorState.imageObj, 0, 0);
+
+      this.resetImageEditorState();
+      this.renderEditorCanvas();
+    },
+
+    rotateEditor(degrees) {
+      this.editorState.rotation = (this.editorState.rotation + degrees + 360) % 360;
+      this.renderEditorCanvas();
+      if (this.editorState.isCropping) {
+        this.initDefaultCropBox();
+        this.updateCropBoxDOM();
       }
     },
 
-    applyEditorPreview() {
-      const img = document.getElementById('imageEditorPreviewImg');
-      if (!img) return;
+    flipEditor(axis) {
+      if (axis === 'h') this.editorState.flipH = !this.editorState.flipH;
+      if (axis === 'v') this.editorState.flipV = !this.editorState.flipV;
+      this.renderEditorCanvas();
+    },
 
-      const { brightness, contrast, saturation, sepia, grayscale, blur, invert, rotation, flipH, flipV } = this.editorState;
-      img.style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) sepia(${sepia}%) grayscale(${grayscale}%) blur(${blur}px) invert(${invert}%)`;
-      img.style.transform = `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`;
+    toggleCrop(forceState) {
+      const nextState = (forceState !== undefined) ? forceState : !this.editorState.isCropping;
+      this.editorState.isCropping = nextState;
+      const toggleCropBtn = document.getElementById('editorToggleCropBtn');
+      const cropBox = document.getElementById('editorCropBox');
+      if (toggleCropBtn) toggleCropBtn.classList.toggle('active', nextState);
+      if (cropBox) cropBox.style.display = nextState ? 'block' : 'none';
+
+      if (nextState) {
+        this.initDefaultCropBox();
+        this.updateCropBoxDOM();
+      }
+    },
+
+    initDefaultCropBox() {
+      const canvas = document.getElementById('editorCanvas');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const displayW = rect.width;
+      const displayH = rect.height;
+
+      let cropW = displayW * 0.8;
+      let cropH = displayH * 0.8;
+
+      if (this.editorState.cropRatio !== 'free') {
+        const parts = this.editorState.cropRatio.split(':').map(Number);
+        if (parts.length === 2) {
+          const aspect = parts[0] / parts[1];
+          if (cropW / cropH > aspect) {
+            cropW = cropH * aspect;
+          } else {
+            cropH = cropW / aspect;
+          }
+        }
+      }
+
+      this.editorState.cropBox = {
+        x: (displayW - cropW) / 2,
+        y: (displayH - cropH) / 2,
+        w: cropW,
+        h: cropH
+      };
+    },
+
+    updateCropBoxDOM() {
+      const cropBox = document.getElementById('editorCropBox');
+      if (!cropBox) return;
+      const b = this.editorState.cropBox;
+      cropBox.style.left = `${b.x}px`;
+      cropBox.style.top = `${b.y}px`;
+      cropBox.style.width = `${b.w}px`;
+      cropBox.style.height = `${b.h}px`;
+    },
+
+    initCropInteractions() {
+      const cropBox = document.getElementById('editorCropBox');
+      const wrapper = document.getElementById('editorCanvasWrapper');
+      if (!cropBox || !wrapper) return;
+
+      const onPointerDown = (clientX, clientY, handle) => {
+        this.editorState.isDraggingCrop = true;
+        this.editorState.activeCropHandle = handle;
+        this.editorState.cropDragStart = { x: clientX, y: clientY };
+        this.editorState.cropBoxStart = { ...this.editorState.cropBox };
+      };
+
+      cropBox.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const handle = e.target.dataset.handle || null;
+        onPointerDown(e.clientX, e.clientY, handle);
+      });
+
+      cropBox.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          e.stopPropagation();
+          const handle = e.target.dataset.handle || null;
+          onPointerDown(e.touches[0].clientX, e.touches[0].clientY, handle);
+        }
+      }, { passive: false });
+
+      const onPointerMove = (clientX, clientY) => {
+        if (!this.editorState.isDraggingCrop) return;
+        const canvas = document.getElementById('editorCanvas');
+        if (!canvas) return;
+
+        const maxW = canvas.getBoundingClientRect().width;
+        const maxH = canvas.getBoundingClientRect().height;
+        const dx = clientX - this.editorState.cropDragStart.x;
+        const dy = clientY - this.editorState.cropDragStart.y;
+        const start = this.editorState.cropBoxStart;
+        const handle = this.editorState.activeCropHandle;
+        const minSize = 30;
+
+        let newBox = { ...start };
+
+        if (!handle) {
+          // Drag entire crop box
+          newBox.x = Math.max(0, Math.min(maxW - start.w, start.x + dx));
+          newBox.y = Math.max(0, Math.min(maxH - start.h, start.y + dy));
+        } else {
+          // Resize via handles
+          if (handle.includes('e')) newBox.w = Math.max(minSize, Math.min(maxW - start.x, start.w + dx));
+          if (handle.includes('s')) newBox.h = Math.max(minSize, Math.min(maxH - start.y, start.h + dy));
+          if (handle.includes('w')) {
+            const adjDx = Math.min(dx, start.w - minSize);
+            newBox.x = Math.max(0, start.x + adjDx);
+            newBox.w = start.w - (newBox.x - start.x);
+          }
+          if (handle.includes('n')) {
+            const adjDy = Math.min(dy, start.h - minSize);
+            newBox.y = Math.max(0, start.y + adjDy);
+            newBox.h = start.h - (newBox.y - start.y);
+          }
+
+          // Apply aspect ratio constraint
+          if (this.editorState.cropRatio !== 'free') {
+            const parts = this.editorState.cropRatio.split(':').map(Number);
+            if (parts.length === 2) {
+              const aspect = parts[0] / parts[1];
+              if (handle === 'e' || handle === 'w' || handle.includes('e') || handle.includes('w')) {
+                newBox.h = newBox.w / aspect;
+              } else {
+                newBox.w = newBox.h * aspect;
+              }
+            }
+          }
+        }
+
+        this.editorState.cropBox = newBox;
+        this.updateCropBoxDOM();
+      };
+
+      window.addEventListener('mousemove', (e) => {
+        if (this.editorState.isDraggingCrop) {
+          e.preventDefault();
+          onPointerMove(e.clientX, e.clientY);
+        }
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (this.editorState.isDraggingCrop && e.touches.length === 1) {
+          e.preventDefault();
+          onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+
+      const onPointerUp = () => {
+        this.editorState.isDraggingCrop = false;
+        this.editorState.activeCropHandle = null;
+      };
+
+      window.addEventListener('mouseup', onPointerUp);
+      window.addEventListener('touchend', onPointerUp);
+    },
+
+    applyCrop() {
+      if (!this.editorState.isCropping) return;
+      const canvas = document.getElementById('editorCanvas');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const box = this.editorState.cropBox;
+      const cropX = Math.round(box.x * scaleX);
+      const cropY = Math.round(box.y * scaleY);
+      const cropW = Math.round(box.w * scaleX);
+      const cropH = Math.round(box.h * scaleY);
+
+      if (cropW <= 0 || cropH <= 0) return;
+
+      // Extract cropped pixels from current display canvas
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = cropW;
+      cropCanvas.height = cropH;
+      const cctx = cropCanvas.getContext('2d');
+      cctx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      // Store cropped output back into sourceCanvas
+      const srcCanvas = this.editorState.sourceCanvas;
+      srcCanvas.width = cropW;
+      srcCanvas.height = cropH;
+      const sctx = srcCanvas.getContext('2d');
+      sctx.drawImage(cropCanvas, 0, 0);
+
+      // Reset transformations
+      this.editorState.rotation = 0;
+      this.editorState.flipH = false;
+      this.editorState.flipV = false;
+
+      this.toggleCrop(false);
+      this.renderEditorCanvas();
+    },
+
+    renderEditorCanvas() {
+      const canvas = document.getElementById('editorCanvas');
+      const src = this.editorState.sourceCanvas;
+      if (!canvas || !src || src.width <= 0 || src.height <= 0) return;
+
+      const rot = this.editorState.rotation;
+      const isRotated90 = (rot === 90 || rot === 270);
+      const destW = isRotated90 ? src.height : src.width;
+      const destH = isRotated90 ? src.width : src.height;
+
+      canvas.width = destW;
+      canvas.height = destH;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, destW, destH);
+
+      ctx.save();
+      ctx.translate(destW / 2, destH / 2);
+      ctx.rotate((rot * Math.PI) / 180);
+      ctx.scale(this.editorState.flipH ? -1 : 1, this.editorState.flipV ? -1 : 1);
+
+      // Build CSS filter string for canvas draw
+      const b = 100 + this.editorState.brightness;
+      const c = 100 + this.editorState.contrast;
+      const s = 100 + this.editorState.saturation;
+      let filterStr = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+
+      if (this.editorState.filter === 'grayscale') filterStr += ' grayscale(100%)';
+      if (this.editorState.filter === 'sepia') filterStr += ' sepia(85%)';
+      if (this.editorState.filter === 'warm') filterStr += ' sepia(35%) saturate(140%)';
+      if (this.editorState.filter === 'invert') filterStr += ' invert(100%)';
+
+      ctx.filter = filterStr;
+      ctx.drawImage(src, -src.width / 2, -src.height / 2);
+      ctx.restore();
+
+      const dimBadge = document.getElementById('editorImageDimBadge');
+      if (dimBadge) {
+        dimBadge.textContent = `${destW} × ${destH} px`;
+      }
     },
 
     openSaveChoiceModal(ctx) {
       const choiceModal = document.getElementById('imageSaveChoiceModal');
       if (!choiceModal) return;
 
+      const file = this.editorState.file;
+      const preview = document.getElementById('saveChoiceCopyNamePreview');
+      if (file && preview) {
+        const parts = file.name.split('.');
+        const ext = parts.length > 1 ? '.' + parts.pop() : '';
+        const base = parts.join('.');
+        const cleanBase = base.replace(/_edited(_\d+)?$/i, '');
+        preview.textContent = `${cleanBase}_edited${ext}`;
+      }
+
       choiceModal.classList.add('open');
-
-      const overwriteBtn = document.getElementById('saveChoiceOverwriteBtn');
-      const copyBtn = document.getElementById('saveChoiceCopyBtn');
-      const cancelBtn = document.getElementById('saveChoiceCancelBtn');
-
-      if (cancelBtn) cancelBtn.onclick = () => choiceModal.classList.remove('open');
-
-      if (overwriteBtn) {
-        overwriteBtn.onclick = async () => {
-          choiceModal.classList.remove('open');
-          await this.executeSave(false, ctx);
-        };
-      }
-
-      if (copyBtn) {
-        copyBtn.onclick = async () => {
-          choiceModal.classList.remove('open');
-          await this.executeSave(true, ctx);
-        };
-      }
     },
 
-    async executeSave(saveAsCopy, ctx) {
-      const file = this.editorState.originalFile;
-      if (!file) return;
+    closeSaveChoiceModal() {
+      const choiceModal = document.getElementById('imageSaveChoiceModal');
+      if (!choiceModal) return;
+      choiceModal.classList.remove('open');
+    },
+
+    async saveEditedImage(saveMode, ctx) {
+      const canvas = document.getElementById('editorCanvas');
+      const file = this.editorState.file;
+      if (!canvas || !file) return;
 
       ctx.showLoading(true);
 
       try {
+        const ext = (file.extension || 'jpg').toLowerCase();
+        const mime = (ext === 'png') ? 'image/png' : (ext === 'webp' ? 'image/webp' : 'image/jpeg');
+        const quality = (mime === 'image/png') ? undefined : 0.92;
+        const dataUrl = canvas.toDataURL(mime, quality);
+
         const payload = {
           action: 'edit_image',
-          file: file.path,
-          save_as_copy: saveAsCopy,
-          rotation: this.editorState.rotation,
-          flip_h: this.editorState.flipH,
-          flip_v: this.editorState.flipV,
-          brightness: this.editorState.brightness,
-          contrast: this.editorState.contrast,
-          saturation: this.editorState.saturation,
-          sepia: this.editorState.sepia,
-          grayscale: this.editorState.grayscale,
-          blur: this.editorState.blur,
-          invert: this.editorState.invert
+          target_path: file.path,
+          save_mode: saveMode,
+          image_data: dataUrl,
+          csrf_token: ctx.state.csrfToken
         };
 
         const res = await fetch('api.php', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.state.csrfToken },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': ctx.state.csrfToken
+          },
           body: JSON.stringify(payload)
         });
 
         const json = await res.json();
+        ctx.showLoading(false);
+
         if (json.success) {
-          ctx.showToast(json.message || ctx.t('editor.save_success'), 'success');
-          const editorModal = document.getElementById('imageEditorModal');
-          if (editorModal) editorModal.classList.remove('open');
-          await ctx.loadDirectory(ctx.state.currentPath, true);
+          this.closeSaveChoiceModal();
+          this.closeImageEditor();
+          ctx.showToast(json.message || 'Image enregistrée avec succès !', 'success');
+
+          // Reload gallery directory to display new/updated image
+          await ctx.loadDirectory(ctx.state.currentPath);
+
+          // If lightbox is open, refresh preview
+          if (ctx.state.lightboxIndex !== null) {
+            if (saveMode === 'overwrite') {
+              ctx.openLightbox(ctx.state.lightboxIndex);
+            } else {
+              const copyIdx = ctx.state.filteredFiles.findIndex(f => f.name === json.file_name);
+              if (copyIdx !== -1) {
+                ctx.openLightbox(copyIdx);
+              }
+            }
+          }
         } else {
-          ctx.showToast(json.error || ctx.t('editor.save_error'), 'error');
+          ctx.showToast('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde.'), 'error');
         }
       } catch (err) {
-        console.error('Image editor save error:', err);
-        ctx.showToast('Erreur réseau lors de la sauvegarde.', 'error');
-      } finally {
         ctx.showLoading(false);
+        ctx.showToast('⚠️ Erreur réseau lors de la sauvegarde : ' + err.message, 'error');
       }
     }
   };

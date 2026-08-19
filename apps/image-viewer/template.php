@@ -5,7 +5,7 @@
  */
 ?>
 <!-- Admin Image Editor Modal (HTML5 Canvas & Transformations) -->
-<div id="imageEditorModal" class="editor-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle">
+<div id="imageEditorModal" class="editor-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle">
   <div class="editor-modal-card">
     <div class="editor-modal-header">
       <div class="editor-title-group">
@@ -130,7 +130,7 @@
 </div>
 
 <!-- Save Image Mode Choice Modal (Overwrite vs Copy) -->
-<div id="imageSaveChoiceModal" class="admin-modal" role="dialog" aria-modal="true" style="display: none;">
+<div id="imageSaveChoiceModal" class="admin-modal" role="dialog" aria-modal="true">
   <div class="admin-modal-content" style="max-width: 480px;">
     <div class="admin-modal-header">
       <h3 data-i18n="save_choice.title">💾 Enregistrer les Modifications</h3>
