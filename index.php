@@ -49,6 +49,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <link rel="stylesheet" href="themes/base.css?v=<?php echo filemtime(__DIR__ . '/themes/base.css'); ?>">
   <link rel="stylesheet" id="activeThemeStylesheet" href="themes/<?php echo htmlspecialchars($theme_preset, ENT_QUOTES, 'UTF-8'); ?>/theme.css?v=<?php echo file_exists(__DIR__ . '/themes/' . $theme_preset . '/theme.css') ? filemtime(__DIR__ . '/themes/' . $theme_preset . '/theme.css') : '1'; ?>">
   <link rel="stylesheet" href="css/gallery.css?v=<?php echo filemtime(__DIR__ . '/css/gallery.css'); ?>">
+  <link rel="stylesheet" href="css/window-manager.css?v=<?php echo file_exists(__DIR__ . '/css/window-manager.css') ? filemtime(__DIR__ . '/css/window-manager.css') : '1'; ?>">
 
   <!-- Leaflet & MarkerCluster for Interactive Maps (100% Free, Zero API Key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -57,9 +58,11 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-  <!-- Userland System Runtime (Core OS Bus, Registries, Syscalls, AppManager, I18n) -->
+  <!-- Userland System Runtime (Core OS Bus, WindowManager, MenuBar, Registries, Syscalls, AppManager, I18n) -->
   <script src="system/userland/core/EventBus.js" defer></script>
   <script src="system/userland/core/SyscallClient.js" defer></script>
+  <script src="system/userland/core/MenuBarManager.js" defer></script>
+  <script src="system/userland/core/WindowManager.js" defer></script>
   <script src="system/userland/core/GalleryViewRegistry.js" defer></script>
   <script src="system/userland/core/MediaViewerRegistry.js" defer></script>
   <script src="system/userland/core/AppManager.js" defer></script>
@@ -100,130 +103,47 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
 </head>
 <body>
 
-  <!-- App Header -->
+  <!-- WebOS Top System & Application Bar (macOS Style) -->
   <header class="app-header">
     <div class="header-container">
-      <!-- Top Row: Brand & Toolbar Controls -->
-      <div class="header-top-row">
-        <div class="brand-section">
-          <div class="brand-logo">📸</div>
-          <h1 class="brand-title"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></h1>
-        </div>
-
-        <!-- Toolbar Controls -->
-        <div class="toolbar-controls">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher des médias..." aria-label="Rechercher des médias" data-i18n-placeholder="nav.search_placeholder">
-            <button type="button" id="searchClearBtn" class="search-clear-btn" title="Effacer la recherche" data-i18n-title="nav.search_clear" style="display: none;">✕</button>
-            <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="Options de recherche avancée" data-i18n-title="nav.search_advanced" onclick="if(window.galleryApp) window.galleryApp.openSearchModal();">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14"></line>
-                <line x1="4" y1="10" x2="4" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12" y2="3"></line>
-                <line x1="20" y1="21" x2="20" y2="16"></line>
-                <line x1="20" y1="12" x2="20" y2="3"></line>
-                <line x1="1" y1="14" x2="7" y2="14"></line>
-                <line x1="9" y1="8" x2="15" y2="8"></line>
-                <line x1="17" y1="16" x2="23" y2="16"></line>
-              </svg>
-            </button>
-          </div>
-
-          <div class="sort-group" style="display: flex; align-items: center; gap: 0.35rem;">
-            <select id="sortSelect" class="sort-select" aria-label="Sort options">
-              <option value="name" data-i18n="sort.name">Nom</option>
-              <option value="exif_date" data-i18n="sort.date">Date de prise de vue 📷</option>
-              <option value="date" data-i18n="sort.mtime">Date de modification</option>
-              <option value="size" data-i18n="sort.size">Taille du fichier</option>
-            </select>
-            <button id="sortOrderBtn" class="btn-toggle" title="Inverser l'ordre" data-i18n-title="sort.order_asc">
-              <span id="sortOrderIcon" style="font-size: 1.1rem; font-weight: bold;">⇩</span>
-            </button>
-          </div>
-
-          <button id="toggleFavoritesBtn" class="btn-toggle" title="Afficher uniquement mes favoris" data-i18n-title="nav.favorites">
-            <span>❤️</span><span id="favCountBadge" class="fav-count-badge" style="display:none;">0</span>
-          </button>
-
-          <div class="archive-dropdown-container">
-            <button id="downloadArchiveBtn" class="btn-toggle" title="Télécharger le dossier sous forme d'archive" data-i18n-title="nav.download_archive">
-              <span>⇲</span> ▾
-            </button>
-            <div id="archiveMenu" class="archive-dropdown-menu">
-              <!-- Dynamically populated by JS based on server binary availability -->
-            </div>
-          </div>
-
-          <!-- View Mode Selector Dropdown -->
-          <div class="view-selector-container" id="viewSelectorContainer">
-            <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="Mode d'affichage" data-i18n-title="view.switch_mode">
-              <span id="currentViewIcon">🖼️</span>
-              <span id="currentViewLabel" data-i18n="view.polaroid">Polaroid</span>
-              <span class="view-dropdown-arrow">▾</span>
-            </button>
-            <div id="viewDropdownMenu" class="view-dropdown-menu" style="display: none;">
-              <button type="button" class="view-option-btn active" data-view-mode="polaroid">
-                <span>🖼️</span> <span data-i18n="view.polaroid">Polaroid</span>
-              </button>
-              <button type="button" class="view-option-btn" data-view-mode="grid">
-                <span>🔲</span> <span data-i18n="view.grid">Grille</span>
-              </button>
-              <button type="button" class="view-option-btn" data-view-mode="mosaic">
-                <span>🧱</span> <span data-i18n="view.mosaic">Mosaïque</span>
-              </button>
-              <button type="button" class="view-option-btn" data-view-mode="list">
-                <span>📑</span> <span data-i18n="view.list">Liste</span>
-              </button>
-            </div>
-          </div>
-
-          <button id="createFolderBtn" class="btn-toggle" title="Créer un nouveau sous-dossier" data-i18n-title="nav.create_folder" style="display: none;">
-            <span>📁+</span>
-          </button>
-
-          <button id="uploadMediaBtn" class="btn-toggle" title="Uploader des médias" data-i18n-title="nav.upload_media" style="display: none;">
-            <span>📤</span>
-          </button>
-          <input type="file" id="uploadFileInput" multiple style="display: none;" />
-
-          <button id="folderSettingsBtn" class="btn-toggle" title="Paramètres du dossier (.title, .desc, .bg, .theme)" data-i18n-title="nav.folder_settings" style="display: none;">
-            <span>⚙</span>
-          </button>
-
-          <!-- Language Selector Dropdown -->
-          <div class="lang-selector-container" id="langSelectorContainer">
-            <button type="button" id="langSelectorBtn" class="btn-toggle lang-btn" title="Changer la langue" data-i18n-title="nav.switch_lang">
-              <span id="currentLangFlag"><?php echo get_locale_flag_html($available_locales[$default_locale] ?? []); ?></span>
-              <span id="currentLangCode"><?php echo strtoupper(htmlspecialchars($default_locale, ENT_QUOTES, 'UTF-8')); ?></span>
-              <span class="lang-dropdown-arrow">▾</span>
-            </button>
-            <div id="langDropdownMenu" class="lang-dropdown-menu" style="display: none;">
-              <?php foreach ($available_locales as $code => $info): ?>
-                <button type="button" class="lang-option-btn <?php echo ($code === $default_locale) ? 'active' : ''; ?>" data-lang="<?php echo htmlspecialchars($code, ENT_QUOTES, 'UTF-8'); ?>">
-                  <span class="lang-flag"><?php echo get_locale_flag_html($info); ?></span>
-                  <span class="lang-name"><?php echo htmlspecialchars($info['name'], ENT_QUOTES, 'UTF-8'); ?></span>
-                  <span class="lang-code"><?php echo strtoupper(htmlspecialchars($code, ENT_QUOTES, 'UTF-8')); ?></span>
-                </button>
-              <?php endforeach; ?>
-            </div>
-          </div>
-
-          <button id="adminBtn" class="btn-toggle" title="Mode Administration" data-i18n-title="nav.admin">
-            <span id="adminBtnIcon">🔑</span> <span id="adminBtnText" data-i18n="nav.admin">Admin</span>
-          </button>
-        </div>
+      <!-- 1. OS Brand Section (Apple-menu style) -->
+      <div class="brand-section">
+        <div class="brand-logo">📸</div>
+        <h1 class="brand-title"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></h1>
       </div>
 
-      <!-- Bottom Row: Dedicated Breadcrumbs Navigation Bar -->
-      <div class="header-bottom-row">
-        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb Navigation">
-          <span class="crumb-item crumb-active"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></span>
-        </nav>
+      <!-- 2. Dynamic Contextual Application Zone (Colonized by Active App via MenuBarManager) -->
+      <div id="appHeaderZone" class="app-header-zone"></div>
+
+      <!-- 3. OS System Tray (Universal Settings, Language, Admin) -->
+      <div class="system-tray-section">
+        <!-- Language Selector Dropdown -->
+        <div class="lang-selector-container" id="langSelectorContainer">
+          <button type="button" id="langSelectorBtn" class="btn-toggle lang-btn" title="Changer la langue" data-i18n-title="nav.switch_lang">
+            <span id="currentLangFlag"><?php echo get_locale_flag_html($available_locales[$default_locale] ?? []); ?></span>
+            <span id="currentLangCode"><?php echo strtoupper(htmlspecialchars($default_locale, ENT_QUOTES, 'UTF-8')); ?></span>
+            <span class="lang-dropdown-arrow">▾</span>
+          </button>
+          <div id="langDropdownMenu" class="lang-dropdown-menu" style="display: none;">
+            <?php foreach ($available_locales as $code => $info): ?>
+              <button type="button" class="lang-option-btn <?php echo ($code === $default_locale) ? 'active' : ''; ?>" data-lang="<?php echo htmlspecialchars($code, ENT_QUOTES, 'UTF-8'); ?>">
+                <span class="lang-flag"><?php echo get_locale_flag_html($info); ?></span>
+                <span class="lang-name"><?php echo htmlspecialchars($info['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="lang-code"><?php echo strtoupper(htmlspecialchars($code, ENT_QUOTES, 'UTF-8')); ?></span>
+              </button>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
+        <button id="adminBtn" class="btn-toggle" title="Mode Administration" data-i18n-title="nav.admin">
+          <span id="adminBtnIcon">🔑</span> <span id="adminBtnText" data-i18n="nav.admin">Admin</span>
+        </button>
       </div>
     </div>
   </header>
+
+  <!-- WebOS Desktop & Workspace Container -->
+  <div id="webosDesktop" class="webos-desktop">
 
   <!-- Filter Pills Bar -->
   <div class="filter-bar">
@@ -397,5 +317,10 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
       </div>
     </div>
   </footer>
+
+  </div><!-- /#webosDesktop -->
+
+  <!-- WebOS Bottom Dock & Taskbar -->
+  <div id="webosTaskbar" class="webos-taskbar"></div>
 </body>
 </html>

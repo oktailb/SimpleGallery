@@ -28,7 +28,7 @@
         ctx.state.isLightboxHistoryPushed = true;
       }
 
-      ctx.el.lightboxTitle.textContent = file.name;
+      ctx.el.lightboxTitle.textContent = `Lecteur de Documents : ${file.name}`;
       ctx.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
       
       const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item : true);
@@ -47,6 +47,22 @@
       if (ctx.el.lightboxEditImageBtn) ctx.el.lightboxEditImageBtn.style.display = 'none';
       if (ctx.el.lightboxExifBtn) ctx.el.lightboxExifBtn.style.display = 'inline-flex';
       ctx.loadUnifiedMetadata(file);
+
+      // Register Document Viewer in Top Contextual MenuBar
+      if (window.MenuBarManager) {
+        window.MenuBarManager.registerAppMenu('generic-doc', (container) => {
+          container.innerHTML = `
+            <div class="app-menu-left">
+              <span class="app-menu-pill active" style="font-weight:600;">📄 Document : ${ctx.escapeHtml(file.name)}</span>
+              <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ Nouvel onglet</a>
+            </div>
+            <div class="app-menu-right">
+              <button type="button" class="app-menu-pill" onclick="if(window.galleryApp) window.galleryApp.closeLightbox();">✕ Fermer</button>
+            </div>
+          `;
+        });
+        window.MenuBarManager.setActiveApp('generic-doc');
+      }
 
       const ext = (file.extension || '').toLowerCase();
 

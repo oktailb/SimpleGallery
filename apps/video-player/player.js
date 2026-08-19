@@ -20,17 +20,73 @@
     cssPath: 'apps/video-player/player.css',
 
     open(file, options, ctx) {
-      if (!ctx || !ctx.el) return false;
-      if (!ctx.el.pipWidget || !ctx.el.pipMediaContainer) return false;
+      if (!ctx) return false;
 
+      const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item !== false : true);
+      const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
+      const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
+      const winId = `video-${cleanPathId}`;
+
+      // 1. WebOS Window Manager Mode (Primary)
+      if (window.WindowManager) {
+        const win = window.WindowManager.createWindow({
+          id: winId,
+          appId: 'video-player',
+          appName: 'Lecteur Vidéo',
+          fileName: file.name,
+          title: `Lecteur Vidéo : ${file.name}`,
+          icon: '🎬',
+          width: 720,
+          height: 480,
+          content: `
+            <div class="webos-video-container" style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;">
+              <video id="video-${cleanPathId}" src="${file.file_url}" controls ${controlsListAttr} autoplay playsinline style="width:100%;height:100%;object-fit:contain;"></video>
+            </div>
+          `,
+          onClose: () => {
+            const vid = document.getElementById(`video-${cleanPathId}`);
+            if (vid) {
+              vid.pause();
+              vid.src = '';
+            }
+          },
+          onFocus: () => {
+            if (window.MenuBarManager) {
+              window.MenuBarManager.registerAppMenu('video-player', (container) => {
+                container.innerHTML = `
+                  <div class="app-menu-left">
+                    <span class="app-menu-pill active" style="font-weight:600;">🎬 ${ctx.escapeHtml(file.name)}</span>
+                    <button type="button" class="app-menu-pill" id="menuVidPlayPauseBtn">⏯️ Lecture / Pause</button>
+                    <button type="button" class="app-menu-pill" id="menuVidMuteBtn">🔊 Muet</button>
+                  </div>
+                  <div class="app-menu-right">
+                    <button type="button" class="app-menu-pill" id="menuVidFullscreenBtn">⛶ Plein Écran</button>
+                  </div>
+                `;
+                const vid = document.getElementById(`video-${cleanPathId}`);
+                if (vid) {
+                  const ppBtn = container.querySelector('#menuVidPlayPauseBtn');
+                  const muteBtn = container.querySelector('#menuVidMuteBtn');
+                  const fsBtn = container.querySelector('#menuVidFullscreenBtn');
+                  if (ppBtn) ppBtn.onclick = () => { if (vid.paused) vid.play(); else vid.pause(); };
+                  if (muteBtn) muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? '🔇 Rétablir son' : '🔊 Muet'; };
+                  if (fsBtn) fsBtn.onclick = () => { if (vid.requestFullscreen) vid.requestFullscreen(); };
+                }
+              });
+              window.MenuBarManager.setActiveApp('video-player');
+            }
+          }
+        });
+        return true;
+      }
+
+      // 2. Legacy PiP Fallback Mode
+      if (!ctx.el || !ctx.el.pipWidget || !ctx.el.pipMediaContainer) return false;
       ctx.state.currentPipFile = file;
       if (ctx.el.pipTitle) ctx.el.pipTitle.innerText = file.comment || file.name;
       ctx.el.pipWidget.style.display = 'flex';
       ctx.el.pipWidget.classList.remove('minimized');
       if (ctx.el.pipInfoPanel) ctx.el.pipInfoPanel.style.display = 'none';
-
-      const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item !== false : true);
-      const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
 
       ctx.el.pipMediaContainer.innerHTML = `
         <div class="video-pip-content">

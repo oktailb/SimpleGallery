@@ -28,7 +28,7 @@
         ctx.state.isLightboxHistoryPushed = true;
       }
 
-      ctx.el.lightboxTitle.textContent = file.name;
+      ctx.el.lightboxTitle.textContent = `Gestionnaire d'Archives : ${file.name}`;
       ctx.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
       
       const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item : true);
@@ -47,6 +47,22 @@
       if (ctx.el.lightboxEditImageBtn) ctx.el.lightboxEditImageBtn.style.display = 'none';
       if (ctx.el.lightboxExifBtn) ctx.el.lightboxExifBtn.style.display = 'inline-flex';
       ctx.loadUnifiedMetadata(file);
+
+      // Register Archive Manager in Top Contextual MenuBar
+      if (window.MenuBarManager) {
+        window.MenuBarManager.registerAppMenu('archive-manager', (container) => {
+          container.innerHTML = `
+            <div class="app-menu-left">
+              <span class="app-menu-pill active" style="font-weight:600;">📦 Archive : ${ctx.escapeHtml(file.name)}</span>
+              <a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 Télécharger</a>
+            </div>
+            <div class="app-menu-right">
+              <button type="button" class="app-menu-pill" onclick="if(window.galleryApp) window.galleryApp.closeLightbox();">✕ Fermer</button>
+            </div>
+          `;
+        });
+        window.MenuBarManager.setActiveApp('archive-manager');
+      }
 
       // Render Skeleton Archive Inspector
       ctx.el.lightboxContent.innerHTML = `

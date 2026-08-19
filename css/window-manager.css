@@ -1,0 +1,286 @@
+/**
+ * SimpleGallery 2026 - WebOS Window Manager & Contextual Menu Styles
+ */
+
+/* -------------------------------------------------------------
+ * 1. WEBOS DESKTOP & WORKSPACE CONTAINER
+ * ------------------------------------------------------------- */
+#webosDesktop {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------
+ * 2. CONTEXTUAL APP MENU BAR (MACOS-STYLE)
+ * ------------------------------------------------------------- */
+.app-menu-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 1.25rem;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 90;
+  min-height: 44px;
+  transition: all 0.2s ease;
+}
+
+.app-menu-left,
+.app-menu-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.app-menu-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #f8fafc);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.app-menu-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.app-menu-pill.active {
+  background: var(--accent-primary, #6366f1);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+}
+
+.app-menu-separator {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 0.25rem;
+}
+
+/* -------------------------------------------------------------
+ * 3. UNIVERSAL WEBOS WINDOWS
+ * ------------------------------------------------------------- */
+.webos-window {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  will-change: transform, width, height, left, top;
+  touch-action: none;
+}
+
+.webos-window.is-active {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(99, 102, 241, 0.5);
+}
+
+.webos-window.is-dragging {
+  opacity: 0.95;
+  cursor: grabbing !important;
+  user-select: none;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), 0 0 0 2px var(--accent-primary, #6366f1);
+}
+
+.webos-window.is-maximized {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  box-shadow: none;
+}
+
+/* Window Header */
+.webos-window .window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: grab;
+  user-select: none;
+}
+
+.webos-window.is-dragging .window-header {
+  cursor: grabbing;
+}
+
+.window-traffic-lights {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.win-btn {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 900;
+  color: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.window-header:hover .win-btn {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.win-btn.win-close {
+  background: #ff5f56;
+  border: 1px solid #e0443e;
+}
+.win-btn.win-minimize {
+  background: #ffbd2e;
+  border: 1px solid #dea123;
+}
+.win-btn.win-maximize {
+  background: #27c93f;
+  border: 1px solid #1aab29;
+}
+
+.win-btn:hover {
+  filter: brightness(1.15);
+  transform: scale(1.1);
+}
+
+.window-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-main, #f8fafc);
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.window-icon {
+  font-size: 1rem;
+}
+
+.window-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Window Body */
+.webos-window .window-body {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------------------------------------------------------------
+ * 4. RESIZE HANDLES (8-DIRECTIONS)
+ * ------------------------------------------------------------- */
+.win-resize-handle {
+  position: absolute;
+  z-index: 50;
+}
+
+.win-resize-handle.res-n { top: 0; left: 8px; right: 8px; height: 6px; cursor: n-resize; }
+.win-resize-handle.res-s { bottom: 0; left: 8px; right: 8px; height: 6px; cursor: s-resize; }
+.win-resize-handle.res-e { top: 8px; right: 0; bottom: 8px; width: 6px; cursor: e-resize; }
+.win-resize-handle.res-w { top: 8px; left: 0; bottom: 8px; width: 6px; cursor: w-resize; }
+.win-resize-handle.res-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: ne-resize; }
+.win-resize-handle.res-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nw-resize; }
+.win-resize-handle.res-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; }
+.win-resize-handle.res-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; }
+
+.webos-window.is-maximized .win-resize-handle {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------
+ * 5. TASKBAR / DOCK
+ * ------------------------------------------------------------- */
+.webos-taskbar {
+  position: fixed;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  max-width: 90vw;
+  overflow-x: auto;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.taskbar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskbar-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.taskbar-item.active {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #fff;
+}
+
+.taskbar-item.minimized {
+  opacity: 0.65;
+  border-style: dashed;
+}

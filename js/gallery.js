@@ -84,6 +84,14 @@ class SimpleGallery {
 
     this.initElements();
     this.initI18n();
+
+    // Initialize WebOS Window Manager & Contextual App Header Zone
+    if (window.WindowManager) window.WindowManager.init();
+    if (window.MenuBarManager) {
+      window.MenuBarManager.init('appHeaderZone');
+      this.initMenuBarExplorerIntegration();
+    }
+
     this.updateViewSwitcherUI();
     this.bindEvents();
     this.initPipPlayer();
@@ -304,16 +312,125 @@ class SimpleGallery {
     };
   }
 
-  bindEvents() {
-    window.addEventListener('popstate', () => this.handleUrlChange());
+  initMenuBarExplorerIntegration() {
+    if (!window.MenuBarManager) return;
 
-    this.el.searchInput.addEventListener('input', (e) => {
-      this.state.searchQuery = e.target.value.toLowerCase();
-      if (this.el.searchClearBtn) {
-        this.el.searchClearBtn.style.display = e.target.value ? 'flex' : 'none';
+    window.MenuBarManager.registerAppMenu('explorer', (container) => {
+      container.innerHTML = `
+        <div class="explorer-header-bar">
+          <!-- Breadcrumbs Nav -->
+          <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb Navigation">
+            <span class="crumb-item crumb-active">${this.escapeHtml(this.state.galleryTitle || 'SimpleGallery')}</span>
+          </nav>
+
+          <!-- Search Box -->
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="${this.escapeHtml(this.t('nav.search_placeholder') || 'Rechercher des médias...')}" value="${this.escapeHtml(this.state.searchQuery || '')}" aria-label="Rechercher des médias">
+            <button type="button" id="searchClearBtn" class="search-clear-btn" title="Effacer" style="${this.state.searchQuery ? 'display:inline-flex;' : 'display:none;'}">✕</button>
+            <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="${this.escapeHtml(this.t('nav.search_advanced') || 'Recherche avancée')}" onclick="if(window.galleryApp) window.galleryApp.openSearchModal();">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Sort Group -->
+          <div class="sort-group">
+            <select id="sortSelect" class="sort-select" aria-label="Sort options">
+              <option value="name" ${this.state.sortBy === 'name' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.name') || 'Nom')}</option>
+              <option value="exif_date" ${this.state.sortBy === 'exif_date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.date') || 'Date prise de vue 📷')}</option>
+              <option value="date" ${this.state.sortBy === 'date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.mtime') || 'Date modif')}</option>
+              <option value="size" ${this.state.sortBy === 'size' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.size') || 'Taille')}</option>
+            </select>
+            <button id="sortOrderBtn" class="btn-toggle" title="Inverser l'ordre">
+              <span id="sortOrderIcon" style="font-size:1.1rem;font-weight:bold;">${this.state.sortOrder === 'asc' ? '⇧' : '⇩'}</span>
+            </button>
+          </div>
+
+          <!-- Favorites Toggle -->
+          <button id="toggleFavoritesBtn" class="btn-toggle ${this.state.showFavoritesOnly ? 'active' : ''}" title="${this.escapeHtml(this.t('nav.favorites') || 'Favoris')}">
+            <span>❤️</span><span id="favCountBadge" class="fav-count-badge" style="${this.state.favorites && this.state.favorites.size > 0 ? 'display:inline-flex;' : 'display:none;'}">${this.state.favorites ? this.state.favorites.size : 0}</span>
+          </button>
+
+          <!-- Archive Dropdown -->
+          <div class="archive-dropdown-container">
+            <button id="downloadArchiveBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.download_archive') || 'Télécharger archive')}">
+              <span>⇲</span> ▾
+            </button>
+            <div id="archiveMenu" class="archive-dropdown-menu"></div>
+          </div>
+
+          <!-- View Mode Selector Dropdown -->
+          <div class="view-selector-container" id="viewSelectorContainer">
+            <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="Mode d'affichage">
+              <span id="currentViewIcon">${this.getViewModeIcon(this.state.viewMode)}</span>
+              <span id="currentViewLabel">${this.getViewModeLabel(this.state.viewMode)}</span>
+              <span class="view-dropdown-arrow">▾</span>
+            </button>
+            <div id="viewDropdownMenu" class="view-dropdown-menu" style="display: none;">
+              <button type="button" class="view-option-btn ${this.state.viewMode === 'polaroid' ? 'active' : ''}" data-view-mode="polaroid"><span>🖼️</span> <span>Polaroid</span></button>
+              <button type="button" class="view-option-btn ${this.state.viewMode === 'grid' ? 'active' : ''}" data-view-mode="grid"><span>🔲</span> <span>Grille</span></button>
+              <button type="button" class="view-option-btn ${this.state.viewMode === 'mosaic' ? 'active' : ''}" data-view-mode="mosaic"><span>🧱</span> <span>Mosaïque</span></button>
+              <button type="button" class="view-option-btn ${this.state.viewMode === 'list' ? 'active' : ''}" data-view-mode="list"><span>📑</span> <span>Liste</span></button>
+            </div>
+          </div>
+
+          <!-- Admin Folder Actions -->
+          <button id="createFolderBtn" class="btn-toggle" title="Créer un sous-dossier" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <span>📁+</span>
+          </button>
+          <button id="uploadMediaBtn" class="btn-toggle" title="Uploader des médias" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <span>📤</span>
+          </button>
+          <input type="file" id="uploadFileInput" multiple style="display: none;" />
+          <button id="folderSettingsBtn" class="btn-toggle" title="Paramètres du dossier" style="${this.state.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <span>⚙</span>
+          </button>
+        </div>
+      `;
+
+      this.initElements();
+      this.bindExplorerHeaderEvents();
+      if (this.state.currentBreadcrumbs) {
+        this.renderBreadcrumbs(this.state.currentBreadcrumbs);
       }
-      this.applyFilterAndRender();
     });
+
+    window.MenuBarManager.restoreDefaultMenu();
+  }
+
+  getViewModeIcon(mode) {
+    switch (mode) {
+      case 'grid': return '🔲';
+      case 'mosaic': return '🧱';
+      case 'list': return '📑';
+      default: return '🖼️';
+    }
+  }
+
+  getViewModeLabel(mode) {
+    switch (mode) {
+      case 'grid': return this.t('view.grid') || 'Grille';
+      case 'mosaic': return this.t('view.mosaic') || 'Mosaïque';
+      case 'list': return this.t('view.list') || 'Liste';
+      default: return this.t('view.polaroid') || 'Polaroid';
+    }
+  }
+
+  bindExplorerHeaderEvents() {
+    if (this.el.searchInput) {
+      this.el.searchInput.addEventListener('input', (e) => {
+        this.state.searchQuery = e.target.value.toLowerCase();
+        if (this.el.searchClearBtn) {
+          this.el.searchClearBtn.style.display = e.target.value ? 'flex' : 'none';
+        }
+        this.applyFilterAndRender();
+      });
+    }
 
     if (this.el.searchClearBtn) {
       this.el.searchClearBtn.addEventListener('click', () => {
@@ -321,23 +438,19 @@ class SimpleGallery {
       });
     }
 
-    if (this.el.exitSearchBtn) {
-      this.el.exitSearchBtn.addEventListener('click', () => {
-        this.exitSearch();
+    if (this.el.sortSelect) {
+      this.el.sortSelect.addEventListener('change', (e) => {
+        this.state.sortBy = e.target.value;
+        if (['date', 'exif_date', 'size'].includes(e.target.value)) {
+          this.state.sortOrder = 'desc';
+        } else {
+          this.state.sortOrder = 'asc';
+        }
+        this.saveFolderSort(this.state.currentPath, this.state.sortBy, this.state.sortOrder);
+        this.updateSortOrderUI();
+        this.applyFilterAndRender();
       });
     }
-
-    this.el.sortSelect.addEventListener('change', (e) => {
-      this.state.sortBy = e.target.value;
-      if (['date', 'exif_date', 'size'].includes(e.target.value)) {
-        this.state.sortOrder = 'desc';
-      } else {
-        this.state.sortOrder = 'asc';
-      }
-      this.saveFolderSort(this.state.currentPath, this.state.sortBy, this.state.sortOrder);
-      this.updateSortOrderUI();
-      this.applyFilterAndRender();
-    });
 
     if (this.el.sortOrderBtn) {
       this.el.sortOrderBtn.addEventListener('click', () => this.toggleSortOrder());
@@ -350,17 +463,57 @@ class SimpleGallery {
       });
     }
 
-    const viewOptionBtns = document.querySelectorAll('.view-option-btn');
-    viewOptionBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+    if (this.el.viewDropdownMenu) {
+      this.el.viewDropdownMenu.querySelectorAll('.view-option-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mode = btn.dataset.viewMode;
+          if (mode) {
+            this.setViewMode(mode);
+            this.closeViewDropdown();
+          }
+        });
+      });
+    }
+
+    if (this.el.toggleFavoritesBtn) {
+      this.el.toggleFavoritesBtn.addEventListener('click', () => this.toggleFavoritesFilter());
+    }
+
+    if (this.el.downloadArchiveBtn) {
+      this.el.downloadArchiveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const mode = btn.dataset.viewMode;
-        if (mode) {
-          this.setViewMode(mode);
-          this.closeViewDropdown();
+        this.toggleArchiveMenu();
+      });
+    }
+
+    if (this.el.createFolderBtn) {
+      this.el.createFolderBtn.addEventListener('click', () => this.openCreateFolderModal());
+    }
+
+    if (this.el.uploadMediaBtn) {
+      this.el.uploadMediaBtn.addEventListener('click', () => {
+        if (this.el.uploadFileInput) this.el.uploadFileInput.click();
+      });
+    }
+
+    if (this.el.uploadFileInput) {
+      this.el.uploadFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handleUploadFiles(e.target.files);
         }
       });
-    });
+    }
+
+    if (this.el.folderSettingsBtn) {
+      this.el.folderSettingsBtn.addEventListener('click', () => this.openFolderSettingsModal());
+    }
+  }
+
+  bindEvents() {
+    window.addEventListener('popstate', () => this.handleUrlChange());
+
+    this.bindExplorerHeaderEvents();
 
     document.addEventListener('click', (e) => {
       if (this.el.viewSelectorContainer && !this.el.viewSelectorContainer.contains(e.target)) {
@@ -368,12 +521,18 @@ class SimpleGallery {
       }
     });
 
-    this.el.filterPills.addEventListener('click', (e) => {
-      const pill = e.target.closest('.pill-btn');
-      if (pill && pill.dataset.category) {
-        this.setFilterCategory(pill.dataset.category);
-      }
-    });
+    if (this.el.filterPills) {
+      this.el.filterPills.addEventListener('click', (e) => {
+        const pill = e.target.closest('.pill-btn');
+        if (pill && pill.dataset.category) {
+          this.setFilterCategory(pill.dataset.category);
+        }
+      });
+    }
+
+    if (this.el.folderMapBtn) {
+      this.el.folderMapBtn.addEventListener('click', () => this.openMapModal());
+    }
 
     if (this.el.folderMapBtn) {
       this.el.folderMapBtn.addEventListener('click', () => this.openMapModal());
@@ -1036,6 +1195,9 @@ class SimpleGallery {
   }
 
   toggleViewDropdown() {
+    if (!this.el.viewDropdownMenu) {
+      this.el.viewDropdownMenu = document.getElementById('viewDropdownMenu');
+    }
     if (!this.el.viewDropdownMenu) return;
     const isVisible = this.el.viewDropdownMenu.style.display === 'flex';
     if (isVisible) {
@@ -1047,6 +1209,9 @@ class SimpleGallery {
   }
 
   closeViewDropdown() {
+    if (!this.el.viewDropdownMenu) {
+      this.el.viewDropdownMenu = document.getElementById('viewDropdownMenu');
+    }
     if (this.el.viewDropdownMenu) {
       this.el.viewDropdownMenu.style.display = 'none';
     }
@@ -1108,6 +1273,12 @@ class SimpleGallery {
   }
 
   renderBreadcrumbs(crumbs) {
+    this.state.currentBreadcrumbs = crumbs;
+    if (!this.el.breadcrumbs) {
+      this.el.breadcrumbs = document.getElementById('breadcrumbs');
+    }
+    if (!this.el.breadcrumbs) return;
+
     this.el.breadcrumbs.innerHTML = crumbs.map((crumb, idx) => {
       const isLast = idx === crumbs.length - 1;
       if (isLast) {
@@ -2365,6 +2536,10 @@ class SimpleGallery {
     this.el.lightboxContent.innerHTML = '';
     this.state.lightboxIndex = null;
     this.resetZoom();
+
+    if (window.MenuBarManager) {
+      window.MenuBarManager.restoreDefaultMenu();
+    }
 
     if (this.state.isLightboxHistoryPushed) {
       this.state.isLightboxHistoryPushed = false;
@@ -4948,6 +5123,9 @@ class SimpleGallery {
   }
 
   toggleLangDropdown() {
+    if (!this.el.langDropdownMenu) {
+      this.el.langDropdownMenu = document.getElementById('langDropdownMenu');
+    }
     if (!this.el.langDropdownMenu) return;
     const isVisible = this.el.langDropdownMenu.style.display === 'flex';
     if (isVisible) {
@@ -4958,6 +5136,9 @@ class SimpleGallery {
   }
 
   closeLangDropdown() {
+    if (!this.el.langDropdownMenu) {
+      this.el.langDropdownMenu = document.getElementById('langDropdownMenu');
+    }
     if (this.el.langDropdownMenu) {
       this.el.langDropdownMenu.style.display = 'none';
     }

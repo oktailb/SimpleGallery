@@ -69,7 +69,7 @@
         ctx.state.isLightboxHistoryPushed = true;
       }
 
-      ctx.el.lightboxTitle.textContent = file.name;
+      ctx.el.lightboxTitle.textContent = `Visionneuse d'Image : ${file.name}`;
       ctx.el.lightboxMeta.textContent = `${file.size_formatted} • ${new Date(file.mtime * 1000).toLocaleDateString()}`;
       
       const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item : true);
@@ -101,8 +101,38 @@
       if (ctx.el.lightboxExifBtn) ctx.el.lightboxExifBtn.style.display = 'inline-flex';
       ctx.loadUnifiedMetadata(file);
 
-      // Render Application Controls into Lightbox Action Bar
+      // Register Image Viewer tools in Top Contextual MenuBar
       const isEditableImage = ctx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
+      if (window.MenuBarManager) {
+        window.MenuBarManager.registerAppMenu('image-viewer', (container) => {
+          container.innerHTML = `
+            <div class="app-menu-left">
+              <span class="app-menu-pill active" style="font-weight:600;">🖼️ Image : ${ctx.escapeHtml(file.name)}</span>
+              <button type="button" class="app-menu-pill" id="menuImgZoomInBtn">➕ Zoom +</button>
+              <button type="button" class="app-menu-pill" id="menuImgZoomOutBtn">➖ Zoom -</button>
+              <button type="button" class="app-menu-pill" id="menuImgResetBtn">🔄 Réinitialiser</button>
+              <button type="button" class="app-menu-pill" id="menuImgRotateBtn">⟳ Rotation 90°</button>
+              ${isEditableImage ? `<button type="button" class="app-menu-pill" id="menuImgEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">🎨 Retoucher l'image</button>` : ''}
+            </div>
+            <div class="app-menu-right">
+              <button type="button" class="app-menu-pill" onclick="if(window.galleryApp) window.galleryApp.closeLightbox();">✕ Fermer</button>
+            </div>
+          `;
+          const zi = container.querySelector('#menuImgZoomInBtn');
+          const zo = container.querySelector('#menuImgZoomOutBtn');
+          const rz = container.querySelector('#menuImgResetBtn');
+          const ro = container.querySelector('#menuImgRotateBtn');
+          const ed = container.querySelector('#menuImgEditBtn');
+          if (zi) zi.onclick = () => this.adjustZoom(0.3);
+          if (zo) zo.onclick = () => this.adjustZoom(-0.3);
+          if (rz) rz.onclick = () => this.resetZoom();
+          if (ro) ro.onclick = () => this.rotateImage();
+          if (ed) ed.onclick = () => this.openImageEditor(file, ctx);
+        });
+        window.MenuBarManager.setActiveApp('image-viewer');
+      }
+
+      // Render Application Controls into Lightbox Action Bar
       const appActions = document.getElementById('lightboxAppActions');
       if (appActions) {
         appActions.innerHTML = `

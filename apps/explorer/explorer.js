@@ -17,9 +17,13 @@
 
     renderItem(file, idx, ctx) {
       let frameClass = 'polaroid-card';
-      if (file.category === 'video') frameClass += ' film-strip-card';
-      if (file.category === 'audio') frameClass += ' audio-cassette-card';
-      if (['doc', 'archive', 'other'].includes(file.category)) frameClass += ' doc-file-card';
+      if (file.category === 'video') {
+        frameClass += ' film-strip-card';
+      } else if (file.category === 'audio') {
+        frameClass += ' audio-cassette-card';
+      } else if (file.category !== 'image') {
+        frameClass += ' doc-file-card';
+      }
 
       let overlayHtml = '';
       if (file.category === 'video') {
@@ -83,9 +87,13 @@
 
     renderItem(file, idx, ctx) {
       let gridFrameClass = 'grid-card';
-      if (file.category === 'video') gridFrameClass += ' film-strip-grid-card';
-      if (file.category === 'audio') gridFrameClass += ' audio-cassette-grid-card';
-      if (['doc', 'archive', 'other'].includes(file.category)) gridFrameClass += ' doc-file-grid-card';
+      if (file.category === 'video') {
+        gridFrameClass += ' film-strip-grid-card';
+      } else if (file.category === 'audio') {
+        gridFrameClass += ' audio-cassette-grid-card';
+      } else if (file.category !== 'image') {
+        gridFrameClass += ' doc-file-grid-card';
+      }
 
       let overlayHtml = '';
       if (file.category === 'video') {
@@ -149,9 +157,13 @@
 
     renderItem(file, idx, ctx) {
       let mosaicFrameClass = 'mosaic-card';
-      if (file.category === 'video') mosaicFrameClass += ' film-strip-grid-card';
-      if (file.category === 'audio') mosaicFrameClass += ' audio-cassette-grid-card';
-      if (['doc', 'archive', 'other'].includes(file.category)) mosaicFrameClass += ' doc-file-grid-card';
+      if (file.category === 'video') {
+        mosaicFrameClass += ' film-strip-grid-card';
+      } else if (file.category === 'audio') {
+        mosaicFrameClass += ' audio-cassette-grid-card';
+      } else if (file.category !== 'image') {
+        mosaicFrameClass += ' doc-file-grid-card';
+      }
 
       let overlayHtml = '';
       if (file.category === 'video') {
