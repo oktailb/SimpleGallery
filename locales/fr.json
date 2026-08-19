@@ -366,6 +366,15 @@
     "common.confirm": "Confirmer",
     "common.loading": "Chargement...",
     "common.search": "Rechercher",
-    "common.reset": "Réinitialiser"
+    "common.reset": "Réinitialiser",
+
+    "doc_editor.edit_btn": "Éditer",
+    "doc_editor.save_btn": "Enregistrer",
+    "doc_editor.saving": "Enregistrement...",
+    "doc_editor.save_success": "Document enregistré avec succès !",
+    "doc_editor.switch_view": "Mode Lecture",
+    "doc_editor.switch_edit": "Mode Édition",
+    "doc_editor.wysiwyg_mode": "WYSIWYG",
+    "doc_editor.markdown_mode": "Markdown"
   }
 }

@@ -1,15 +1,71 @@
 /**
  * SimpleGallery 2026 - Document Viewer Application
- * Autonomous viewer supporting embedded PDF preview, interactive Text/Markdown/Code reader, and document actions in WebOS Windows.
+ * Autonomous viewer supporting embedded PDF preview, interactive Text/Markdown/Code reader,
+ * and integrated WYSIWYG / Markdown Editor (Toast UI Editor) in WebOS Windows.
  */
 (function(window) {
   'use strict';
+
+  let toastUiLoadingPromise = null;
+
+  /**
+   * Lazy-loads Toast UI Editor CDN assets on-demand
+   */
+  function loadToastUiEditor() {
+    if (window.toastui && window.toastui.Editor) {
+      return Promise.resolve(window.toastui.Editor);
+    }
+    if (toastUiLoadingPromise) return toastUiLoadingPromise;
+
+    toastUiLoadingPromise = new Promise((resolve, reject) => {
+      // 1. Inject Toast UI Editor Core & Dark Theme CSS
+      if (!document.getElementById('toastui-editor-css')) {
+        const link = document.createElement('link');
+        link.id = 'toastui-editor-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://uicdn.toast.com/editor/latest/toastui-editor.min.css';
+        document.head.appendChild(link);
+      }
+      if (!document.getElementById('toastui-editor-dark-css')) {
+        const linkDark = document.createElement('link');
+        linkDark.id = 'toastui-editor-dark-css';
+        linkDark.rel = 'stylesheet';
+        linkDark.href = 'https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css';
+        document.head.appendChild(linkDark);
+      }
+
+      // 2. Inject Toast UI Editor Core JS Bundle
+      if (!document.getElementById('toastui-editor-js')) {
+        const script = document.createElement('script');
+        script.id = 'toastui-editor-js';
+        script.src = 'https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js';
+        script.onload = () => {
+          if (window.toastui && window.toastui.Editor) {
+            resolve(window.toastui.Editor);
+          } else {
+            reject(new Error('Toast UI Editor is not defined on window.toastui'));
+          }
+        };
+        script.onerror = () => reject(new Error('Failed to load Toast UI Editor from CDN'));
+        document.head.appendChild(script);
+      } else {
+        const interval = setInterval(() => {
+          if (window.toastui && window.toastui.Editor) {
+            clearInterval(interval);
+            resolve(window.toastui.Editor);
+          }
+        }, 50);
+      }
+    });
+
+    return toastUiLoadingPromise;
+  }
 
   const DocViewerPlugin = {
     id: 'generic-doc',
     nameKey: 'viewer.doc',
     categories: ['doc', 'other'],
-    extensions: ['pdf', 'txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'log', 'ini', 'sql'],
+    extensions: ['pdf', 'txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'log', 'ini', 'sql', 'yaml', 'yml'],
     mimeTypes: ['application/pdf', 'text/*', 'application/json', 'application/msword', 'application/vnd.openxmlformats-officedocument.*'],
     defaultTarget: 'pip',
     supportsFullscreen: true,
@@ -25,12 +81,14 @@
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `doc-${cleanPathId}`;
       const ext = (file.extension || '').toLowerCase();
-      const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql'].includes(ext);
+      const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
+      const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
+      const canEdit = (ctx.state.isAdmin || window.IS_ADMIN || (ctx.state.userRights && ctx.state.userRights.can_upload)) && isEditableText;
 
       // 1. WebOS Window Mode (Primary)
       if (window.WindowManager) {
-        const defaultW = Math.min(880, Math.max(480, Math.round(window.innerWidth * 0.75)));
-        const defaultH = Math.min(620, Math.max(360, Math.round(window.innerHeight * 0.70)));
+        const defaultW = Math.min(940, Math.max(520, Math.round(window.innerWidth * 0.75)));
+        const defaultH = Math.min(680, Math.max(400, Math.round(window.innerHeight * 0.75)));
 
         let bodyHtml = '';
 
@@ -50,16 +108,37 @@
           `;
         } else if (isText) {
           bodyHtml = `
-            <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#0d1117;color:#c9d1d9;">
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#0d1117;color:#c9d1d9;position:relative;">
+              <!-- Reader View Toolbar -->
+              <div id="docReaderToolbar-${cleanPathId}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);">
                 <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📝 ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;align-items:center;">
                   <button type="button" id="docTextInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
-                  <button type="button" id="docWinCopyBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:#6366f1;color:#fff;border-radius:8px;">📋 Copier le texte</button>
+                  <button type="button" id="docWinCopyBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;">📋 Copier</button>
+                  ${canEdit ? `<button type="button" id="docEditToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--accent-primary,#6366f1);color:#fff;border-radius:8px;font-weight:600;"><span data-i18n="doc_editor.edit_btn">✏️ Éditer (WYSIWYG)</span></button>` : ''}
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
-              <div id="docWinTextBody-${cleanPathId}" style="flex:1;padding:1rem 1.25rem;overflow:auto;font-family:Consolas,Monaco,'Courier New',monospace;font-size:0.88rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;user-select:text;">Chargement du contenu texte...</div>
+
+              <!-- Reader Text Content -->
+              <div id="docWinTextContainer-${cleanPathId}" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <div id="docWinTextBody-${cleanPathId}" style="flex:1;padding:1rem 1.25rem;overflow:auto;font-family:Consolas,Monaco,'Courier New',monospace;font-size:0.88rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;user-select:text;">Chargement du contenu texte...</div>
+              </div>
+
+              <!-- WYSIWYG & Markdown Editor View -->
+              <div id="docEditorView-${cleanPathId}" class="doc-editor-container" style="display:none;flex:1;">
+                <div class="doc-editor-toolbar">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="docEditorStatusBadge-${cleanPathId}" class="doc-status-badge saved">● Enregistré</span>
+                    <span style="font-size:0.75rem;color:var(--text-muted,#94a3b8);">(Ctrl+S pour sauvegarder)</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <button type="button" id="docSaveBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 12px;background:#22c55e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">💾 Enregistrer</button>
+                    <button type="button" id="docCloseEditBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;cursor:pointer;">👁️ Mode Lecture</button>
+                  </div>
+                </div>
+                <div id="docEditorHost-${cleanPathId}" style="flex:1;height:calc(100% - 42px);overflow:hidden;"></div>
+              </div>
             </div>
           `;
         } else {
@@ -83,6 +162,10 @@
           ? window.sys.appManager.getAppTitle('doc-viewer') 
           : (ctx.t('apps.doc-viewer.title') || "Lecteur de Documents");
 
+        let activeEditorInstance = null;
+        let isEditing = false;
+        let currentRawText = '';
+
         const win = window.WindowManager.createWindow({
           id: winId,
           appId: 'doc-viewer',
@@ -100,6 +183,7 @@
                   <div class="app-menu-left">
                     <span class="app-menu-pill active" style="font-weight:600;">📄 ${ctx.escapeHtml(file.name)}</span>
                     <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${ctx.escapeHtml(ctx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
+                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${ctx.escapeHtml(ctx.t('doc_editor.edit_btn') || 'Éditer')}</button>` : ''}
                     ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
                     <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
@@ -109,28 +193,178 @@
                 `;
                 const info = container.querySelector('#menuDocInfoBtn');
                 const fs = container.querySelector('#menuDocFsBtn');
+                const menuEdit = container.querySelector('#menuDocEditBtn');
+
                 if (info) info.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
                 if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
+                if (menuEdit) menuEdit.onclick = () => toggleEditor();
               });
               window.MenuBarManager.setActiveApp('doc-viewer');
             }
           }
         });
 
+        // Function to perform file saving
+        const saveDocument = async () => {
+          if (!activeEditorInstance) return;
+          const newContent = activeEditorInstance.getMarkdown();
+          const badge = document.getElementById(`docEditorStatusBadge-${cleanPathId}`);
+          const saveBtn = document.getElementById(`docSaveBtn-${cleanPathId}`);
+
+          if (badge) {
+            badge.className = 'doc-status-badge dirty';
+            badge.textContent = '⏳ Enregistrement...';
+          }
+          if (saveBtn) saveBtn.disabled = true;
+
+          const csrfToken = (ctx && ctx.state && ctx.state.csrfToken)
+            || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+            || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+            || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            || (window.explorerApp && window.explorerApp.state && window.explorerApp.state.csrfToken)
+            || (window.galleryApp && window.galleryApp.state && window.galleryApp.state.csrfToken)
+            || '';
+
+          try {
+            const res = await fetch('api.php', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+              },
+              body: JSON.stringify({
+                action: 'save_text_file',
+                target_path: file.path,
+                content: newContent,
+                csrf_token: csrfToken
+              })
+            });
+
+            const json = await res.json();
+            if (saveBtn) saveBtn.disabled = false;
+
+            if (json.success) {
+              currentRawText = newContent;
+              if (badge) {
+                badge.className = 'doc-status-badge saved';
+                badge.textContent = '● Enregistré';
+              }
+              const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
+              if (bodyEl) bodyEl.textContent = newContent;
+
+              if (typeof ctx.showToast === 'function') {
+                ctx.showToast(json.message || 'Document enregistré avec succès !', 'success');
+              }
+            } else {
+              if (badge) {
+                badge.className = 'doc-status-badge dirty';
+                badge.textContent = '⚠️ Échec enregistrement';
+              }
+              if (typeof ctx.showToast === 'function') {
+                ctx.showToast('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde.'), 'error');
+              }
+            }
+          } catch (err) {
+            if (saveBtn) saveBtn.disabled = false;
+            if (badge) {
+              badge.className = 'doc-status-badge dirty';
+              badge.textContent = '⚠️ Erreur réseau';
+            }
+            if (typeof ctx.showToast === 'function') {
+              ctx.showToast('⚠️ Erreur réseau : ' + err.message, 'error');
+            }
+          }
+        };
+
+        // Function to toggle between Reader and Toast UI WYSIWYG Editor
+        const toggleEditor = async (forceState) => {
+          if (!canEdit) return;
+          const nextState = (forceState !== undefined) ? forceState : !isEditing;
+          isEditing = nextState;
+
+          const readerToolbar = document.getElementById(`docReaderToolbar-${cleanPathId}`);
+          const textContainer = document.getElementById(`docWinTextContainer-${cleanPathId}`);
+          const editorView = document.getElementById(`docEditorView-${cleanPathId}`);
+          const hostEl = document.getElementById(`docEditorHost-${cleanPathId}`);
+
+          if (readerToolbar) readerToolbar.style.display = isEditing ? 'none' : 'flex';
+          if (textContainer) textContainer.style.display = isEditing ? 'none' : 'flex';
+          if (editorView) editorView.style.display = isEditing ? 'flex' : 'none';
+
+          if (isEditing) {
+            if (!activeEditorInstance && hostEl) {
+              if (typeof ctx.showToast === 'function') ctx.showToast('Chargement de l\'éditeur WYSIWYG...', 'info');
+              try {
+                const Editor = await loadToastUiEditor();
+                const isMd = ['md', 'markdown'].includes(ext);
+
+                activeEditorInstance = new Editor({
+                  el: hostEl,
+                  height: '100%',
+                  initialEditType: isMd ? 'wysiwyg' : 'markdown',
+                  previewStyle: 'vertical',
+                  initialValue: currentRawText,
+                  theme: 'dark',
+                  usageStatistics: false,
+                  toolbarItems: [
+                    ['heading', 'bold', 'italic', 'strike'],
+                    ['hr', 'quote'],
+                    ['ul', 'ol', 'task', 'indent', 'outdent'],
+                    ['table', 'image', 'link'],
+                    ['code', 'codeblock']
+                  ]
+                });
+
+                activeEditorInstance.on('change', () => {
+                  const badge = document.getElementById(`docEditorStatusBadge-${cleanPathId}`);
+                  if (badge) {
+                    badge.className = 'doc-status-badge dirty';
+                    badge.textContent = '● Non sauvegardé';
+                  }
+                });
+              } catch (err) {
+                console.error('Failed to init Toast UI Editor:', err);
+                if (typeof ctx.showToast === 'function') {
+                  ctx.showToast('⚠️ Impossible de charger l\'éditeur : ' + err.message, 'error');
+                }
+                toggleEditor(false);
+              }
+            } else if (activeEditorInstance) {
+              activeEditorInstance.setMarkdown(currentRawText);
+            }
+          }
+        };
+
         // Bind in-window info buttons
         setTimeout(() => {
           const pdfInfo = document.getElementById(`docPdfInfoBtn-${cleanPathId}`);
           const textInfo = document.getElementById(`docTextInfoBtn-${cleanPathId}`);
           const cardInfo = document.getElementById(`docCardInfoBtn-${cleanPathId}`);
+          const editBtn = document.getElementById(`docEditToggleBtn-${cleanPathId}`);
+          const closeEditBtn = document.getElementById(`docCloseEditBtn-${cleanPathId}`);
+          const saveBtn = document.getElementById(`docSaveBtn-${cleanPathId}`);
+
           const onInfo = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
           if (pdfInfo) pdfInfo.onclick = onInfo;
           if (textInfo) textInfo.onclick = onInfo;
           if (cardInfo) cardInfo.onclick = onInfo;
+          if (editBtn) editBtn.onclick = () => toggleEditor(true);
+          if (closeEditBtn) closeEditBtn.onclick = () => toggleEditor(false);
+          if (saveBtn) saveBtn.onclick = () => saveDocument();
         }, 50);
 
-        // Shortcut I
+        // Shortcut I (info) & Ctrl+S (save)
         const keyHandler = (e) => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+            if (win.element && win.element.classList.contains('active') && isEditing) {
+              e.preventDefault();
+              saveDocument();
+              return;
+            }
+          }
+
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || isEditing) return;
           if (e.key === 'i' || e.key === 'I') {
             if (win.element && win.element.classList.contains('active')) {
               if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file);
@@ -144,6 +378,7 @@
           try {
             const res = await fetch(file.file_url);
             const text = await res.text();
+            currentRawText = text;
             const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
             if (bodyEl) {
               bodyEl.textContent = text;
@@ -151,9 +386,9 @@
             const copyBtn = document.getElementById(`docWinCopyBtn-${cleanPathId}`);
             if (copyBtn) {
               copyBtn.onclick = () => {
-                navigator.clipboard.writeText(text).then(() => {
+                navigator.clipboard.writeText(currentRawText).then(() => {
                   copyBtn.textContent = '✓ Copié !';
-                  setTimeout(() => { copyBtn.textContent = '📋 Copier le texte'; }, 2000);
+                  setTimeout(() => { copyBtn.textContent = '📋 Copier'; }, 2000);
                 });
               };
             }

@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'save_permissions', 'edit_image'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'create_folder', 'move_item', 'delete_item', 'save_permissions', 'edit_image', 'save_text_file'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -1127,6 +1127,79 @@ if ($action === 'edit_image') {
             'path'           => $saved_relative,
             'thumb_url'      => 'thumb.php?file=' . rawurlencode($saved_relative) . '&t=' . time(),
             'file_url'       => 'thumb.php?file=' . rawurlencode($saved_relative) . '&raw=1&t=' . time()
+        ]);
+        exit;
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => __t('api.err_file_write_failed')]);
+        exit;
+    }
+}
+
+if ($action === 'save_text_file') {
+    if (!is_admin_logged_in() && !has_permission('can_upload', $real_base_dir)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => __t('api.err_admin_required')
+        ]);
+        exit;
+    }
+
+    $target_param = $raw_body['target_path'] ?? $_POST['target_path'] ?? '';
+    $content = $raw_body['content'] ?? $_POST['content'] ?? null;
+
+    if (empty($target_param)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => __t('api.err_invalid_path')]);
+        exit;
+    }
+
+    if ($content === null) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => __t('api.err_missing_content') ?: 'Contenu manquant']);
+        exit;
+    }
+
+    $target_file = sanitize_file_path($target_param, $real_base_dir);
+    if ($target_file === null || !is_file($target_file) || is_path_ignored($target_file, $real_base_dir, $ignore_list)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => __t('api.err_invalid_path')]);
+        exit;
+    }
+
+    $ext = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    $allowed_text_exts = ['md', 'markdown', 'txt', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'];
+    $disallowed_exts = ['php', 'phtml', 'phar', 'php3', 'php4', 'php5', 'php7', 'phps', 'sh', 'bash', 'exe', 'bat', 'cmd', 'cgi', 'pl', 'py'];
+
+    if (!in_array($ext, $allowed_text_exts, true) || in_array($ext, $disallowed_exts, true)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => __t('api.err_unsupported_format')]);
+        exit;
+    }
+
+    $parent_dir = dirname($target_file);
+    if (!is_writable($parent_dir) || !is_writable($target_file)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => __t('api.err_write_permission')]);
+        exit;
+    }
+
+    $save_success = (@file_put_contents($target_file, $content, LOCK_EX) !== false);
+
+    if ($save_success) {
+        @chmod($target_file, 0644);
+        invalidate_dir_cache($parent_dir, $real_base_dir, $thumbnail_dir);
+
+        $saved_relative = get_relative_path($target_file, $real_base_dir);
+        $saved_filename = basename($target_file);
+
+        echo json_encode([
+            'success'   => true,
+            'message'   => __t('doc_editor.save_success') ?: 'Document enregistré avec succès !',
+            'file_name' => $saved_filename,
+            'path'      => $saved_relative,
+            'size'      => filesize($target_file)
         ]);
         exit;
     } else {

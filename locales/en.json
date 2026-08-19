@@ -366,6 +366,15 @@
     "common.confirm": "Confirm",
     "common.loading": "Loading...",
     "common.search": "Search",
-    "common.reset": "Reset"
+    "common.reset": "Reset",
+
+    "doc_editor.edit_btn": "Edit",
+    "doc_editor.save_btn": "Save",
+    "doc_editor.saving": "Saving...",
+    "doc_editor.save_success": "Document saved successfully!",
+    "doc_editor.switch_view": "Reading Mode",
+    "doc_editor.switch_edit": "Edit Mode",
+    "doc_editor.wysiwyg_mode": "WYSIWYG",
+    "doc_editor.markdown_mode": "Markdown"
   }
 }

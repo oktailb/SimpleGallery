@@ -366,6 +366,15 @@
     "common.confirm": "確定",
     "common.loading": "読み込み中...",
     "common.search": "検索",
-    "common.reset": "リセット"
+    "common.reset": "リセット",
+
+    "doc_editor.edit_btn": "編集",
+    "doc_editor.save_btn": "保存",
+    "doc_editor.saving": "保存中...",
+    "doc_editor.save_success": "ドキュメントを保存しました！",
+    "doc_editor.switch_view": "閲覧モード",
+    "doc_editor.switch_edit": "編集モード",
+    "doc_editor.wysiwyg_mode": "WYSIWYG",
+    "doc_editor.markdown_mode": "Markdown"
   }
 }
