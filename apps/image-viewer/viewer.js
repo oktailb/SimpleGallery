@@ -787,7 +787,18 @@
       const file = this.editorState.file;
       if (!canvas || !file) return;
 
-      ctx.showLoading(true);
+      const currentCtx = ctx || this.currentCtx || window.explorerApp || window.galleryApp;
+      const csrfToken = (currentCtx && currentCtx.state && currentCtx.state.csrfToken)
+        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || (window.explorerApp && window.explorerApp.state && window.explorerApp.state.csrfToken)
+        || (window.galleryApp && window.galleryApp.state && window.galleryApp.state.csrfToken)
+        || '';
+
+      if (currentCtx && typeof currentCtx.showLoading === 'function') {
+        currentCtx.showLoading(true);
+      }
 
       try {
         const ext = (file.extension || 'jpg').toLowerCase();
@@ -800,28 +811,35 @@
           target_path: file.path,
           save_mode: saveMode,
           image_data: dataUrl,
-          csrf_token: ctx.state.csrfToken
+          csrf_token: csrfToken
         };
 
         const res = await fetch('api.php', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-Token': ctx.state.csrfToken
+            'X-CSRF-Token': csrfToken
           },
           body: JSON.stringify(payload)
         });
 
         const json = await res.json();
-        ctx.showLoading(false);
+        if (currentCtx && typeof currentCtx.showLoading === 'function') {
+          currentCtx.showLoading(false);
+        }
 
         if (json.success) {
           this.closeSaveChoiceModal();
           this.closeImageEditor();
-          ctx.showToast(json.message || 'Image enregistrée avec succès !', 'success');
+          if (currentCtx && typeof currentCtx.showToast === 'function') {
+            currentCtx.showToast(json.message || 'Image enregistrée avec succès !', 'success');
+          }
 
           // Reload gallery directory to display new/updated image
-          await ctx.loadDirectory(ctx.state.currentPath);
+          if (currentCtx && typeof currentCtx.loadDirectory === 'function') {
+            await currentCtx.loadDirectory(currentCtx.state.currentPath);
+          }
 
           // If lightbox is open, refresh preview
           if (ctx.state.lightboxIndex !== null) {

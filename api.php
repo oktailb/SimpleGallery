@@ -1003,7 +1003,7 @@ if ($action === 'delete_item') {
 }
 
 if ($action === 'edit_image') {
-    if (!is_admin_logged_in()) {
+    if (!is_admin_logged_in() && !has_permission('can_upload', $real_base_dir)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,

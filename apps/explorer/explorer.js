@@ -31,6 +31,7 @@
         currentBreadcrumbs: null,
         isAdmin: false,
         adminEnabled: false,
+        csrfToken: (typeof window !== 'undefined' && (window.CSRF_TOKEN || window.SG_CSRF_TOKEN)) || '',
         userRights: {},
         availableArchives: [],
         viewMode: 'polaroid',
@@ -472,6 +473,11 @@
         this.state.isAdmin = !!json.is_admin;
         this.state.adminEnabled = !!json.admin_enabled;
         this.state.userRights = json.user_rights || {};
+        if (json.csrf_token) {
+          this.state.csrfToken = json.csrf_token;
+          window.CSRF_TOKEN = json.csrf_token;
+          window.SG_CSRF_TOKEN = json.csrf_token;
+        }
         if (json.available_archives) this.state.availableArchives = json.available_archives;
 
         // Apply folder theme / background overrides
