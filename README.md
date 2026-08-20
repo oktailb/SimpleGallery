@@ -1,292 +1,123 @@
-# SimpleGallery 🚀
+# SimpleGallery WebOS 🚀
 
-**SimpleGallery** est une galerie web ultra-légère, ultra-rapide et moderne conçue en **PHP 7.2+ / PHP 8+ / JavaScript Vanilla** (sans frameworks lourds ni dépendances complexes).
+**SimpleGallery** est une galerie multimédia et un **environnement WebOS moderne, ultra-rapide et modulaire** conçu en **PHP 7.4+ / PHP 8+ et JavaScript Vanilla pur** (zéro framework lourd, zéro dépendance complexe).
 
-![SimpleGallery Screenshot](screenshot.png)
-
-Le principe fondamental du projet d'origine (2005) est conservé : **pour publier des nouveaux médias (photos, vidéos, musique, documents), il suffit simplement de les copier dans n'importe quel dossier sur le serveur.**
+Le principe fondamental d'origine (2005) reste intact : **pour publier de nouveaux médias (photos, vidéos, musique, documents, archives), il suffit simplement de les déposer dans n'importe quel dossier sur le serveur.**
 
 ---
 
-## ✨ Fonctionnalités Principales
+## 🌟 Vue d'Ensemble & Fonctionnalités Utilisateur
 
-- 🔄 **Orientation Automatique des Photos (EXIF)** :
-  - Détection et orientation automatique à 100% des photos smartphone / appareils numériques (verticales / horizontales) via `image-orientation: from-image` en CSS3 et `exif_read_data` / `imagerotate` en PHP.
-- 🔎 **Explorateur d'Images Interactif (Zoom & Déplacement)** :
-  - **Zoom Avant / Arrière** : Via les boutons `➕` / `➖`, la molette de la souris, ou les touches clavier `+` / `-`.
-  - **Déplacement à la souris (*Pan / Drag*)** : Glissez-déposez l'image à la souris ou au doigt pour explorer les détails.
-  - **Double-Clic** : Alterne rapidement entre le zoom 1x et 2.5x centré.
-  - **Rotation 90°** : Bouton `⟳` ou touche `R` pour pivoter les photos à la volée.
-  - **Bouton Réinitialiser** : Recommencez le zoom à 100% via le bouton `🔄` ou la touche `0`.
-- 📸 **Rendu Polaroid Ultra-Réaliste & Mode Grille** :
-  - **Mode Polaroid** : Cartes style tirage argentique Polaroid 600 (marges authentiques, papier coquille d'œuf texturé, effet de reflet brillant, ruban adhésif *Washi Tape* translucide, inclinaisons naturelles et police d'encre manuscrite *Caveat*).
-  - **Mode Grille** : Grille responsive épurée avec zoom au survol.
-- ⚡ **Génération & Cache de Vignettes Intelligent** ([thumb.php](file:///home/oktail/Documents/GitHub/SimpleGallery/thumb.php)) :
-  - **Photos** : Redimensionnement automatique via l'extension **PHP GD** avec gestion de la rotation EXIF. *Bascule automatique en stream direct si GD n'est pas installé*.
-  - **Vidéos** : Extraction automatique d'une image poster (à 1.0s) via **FFmpeg** pour les fichiers `.mp4`, `.webm`, `.mov`, `.mkv`, etc.
-  - Mise en cache automatique dans le dossier `.thumbnails/` au format WebP / JPEG optimisé.
+### 🖥️ 1. Environnement de Bureau WebOS (Style macOS / Modern Desktop)
+- **Gestionnaire de Fenêtres Multi-Tâches (`WindowManager`)** : Déplacez, redimensionnez, maximisez, minimisez dans le dock et empilez librement vos fenêtres d'applications avec gestion fluide du `z-index`.
+- **Barre Supérieure Contextuelle (`MenuBarManager`)** : Menu d'application dynamique (façon macOS) adapté à l'application active au premier plan, horloge système en direct, indicateurs de statut et sélecteur de langue instantané.
+- **Dock & Barre des Tâches** : Accès rapide aux applications épinglées, restauration de fenêtres réduites et indicateurs de processus actifs.
+- **Raccourcis de Bureau & Grille Personnalisable** : Raccourcis configurables, drag-and-drop, choix du fond d'écran et des thèmes.
+- **Internationalisation Complète (i18n)** : Interface et jeux traduits en **Français (FR)**, **Anglais (EN)** et **Japonais (JA)** avec **basculement réactif en temps réel** (aucun rechargement de page nécessaire).
 
 ---
 
-## ⚡ Démarrage Rapide (Serveur Local)
+### 📂 2. Suite Complète d'Applications Intégrées (`apps/`)
 
-Pour lancer le serveur localement avec une limite d'upload de **128 Mo** :
+| Application | Icône | Description & Capacités |
+|---|:---:|---|
+| **Explorateur de Fichiers** | 📁 | Navigation arborescente double volet, fil d'Ariane, tri, recherche en direct, sélection multiple, téléversement par glisser-déposer, création de dossiers, gestion des permissions, modes d'affichage **Polaroid 600**, **Grille Moderne**, **Liste** et **Compact**. |
+| **Visionneuse d'Images** | 🖼️ | Moteur interactif de zoom profond (*Deep Zoom* jusqu'à 10x), déplacement à la souris (*Pan/Drag*), rotation 90°, filtres colorimétriques (luminosité, contraste, saturation, sépia, inversion, flou) et panneau d'inspection des métadonnées EXIF. |
+| **Lecteur Vidéo HTML5** | 🎬 | Lecteur vidéo complet avec gestion des pistes de sous-titres (`.vtt`, `.srt`), sélection de la vitesse de lecture (0.25x à 2x), mode cinéma, *Picture-in-Picture* (PiP) et capture d'écran instantanée. |
+| **Lecteur Audio & Musique** | 🎵 | Lecteur musical avec analyseur de spectre / onde sonore dynamique en temps réel (*Canvas Visualizer*), lecture des pochettes et tags ID3, listes de lecture, lecture aléatoire et répétition. |
+| **Lecteur & Éditeur de Documents** | 📄 | **PDF** (rendu vectoriel PDF.js avec miniatures et pagination), **Markdown** (visionneuse et éditeur scindé en direct avec rendu de listes, tableaux, formules et mise en forme riche), **Éditeur de Code Source** (coloration syntaxique Prism.js pour 50+ langages, numérotation des lignes, thèmes sombre/clair et sauvegarde directe sur le serveur). |
+| **Gestionnaire d'Archives** | 📦 | Exploration directe du contenu des archives ZIP, extraction de fichiers et création d'archives à la volée. |
+| **Cartes & Géolocalisation** | 🗺️ | Carte interactive du monde (Leaflet / OpenStreetMap) avec regroupement automatique par clusters (*Clustering*) des photos géotaggées par GPS EXIF et traçage d'itinéraires. |
+| **Jeu des 8 Dames** | 👑 | Puzzle classique des N-Dames (échiquier de 4x4 à 12x12), solveur procédural complet par backtracking, explorateur interactif de solutions, rayons de menace dynamiques, indices et démo automatique. |
+| **Foot Pong Arcade** | ⚽ | Jeu d'arcade rétro physique 1v1 avec raquettes inclinables à la souris, rebonds balistiques, système de particules, niveaux de difficulté IA (Facile, Moyen, Pro, Légende) et chronomètre de match. |
+| **Tours de Hanoï** | 🗼 | Casse-tête mathématique (3 à 8 disques), glisser-déposer et placement au clic, calcul du minimum optimal d'étapes ($2^n - 1$), solveur récursif pas-à-pas animé et indices intelligents. |
+| **Tuyaux & Réseau Connecté** | 🔧 | Puzzle procédural de connexion de réseau (*Netwalk*), simulation de fluide dynamique, prévention des fuites, mode boucle cyclique circulaire (**Tore**) et solveur automatique. |
+
+---
+
+## ⚡ Installation & Démarrage Rapide
+
+### Prérequis
+- **PHP 7.4+** ou **PHP 8.0+** (extensions recommandées : `gd`, `exif`, `fileinfo`, `zip`).
+- Optionnel : **FFmpeg** installé sur la machine hôte pour la génération automatique des vignettes d'affiches vidéo.
+
+### 1. Démarrage Local Immédiat
+Lancez simplement le script de démarrage local inclus :
 
 ```bash
 ./start.sh
-# Ou avec un port specifique:
+# Ou en spécifiant un port particulier :
 ./start.sh 8080
 ```
-
-- 🎬 **Support Média HTML5 Natif** : Lecture directe des vidéos et musiques dans le navigateur (zéro Flash).
-- 📁 **Surcharge de Configuration par Fichiers Cachés (*Dotfiles Unix*)** : Personnalisez les commentaires, fonds d'écran, titres et thèmes par dossier via `.comment`, `.bg`, `.title`, `.desc`, `.theme`.
-- 🎨 **Thèmes & Couleurs Configurables** : Sélection de thèmes (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`) ou couleurs sur mesure dans `config.php`.
-- 🔍 **Recherche & Filtres en Temps Réel** : Filtrage instantané par type de média et barre de recherche.
-- 🔐 **Mode Administrateur & Authentification** : Authentification sécurisée par mot de passe haché (BCRYPT) enregistré dans `config.php` via le script CLI `set_admin_password.php` ou l'interface web.
-- 🔒 **Sécurité Renforcement** : Protection stricte contre le *Directory Traversal* (`../`).
+Ouvrez ensuite `http://localhost:8080` dans votre navigateur.
 
 ---
 
-## ⌨️ Raccourcis Clavier dans la Lightbox
-
-| Raccourci | Action |
-|---|---|
-| `<Flèche Gauche>` / `<Flèche Droite>` | Élément précédent / suivant |
-| `Swipe Gauche / Droite` (Mobile) | Navigation tactile fluide |
-| `+` ou `=` | Zoom avant |
-| `-` ou `_` | Zoom arrière |
-| `Glisser Souris` | Déplacer l'image (*Pan / Drag*) |
-| `Double Clic` | Basculer entre zoom 1x et 2.5x |
-| `0` | Réinitialiser le zoom (100%) |
-| `R` | Rotation de l'image de 90° |
-| `F` | Basculer en mode Plein Écran (*Fullscreen*) |
-| `Échap` | Fermer la visionneuse Lightbox |
+### 2. Déploiement sur Serveur Web (Apache, Nginx, LiteSpeed, Caddy)
+1. Téléversez l'ensemble des fichiers du projet dans la racine de votre hébergement web (`public_html` ou `/var/www/html/SimpleGallery`).
+2. Accordez les permissions d'écriture nécessaires au serveur web :
+   ```bash
+   chown -R www-data:www-data /var/www/html/SimpleGallery
+   chmod -R 775 /var/www/html/SimpleGallery
+   ```
+3. Initialisez le mot de passe d'administration via la ligne de commande :
+   ```bash
+   php set_admin_password.php "VotreMotDePasseSecret"
+   ```
+4. Déposez vos dossiers de photos et médias : ils sont immédiatement détectés et prêts à être explorés !
 
 ---
 
-## 🔐 Configuration du Mode Administration (`set_admin_password.php`)
+## 🔐 Mode Administration & Sécurité
 
-SimpleGallery intègre un **mode administration** sécurisé pour déverrouiller des fonctionnalités de gestion.
-
-### 1. Initialiser ou Modifier le Mot de Passe Admin via CLI
-
-Exécutez la commande suivante dans votre terminal à la racine du projet pour générer et enregistrer le hash BCRYPT dans [config.php](file:///home/oktail/Documents/GitHub/SimpleGallery/config.php) :
-
-```bash
-php set_admin_password.php "VotreMotDePasseSecret"
-```
-
-### 2. Se Connecter et Modifier le Mot de Passe via l'Interface Web
-
-- Cliquez sur le bouton **🔑 Admin** dans la barre d'outils de l'application.
-- Saisissez votre mot de passe pour activer le mode **🛡️ Admin Active**.
-- Vous pouvez ensuite modifier votre mot de passe directement depuis le formulaire du modal administration.
-
-### 3. Désactiver le Mode Admin
-
-Pour désactiver temporairement le mode administration, définissez la variable `$admin_password_hash` sur une chaîne vide dans `config.php` :
-
-```php
-$admin_password_hash = '';
-```
-
-### 4. Édition des Métadonnées & Dotfiles en Mode Admin
-
-Lorsque le mode administration est actif (**🛡️ Admin Active**), l'édition se fait directement depuis l'interface web :
-
-- **Titre du dossier (`.title`)** : Personnalisez le nom affiché du répertoire via le bouton **🎨 Folder Settings**.
-- **Description du dossier (`.desc`)** : Éditez ou ajoutez une bannière descriptive en un clic (**✏️ Edit Banner**).
-- **Fond (`.bg`) & Thème du dossier (`.theme`)** : Configurez la couleur/image de fond et le thème du dossier courant.
-- **Légende des médias (`.comment`)** : Cliquez sur l'icône **✏️** au survol des cartes Polaroid/Grille ou dans la visionneuse Lightbox pour ajouter/modifier une légende (`fichier.jpg = Ma légende`).
-
-> ℹ️ **Remarque** : Les noms réels des fichiers et répertoires physiques restent 100% inchangés sur le disque. Seuls les fichiers cachés (*Dotfiles*) `.title`, `.desc`, `.comment`, `.bg` et `.theme` du répertoire sont modifiés.
-
-### 5. Augmenter la Taille Maximale de Téléversement (Upload Max Size)
-
-Par défaut, PHP limite parfois la taille des fichiers téléversés (ex: 2 Mo par défaut sous certaines configurations PHP).
-SimpleGallery inclut déjà les fichiers de configuration par dossier suivants (fixés à **128 Mo**) :
-
-- **Nginx / FastCGI / PHP-FPM** : Fichier [.user.ini](file:///home/oktail/Documents/GitHub/SimpleGallery/.user.ini) à la racine du projet.
-- **Apache (mod_php)** : Fichier [.htaccess](file:///home/oktail/Documents/GitHub/SimpleGallery/.htaccess) à la racine du projet.
-
-```ini
-upload_max_filesize = 128M
-post_max_size = 128M
-max_file_uploads = 100
-memory_limit = 256M
-```
-
-
+- **Authentification Robuste** : Mot de passe haché par algorithme BCRYPT stocké de manière sécurisée dans `config.php`.
+- **Protection CSRF Globale** : Toutes les requêtes d'écriture, téléversement et modifications exigent un jeton de session anti-CSRF valide.
+- **Isolation du Système de Fichiers** : Filtrage strict contre le *Directory Traversal* (`../`).
+- **Gestion des Fichiers en Mode Admin** :
+  - Cliquez sur **🔑 Admin** dans la barre supérieure pour vous connecter.
+  - Éditez les métadonnées, titres, bannières descriptives et légendes directement depuis l'interface web.
+  - Déverrouillez la création de dossiers, le renommage, le déplacement, la suppression et le téléversement de fichiers par glisser-déposer.
 
 ---
 
 ## 📂 Configuration par Fichiers Cachés (*Dotfiles Unix*)
 
-SimpleGallery permet de personnaliser individuellement chaque dossier de la galerie en y créant de simples **fichiers texte cachés Unix** (*Dotfiles*, commençant par un point `.`). 
-
-Ces fichiers peuvent être créés **manuellement avec n'importe quel éditeur de texte** ou enregistrés **automatiquement depuis l'interface web via le Mode Admin**.
-
----
-
-### 📋 Tableau Synthétique des Dotfiles
+SimpleGallery vous permet de personnaliser individuellement n'importe quel sous-dossier sans base de données, simplement en y plaçant des fichiers texte cachés :
 
 | Fichier | Rôle & Fonctionnalité | Exemple Rapide |
 |---|---|---|
-| **`.title`** | Surcharge le nom d'affichage du dossier (en-tête, grille, fil d'Ariane). | `Vacances d'Été 2026` |
-| **`.desc`** ou **`.description`** | Affiche une bannière descriptive élégante en haut de la galerie pour ce dossier. | `Album photo et vidéo de notre voyage en Espagne.` |
-| **`.comment`** | Associe des commentaires ou légendes spécifiques aux fichiers du dossier. | `photo1.jpg = Souvenir à la plage` |
-| **`.bg`** | Applique une image locale ou une couleur/dégradé CSS en fond d'écran. | `#0f172a` ou `fond.jpg` |
-| **`.theme`** | Applique un thème de couleurs spécifique à ce répertoire. | `cyberpunk` |
-| **`.private`** | Masque le dossier aux utilisateurs publics (visible uniquement par l'Admin). | *Fichier vide ou "private"* |
-| **`.password`** | Protège le dossier par mot de passe (affiche un badge 🔒 et un formulaire). | *Hash BCRYPT* |
+| **`.title`** | Surcharge le nom d'affichage du dossier (en-tête, fil d'Ariane, grille). | `Vacances d'Été 2026 🏖️` |
+| **`.desc`** / **`.description`** | Affiche une bannière descriptive élégante en haut du dossier. | `Album souvenir de notre voyage en Espagne.` |
+| **`.comment`** | Associe des légendes personnalisées aux médias du dossier (`fichier.jpg = Légende`). | `photo1.jpg = Plage au coucher du soleil` |
+| **`.bg`** | Définit une image locale ou une couleur/dégradé CSS en fond d'écran. | `#0f172a` ou `fond.jpg` |
+| **`.theme`** | Applique un thème visuel dédié à ce répertoire (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`). | `dark-glass` |
+| **`.private`** | Masque le dossier aux visiteurs publics (visible uniquement pour l'Admin). | *Fichier vide ou "private"* |
+| **`.password`** | Protège l'accès au dossier par un mot de passe dédié. | *Hash BCRYPT* |
 
 ---
 
-### 📝 Syntaxe et Exemples par Fichier
+## ⌨️ Raccourcis Clavier Principaux
 
-#### 1. Titre de Dossier Personnalisé (`.title`)
-Permet de remplacer le nom réel du répertoire sur le disque par un titre d'affichage lisible avec espaces et accents.
-- **Chemin** : `mon_dossier/.title`
-- **Contenu** :
-  ```text
-  Vacances à la Montagne 🏔️
-  ```
-
-#### 2. Bannière Descriptive (`.desc` ou `.description`)
-Affiche une bannière d'information au-dessus de la grille de médias.
-- **Chemin** : `mon_dossier/.desc`
-- **Contenu** :
-  ```text
-  Retrouvez ici toutes les photos et vidéos prises lors de notre séjour au ski en février 2026.
-  ```
-
-#### 3. Commentaires et Légendes Médias (`.comment`)
-Associe une légende personnalisée sous les Polaroids, les cartes de la grille et dans la visionneuse Lightbox.
-
-- **Chemin** : `mon_dossier/.comment`
-- **Format Recommandé (Clé = Valeur)** :
-  ```text
-  photo1.jpg = Souvenir de la randonnée en altitude
-  video_ski.mp4 = Descent en snowboard à toute vitesse !
-  IMG_2026.JPG = Soirée raclette au chalet
-  ```
-- **Format Legacy 2005 (Nom de fichier suivi du texte sur la ligne suivante)** :
-  ```text
-  photo1.jpg
-  Souvenir de la randonnée en altitude
-  video_ski.mp4
-  Descent en snowboard à toute vitesse !
-  ```
-
-#### 4. Fond d'Écran Personnalisé (`.bg`)
-Permet de définir un fond d'écran unique pour le dossier (image locale ou style CSS).
-- **Chemin** : `mon_dossier/.bg`
-- **Exemple 1 (Image locale dans le dossier)** :
-  ```text
-  fond_montagne.jpg
-  ```
-- **Exemple 2 (Couleur Unie CSS)** :
-  ```text
-  #0f172a
-  ```
-- **Exemple 3 (Dégradé CSS)** :
-  ```text
-  linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)
-  ```
-
-#### 5. Thème de Couleur Dédié (`.theme`)
-Permet d'appliquer un thème visuel spécifique uniquement pour ce dossier.
-- **Chemin** : `mon_dossier/.theme`
-- **Option A (Nom d'un thème prédéfini)** :
-  ```text
-  cyberpunk
-  ```
-  *(Thèmes disponibles : `polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`)*
-
-- **Option B (Surcharge de couleurs sur mesure en clé=valeur)** :
-  ```text
-  accent = #ec4899
-  polaroid_bg = #fef08a
-  bg_main = #0d0221
-  ```
-
-#### 6. Dossier Masqué / Privé (`.private` ou nom de dossier `private`)
-Masque automatiquement le dossier aux visiteurs publics. Il reste visible et accessible **uniquement en Mode Admin**.
-- **Chemin** : `mon_dossier/.private`
-- **Fonctionnement** : Par défaut, tout dossier nommé `private` ou contenant un fichier `.private` est exclu des résultats API et masqué de l'interface pour les utilisateurs non authentifiés.
-
-#### 7. Dossier Protégé par Mot de Passe (`.password`)
-Affiche le dossier publiquement avec un badge **🔒 Protégé** mais exige la saisie d'un mot de passe pour ouvrir le dossier et afficher ses photos/vidéos.
-- **Chemin** : `mon_dossier/.password`
-- **Contenu** : Contient un hash BCRYPT du mot de passe du dossier (généré automatiquement via l'interface Admin).
-- **Re-verrouillage (`🔒 Lock Folder`)** : Lorsqu'un visiteur déverrouille un dossier pour sa session, un bouton **🔒 Lock Folder** apparaît dans la bannière supérieure, lui permettant de fermer/re-verrouiller la session à tout moment.
+| Raccourci | Action |
+|---|---|
+| `<Flèche Gauche>` / `<Flèche Droite>` | Élément précédent / suivant |
+| `+` ou `=` / `-` ou `_` | Zoom avant / arrière |
+| `Glisser Souris` (*Drag*) | Déplacer l'image agrandie (*Pan*) |
+| `Double Clic` | Alterne entre zoom normal (1x) et zoom centré (2.5x) |
+| `R` | Rotation de l'image de 90° |
+| `0` | Réinitialiser le zoom (100%) |
+| `F` | Basculer en mode Plein Écran (*Fullscreen*) |
+| `Échap` | Fermer la visionneuse active |
 
 ---
 
-### 🛡️ Édition Automatique depuis le Mode Admin
+## 🛠️ Architecture Interne & Guide Développeur
 
-Lorsque le **Mode Admin** est déverrouillé (**🛡️ Admin Active**) :
-- Les paramètres d'accès (**🌐 Public**, **👁️‍🗨️ Masqué/Admin**, **🔒 Protégé par mot de passe**), le titre (`.title`), la description (`.desc`), le fond (`.bg`) et le thème (`.theme`) s'éditent facilement depuis le modal **🎨 Folder Settings**.
-- Le fichier `.comment` s'édite en cliquant sur l'icône **✏️ Edit Legend** sur chaque carte ou dans la visionneuse Lightbox.
-- Le serveur met à jour les fichiers cachés automatiquement **sans jamais renommer ni altérer vos fichiers et dossiers originaux**.
+Pour comprendre le fonctionnement interne du système, l'architecture du Kernel, le cycle de vie des fenêtres, le bus d'événements IPC, le système de localisation dynamique ou pour **créer vos propres applications modulaires**, consultez la documentation technique complète :
 
----
-
-## 🎨 Configuration du Thème (`config.php`)
-
-Dans [config.php](file:///home/oktail/Documents/GitHub/SimpleGallery/config.php), vous pouvez choisir un thème global ou ajuster les paramètres :
-
-```php
-// Sélection du thème global ('polaroid-classic', 'dark-glass', 'light-minimal', 'cyberpunk')
-$theme_preset = 'polaroid-classic';
-
-// Titre par défaut de la galerie
-$gallery_title = "SimpleGallery";
-
-// Dimensions maximales des vignettes (en pixels)
-$thumb_width = 360;
-$thumb_height = 360;
-```
-
----
-
-## 🛠️ Structure du Projet
-
-```text
-SimpleGallery/
-├── config.php            # Configuration générale (thèmes, titre, hash admin)
-├── api.php               # API REST JSON PHP (scan des répertoires, dotfiles & auth admin)
-├── thumb.php             # Moteur de vignettes (GD, FFmpeg, cache .thumbnails & stream direct)
-├── set_admin_password.php # Script CLI pour générer/mettre à jour le mot de passe admin
-├── index.php             # Application Web HTML5 SPA (interface principale & modal admin)
-├── css/
-│   └── gallery.css       # Style CSS3, effet Polaroid réaliste, grille & modal admin
-├── js/
-│   └── gallery.js        # Logique client (moteur de zoom/déplacement, AJAX, Lightbox, auth admin)
-└── .thumbnails/          # Dossier de cache des vignettes (créé automatiquement)
-```
-
----
-
-## 💻 Installation & Permissions
-
-1. Copiez les fichiers de **SimpleGallery** sur votre serveur web PHP (compatible Apache, Nginx, LiteSpeed, Caddy avec PHP 7.4+ ou PHP 8+).
-2. Optionnel : activez l'extension PHP `gd` pour le redimensionnement d'images et installez `ffmpeg` pour l'extraction de vignettes vidéo.
-3. Définissez le mot de passe d'administration via la commande CLI :
-   ```bash
-   php set_admin_password.php "VotreMotDePasse"
-   ```
-4. **Permissions d'écriture** (Nécessaire pour que le mode Admin puisse enregistrer les Dotfiles `.title`, `.desc`, `.comment`, `.bg`, `.theme`) :
-   Accordez les droits d'écriture à l'utilisateur du serveur web (`http`, `www-data` ou `nginx`) sur les dossiers de la galerie :
-   ```bash
-   # Exemple de commande sous Linux / Apache / Nginx :
-   chown -R www-data:www-data /path/to/SimpleGallery
-   chmod -R 775 /path/to/SimpleGallery
-   ```
-5. Glissez vos dossiers de photos et médias directement dans le répertoire.
-6. Ouvrez `index.php` dans votre navigateur web !
+👉 **[Consulter DOCUMENTATION.md](DOCUMENTATION.md)**
 
 ---
 
 ## 📄 Licence
-[MIT License](LICENSE)
+Ce projet est distribué sous licence [MIT License](LICENSE).
