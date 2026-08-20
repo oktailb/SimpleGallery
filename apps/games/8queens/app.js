@@ -641,11 +641,11 @@
       this.boardSize = n;
       this.computeSolutions();
 
-      if (this.win) {
+      if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('8queens')
           : (this.t('games.8queens.title') || "Jeu des 8 Dames");
-        this.win.setTitle(`${appTitle} (${this.boardSize}x${this.boardSize})`);
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.boardSize}x${this.boardSize})`);
       }
 
       if (this.el.solutionBaseLabel) {
@@ -668,8 +668,8 @@
         ? window.sys.appManager.getAppTitle('8queens')
         : (this.t('games.8queens.title') || "Jeu des 8 Dames");
 
-      if (this.win) {
-        this.win.setTitle(`${appTitle} (${this.boardSize}x${this.boardSize})`);
+      if (window.WindowManager) {
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.boardSize}x${this.boardSize})`);
       }
 
       this.updateStats();

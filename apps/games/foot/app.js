@@ -797,8 +797,8 @@
         ? window.sys.appManager.getAppTitle('foot')
         : (this.t('games.foot.title') || "Foot Pong Arcade");
 
-      if (this.win) {
-        this.win.setTitle(`${appTitle} (1v1)`);
+      if (window.WindowManager) {
+        window.WindowManager.setTitle(this.winId, `${appTitle} (1v1)`);
       }
 
       const playerTeam = this.el.app ? this.el.app.querySelector('.foot-team.player span:first-child') : null;

@@ -285,11 +285,11 @@
 
     toggleWrapAround() {
       this.isWrapAround = !this.isWrapAround;
-      if (this.win) {
+      if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('pipe')
           : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
-        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
       if (this.el.wrapModePill) {
         this.el.wrapModePill.className = `pipe-stat-pill ${this.isWrapAround ? 'wrap-mode' : ''}`;
@@ -309,11 +309,11 @@
     setGridSize(n) {
       if (n < 3 || n > 10) return;
       this.gridSize = n;
-      if (this.win) {
+      if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('pipe')
           : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
-        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
       if (this.el.totalCellsCount) this.el.totalCellsCount.textContent = n * n;
       this.generatePuzzle();
@@ -735,8 +735,8 @@
         ? window.sys.appManager.getAppTitle('pipe')
         : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
 
-      if (this.win) {
-        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
+      if (window.WindowManager) {
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
 
       if (this.el.wrapModePill) {

@@ -355,11 +355,11 @@
     setDiskCount(count) {
       if (count < 3 || count > 8) return;
       this.diskCount = count;
-      if (this.win) {
+      if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('hanoi')
           : (this.t('games.hanoi.title') || "Tours de Hanoï");
-        this.win.setTitle(`${appTitle} (${this.diskCount} disques)`);
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.diskCount} disques)`);
       }
       if (this.el.diskCountVal) this.el.diskCountVal.textContent = this.diskCount;
       this.resetPuzzle();
@@ -598,8 +598,8 @@
         ? window.sys.appManager.getAppTitle('hanoi')
         : (this.t('games.hanoi.title') || "Tours de Hanoï");
 
-      if (this.win) {
-        this.win.setTitle(`${appTitle} (${this.diskCount} disques)`);
+      if (window.WindowManager) {
+        window.WindowManager.setTitle(this.winId, `${appTitle} (${this.diskCount} disques)`);
       }
 
       if (this.el.diskCountVal) this.el.diskCountVal.textContent = this.diskCount;
