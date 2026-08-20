@@ -297,10 +297,8 @@
         }
         if (json.available_archives) this.state.availableArchives = json.available_archives;
 
-        // Apply folder theme / background overrides
-        if (window.desktop && typeof window.desktop.applyDotfileOverrides === 'function') {
-          window.desktop.applyDotfileOverrides(this.state.overrides);
-        }
+        // Apply folder theme / background overrides directly to explorer instance window
+        this.applyFolderOverrides(this.state.overrides);
 
         // Restore per-folder persistent sort
         const savedSort = this.getFolderSort(dirPath);
@@ -326,6 +324,38 @@
         console.error('[Explorer] Error fetching directory:', err);
       } finally {
         this.showLoading(false);
+      }
+    }
+
+    applyFolderOverrides(overrides) {
+      if (!this.containerEl) return;
+      if (overrides && overrides.background) {
+        const bg = overrides.background;
+        if (bg.startsWith('#') || bg.startsWith('rgb') || bg.startsWith('hsl') || bg.startsWith('linear-gradient') || bg.startsWith('radial-gradient')) {
+          this.containerEl.style.backgroundColor = bg;
+          this.containerEl.style.backgroundImage = 'none';
+        } else {
+          const url = bg.startsWith('url(') ? bg : `url("${bg}")`;
+          this.containerEl.style.backgroundImage = url;
+          this.containerEl.style.backgroundSize = 'cover';
+          this.containerEl.style.backgroundPosition = 'center';
+          this.containerEl.style.backgroundRepeat = 'no-repeat';
+        }
+      } else {
+        this.containerEl.style.backgroundImage = '';
+        this.containerEl.style.backgroundColor = '';
+        this.containerEl.style.backgroundSize = '';
+        this.containerEl.style.backgroundPosition = '';
+        this.containerEl.style.backgroundRepeat = '';
+      }
+
+      if (this.el.folderDescBanner) {
+        if (overrides && overrides.description) {
+          this.el.folderDescBanner.innerHTML = overrides.description;
+          this.el.folderDescBanner.style.display = 'block';
+        } else {
+          this.el.folderDescBanner.style.display = 'none';
+        }
       }
     }
 
