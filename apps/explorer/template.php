@@ -9,7 +9,7 @@
   <!-- Breadcrumbs Navigation Bar (Moved above filter pills for maximum readability) -->
   <div class="breadcrumbs-container">
     <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb Navigation">
-      <span class="crumb-item crumb-active"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></span>
+      <span class="crumb-item crumb-active crumb-root-item" title="Stockage (Racine)"><span class="crumb-root-icon" aria-hidden="true">💾</span> <span class="crumb-root-name" data-i18n="nav.root">Stockage</span></span>
     </nav>
   </div>
 

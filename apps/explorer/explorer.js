@@ -98,6 +98,7 @@
             this.containerEl.parentNode.removeChild(this.containerEl);
           }
           this.win = null;
+          this.state.currentPath = '';
           if (window.EventBus) window.EventBus.emit('explorer:closed');
           if (window.MenuBarManager) {
             window.MenuBarManager.restoreDefaultMenu();
@@ -111,10 +112,14 @@
     }
 
     open(params = {}) {
-      if (params.dir !== undefined) {
-        this.navigateTo(params.dir);
+      const isReopening = !this.win || !window.WindowManager || !window.WindowManager.windows.has('explorer-main');
+      const targetDir = params.dir !== undefined ? params.dir : '';
+
+      if (params.dir !== undefined || (isReopening && this.state.currentPath !== '')) {
+        this.navigateTo(targetDir);
       }
-      if (!this.win || !window.WindowManager || !window.WindowManager.windows.has('explorer-main')) {
+
+      if (isReopening) {
         this.initWindow();
       } else {
         if (this.win.state === 'minimized') {
@@ -327,9 +332,6 @@
         `;
 
         this.bindMenuBarEvents();
-        if (this.state.currentBreadcrumbs) {
-          this.renderBreadcrumbs(this.state.currentBreadcrumbs);
-        }
         this.updateArchiveMenuUI();
       });
 
@@ -574,15 +576,23 @@
       const nav = document.getElementById('breadcrumbs');
       if (!nav) return;
 
+      const rootLabel = this.t('nav.root') || 'Stockage';
+
       nav.innerHTML = crumbs.map((crumb, idx) => {
         const isLast = idx === crumbs.length - 1;
+        const isRoot = idx === 0 || crumb.path === '' || crumb.path === '.';
+        const contentHtml = isRoot
+          ? `<span class="crumb-root-icon" aria-hidden="true">💾</span> <span class="crumb-root-name">${this.escapeHtml(rootLabel)}</span>`
+          : `<span>${this.escapeHtml(crumb.name)}</span>`;
+        const titleAttr = isRoot ? `title="${this.escapeHtml(rootLabel)}"` : `title="${this.escapeHtml(crumb.name)}"`;
+
         if (isLast) {
-          return `<span class="crumb-item crumb-active">${this.escapeHtml(crumb.name)}</span>`;
+          return `<span class="crumb-item crumb-active ${isRoot ? 'crumb-root-item' : ''}" ${titleAttr}>${contentHtml}</span>`;
         }
         const targetPath = (crumb.path === undefined || crumb.path === null || crumb.path === '.') ? '' : crumb.path;
         return `
-          <button type="button" class="crumb-item crumb-btn" data-path="${targetPath}">
-            ${this.escapeHtml(crumb.name)}
+          <button type="button" class="crumb-item crumb-btn ${isRoot ? 'crumb-root-item' : ''}" data-path="${targetPath}" ${titleAttr}>
+            ${contentHtml}
           </button>
           <span class="crumb-separator">/</span>
         `;
@@ -599,6 +609,13 @@
 
       nav.querySelectorAll('.crumb-btn').forEach(btn => {
         const destPath = btn.getAttribute('data-path') !== null ? btn.getAttribute('data-path') : '';
+
+        // Direct Click Navigation
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.navigateTo(destPath);
+        };
 
         // Breadcrumb as Drop Target
         btn.ondragover = (e) => {
@@ -635,8 +652,9 @@
       // Update Explorer Window Title
       if (window.WindowManager) {
         const lastCrumb = (crumbs && crumbs.length) ? crumbs[crumbs.length - 1] : null;
-        const folderName = lastCrumb ? lastCrumb.name : this.state.galleryTitle;
-        const fullTitle = (crumbs && crumbs.length > 1) ? `${this.state.galleryTitle} : ${folderName}` : this.state.galleryTitle;
+        const isRootLast = (!crumbs || crumbs.length <= 1);
+        const folderName = isRootLast ? rootLabel : (lastCrumb ? lastCrumb.name : rootLabel);
+        const fullTitle = isRootLast ? `${this.state.galleryTitle} : ${rootLabel}` : `${this.state.galleryTitle} : ${folderName}`;
         window.WindowManager.setTitle('explorer-main', fullTitle);
       }
     }

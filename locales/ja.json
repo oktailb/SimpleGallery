@@ -7,7 +7,7 @@
   },
   "translations": {
     "app.title": "SimpleGallery",
-    "nav.root": "ホーム",
+    "nav.root": "ストレージ",
     "nav.search_placeholder": "メディアを検索...",
     "nav.search_clear": "検索をクリア",
     "nav.search_advanced": "高度な検索オプション",

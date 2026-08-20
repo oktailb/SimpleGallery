@@ -7,7 +7,7 @@
   },
   "translations": {
     "app.title": "SimpleGallery",
-    "nav.root": "Accueil",
+    "nav.root": "Stockage",
     "nav.search_placeholder": "Rechercher des médias...",
     "nav.search_clear": "Effacer la recherche",
     "nav.search_advanced": "Options de recherche avancée",

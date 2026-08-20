@@ -376,6 +376,8 @@
       const win = this.windows.get(id);
       if (!win || !win.element) return;
 
+      const wasAlreadyActive = (this.activeWindowId === id);
+
       this.activeWindowId = id;
       win.zIndex = ++this.topZIndex;
       win.element.style.zIndex = win.zIndex;
@@ -389,13 +391,15 @@
 
       this.updateTaskbar();
 
-      // Emit focus event to MenuBarManager and EventBus
-      if (window.EventBus) {
-        window.EventBus.emit('window:focus', { windowId: id, appId: win.appId, win });
-      }
+      if (!wasAlreadyActive) {
+        // Emit focus event to MenuBarManager and EventBus
+        if (window.EventBus) {
+          window.EventBus.emit('window:focus', { windowId: id, appId: win.appId, win });
+        }
 
-      if (typeof win.onFocus === 'function') {
-        win.onFocus(win);
+        if (typeof win.onFocus === 'function') {
+          win.onFocus(win);
+        }
       }
     }
 
