@@ -1,0 +1,26 @@
+{
+  "id": "8queens",
+  "name": "8 Queens Puzzle",
+  "version": "2.0.0",
+  "icon": "👑",
+  "author": "SimpleGallery WebOS",
+  "category": "game",
+  "locales": {
+    "fr": {
+      "title": "Jeu des 8 Dames",
+      "description": "Casse-tête des 8 Dames avec détection des conflits en direct, aide IA et explorateur des 92 solutions"
+    },
+    "en": {
+      "title": "8 Queens Puzzle",
+      "description": "Classic 8 Queens chess puzzle with real-time threat detection, AI hints and 92 solutions browser"
+    },
+    "ja": {
+      "title": "エイト・クイーン パズル",
+      "description": "8クイーンチェスパズル、リアルタイム衝突検出、AIヒント、全92解ブラウザ"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "app.css"
+  }
+}

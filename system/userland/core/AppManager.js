@@ -12,96 +12,27 @@ class AppManager {
         this.initDefaultApps();
     }
 
+    /**
+     * Ingests all auto-discovered application manifests provided by PluginDiscovery via window.SG_DISCOVERED_APPS
+     */
     initDefaultApps() {
-        const defaultManifests = [
-            {
-                id: 'explorer',
-                name: 'Explorateur',
-                icon: '🗂️',
-                description: 'Explorateur de dossiers, albums et fichiers multimédias',
-                locales: {
-                    fr: { title: 'Explorateur de Galerie', description: 'Explorateur de dossiers, albums et fichiers multimédias' },
-                    en: { title: 'Gallery Explorer', description: 'Explore folders, albums and multimedia files' }
+        const discovered = (typeof window !== 'undefined' && window.SG_DISCOVERED_APPS) || {};
+        if (typeof discovered === 'object' && Object.keys(discovered).length > 0) {
+            Object.values(discovered).forEach(appInfo => {
+                if (appInfo && appInfo.manifest && appInfo.id) {
+                    this.registerApp(appInfo.manifest, null);
+                } else if (appInfo && appInfo.id) {
+                    this.registerApp(appInfo, null);
                 }
-            },
-            {
-                id: 'maps',
-                name: 'Carte GPS',
-                icon: '🗺️',
-                description: 'Exploration cartographique et tracé chronologique des photos géolocalisées',
-                locales: {
-                    fr: { title: 'Carte GPS & Trajets', description: 'Exploration cartographique et tracé chronologique des photos géolocalisées' },
-                    en: { title: 'GPS Maps & Routes', description: 'Map exploration and chronological travel paths' }
-                }
-            },
-            {
-                id: 'image-viewer',
-                name: 'Photos',
-                icon: '🖼️',
-                description: 'Visionneuse photo haute définition, zoom fluide et métadonnées EXIF',
-                extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp', 'ico'],
-                locales: {
-                    fr: { title: 'Visionneuse Photos', description: 'Visionneuse photo haute définition, zoom fluide et métadonnées EXIF' },
-                    en: { title: 'Photo Viewer', description: 'High-definition photo viewer with fluid zoom and EXIF data' }
-                }
-            },
-            {
-                id: 'video-player',
-                name: 'Lecteur Vidéo',
-                icon: '🎬',
-                description: 'Lecteur vidéo avec contrôle de vitesse, mur vidéo et sous-titres',
-                extensions: ['mp4', 'webm', 'mov', 'mkv', 'avi'],
-                locales: {
-                    fr: { title: 'Lecteur Vidéo & Mur Vidéo', description: 'Lecteur vidéo avec contrôle de vitesse, mur vidéo et sous-titres' },
-                    en: { title: 'Video Player & Video Wall', description: 'Video playback, speed control, video wall and subtitles' }
-                }
-            },
-            {
-                id: 'audio-player',
-                name: 'Lecteur Audio',
-                icon: '🎵',
-                description: 'Lecteur de musique avec visualiseur spectral en direct et playlist',
-                extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'],
-                locales: {
-                    fr: { title: 'Lecteur Audio & Visualiseur', description: 'Lecteur de musique avec visualiseur spectral en direct et playlist' },
-                    en: { title: 'Audio Player & Visualizer', description: 'Music player with live audio spectrum visualizer' }
-                }
-            },
-            {
-                id: 'doc-viewer',
-                name: 'Documents',
-                icon: '📄',
-                description: 'Lecteur PDF, visualiseur Markdown rendu HTML et éditeur de texte',
-                extensions: ['pdf', 'txt', 'md', 'markdown', 'json', 'xml', 'csv', 'log'],
-                locales: {
-                    fr: { title: 'Visionneuse Documents & Markdown', description: 'Lecteur PDF, visualiseur Markdown rendu HTML et éditeur de texte' },
-                    en: { title: 'Document & Markdown Viewer', description: 'PDF reader, rendered Markdown viewer and text editor' }
-                }
-            },
-            {
-                id: 'archive-manager',
-                name: 'Archives',
-                icon: '📦',
-                description: 'Exploration d\'archives ZIP et téléchargement de dossiers',
-                extensions: ['zip'],
-                locales: {
-                    fr: { title: 'Gestionnaire d\'Archives', description: 'Exploration d\'archives ZIP et téléchargement de dossiers' },
-                    en: { title: 'Archive Manager', description: 'ZIP archive inspection and directory downloads' }
-                }
-            },
-            {
-                id: 'settings',
-                name: 'Paramètres',
-                icon: '⚙️',
-                description: 'Configuration du système, sécurité et matrice des droits',
-                locales: {
-                    fr: { title: 'Paramètres & Administration', description: 'Configuration du système, sécurité et matrice des droits' },
-                    en: { title: 'Settings & Administration', description: 'System setup, security and guest permissions matrix' }
-                }
-            }
-        ];
+            });
+        }
+    }
 
-        defaultManifests.forEach(m => this.registerApp(m, null));
+    /**
+     * Re-scans and synchronizes discovered apps from window.SG_DISCOVERED_APPS
+     */
+    refreshDiscoveredApps() {
+        this.initDefaultApps();
     }
 
     registerApp(manifest, appInstance) {
@@ -110,9 +41,10 @@ class AppManager {
             return;
         }
 
+        const existing = this.apps.get(manifest.id);
         this.apps.set(manifest.id, {
-            manifest,
-            instance: appInstance,
+            manifest: { ...(existing ? existing.manifest : {}), ...manifest },
+            instance: appInstance || (existing ? existing.instance : null),
             running: false
         });
 
@@ -179,6 +111,11 @@ class AppManager {
     }
 
     getAllApps() {
+        // Ensure discovered apps are loaded
+        if (this.apps.size === 0) {
+            this.initDefaultApps();
+        }
+
         const list = [];
         this.apps.forEach((entry, id) => {
             list.push({
@@ -193,51 +130,78 @@ class AppManager {
         return list;
     }
 
+    /**
+     * Dynamically and generically launches any registered application
+     */
     launchApp(appId, params = {}) {
         if (!appId) return;
 
-        switch (appId) {
-            case 'explorer':
-                if (window.explorerApp && typeof window.explorerApp.open === 'function') {
-                    window.explorerApp.open(params);
-                }
-                break;
-
-            case 'maps':
-                if (window.sys && typeof window.sys.openMaps === 'function') {
-                    window.sys.openMaps(params);
-                }
-                break;
-
-            case 'settings':
-            case 'admin':
-                if (window.desktop && typeof window.desktop.openAdminModal === 'function') {
-                    window.desktop.openAdminModal();
-                } else {
-                    const btn = document.getElementById('adminBtn');
-                    if (btn) btn.click();
-                }
-                break;
-
-            default:
-                const entry = this.apps.get(appId);
-                if (entry && entry.instance && typeof entry.instance.open === 'function') {
-                    entry.instance.open(params.file || {}, params, window.desktop || window.explorerApp);
-                } else if (params.file && window.MediaViewerRegistry) {
-                    if (typeof window.MediaViewerRegistry.open === 'function') {
-                        window.MediaViewerRegistry.open(params.file, params, window.desktop || window.explorerApp);
-                    } else if (typeof window.MediaViewerRegistry.findViewer === 'function') {
-                        const viewer = window.MediaViewerRegistry.findViewer(params.file);
-                        if (viewer && typeof viewer.open === 'function') {
-                            viewer.open(params.file, params, window.desktop || window.explorerApp);
-                        }
-                    }
-                } else {
-                    // Open interactive file picker for this application
-                    this.openFilePicker(appId);
-                }
-                break;
+        // Ensure discovered apps are loaded
+        if (this.apps.size === 0) {
+            this.initDefaultApps();
         }
+
+        const entry = this.apps.get(appId);
+
+        // 1. Direct AppInstance registered on AppManager
+        if (entry && entry.instance && typeof entry.instance.open === 'function') {
+            entry.instance.open(params.file || params, params, window.desktop || window.explorerApp);
+            if (window.EventBus) window.EventBus.emit('app:launch', { appId, params });
+            return;
+        }
+
+        // 2. Generic naming conventions for loaded global app instances
+        // Handles: explorerApp, MapsApp, EightQueensApp, docViewerApp, archiveManagerApp, settingsApp, etc.
+        const camelId = appId.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+        const pascalId = camelId.charAt(0).toUpperCase() + camelId.slice(1);
+
+        const candidates = [
+            window[appId + 'App'],
+            window[camelId + 'App'],
+            window[pascalId + 'App'],
+            window[appId],
+            window[camelId],
+            window[pascalId],
+            window.sys && window.sys[camelId],
+            window.sys && window.sys[appId]
+        ];
+
+        for (const candidate of candidates) {
+            if (candidate && typeof candidate.open === 'function') {
+                candidate.open(params);
+                if (window.EventBus) window.EventBus.emit('app:launch', { appId, params });
+                return;
+            }
+        }
+
+        // 3. Built-in Special Modals (Settings / Admin)
+        if (appId === 'settings' || appId === 'admin') {
+            if (window.desktop && typeof window.desktop.openAdminModal === 'function') {
+                window.desktop.openAdminModal();
+            } else {
+                const btn = document.getElementById('adminBtn');
+                if (btn) btn.click();
+            }
+            if (window.EventBus) window.EventBus.emit('app:launch', { appId, params });
+            return;
+        }
+
+        // 4. File-based viewers registered in MediaViewerRegistry
+        if (params.file && window.MediaViewerRegistry) {
+            if (typeof window.MediaViewerRegistry.open === 'function') {
+                window.MediaViewerRegistry.open(params.file, params, window.desktop || window.explorerApp);
+            } else if (typeof window.MediaViewerRegistry.findViewer === 'function') {
+                const viewer = window.MediaViewerRegistry.findViewer(params.file);
+                if (viewer && typeof viewer.open === 'function') {
+                    viewer.open(params.file, params, window.desktop || window.explorerApp);
+                }
+            }
+            if (window.EventBus) window.EventBus.emit('app:launch', { appId, params });
+            return;
+        }
+
+        // 5. If no file was provided and app has file associations, open interactive file picker
+        this.openFilePicker(appId);
 
         if (window.EventBus) {
             window.EventBus.emit('app:launch', { appId, params });

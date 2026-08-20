@@ -18,11 +18,30 @@ class PluginDiscovery {
         }
 
         $folders = @scandir($apps_dir) ?: [];
+        $app_dirs = [];
+
         foreach ($folders as $folder) {
             if ($folder[0] === '.') continue;
             $app_path = $apps_dir . '/' . $folder;
             if (!is_dir($app_path)) continue;
 
+            if (file_exists($app_path . '/manifest.json') || file_exists($app_path . '/app.js') || file_exists($app_path . '/' . $folder . '.js')) {
+                $app_dirs[$folder] = $app_path;
+            } else {
+                // Check 1 level of subdirectories (e.g., apps/games/*)
+                $sub_folders = @scandir($app_path) ?: [];
+                foreach ($sub_folders as $sub) {
+                    if ($sub[0] === '.') continue;
+                    $sub_path = $app_path . '/' . $sub;
+                    if (is_dir($sub_path) && (file_exists($sub_path . '/manifest.json') || file_exists($sub_path . '/app.js') || file_exists($sub_path . '/' . $sub . '.js'))) {
+                        $app_dirs[$folder . '/' . $sub] = $sub_path;
+                    }
+                }
+            }
+        }
+
+        foreach ($app_dirs as $rel_key => $app_path) {
+            $folder = basename($app_path);
             $manifest_file = $app_path . '/manifest.json';
             $manifest = [];
             if (file_exists($manifest_file)) {
@@ -33,35 +52,36 @@ class PluginDiscovery {
             // Find JS entry point
             $js_entry = null;
             if (!empty($manifest['entry']['js']) && file_exists($app_path . '/' . $manifest['entry']['js'])) {
-                $js_entry = 'apps/' . $folder . '/' . $manifest['entry']['js'];
+                $js_entry = 'apps/' . $rel_key . '/' . $manifest['entry']['js'];
             } elseif (file_exists($app_path . '/app.js')) {
-                $js_entry = 'apps/' . $folder . '/app.js';
+                $js_entry = 'apps/' . $rel_key . '/app.js';
             } elseif (file_exists($app_path . '/' . $folder . '.js')) {
-                $js_entry = 'apps/' . $folder . '/' . $folder . '.js';
+                $js_entry = 'apps/' . $rel_key . '/' . $folder . '.js';
             }
 
             // Find CSS entry point
             $css_entry = null;
             if (!empty($manifest['entry']['css']) && file_exists($app_path . '/' . $manifest['entry']['css'])) {
-                $css_entry = 'apps/' . $folder . '/' . $manifest['entry']['css'];
+                $css_entry = 'apps/' . $rel_key . '/' . $manifest['entry']['css'];
             } elseif (file_exists($app_path . '/app.css')) {
-                $css_entry = 'apps/' . $folder . '/app.css';
+                $css_entry = 'apps/' . $rel_key . '/app.css';
             } elseif (file_exists($app_path . '/' . $folder . '.css')) {
-                $css_entry = 'apps/' . $folder . '/' . $folder . '.css';
+                $css_entry = 'apps/' . $rel_key . '/' . $folder . '.css';
             }
 
             // Find Template / HTML UI entry point
             $template_entry = null;
             if (!empty($manifest['entry']['template']) && file_exists($app_path . '/' . $manifest['entry']['template'])) {
-                $template_entry = 'apps/' . $folder . '/' . $manifest['entry']['template'];
+                $template_entry = 'apps/' . $rel_key . '/' . $manifest['entry']['template'];
             } elseif (file_exists($app_path . '/template.php')) {
-                $template_entry = 'apps/' . $folder . '/template.php';
+                $template_entry = 'apps/' . $rel_key . '/template.php';
             } elseif (file_exists($app_path . '/template.html')) {
-                $template_entry = 'apps/' . $folder . '/template.html';
+                $template_entry = 'apps/' . $rel_key . '/template.html';
             }
 
-            $apps[$folder] = [
-                'id'             => $manifest['id'] ?? $folder,
+            $app_id = $manifest['id'] ?? $folder;
+            $apps[$app_id] = [
+                'id'             => $app_id,
                 'name'           => $manifest['name'] ?? ucfirst($folder),
                 'version'        => $manifest['version'] ?? '1.0.0',
                 'icon'           => $manifest['icon'] ?? '📱',
@@ -88,11 +108,29 @@ class PluginDiscovery {
 
         $code = strtolower($code);
         $folders = @scandir($apps_dir) ?: [];
+        $app_dirs = [];
+
         foreach ($folders as $folder) {
             if ($folder[0] === '.') continue;
             $app_path = $apps_dir . '/' . $folder;
             if (!is_dir($app_path)) continue;
 
+            if (file_exists($app_path . '/manifest.json') || file_exists($app_path . '/app.js') || file_exists($app_path . '/' . $folder . '.js')) {
+                $app_dirs[$folder] = $app_path;
+            } else {
+                $sub_folders = @scandir($app_path) ?: [];
+                foreach ($sub_folders as $sub) {
+                    if ($sub[0] === '.') continue;
+                    $sub_path = $app_path . '/' . $sub;
+                    if (is_dir($sub_path)) {
+                        $app_dirs[$folder . '/' . $sub] = $sub_path;
+                    }
+                }
+            }
+        }
+
+        foreach ($app_dirs as $rel_key => $app_path) {
+            $folder = basename($app_path);
             $app_id = $folder;
 
             // 1. Check apps/<app>/locales/<code>.json

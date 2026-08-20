@@ -121,6 +121,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   }
   ?>
   <script>
+    window.SG_DISCOVERED_APPS = <?php echo json_encode($discovered_apps, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
     window.SG_I18N_CONFIG = <?php echo json_encode([
       'locales'      => $available_locales,
       'default'      => $default_locale,
