@@ -1,0 +1,26 @@
+{
+  "id": "foot",
+  "name": "Foot Pong Arcade",
+  "version": "2.0.0",
+  "icon": "⚽",
+  "author": "SimpleGallery WebOS",
+  "category": "game",
+  "locales": {
+    "fr": {
+      "title": "Foot Pong Arcade",
+      "description": "Jeu de football / Pong à la souris avec orientation dynamique de la raquette et tirs à effet"
+    },
+    "en": {
+      "title": "Foot Pong Arcade",
+      "description": "Mouse-controlled soccer pong with dynamic paddle angles, ball spin, and AI opponent"
+    },
+    "ja": {
+      "title": "フット・ポン・アーケード",
+      "description": "マウス操作のサッカーポン、動的パドル角度、スピンシュート、対戦AI"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "app.css"
+  }
+}

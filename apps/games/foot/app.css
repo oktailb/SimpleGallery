@@ -1,0 +1,207 @@
+/**
+ * SimpleGallery WebOS - Foot Pong Arcade Game
+ * Stylesheet with Stadium UI, Neon Pitch, Digital Scoreboard & Goal Animations.
+ */
+
+.foot-pong-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: radial-gradient(circle at 50% 30%, #064e3b 0%, #022c22 60%, #02120e 100%);
+  color: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header Scoreboard & Controls */
+.foot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(2, 44, 34, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+  gap: 12px;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.foot-scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.foot-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.foot-team.player {
+  color: #38bdf8;
+}
+
+.foot-team.cpu {
+  color: #f87171;
+}
+
+.foot-score-badge {
+  font-size: 1.5rem;
+  font-weight: 900;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 2px 14px;
+  color: #fbbf24;
+  letter-spacing: 2px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.foot-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.foot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.foot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.foot-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.foot-btn.primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #34d399;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.foot-btn.primary:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+/* Arena Viewport */
+.foot-arena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.foot-canvas-wrapper {
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(16, 185, 129, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  background: #14532d;
+  cursor: crosshair;
+}
+
+.foot-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Goal Toast Banner */
+.foot-goal-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid #fbbf24;
+  border-radius: 20px;
+  padding: 1.5rem 3rem;
+  color: #fbbf24;
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px #fbbf24, 0 4px 10px rgba(0,0,0,0.8);
+  box-shadow: 0 0 50px rgba(251, 191, 36, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 25;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.foot-goal-banner.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Match Over Modal */
+.foot-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 18, 14, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  animation: fade-in 0.25s ease;
+}
+
+.foot-card {
+  background: rgba(6, 78, 59, 0.95);
+  border: 2px solid #34d399;
+  border-radius: 20px;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(52, 211, 153, 0.3);
+  text-align: center;
+  max-width: 440px;
+}
+
+.foot-card-title {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+}
+
+.foot-card-score {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 1rem 0;
+}
