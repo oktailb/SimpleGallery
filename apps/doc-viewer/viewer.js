@@ -216,6 +216,17 @@
       const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
       const canEdit = (effectiveCtx.state.isAdmin || window.IS_ADMIN || (effectiveCtx.state.userRights && effectiveCtx.state.userRights.can_upload)) && isEditableText;
 
+      // Notification helper
+      const showNotification = (msg, type = 'info') => {
+        if (typeof effectiveCtx.showToast === 'function') {
+          effectiveCtx.showToast(msg, type);
+        } else if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
+          window.sys.desktop.showToast(msg, type);
+        } else if (window.galleryApp && typeof window.galleryApp.showToast === 'function') {
+          window.galleryApp.showToast(msg, type);
+        }
+      };
+
       // 1. WebOS Window Mode (Primary)
       if (window.WindowManager) {
         const defaultW = Math.min(960, Math.max(540, Math.round(window.innerWidth * 0.75)));
@@ -227,14 +238,14 @@
           bodyHtml = `
             <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#1e293b;">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.1);">
-                <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📄 ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
+                <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📄 ${effectiveCtx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;">
-                  <button type="button" id="docPdfInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
+                  <button type="button" id="docPdfInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
                   <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;">↗ Nouvel onglet</a>
-                  ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:#6366f1;border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
+                  ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:#6366f1;border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
-              <iframe class="doc-pdf-iframe" src="${file.file_url}" title="${ctx.escapeHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"></iframe>
+              <iframe class="doc-pdf-iframe" src="${file.file_url}" title="${effectiveCtx.escapeHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"></iframe>
             </div>
           `;
         } else if (isText) {
@@ -242,13 +253,13 @@
             <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#0d1117;color:#c9d1d9;position:relative;">
               <!-- Reader View Toolbar -->
               <div id="docReaderToolbar-${cleanPathId}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);">
-                <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">${isMd ? '📖' : '📝'} ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
+                <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">${isMd ? '📖' : '📝'} ${effectiveCtx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;align-items:center;">
-                  <button type="button" id="docTextInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
+                  <button type="button" id="docTextInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
                   <button type="button" id="docWinCopyBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;">📋 Copier</button>
                   ${isMd ? `<button type="button" id="docMdViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.12);color:#fff;border-radius:8px;">📄 Code Source</button>` : ''}
                   ${canEdit ? `<button type="button" id="docEditToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--accent-primary,#6366f1);color:#fff;border-radius:8px;font-weight:600;"><span data-i18n="doc_editor.edit_btn">✏️ Éditer (WYSIWYG)</span></button>` : ''}
-                  ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
+                  ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
 
@@ -278,12 +289,12 @@
             <div class="webos-doc-container" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#0f172a;padding:2rem;">
               <div class="doc-viewer-card" style="background:rgba(30,41,59,0.7);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:2.5rem;text-align:center;max-width:440px;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
                 <div style="font-size:3.5rem;margin-bottom:1rem;">📄</div>
-                <div style="font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:0.4rem;word-break:break-all;">${ctx.escapeHtml(file.name)}</div>
+                <div style="font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:0.4rem;word-break:break-all;">${effectiveCtx.escapeHtml(file.name)}</div>
                 <div style="font-size:0.85rem;color:var(--text-muted,#94a3b8);margin-bottom:1.5rem;">${file.size_formatted} • Format ${ext.toUpperCase()}</div>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                  <button type="button" id="docCardInfoBtn-${cleanPathId}" class="app-menu-pill" style="padding:8px 16px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:10px;"><span data-i18n="lightbox.metadata_btn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés')}</span></button>
+                  <button type="button" id="docCardInfoBtn-${cleanPathId}" class="app-menu-pill" style="padding:8px 16px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:10px;"><span data-i18n="lightbox.metadata_btn">ℹ️ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés')}</span></button>
                   <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;padding:8px 16px;background:rgba(255,255,255,0.12);color:#fff;border-radius:10px;">↗ Ouvrir le fichier</a>
-                  ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;padding:8px 16px;background:#6366f1;color:#fff;border-radius:10px;font-weight:600;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
+                  ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;padding:8px 16px;background:#6366f1;color:#fff;border-radius:10px;font-weight:600;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
             </div>
@@ -292,7 +303,7 @@
 
         const appTitle = (window.sys && window.sys.appManager) 
           ? window.sys.appManager.getAppTitle('doc-viewer') 
-          : (ctx.t('apps.doc-viewer.title') || "Lecteur de Documents");
+          : (effectiveCtx.t('apps.doc-viewer.title') || "Lecteur de Documents");
 
         let activeEditorInstance = null;
         let isEditing = false;
@@ -330,14 +341,14 @@
               window.MenuBarManager.registerAppMenu('doc-viewer', (container) => {
                 container.innerHTML = `
                   <div class="app-menu-left">
-                    <span class="app-menu-pill active" style="font-weight:600;">${isMd ? '📖' : '📄'} ${ctx.escapeHtml(file.name)}</span>
-                    <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${ctx.escapeHtml(ctx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
-                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${ctx.escapeHtml(ctx.t('doc_editor.edit_btn') || 'Éditer (WYSIWYG)')}</button>` : ''}
-                    ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
-                    <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
+                    <span class="app-menu-pill active" style="font-weight:600;">${isMd ? '📖' : '📄'} ${effectiveCtx.escapeHtml(file.name)}</span>
+                    <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${effectiveCtx.escapeHtml(effectiveCtx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
+                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${effectiveCtx.escapeHtml(effectiveCtx.t('doc_editor.edit_btn') || 'Éditer (WYSIWYG)')}</button>` : ''}
+                    ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
+                    <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
                   <div class="app-menu-right">
-                    <button type="button" class="app-menu-pill" id="menuDocFsBtn">⛶ ${ctx.escapeHtml(ctx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
+                    <button type="button" class="app-menu-pill" id="menuDocFsBtn">⛶ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
                   </div>
                 `;
                 const info = container.querySelector('#menuDocInfoBtn');
@@ -366,7 +377,7 @@
           }
           if (saveBtn) saveBtn.disabled = true;
 
-          const csrfToken = (ctx && ctx.state && ctx.state.csrfToken)
+          const csrfToken = (effectiveCtx && effectiveCtx.state && effectiveCtx.state.csrfToken)
             || (typeof window !== 'undefined' && window.CSRF_TOKEN)
             || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
             || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
@@ -400,18 +411,13 @@
                 badge.textContent = '● Enregistré';
               }
               updateReaderDisplay();
-
-              if (typeof ctx.showToast === 'function') {
-                ctx.showToast(json.message || 'Document enregistré avec succès !', 'success');
-              }
+              showNotification(json.message || 'Document enregistré avec succès !', 'success');
             } else {
               if (badge) {
                 badge.className = 'doc-status-badge dirty';
                 badge.textContent = '⚠️ Échec enregistrement';
               }
-              if (typeof ctx.showToast === 'function') {
-                ctx.showToast('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde.'), 'error');
-              }
+              showNotification('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde.'), 'error');
             }
           } catch (err) {
             if (saveBtn) saveBtn.disabled = false;
@@ -419,9 +425,7 @@
               badge.className = 'doc-status-badge dirty';
               badge.textContent = '⚠️ Erreur réseau';
             }
-            if (typeof ctx.showToast === 'function') {
-              ctx.showToast('⚠️ Erreur réseau : ' + err.message, 'error');
-            }
+            showNotification('⚠️ Erreur réseau : ' + err.message, 'error');
           }
         };
 
@@ -442,7 +446,7 @@
 
           if (isEditing) {
             if (!activeEditorInstance && hostEl) {
-              if (typeof ctx.showToast === 'function') ctx.showToast('Chargement de l\'éditeur WYSIWYG...', 'info');
+              showNotification('Chargement de l\'éditeur WYSIWYG...', 'info');
               try {
                 const Editor = await loadToastUiEditor();
 
@@ -472,9 +476,7 @@
                 });
               } catch (err) {
                 console.error('Failed to init Toast UI Editor:', err);
-                if (typeof ctx.showToast === 'function') {
-                  ctx.showToast('⚠️ Impossible de charger l\'éditeur : ' + err.message, 'error');
-                }
+                showNotification('⚠️ Impossible de charger l\'éditeur : ' + err.message, 'error');
                 toggleEditor(false);
               }
             } else if (activeEditorInstance) {
@@ -558,11 +560,11 @@
       }
 
       // 2. Legacy Lightbox Fallback Mode
-      if (!ctx.el) return false;
-      ctx.state.lightboxIndex = index;
-      ctx.el.lightboxTitle.textContent = `Lecteur de Documents : ${file.name}`;
-      ctx.el.lightboxContent.innerHTML = `<div style="padding:2rem;text-align:center;">${file.name}</div>`;
-      ctx.el.lightbox.classList.add('open');
+      if (!effectiveCtx.el) return false;
+      effectiveCtx.state.lightboxIndex = index;
+      effectiveCtx.el.lightboxTitle.textContent = `Lecteur de Documents : ${file.name}`;
+      effectiveCtx.el.lightboxContent.innerHTML = `<div style="padding:2rem;text-align:center;">${file.name}</div>`;
+      effectiveCtx.el.lightbox.classList.add('open');
       return true;
     }
   };

@@ -1404,9 +1404,17 @@ if ($action === 'save_text_file') {
     }
 
     $target_file = sanitize_file_path($target_param, $real_base_dir);
-    if ($target_file === null || !is_file($target_file) || is_path_ignored($target_file, $real_base_dir, $ignore_list)) {
+    if ($target_file === null || !is_file($target_file)) {
         http_response_code(404);
         echo json_encode(['success' => false, 'error' => __t('api.err_invalid_path')]);
+        exit;
+    }
+
+    $base_name = basename($target_file);
+    $sensitive_files = ['.admin_password_hash', '.htaccess', '.htpasswd', '.env', '.user.ini', 'php.ini', 'web.config'];
+    if (in_array(strtolower($base_name), $sensitive_files, true)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => __t('api.err_unsupported_format') ?: 'Fichier système protégé']);
         exit;
     }
 
@@ -1421,13 +1429,10 @@ if ($action === 'save_text_file') {
     }
 
     $parent_dir = dirname($target_file);
-    if (!is_writable($parent_dir) || !is_writable($target_file)) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'error' => __t('api.err_write_permission')]);
-        exit;
-    }
-
     $save_success = (@file_put_contents($target_file, $content, LOCK_EX) !== false);
+    if (!$save_success) {
+        $save_success = (@file_put_contents($target_file, $content) !== false);
+    }
 
     if ($save_success) {
         @chmod($target_file, 0644);
