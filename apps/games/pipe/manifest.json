@@ -1,0 +1,26 @@
+{
+  "id": "pipe",
+  "name": "Pipe Connect & Netwalk",
+  "version": "2.0.0",
+  "icon": "🔧",
+  "author": "SimpleGallery WebOS",
+  "category": "game",
+  "locales": {
+    "fr": {
+      "title": "Tuyaux & Réseau Connecté",
+      "description": "Faites pivoter les sections de tuyaux pour connecter l'intégralité du réseau sans fuite ni îlot, avec option de carte circulaire (tore)"
+    },
+    "en": {
+      "title": "Pipe Connect & Netwalk",
+      "description": "Rotate pipe tiles to connect the entire network without leaks or islands, with wrap-around circular map option"
+    },
+    "ja": {
+      "title": "パイプ・コネクト＆ネットウォーク",
+      "description": "パイプを回転させてネットワーク全体を接続するパズル（トーラス状の循環マップ対応）"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "app.css"
+  }
+}

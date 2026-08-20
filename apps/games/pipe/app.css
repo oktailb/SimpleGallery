@@ -1,0 +1,272 @@
+/**
+ * SimpleGallery WebOS - Pipe Connect & Netwalk Puzzle
+ * Stylesheet with SVG Pipes, Neon Energy Liquid Glow, Smooth Rotations & Torus Grid Indicators.
+ */
+
+.pipe-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: radial-gradient(circle at 50% 20%, #0f172a 0%, #020617 80%, #000000 100%);
+  color: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header & Controls */
+.pipe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  gap: 12px;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.pipe-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pipe-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.pipe-stat-pill.connected {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.pipe-stat-pill.wrap-mode {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.pipe-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pipe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pipe-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.pipe-btn.primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.pipe-btn.accent {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  border-color: #c084fc;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+}
+
+/* Arena & Grid */
+.pipe-arena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: auto;
+  position: relative;
+}
+
+.pipe-grid-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);
+}
+
+.pipe-grid-wrapper.circular-wrap {
+  border: 2px dashed rgba(168, 85, 247, 0.6);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(168, 85, 247, 0.25);
+}
+
+.pipe-grid {
+  display: grid;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  touch-action: manipulation;
+}
+
+/* Pipe Cell Tile */
+.pipe-cell {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  overflow: hidden;
+}
+
+.pipe-cell:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.pipe-cell.source-cell {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: inset 0 0 15px rgba(251, 191, 36, 0.3);
+}
+
+.pipe-cell.hint-active {
+  animation: pulse-hint 1s infinite alternate;
+}
+
+@keyframes pulse-hint {
+  0% { box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4); }
+  100% { box-shadow: 0 0 16px 4px rgba(251, 191, 36, 0.9); }
+}
+
+/* SVG Pipe Element inside Cell */
+.pipe-svg {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Pipe Segment Styling */
+.pipe-body {
+  stroke: #475569;
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.25s ease, filter 0.25s ease;
+}
+
+.pipe-inner {
+  stroke: #1e293b;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.25s ease;
+}
+
+/* Connected / Flowing State */
+.pipe-cell.connected .pipe-body {
+  stroke: #0284c7;
+  filter: drop-shadow(0 0 6px #38bdf8);
+}
+
+.pipe-cell.connected .pipe-inner {
+  stroke: #38bdf8;
+}
+
+/* Source Terminal Hub */
+.pipe-source-hub {
+  fill: #fbbf24;
+  stroke: #ffffff;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 10px #fbbf24);
+  animation: pulse-hub 2s infinite;
+}
+
+@keyframes pulse-hub {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* Wrap Edge Guides */
+.wrap-indicator-top, .wrap-indicator-bottom, .wrap-indicator-left, .wrap-indicator-right {
+  position: absolute;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #c084fc;
+  letter-spacing: 2px;
+  pointer-events: none;
+  opacity: 0.8;
+}
+.wrap-indicator-top { top: -20px; }
+.wrap-indicator-bottom { bottom: -20px; }
+.wrap-indicator-left { left: -32px; transform: rotate(-90deg); }
+.wrap-indicator-right { right: -32px; transform: rotate(90deg); }
+
+/* Victory Modal */
+.pipe-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  animation: fade-in 0.3s ease;
+}
+
+.pipe-card {
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #38bdf8;
+  border-radius: 20px;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 50px rgba(56, 189, 248, 0.3);
+  text-align: center;
+  max-width: 440px;
+}
+
+.pipe-card-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #38bdf8;
+  margin-bottom: 0.5rem;
+}
