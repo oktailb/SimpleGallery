@@ -1,0 +1,28 @@
+{
+  "translations": {
+    "games.8queens.title": "エイト・クイーン パズル",
+    "games.8queens.queens_count": "👑 {count}/{total} クイーン",
+    "games.8queens.conflicts_count": "⚡ {count} 衝突",
+    "games.8queens.moves": "🎯 {count} 手数",
+    "games.8queens.time": "⏱️ 時間 : {time}",
+    "games.8queens.hint": "💡 ヒント",
+    "games.8queens.solver": "🤖 ソルバー",
+    "games.8queens.restart": "🔄 やり直す",
+    "games.8queens.new_game": "🔄 新規ゲーム",
+    "games.8queens.solutions_found": "📚 データベース : <strong>{count} 通りの解を発見</strong> ({size}x{size})",
+    "games.8queens.solution_badge": "(解 {current} / {total})",
+    "games.8queens.prev_sol": "◀ 前の解",
+    "games.8queens.next_sol": "次の解 ▶",
+    "games.8queens.auto_demo": "▶ 自動デモ",
+    "games.8queens.pause_demo": "⏸ 一時停止",
+    "games.8queens.victory_title": "クリア！",
+    "games.8queens.victory_subtitle": "衝突なしで全 {size} 個のクイーンを配置しました！",
+    "games.8queens.play_again": "🔄 もう一度遊ぶ",
+    "games.8queens.explore_solutions": "📋 解を閲覧する",
+    "games.8queens.size_label": "サイズ : {size}x{size}",
+    "games.8queens.theme_cyber": "🎨 サイバーネオン",
+    "games.8queens.theme_wood": "🎨 クラシックウッド",
+    "games.8queens.theme_emerald": "🎨 エメラルド",
+    "games.8queens.fullscreen": "⛶ フルスクリーン"
+  }
+}

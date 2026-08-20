@@ -1,0 +1,23 @@
+{
+  "translations": {
+    "games.hanoi.title": "ハノイの塔",
+    "games.hanoi.disks_count": "🗼 {count} 枚のディスク",
+    "games.hanoi.moves_count": "🎯 手数 : <strong>{count}</strong> / {min} (最短)",
+    "games.hanoi.time": "⏱️ {time}",
+    "games.hanoi.hint": "💡 ヒント",
+    "games.hanoi.auto_demo": "🤖 自動デモ",
+    "games.hanoi.pause_demo": "⏸ 一時停止",
+    "games.hanoi.restart": "🔄 やり直す",
+    "games.hanoi.peg_a": "塔 A (開始)",
+    "games.hanoi.peg_b": "塔 B (補助)",
+    "games.hanoi.peg_c": "塔 C (ゴール)",
+    "games.hanoi.illegal_move": "⚠️ 無効な移動：小さいディスクの上に大きいディスクを置くことはできません！",
+    "games.hanoi.hint_msg": "💡 塔 {from} から 塔 {to} へディスクを移動してください",
+    "games.hanoi.victory_title": "🎉 おめでとうございます！",
+    "games.hanoi.victory_msg": "{time} で {moves} 手でクリア (最短: {min}) - 効率: {efficiency}%！",
+    "games.hanoi.play_again": "🔄 もう一度遊ぶ",
+    "games.hanoi.next_level": "⏫ 次のレベル (+1 ディスク)",
+    "games.hanoi.disks_select": "{count} 枚のディスク ({moves} 手)",
+    "games.hanoi.fullscreen": "⛶ フルスクリーン"
+  }
+}

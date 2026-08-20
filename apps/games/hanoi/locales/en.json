@@ -1,0 +1,23 @@
+{
+  "translations": {
+    "games.hanoi.title": "Towers of Hanoi",
+    "games.hanoi.disks_count": "🗼 {count} Disks",
+    "games.hanoi.moves_count": "🎯 Moves : <strong>{count}</strong> / {min} (Optimal)",
+    "games.hanoi.time": "⏱️ {time}",
+    "games.hanoi.hint": "💡 Hint",
+    "games.hanoi.auto_demo": "🤖 Auto Demo",
+    "games.hanoi.pause_demo": "⏸ Pause",
+    "games.hanoi.restart": "🔄 Restart",
+    "games.hanoi.peg_a": "TOWER A (Source)",
+    "games.hanoi.peg_b": "TOWER B (Auxiliary)",
+    "games.hanoi.peg_c": "TOWER C (Target)",
+    "games.hanoi.illegal_move": "⚠️ Illegal move: A larger disk cannot be placed on top of a smaller disk!",
+    "games.hanoi.hint_msg": "💡 Move the top disk from Tower {from} to Tower {to}",
+    "games.hanoi.victory_title": "🎉 CONGRATULATIONS!",
+    "games.hanoi.victory_msg": "Solved in {moves} moves (Optimal: {min}) in {time} - Efficiency: {efficiency}%!",
+    "games.hanoi.play_again": "🔄 Play Again",
+    "games.hanoi.next_level": "⏫ Next Level (+1 Disk)",
+    "games.hanoi.disks_select": "{count} Disks ({moves} moves)",
+    "games.hanoi.fullscreen": "⛶ Fullscreen"
+  }
+}

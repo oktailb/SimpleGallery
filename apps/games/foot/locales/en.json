@@ -1,0 +1,25 @@
+{
+  "translations": {
+    "games.foot.title": "Foot Pong Arcade",
+    "games.foot.player": "👤 PLAYER",
+    "games.foot.cpu": "🤖 AI BOT",
+    "games.foot.timer": "⏱️ {time}",
+    "games.foot.pause": "⏸ Pause",
+    "games.foot.resume": "▶ Resume",
+    "games.foot.new_match": "🔄 New Match",
+    "games.foot.diff_easy": "⚡ Easy",
+    "games.foot.diff_normal": "⚡ Normal",
+    "games.foot.diff_pro": "⚡ Pro 🔥",
+    "games.foot.goal_player": "⚽ GOAL FOR PLAYER!",
+    "games.foot.goal_cpu": "⚽ GOAL FOR AI!",
+    "games.foot.match_over": "FULL TIME",
+    "games.foot.win_title": "🏆 GLORIOUS VICTORY!",
+    "games.foot.draw_title": "🤝 DRAW MATCH",
+    "games.foot.lose_title": "💔 DEFEAT",
+    "games.foot.win_msg": "Congratulations! You defeated the AI on {diff} difficulty!",
+    "games.foot.draw_msg": "A very tight game! Play again to lift the trophy!",
+    "games.foot.lose_msg": "The AI took the win this time! Go for revenge!",
+    "games.foot.replay": "🔄 Play Again",
+    "games.foot.fullscreen": "⛶ Fullscreen"
+  }
+}

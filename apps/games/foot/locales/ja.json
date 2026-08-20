@@ -1,0 +1,25 @@
+{
+  "translations": {
+    "games.foot.title": "フット・ポン・アーケード",
+    "games.foot.player": "👤 プレイヤー",
+    "games.foot.cpu": "🤖 AIボット",
+    "games.foot.timer": "⏱️ {time}",
+    "games.foot.pause": "⏸ 一時停止",
+    "games.foot.resume": "▶ 再開",
+    "games.foot.new_match": "🔄 新規マッチ",
+    "games.foot.diff_easy": "⚡ イージー",
+    "games.foot.diff_normal": "⚡ ノーマル",
+    "games.foot.diff_pro": "⚡ プロ 🔥",
+    "games.foot.goal_player": "⚽ プレイヤーのゴール！",
+    "games.foot.goal_cpu": "⚽ AIのゴール！",
+    "games.foot.match_over": "試合終了",
+    "games.foot.win_title": "🏆 勝利！",
+    "games.foot.draw_title": "🤝 引き分け",
+    "games.foot.lose_title": "💔 敗北",
+    "games.foot.win_msg": "おめでとうございます！ 難易度 {diff} でAIに勝利しました！",
+    "games.foot.draw_msg": "接戦でした！ もう一度プレイして勝利を掴みましょう！",
+    "games.foot.lose_msg": "今回はAIが勝利しました！ リベンジしましょう！",
+    "games.foot.replay": "🔄 もう一度遊ぶ",
+    "games.foot.fullscreen": "⛶ フルスクリーン"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "translations": {
+    "games.pipe.title": "Tuyaux & Réseau Connecté",
+    "games.pipe.connected_count": "⚡ {count}/{total} Connectés",
+    "games.pipe.wrap_on": "🌐 Map Circulaire (Tore)",
+    "games.pipe.wrap_off": "🌐 Grille Standard",
+    "games.pipe.wrap_btn_on": "🌐 Map Circulaire : ON",
+    "games.pipe.wrap_btn_off": "🌐 Map Circulaire : OFF",
+    "games.pipe.time": "⏱️ {time}",
+    "games.pipe.rotations": "🎯 {count} Rotations",
+    "games.pipe.hint": "💡 Indice",
+    "games.pipe.solver": "🤖 Résoudre",
+    "games.pipe.new_puzzle": "🔄 Nouveau Puzzle",
+    "games.pipe.wrap_north": "▲ BOUCLE CYCLIQUE NORD ▲",
+    "games.pipe.wrap_south": "▼ BOUCLE CYCLIQUE SUD ▼",
+    "games.pipe.wrap_west": "◄ BOUCLE OUEST ◄",
+    "games.pipe.wrap_east": "► BOUCLE EST ►",
+    "games.pipe.hint_msg": "💡 Regardez le tuyau en surbrillance (Ligne {row}, Colonne {col}) !",
+    "games.pipe.victory_title": "RÉSEAU 100% CONNECTÉ !",
+    "games.pipe.victory_msg": "Félicitations ! L'intégralité du réseau {size}x{size} est sous tension sans aucune fuite en {moves} rotations et {time} !",
+    "games.pipe.play_again": "🔄 Nouveau Puzzle",
+    "games.pipe.size_select": "Taille : {size}x{size}",
+    "games.pipe.fullscreen": "⛶ Plein Écran"
+  }
+}

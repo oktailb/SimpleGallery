@@ -1,0 +1,25 @@
+{
+  "translations": {
+    "games.pipe.title": "Pipe Connect & Netwalk",
+    "games.pipe.connected_count": "⚡ {count}/{total} Connected",
+    "games.pipe.wrap_on": "🌐 Circular Map (Torus)",
+    "games.pipe.wrap_off": "🌐 Standard Grid",
+    "games.pipe.wrap_btn_on": "🌐 Circular Map : ON",
+    "games.pipe.wrap_btn_off": "🌐 Circular Map : OFF",
+    "games.pipe.time": "⏱️ {time}",
+    "games.pipe.rotations": "🎯 {count} Turns",
+    "games.pipe.hint": "💡 Hint",
+    "games.pipe.solver": "🤖 Solve",
+    "games.pipe.new_puzzle": "🔄 New Puzzle",
+    "games.pipe.wrap_north": "▲ NORTH CYCLIC LOOP ▲",
+    "games.pipe.wrap_south": "▼ SOUTH CYCLIC LOOP ▼",
+    "games.pipe.wrap_west": "◄ WEST LOOP ◄",
+    "games.pipe.wrap_east": "► EAST LOOP ►",
+    "games.pipe.hint_msg": "💡 Check the highlighted pipe (Row {row}, Column {col})!",
+    "games.pipe.victory_title": "100% CONNECTED NETWORK!",
+    "games.pipe.victory_msg": "Congratulations! The entire {size}x{size} grid is energized without any leaks in {moves} turns and {time}!",
+    "games.pipe.play_again": "🔄 New Puzzle",
+    "games.pipe.size_select": "Size : {size}x{size}",
+    "games.pipe.fullscreen": "⛶ Fullscreen"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "translations": {
+    "games.8queens.title": "Jeu des 8 Dames",
+    "games.8queens.queens_count": "👑 {count}/{total} Dames",
+    "games.8queens.conflicts_count": "⚡ {count} Conflits",
+    "games.8queens.moves": "🎯 {count} Coups",
+    "games.8queens.time": "⏱️ Temps : {time}",
+    "games.8queens.hint": "💡 Indice",
+    "games.8queens.solver": "🤖 Solveur",
+    "games.8queens.restart": "🔄 Recommencer",
+    "games.8queens.new_game": "🔄 Nouvelle Partie",
+    "games.8queens.solutions_found": "📚 Base : <strong>{count} solutions trouvées</strong> ({size}x{size})",
+    "games.8queens.solution_badge": "(Solution {current} / {total})",
+    "games.8queens.prev_sol": "◀ Précédente",
+    "games.8queens.next_sol": "Suivante ▶",
+    "games.8queens.auto_demo": "▶ Démo Auto",
+    "games.8queens.pause_demo": "⏸ Pause",
+    "games.8queens.victory_title": "VICTOIRE !",
+    "games.8queens.victory_subtitle": "Vous avez placé les {size} dames sans aucun conflit !",
+    "games.8queens.play_again": "🔄 Rejouer",
+    "games.8queens.explore_solutions": "📋 Explorer les Solutions",
+    "games.8queens.size_label": "Taille : {size}x{size}",
+    "games.8queens.theme_cyber": "🎨 Cyber Néon",
+    "games.8queens.theme_wood": "🎨 Bois Classique",
+    "games.8queens.theme_emerald": "🎨 Émeraude",
+    "games.8queens.fullscreen": "⛶ Plein Écran"
+  }
+}

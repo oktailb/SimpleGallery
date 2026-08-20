@@ -1,0 +1,25 @@
+{
+  "translations": {
+    "games.foot.title": "Foot Pong Arcade",
+    "games.foot.player": "👤 JOUEUR",
+    "games.foot.cpu": "🤖 IA BOT",
+    "games.foot.timer": "⏱️ {time}",
+    "games.foot.pause": "⏸ Pause",
+    "games.foot.resume": "▶ Reprendre",
+    "games.foot.new_match": "🔄 Nouveau Match",
+    "games.foot.diff_easy": "⚡ Facile",
+    "games.foot.diff_normal": "⚡ Normal",
+    "games.foot.diff_pro": "⚡ Pro 🔥",
+    "games.foot.goal_player": "⚽ BUUUT DU JOUEUR !",
+    "games.foot.goal_cpu": "⚽ BUT DE L'IA !",
+    "games.foot.match_over": "FIN DU MATCH",
+    "games.foot.win_title": "🏆 VICTOIRE ÉCLATANTE !",
+    "games.foot.draw_title": "🤝 MATCH NUL",
+    "games.foot.lose_title": "💔 DÉFAITE",
+    "games.foot.win_msg": "Félicitations ! Vous avez battu l'IA en niveau {diff} !",
+    "games.foot.draw_msg": "Un match très serré ! Rejouez pour remporter la coupe !",
+    "games.foot.lose_msg": "L'IA a été plus forte cette fois-ci ! Tentez votre revanche !",
+    "games.foot.replay": "🔄 Rejouer",
+    "games.foot.fullscreen": "⛶ Plein Écran"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "translations": {
+    "games.hanoi.title": "Tours de Hanoï",
+    "games.hanoi.disks_count": "🗼 {count} Disques",
+    "games.hanoi.moves_count": "🎯 Coups : <strong>{count}</strong> / {min} (Optimal)",
+    "games.hanoi.time": "⏱️ {time}",
+    "games.hanoi.hint": "💡 Indice",
+    "games.hanoi.auto_demo": "🤖 Démo Auto",
+    "games.hanoi.pause_demo": "⏸ Pause",
+    "games.hanoi.restart": "🔄 Recommencer",
+    "games.hanoi.peg_a": "TOUR A (Départ)",
+    "games.hanoi.peg_b": "TOUR B (Intermédiaire)",
+    "games.hanoi.peg_c": "TOUR C (Arrivée)",
+    "games.hanoi.illegal_move": "⚠️ Coup impossible : un disque plus grand ne peut pas être posé sur un plus petit !",
+    "games.hanoi.hint_msg": "💡 Déplacez le disque de la Tour {from} vers la Tour {to}",
+    "games.hanoi.victory_title": "🎉 FÉLICITATIONS !",
+    "games.hanoi.victory_msg": "Résolu en {moves} coups (Optimal : {min}) en {time} - Efficacité : {efficiency}% !",
+    "games.hanoi.play_again": "🔄 Rejouer",
+    "games.hanoi.next_level": "⏫ Niveau Suivant (+1 Disque)",
+    "games.hanoi.disks_select": "{count} Disques ({moves} coups)",
+    "games.hanoi.fullscreen": "⛶ Plein Écran"
+  }
+}

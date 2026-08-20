@@ -196,7 +196,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('foot')
-        : "Foot Pong Arcade";
+        : (this.t('games.foot.title') || "Foot Pong Arcade");
 
       const defaultW = Math.min(880, Math.max(540, Math.round(window.innerWidth * 0.72)));
       const defaultH = Math.min(680, Math.max(420, Math.round(window.innerHeight * 0.78)));
@@ -207,24 +207,24 @@
           <div class="foot-header">
             <div class="foot-scoreboard">
               <div class="foot-team player">
-                <span>👤 JOUEUR</span>
+                <span>${this.t('games.foot.player')}</span>
                 <span class="foot-score-badge" id="playerScore-${this.id}">0</span>
               </div>
               <span style="font-weight:900;color:rgba(255,255,255,0.4);">:</span>
               <div class="foot-team cpu">
                 <span class="foot-score-badge" id="cpuScore-${this.id}">0</span>
-                <span>🤖 IA BOT</span>
+                <span>${this.t('games.foot.cpu')}</span>
               </div>
             </div>
 
             <div class="foot-meta">
               <span class="foot-pill">⏱️ <span id="timerBadge-${this.id}">02:00</span></span>
-              <span class="foot-pill" id="diffBadge-${this.id}">⚡ ${this.getDiffLabel()}</span>
+              <span class="foot-pill" id="diffBadge-${this.id}">${this.getDiffLabel()}</span>
             </div>
 
             <div style="display:flex;align-items:center;gap:8px;">
-              <button type="button" class="foot-btn" id="pauseBtn-${this.id}">⏸ Pause</button>
-              <button type="button" class="foot-btn primary" id="resetBtn-${this.id}">🔄 Nouveau Match</button>
+              <button type="button" class="foot-btn" id="pauseBtn-${this.id}">${this.isPaused ? this.t('games.foot.resume') : this.t('games.foot.pause')}</button>
+              <button type="button" class="foot-btn primary" id="resetBtn-${this.id}">${this.t('games.foot.new_match')}</button>
             </div>
           </div>
 
@@ -238,11 +238,11 @@
             <!-- Match Over Modal -->
             <div class="foot-modal" id="footModal-${this.id}" style="display:none;">
               <div class="foot-card">
-                <div class="foot-card-title" id="modalTitle-${this.id}">FIN DU MATCH</div>
+                <div class="foot-card-title" id="modalTitle-${this.id}">${this.t('games.foot.match_over')}</div>
                 <div class="foot-card-score" id="modalScore-${this.id}">0 - 0</div>
                 <p id="modalMsg-${this.id}" style="color:#e2e8f0;margin-bottom:1.5rem;font-weight:600;"></p>
                 <div style="display:flex;justify-content:center;gap:12px;">
-                  <button type="button" class="foot-btn primary" id="modalReplayBtn-${this.id}">🔄 Rejouer</button>
+                  <button type="button" class="foot-btn primary" id="modalReplayBtn-${this.id}">${this.t('games.foot.replay')}</button>
                 </div>
               </div>
             </div>
@@ -313,16 +313,16 @@
       window.MenuBarManager.registerAppMenu('foot', (container) => {
         container.innerHTML = `
           <div class="app-menu-left">
-            <button type="button" class="app-menu-pill" id="menuFootNewBtn">🔄 Nouveau Match</button>
-            <button type="button" class="app-menu-pill" id="menuFootPauseBtn">${this.isPaused ? '▶ Reprendre' : '⏸ Pause'}</button>
+            <button type="button" class="app-menu-pill" id="menuFootNewBtn">${this.t('games.foot.new_match')}</button>
+            <button type="button" class="app-menu-pill" id="menuFootPauseBtn">${this.isPaused ? this.t('games.foot.resume') : this.t('games.foot.pause')}</button>
             <select class="app-menu-pill" id="menuFootDiffSelect" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;">
-              <option value="easy" ${this.difficulty === 'easy' ? 'selected' : ''} style="background:#022c22;color:#fff;">⚡ Facile</option>
-              <option value="normal" ${this.difficulty === 'normal' ? 'selected' : ''} style="background:#022c22;color:#fff;">⚡ Normal</option>
-              <option value="pro" ${this.difficulty === 'pro' ? 'selected' : ''} style="background:#022c22;color:#fff;">⚡ Pro / Champion</option>
+              <option value="easy" ${this.difficulty === 'easy' ? 'selected' : ''} style="background:#022c22;color:#fff;">${this.t('games.foot.diff_easy')}</option>
+              <option value="normal" ${this.difficulty === 'normal' ? 'selected' : ''} style="background:#022c22;color:#fff;">${this.t('games.foot.diff_normal')}</option>
+              <option value="pro" ${this.difficulty === 'pro' ? 'selected' : ''} style="background:#022c22;color:#fff;">${this.t('games.foot.diff_pro')}</option>
             </select>
           </div>
           <div class="app-menu-right">
-            <button type="button" class="app-menu-pill" id="menuFootFsBtn">⛶ Plein Écran</button>
+            <button type="button" class="app-menu-pill" id="menuFootFsBtn">${this.t('games.foot.fullscreen')}</button>
           </div>
         `;
 
@@ -340,9 +340,9 @@
     }
 
     getDiffLabel() {
-      if (this.difficulty === 'easy') return 'Facile';
-      if (this.difficulty === 'pro') return 'Pro 🔥';
-      return 'Normal';
+      if (this.difficulty === 'easy') return this.t('games.foot.diff_easy');
+      if (this.difficulty === 'pro') return this.t('games.foot.diff_pro');
+      return this.t('games.foot.diff_normal');
     }
 
     setDifficulty(diff) {
@@ -357,7 +357,7 @@
         this.cpu.speed = 4.8;
         this.cpu.reactionLag = 0.15;
       }
-      if (this.el.diffBadge) this.el.diffBadge.textContent = `⚡ ${this.getDiffLabel()}`;
+      if (this.el.diffBadge) this.el.diffBadge.textContent = this.getDiffLabel();
     }
 
     resizeCanvas() {
@@ -417,7 +417,7 @@
     togglePause() {
       this.isPaused = !this.isPaused;
       const pauseBtn = document.getElementById(`pauseBtn-${this.id}`);
-      if (pauseBtn) pauseBtn.textContent = this.isPaused ? '▶ Reprendre' : '⏸ Pause';
+      if (pauseBtn) pauseBtn.textContent = this.isPaused ? this.t('games.foot.resume') : this.t('games.foot.pause');
       this.updateMenuBar();
     }
 
@@ -477,7 +477,7 @@
 
       // Show goal banner
       if (this.el.goalBanner) {
-        this.el.goalBanner.textContent = scoringTeam === 'player' ? '⚽ BUUUT DU JOUEUR !' : '⚽ BUT DE L\'IA !';
+        this.el.goalBanner.textContent = scoringTeam === 'player' ? this.t('games.foot.goal_player') : this.t('games.foot.goal_cpu');
         this.el.goalBanner.classList.add('active');
         setTimeout(() => {
           if (this.el.goalBanner) this.el.goalBanner.classList.remove('active');
@@ -502,14 +502,14 @@
         const isDraw = this.playerScore === this.cpuScore;
 
         if (this.el.modalTitle) {
-          this.el.modalTitle.textContent = isWin ? '🏆 VICTOIRE ÉCLATANTE !' : (isDraw ? '🤝 MATCH NUL' : '💔 DÉFAITE');
+          this.el.modalTitle.textContent = isWin ? this.t('games.foot.win_title') : (isDraw ? this.t('games.foot.draw_title') : this.t('games.foot.lose_title'));
           this.el.modalTitle.style.color = isWin ? '#fbbf24' : (isDraw ? '#38bdf8' : '#f87171');
         }
         if (this.el.modalScore) this.el.modalScore.textContent = `${this.playerScore} - ${this.cpuScore}`;
         if (this.el.modalMsg) {
           this.el.modalMsg.textContent = isWin
-            ? `Félicitations ! Vous avez battu l'IA en niveau ${this.getDiffLabel()} !`
-            : (isDraw ? 'Un match très serré ! Rejouez pour remporter la coupe !' : 'L\'IA a été plus forte cette fois-ci ! Tentez votre revanche !');
+            ? this.t('games.foot.win_msg', { diff: this.getDiffLabel() })
+            : (isDraw ? this.t('games.foot.draw_msg') : this.t('games.foot.lose_msg'));
         }
         this.el.modal.style.display = 'flex';
       }

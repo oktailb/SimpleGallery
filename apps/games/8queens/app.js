@@ -82,7 +82,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('8queens')
-        : "Jeu des 8 Dames";
+        : (this.t('games.8queens.title') || "Jeu des 8 Dames");
 
       const defaultW = Math.min(760, Math.max(500, Math.round(window.innerWidth * 0.65)));
       const defaultH = Math.min(820, Math.max(540, Math.round(window.innerHeight * 0.85)));
@@ -107,14 +107,14 @@
             </div>
 
             <div class="eight-queens-controls">
-              <button type="button" class="eight-queens-btn" id="hintBtn-${this.id}" title="Afficher les cases sûres">
-                💡 Indice
+              <button type="button" class="eight-queens-btn" id="hintBtn-${this.id}" title="${this.t('games.8queens.hint')}">
+                ${this.t('games.8queens.hint')}
               </button>
-              <button type="button" class="eight-queens-btn primary" id="solveBtn-${this.id}" title="Résoudre avec l'IA">
-                🤖 Solveur
+              <button type="button" class="eight-queens-btn primary" id="solveBtn-${this.id}" title="${this.t('games.8queens.solver')}">
+                ${this.t('games.8queens.solver')}
               </button>
-              <button type="button" class="eight-queens-btn" id="resetBtn-${this.id}" title="Recommencer la partie">
-                🔄 Recommencer
+              <button type="button" class="eight-queens-btn" id="resetBtn-${this.id}" title="${this.t('games.8queens.restart')}">
+                ${this.t('games.8queens.restart')}
               </button>
             </div>
           </div>
@@ -140,8 +140,8 @@
             <div class="eight-queens-victory-modal" id="victoryModal-${this.id}" style="display:none;">
               <div class="victory-card">
                 <div class="victory-crown">👑</div>
-                <div class="victory-title">VICTOIRE !</div>
-                <div class="victory-subtitle">Vous avez placé les ${this.boardSize} dames sans aucun conflit !</div>
+                <div class="victory-title">${this.t('games.8queens.victory_title')}</div>
+                <div class="victory-subtitle" id="winSubtitle-${this.id}">${this.t('games.8queens.victory_subtitle', { size: this.boardSize })}</div>
                 <div class="victory-stats">
                   <div class="victory-stat-item">
                     <div class="victory-stat-val" id="winTimeVal-${this.id}">00:00</div>
@@ -153,15 +153,15 @@
                   </div>
                   <div class="victory-stat-item">
                     <div class="victory-stat-val">${this.allSolutions.length}</div>
-                    <div class="victory-stat-lbl">Solutions Possibles</div>
+                    <div class="victory-stat-lbl">Solutions</div>
                   </div>
                 </div>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                   <button type="button" class="eight-queens-btn primary" id="winPlayAgainBtn-${this.id}">
-                    🔄 Rejouer
+                    ${this.t('games.8queens.play_again')}
                   </button>
                   <button type="button" class="eight-queens-btn accent" id="winExploreBtn-${this.id}">
-                    📋 Explorer les Solutions
+                    ${this.t('games.8queens.explore_solutions')}
                   </button>
                 </div>
               </div>
@@ -171,13 +171,13 @@
           <!-- Bottom Solutions Browser Bar -->
           <div class="solution-browser-bar" id="solutionBar-${this.id}">
             <div style="display:flex;align-items:center;gap:8px;">
-              <span>📚 Base : <strong>${this.allSolutions.length} solutions trouvées</strong> (${this.boardSize}x${this.boardSize})</span>
+              <span id="solutionBaseLabel-${this.id}">${this.t('games.8queens.solutions_found', { count: this.allSolutions.length, size: this.boardSize })}</span>
               <span id="solIndexBadge-${this.id}" style="color:var(--text-muted);"></span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <button type="button" class="eight-queens-btn" id="prevSolBtn-${this.id}">◀ Précédente</button>
-              <button type="button" class="eight-queens-btn" id="nextSolBtn-${this.id}">Suivante ▶</button>
-              <button type="button" class="eight-queens-btn accent" id="autoPlayBtn-${this.id}">▶ Démo Auto</button>
+              <button type="button" class="eight-queens-btn" id="prevSolBtn-${this.id}">${this.t('games.8queens.prev_sol')}</button>
+              <button type="button" class="eight-queens-btn" id="nextSolBtn-${this.id}">${this.t('games.8queens.next_sol')}</button>
+              <button type="button" class="eight-queens-btn accent" id="autoPlayBtn-${this.id}">${this.t('games.8queens.auto_demo')}</button>
             </div>
           </div>
         </div>
@@ -224,6 +224,8 @@
       this.el.movesVal = document.getElementById(`movesVal-${this.id}`);
       this.el.victoryModal = document.getElementById(`victoryModal-${this.id}`);
       this.el.solIndexBadge = document.getElementById(`solIndexBadge-${this.id}`);
+      this.el.solutionBaseLabel = document.getElementById(`solutionBaseLabel-${this.id}`);
+      this.el.winSubtitle = document.getElementById(`winSubtitle-${this.id}`);
     }
 
     bindEvents() {
@@ -251,20 +253,20 @@
       window.MenuBarManager.registerAppMenu('8queens', (container) => {
         container.innerHTML = `
           <div class="app-menu-left">
-            <button type="button" class="app-menu-pill" id="menu8qNewBtn">🔄 Nouvelle Partie</button>
-            <button type="button" class="app-menu-pill" id="menu8qHintBtn">💡 Indice</button>
-            <button type="button" class="app-menu-pill" id="menu8qSolveBtn">🤖 Résoudre</button>
+            <button type="button" class="app-menu-pill" id="menu8qNewBtn">${this.t('games.8queens.new_game')}</button>
+            <button type="button" class="app-menu-pill" id="menu8qHintBtn">${this.t('games.8queens.hint')}</button>
+            <button type="button" class="app-menu-pill" id="menu8qSolveBtn">${this.t('games.8queens.solver')}</button>
             <select class="app-menu-pill" id="menu8qSizeSelect" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;">
-              ${[4,5,6,7,8,9,10,12].map(n => `<option value="${n}" ${n === this.boardSize ? 'selected' : ''} style="background:#1e293b;color:#fff;">Taille : ${n}x${n}</option>`).join('')}
+              ${[4,5,6,7,8,9,10,12].map(n => `<option value="${n}" ${n === this.boardSize ? 'selected' : ''} style="background:#1e293b;color:#fff;">${this.t('games.8queens.size_label', { size: n })}</option>`).join('')}
             </select>
             <select class="app-menu-pill" id="menu8qThemeSelect" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;">
-              <option value="cyber" ${this.theme === 'cyber' ? 'selected' : ''} style="background:#1e293b;color:#fff;">🎨 Cyber Néon</option>
-              <option value="wood" ${this.theme === 'wood' ? 'selected' : ''} style="background:#1e293b;color:#fff;">🎨 Bois Classique</option>
-              <option value="emerald" ${this.theme === 'emerald' ? 'selected' : ''} style="background:#1e293b;color:#fff;">🎨 Émeraude</option>
+              <option value="cyber" ${this.theme === 'cyber' ? 'selected' : ''} style="background:#1e293b;color:#fff;">${this.t('games.8queens.theme_cyber')}</option>
+              <option value="wood" ${this.theme === 'wood' ? 'selected' : ''} style="background:#1e293b;color:#fff;">${this.t('games.8queens.theme_wood')}</option>
+              <option value="emerald" ${this.theme === 'emerald' ? 'selected' : ''} style="background:#1e293b;color:#fff;">${this.t('games.8queens.theme_emerald')}</option>
             </select>
           </div>
           <div class="app-menu-right">
-            <button type="button" class="app-menu-pill" id="menu8qFsBtn">⛶ Plein Écran</button>
+            <button type="button" class="app-menu-pill" id="menu8qFsBtn">${this.t('games.8queens.fullscreen')}</button>
           </div>
         `;
 

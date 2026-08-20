@@ -1,0 +1,25 @@
+{
+  "translations": {
+    "games.pipe.title": "パイプ・コネクト＆ネットウォーク",
+    "games.pipe.connected_count": "⚡ {count}/{total} 接続済み",
+    "games.pipe.wrap_on": "🌐 循環マップ (トーラス)",
+    "games.pipe.wrap_off": "🌐 標準グリッド",
+    "games.pipe.wrap_btn_on": "🌐 循環マップ : ON",
+    "games.pipe.wrap_btn_off": "🌐 循環マップ : OFF",
+    "games.pipe.time": "⏱️ {time}",
+    "games.pipe.rotations": "🎯 {count} 回回転",
+    "games.pipe.hint": "💡 ヒント",
+    "games.pipe.solver": "🤖 解く",
+    "games.pipe.new_puzzle": "🔄 新規パズル",
+    "games.pipe.wrap_north": "▲ 北側ループ ▲",
+    "games.pipe.wrap_south": "▼ 南側ループ ▼",
+    "games.pipe.wrap_west": "◄ 西側ループ ◄",
+    "games.pipe.wrap_east": "► 東側ループ ►",
+    "games.pipe.hint_msg": "💡 強調表示されたパイプ (行 {row}、列 {col}) を確認してください！",
+    "games.pipe.victory_title": "ネットワーク完全接続！",
+    "games.pipe.victory_msg": "おめでとうございます！ 全 {size}x{size} のグリッドが {time}・{moves} 回の回転で漏れなく通電しました！",
+    "games.pipe.play_again": "🔄 新規パズル",
+    "games.pipe.size_select": "サイズ : {size}x{size}",
+    "games.pipe.fullscreen": "⛶ フルスクリーン"
+  }
+}

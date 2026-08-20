@@ -146,7 +146,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('hanoi')
-        : "Tours de Hanoï";
+        : (this.t('games.hanoi.title') || "Tours de Hanoï");
 
       const defaultW = Math.min(840, Math.max(540, Math.round(window.innerWidth * 0.70)));
       const defaultH = Math.min(680, Math.max(450, Math.round(window.innerHeight * 0.75)));
@@ -160,7 +160,7 @@
                 🗼 <span id="diskCountVal-${this.id}">${this.diskCount}</span> Disques
               </span>
               <span class="hanoi-stat-pill">
-                🎯 Coups : <strong id="movesVal-${this.id}">0</strong> / <span id="minMovesVal-${this.id}">${this.getMinMoves()}</span> (Optimal)
+                <span id="movesLabel-${this.id}">${this.t('games.hanoi.moves_count', { count: this.movesCount, min: this.getMinMoves() })}</span>
               </span>
               <span class="hanoi-stat-pill">
                 ⏱️ <span id="timerVal-${this.id}">00:00</span>
@@ -168,14 +168,14 @@
             </div>
 
             <div class="hanoi-controls">
-              <button type="button" class="hanoi-btn" id="hintBtn-${this.id}" title="Indication du prochain coup optimal">
-                💡 Indice
+              <button type="button" class="hanoi-btn" id="hintBtn-${this.id}" title="${this.t('games.hanoi.hint')}">
+                ${this.t('games.hanoi.hint')}
               </button>
-              <button type="button" class="hanoi-btn accent" id="solveBtn-${this.id}" title="Résolution automatique">
-                🤖 Démo Auto
+              <button type="button" class="hanoi-btn accent" id="solveBtn-${this.id}" title="${this.t('games.hanoi.auto_demo')}">
+                ${this.t('games.hanoi.auto_demo')}
               </button>
-              <button type="button" class="hanoi-btn primary" id="resetBtn-${this.id}" title="Recommencer la partie">
-                🔄 Recommencer
+              <button type="button" class="hanoi-btn primary" id="resetBtn-${this.id}" title="${this.t('games.hanoi.restart')}">
+                ${this.t('games.hanoi.restart')}
               </button>
             </div>
           </div>
@@ -190,36 +190,36 @@
               <div class="hanoi-peg-col" id="pegCol-${this.id}-0" data-peg="0">
                 <div class="hanoi-peg-pole"></div>
                 <div class="hanoi-disks-stack" id="pegStack-${this.id}-0"></div>
-                <div class="hanoi-peg-label">TOUR A (Départ)</div>
+                <div class="hanoi-peg-label">${this.t('games.hanoi.peg_a')}</div>
               </div>
 
               <!-- Peg B (1) -->
               <div class="hanoi-peg-col" id="pegCol-${this.id}-1" data-peg="1">
                 <div class="hanoi-peg-pole"></div>
                 <div class="hanoi-disks-stack" id="pegStack-${this.id}-1"></div>
-                <div class="hanoi-peg-label">TOUR B (Intermédiaire)</div>
+                <div class="hanoi-peg-label">${this.t('games.hanoi.peg_b')}</div>
               </div>
 
               <!-- Peg C (2) -->
               <div class="hanoi-peg-col" id="pegCol-${this.id}-2" data-peg="2">
                 <div class="hanoi-peg-pole"></div>
                 <div class="hanoi-disks-stack" id="pegStack-${this.id}-2"></div>
-                <div class="hanoi-peg-label">TOUR C (Arrivée)</div>
+                <div class="hanoi-peg-label">${this.t('games.hanoi.peg_c')}</div>
               </div>
             </div>
 
             <!-- Victory Modal -->
             <div class="hanoi-modal" id="victoryModal-${this.id}" style="display:none;">
               <div class="hanoi-card">
-                <div class="hanoi-card-title">🎉 FÉLICITATIONS !</div>
+                <div class="hanoi-card-title">${this.t('games.hanoi.victory_title')}</div>
                 <div class="hanoi-stars" id="winStars-${this.id}">⭐⭐⭐</div>
                 <p id="winMsg-${this.id}" style="color:#e2e8f0;margin-bottom:1.5rem;font-weight:600;"></p>
                 <div style="display:flex;gap:12px;justify-content:center;">
                   <button type="button" class="hanoi-btn primary" id="winPlayAgainBtn-${this.id}">
-                    🔄 Rejouer
+                    ${this.t('games.hanoi.play_again')}
                   </button>
                   <button type="button" class="hanoi-btn accent" id="winNextLevelBtn-${this.id}">
-                    ⏫ Niveau Suivant (+1 Disque)
+                    ${this.t('games.hanoi.next_level')}
                   </button>
                 </div>
               </div>
@@ -254,8 +254,7 @@
 
     cacheDom() {
       this.el.app = document.getElementById(`hanoiApp-${this.id}`);
-      this.el.movesVal = document.getElementById(`movesVal-${this.id}`);
-      this.el.minMovesVal = document.getElementById(`minMovesVal-${this.id}`);
+      this.el.movesLabel = document.getElementById(`movesLabel-${this.id}`);
       this.el.timerVal = document.getElementById(`timerVal-${this.id}`);
       this.el.diskCountVal = document.getElementById(`diskCountVal-${this.id}`);
       this.el.victoryModal = document.getElementById(`victoryModal-${this.id}`);
@@ -303,15 +302,15 @@
       window.MenuBarManager.registerAppMenu('hanoi', (container) => {
         container.innerHTML = `
           <div class="app-menu-left">
-            <button type="button" class="app-menu-pill" id="menuHanoiNewBtn">🔄 Recommencer</button>
-            <button type="button" class="app-menu-pill" id="menuHanoiHintBtn">💡 Indice</button>
-            <button type="button" class="app-menu-pill" id="menuHanoiSolveBtn">${this.autoSolveInterval ? '⏸ Pause' : '🤖 Résoudre'}</button>
+            <button type="button" class="app-menu-pill" id="menuHanoiNewBtn">${this.t('games.hanoi.restart')}</button>
+            <button type="button" class="app-menu-pill" id="menuHanoiHintBtn">${this.t('games.hanoi.hint')}</button>
+            <button type="button" class="app-menu-pill" id="menuHanoiSolveBtn">${this.autoSolveInterval ? this.t('games.hanoi.pause_demo') : this.t('games.hanoi.auto_demo')}</button>
             <select class="app-menu-pill" id="menuHanoiDisksSelect" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;">
-              ${[3,4,5,6,7,8].map(n => `<option value="${n}" ${n === this.diskCount ? 'selected' : ''} style="background:#1e1b4b;color:#fff;">${n} Disques (${Math.pow(2,n)-1} coups)</option>`).join('')}
+              ${[3,4,5,6,7,8].map(n => `<option value="${n}" ${n === this.diskCount ? 'selected' : ''} style="background:#1e1b4b;color:#fff;">${this.t('games.hanoi.disks_select', { count: n, moves: Math.pow(2,n)-1 })}</option>`).join('')}
             </select>
           </div>
           <div class="app-menu-right">
-            <button type="button" class="app-menu-pill" id="menuHanoiFsBtn">⛶ Plein Écran</button>
+            <button type="button" class="app-menu-pill" id="menuHanoiFsBtn">${this.t('games.hanoi.fullscreen')}</button>
           </div>
         `;
 
@@ -351,11 +350,10 @@
       if (this.win) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('hanoi')
-          : "Tours de Hanoï";
+          : (this.t('games.hanoi.title') || "Tours de Hanoï");
         this.win.setTitle(`${appTitle} (${this.diskCount} disques)`);
       }
       if (this.el.diskCountVal) this.el.diskCountVal.textContent = this.diskCount;
-      if (this.el.minMovesVal) this.el.minMovesVal.textContent = this.getMinMoves();
       this.resetPuzzle();
     }
 
@@ -389,7 +387,7 @@
         // ILLEGAL MOVE: Cannot put larger disk on top of smaller disk!
         this.sound.playError();
         if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
-          window.sys.desktop.showToast("⚠️ Coup impossible : un disque plus grand ne peut pas être posé sur un plus petit !", "warning");
+          window.sys.desktop.showToast(this.t('games.hanoi.illegal_move'), "warning");
         }
         this.selectedPeg = null;
         this.renderTowers();
@@ -407,7 +405,9 @@
     }
 
     renderTowers() {
-      if (this.el.movesVal) this.el.movesVal.textContent = this.movesCount;
+      if (this.el.movesLabel) {
+        this.el.movesLabel.innerHTML = this.t('games.hanoi.moves_count', { count: this.movesCount, min: this.getMinMoves() });
+      }
 
       this.pegs.forEach((stack, pegIdx) => {
         const stackEl = this.el.pegStacks[pegIdx];
@@ -454,14 +454,19 @@
 
       if (this.el.winStars) this.el.winStars.textContent = stars;
       if (this.el.winMsg) {
-        this.el.winMsg.textContent = `Résolu en ${moves} coups (Optimal : ${min}) en ${this.formatTime(this.elapsedSeconds)} - Efficacité : ${efficiency}% !`;
+        this.el.winMsg.textContent = this.t('games.hanoi.victory_msg', {
+          moves,
+          min,
+          time: this.formatTime(this.elapsedSeconds),
+          efficiency
+        });
       }
       if (this.el.victoryModal) {
         this.el.victoryModal.style.display = 'flex';
       }
 
       if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
-        window.sys.desktop.showToast(`🎉 Victoire ! Tours de Hanoï résolues en ${moves} coups !`, 'success');
+        window.sys.desktop.showToast(`🎉 ${this.t('games.hanoi.victory_title')}`, 'success');
       }
     }
 
@@ -479,9 +484,6 @@
       });
     }
 
-    /**
-     * Compute next optimal move using recursive solver generator
-     */
     showHint() {
       const moves = [];
       const solve = (n, from, to, aux) => {
@@ -494,7 +496,6 @@
         solve(n - 1, aux, to, from);
       };
 
-      // In initial state, solve from 0 to 2
       solve(this.diskCount, 0, 2, 1);
       const nextMove = moves[this.movesCount % moves.length];
       if (!nextMove) return;
@@ -505,7 +506,7 @@
 
       if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
         const pegNames = ['A', 'B', 'C'];
-        window.sys.desktop.showToast(`💡 Déplacez le disque de la Tour ${pegNames[nextMove.from]} vers la Tour ${pegNames[nextMove.to]}`, 'info');
+        window.sys.desktop.showToast(this.t('games.hanoi.hint_msg', { from: pegNames[nextMove.from], to: pegNames[nextMove.to] }), 'info');
       }
     }
 
@@ -515,7 +516,7 @@
       } else {
         this.resetPuzzle();
         const solveBtn = document.getElementById(`solveBtn-${this.id}`);
-        if (solveBtn) solveBtn.textContent = '⏸ Pause';
+        if (solveBtn) solveBtn.textContent = this.t('games.hanoi.pause_demo');
 
         const moves = [];
         const solve = (n, from, to, aux) => {
@@ -556,7 +557,7 @@
         clearInterval(this.autoSolveInterval);
         this.autoSolveInterval = null;
         const solveBtn = document.getElementById(`solveBtn-${this.id}`);
-        if (solveBtn) solveBtn.textContent = '🤖 Démo Auto';
+        if (solveBtn) solveBtn.textContent = this.t('games.hanoi.auto_demo');
       }
     }
 

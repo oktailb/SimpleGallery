@@ -122,7 +122,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('pipe')
-        : "Tuyaux & Réseau Connecté";
+        : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
 
       const defaultW = Math.min(760, Math.max(500, Math.round(window.innerWidth * 0.65)));
       const defaultH = Math.min(820, Math.max(540, Math.round(window.innerHeight * 0.85)));
@@ -136,7 +136,7 @@
                 ⚡ <span id="connectedCount-${this.id}">0</span>/<span id="totalCellsCount-${this.id}">${this.gridSize * this.gridSize}</span> Connectés
               </span>
               <span class="pipe-stat-pill ${this.isWrapAround ? 'wrap-mode' : ''}" id="wrapModePill-${this.id}">
-                🌐 ${this.isWrapAround ? 'Map Circulaire (Tore)' : 'Grille Standard'}
+                ${this.isWrapAround ? this.t('games.pipe.wrap_on') : this.t('games.pipe.wrap_off')}
               </span>
               <span class="pipe-stat-pill">
                 ⏱️ <span id="timerVal-${this.id}">00:00</span>
@@ -147,14 +147,14 @@
             </div>
 
             <div class="pipe-controls">
-              <button type="button" class="pipe-btn" id="hintBtn-${this.id}" title="Indiquer une section mal orientée">
-                💡 Indice
+              <button type="button" class="pipe-btn" id="hintBtn-${this.id}" title="${this.t('games.pipe.hint')}">
+                ${this.t('games.pipe.hint')}
               </button>
-              <button type="button" class="pipe-btn accent" id="solveBtn-${this.id}" title="Résolution automatique">
-                🤖 Résoudre
+              <button type="button" class="pipe-btn accent" id="solveBtn-${this.id}" title="${this.t('games.pipe.solver')}">
+                ${this.t('games.pipe.solver')}
               </button>
-              <button type="button" class="pipe-btn primary" id="resetBtn-${this.id}" title="Générer un nouveau puzzle">
-                🔄 Nouveau
+              <button type="button" class="pipe-btn primary" id="resetBtn-${this.id}" title="${this.t('games.pipe.new_puzzle')}">
+                ${this.t('games.pipe.new_puzzle')}
               </button>
             </div>
           </div>
@@ -163,10 +163,10 @@
           <div class="pipe-arena" id="pipeArena-${this.id}">
             <div class="pipe-grid-wrapper ${this.isWrapAround ? 'circular-wrap' : ''}" id="gridWrapper-${this.id}">
               ${this.isWrapAround ? `
-                <div class="wrap-indicator-top">▲ BOUCLE CYCLIQUE NORD ▲</div>
-                <div class="wrap-indicator-bottom">▼ BOUCLE CYCLIQUE SUD ▼</div>
-                <div class="wrap-indicator-left">◄ BOUCLE OUEST ◄</div>
-                <div class="wrap-indicator-right">► BOUCLE EST ►</div>
+                <div class="wrap-indicator-top">${this.t('games.pipe.wrap_north')}</div>
+                <div class="wrap-indicator-bottom">${this.t('games.pipe.wrap_south')}</div>
+                <div class="wrap-indicator-left">${this.t('games.pipe.wrap_west')}</div>
+                <div class="wrap-indicator-right">${this.t('games.pipe.wrap_east')}</div>
               ` : ''}
               <div class="pipe-grid" id="pipeGrid-${this.id}"></div>
             </div>
@@ -175,11 +175,11 @@
             <div class="pipe-modal" id="victoryModal-${this.id}" style="display:none;">
               <div class="pipe-card">
                 <div style="font-size:3.5rem;margin-bottom:0.5rem;">⚡</div>
-                <div class="pipe-card-title">RÉSEAU 100% CONNECTÉ !</div>
+                <div class="pipe-card-title">${this.t('games.pipe.victory_title')}</div>
                 <p id="winMsg-${this.id}" style="color:#e2e8f0;margin-bottom:1.5rem;font-weight:600;"></p>
                 <div style="display:flex;gap:12px;justify-content:center;">
                   <button type="button" class="pipe-btn primary" id="winPlayAgainBtn-${this.id}">
-                    🔄 Nouveau Puzzle
+                    ${this.t('games.pipe.play_again')}
                   </button>
                 </div>
               </div>
@@ -192,7 +192,7 @@
         id: this.winId,
         appId: 'pipe',
         appName: appTitle,
-        title: `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - Map Circulaire' : ''})`,
+        title: `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`,
         icon: '🔧',
         width: defaultW,
         height: defaultH,
@@ -244,18 +244,18 @@
       window.MenuBarManager.registerAppMenu('pipe', (container) => {
         container.innerHTML = `
           <div class="app-menu-left">
-            <button type="button" class="app-menu-pill" id="menuPipeNewBtn">🔄 Nouveau Puzzle</button>
-            <button type="button" class="app-menu-pill" id="menuPipeHintBtn">💡 Indice</button>
-            <button type="button" class="app-menu-pill" id="menuPipeSolveBtn">🤖 Résoudre</button>
+            <button type="button" class="app-menu-pill" id="menuPipeNewBtn">${this.t('games.pipe.new_puzzle')}</button>
+            <button type="button" class="app-menu-pill" id="menuPipeHintBtn">${this.t('games.pipe.hint')}</button>
+            <button type="button" class="app-menu-pill" id="menuPipeSolveBtn">${this.t('games.pipe.solver')}</button>
             <button type="button" class="app-menu-pill ${this.isWrapAround ? 'active' : ''}" id="menuPipeWrapBtn">
-              🌐 ${this.isWrapAround ? 'Map Circulaire : ON' : 'Map Circulaire : OFF'}
+              ${this.isWrapAround ? this.t('games.pipe.wrap_btn_on') : this.t('games.pipe.wrap_btn_off')}
             </button>
             <select class="app-menu-pill" id="menuPipeSizeSelect" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;">
-              ${[4,5,6,7,8].map(n => `<option value="${n}" ${n === this.gridSize ? 'selected' : ''} style="background:#0f172a;color:#fff;">Taille : ${n}x${n}</option>`).join('')}
+              ${[4,5,6,7,8].map(n => `<option value="${n}" ${n === this.gridSize ? 'selected' : ''} style="background:#0f172a;color:#fff;">${this.t('games.pipe.size_select', { size: n })}</option>`).join('')}
             </select>
           </div>
           <div class="app-menu-right">
-            <button type="button" class="app-menu-pill" id="menuPipeFsBtn">⛶ Plein Écran</button>
+            <button type="button" class="app-menu-pill" id="menuPipeFsBtn">${this.t('games.pipe.fullscreen')}</button>
           </div>
         `;
 
@@ -281,12 +281,12 @@
       if (this.win) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('pipe')
-          : "Tuyaux & Réseau Connecté";
-        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - Map Circulaire' : ''})`);
+          : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
       if (this.el.wrapModePill) {
         this.el.wrapModePill.className = `pipe-stat-pill ${this.isWrapAround ? 'wrap-mode' : ''}`;
-        this.el.wrapModePill.textContent = `🌐 ${this.isWrapAround ? 'Map Circulaire (Tore)' : 'Grille Standard'}`;
+        this.el.wrapModePill.textContent = this.isWrapAround ? this.t('games.pipe.wrap_on') : this.t('games.pipe.wrap_off');
       }
       if (this.el.gridWrapper) {
         if (this.isWrapAround) {
@@ -305,8 +305,8 @@
       if (this.win) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('pipe')
-          : "Tuyaux & Réseau Connecté";
-        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - Map Circulaire' : ''})`);
+          : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
       if (this.el.totalCellsCount) this.el.totalCellsCount.textContent = n * n;
       this.generatePuzzle();
@@ -603,8 +603,6 @@
       const mask = cell.baseMask; // [Up, Right, Down, Left]
       const paths = [];
 
-      // Center pivot (50, 50)
-      // Up: (50, 0), Right: (100, 50), Down: (50, 100), Left: (0, 50)
       if (mask[0]) paths.push('M50,50 L50,0');
       if (mask[1]) paths.push('M50,50 L100,50');
       if (mask[2]) paths.push('M50,50 L50,100');
@@ -652,7 +650,7 @@
               setTimeout(() => cellEl.classList.remove('hint-active'), 1800);
             }
             if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
-              window.sys.desktop.showToast(`💡 Regardez le tuyau en surbrillance (Ligne ${r+1}, Colonne ${c+1}) !`, 'info');
+              window.sys.desktop.showToast(this.t('games.pipe.hint_msg', { row: r + 1, col: c + 1 }), 'info');
             }
             return;
           }
@@ -677,13 +675,17 @@
 
     celebrateVictory() {
       if (this.el.winMsg) {
-        this.el.winMsg.textContent = `Félicitations ! L'intégralité du réseau ${this.gridSize}x${this.gridSize} est sous tension sans aucune fuite en ${this.movesCount} rotations et ${this.formatTime(this.elapsedSeconds)} !`;
+        this.el.winMsg.textContent = this.t('games.pipe.victory_msg', {
+          size: this.gridSize,
+          moves: this.movesCount,
+          time: this.formatTime(this.elapsedSeconds)
+        });
       }
       if (this.el.victoryModal) {
         this.el.victoryModal.style.display = 'flex';
       }
       if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
-        window.sys.desktop.showToast(`🎉 VICTOIRE ! Réseau de tuyaux 100% raccordé !`, 'success');
+        window.sys.desktop.showToast(`🎉 ${this.t('games.pipe.victory_title')}`, 'success');
       }
     }
 
