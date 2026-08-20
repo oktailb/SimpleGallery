@@ -160,45 +160,81 @@ body {
   flex-shrink: 0;
 }
 
-/* Breadcrumbs (Compact Header Bar Mode) */
-.breadcrumbs {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0 0.75rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  white-space: nowrap;
-  flex-shrink: 0;
-  height: 32px;
+/* -------------------------------------------------------------
+ * Breadcrumbs Bar (Dedicated Explorer Navigation Zone)
+ * ------------------------------------------------------------- */
+.webos-explorer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100%;
   box-sizing: border-box;
 }
 
+.breadcrumbs-container {
+  width: 100%;
+  max-width: var(--max-width, 1600px);
+  margin: 0.6rem auto 0.2rem auto;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.breadcrumbs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.breadcrumbs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
 .crumb-item {
-  color: var(--text-muted);
+  color: var(--text-muted, #94a3b8);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  transition: color 0.2s ease;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
   font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 6px;
 }
 
 .crumb-item:hover {
-  color: var(--accent-primary);
+  color: var(--accent-primary, #6366f1);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .crumb-separator {
-  color: var(--text-muted);
-  opacity: 0.5;
-  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.45;
+  font-size: 0.75rem;
+  user-select: none;
 }
 
 .crumb-active {
-  color: var(--text-main);
+  color: var(--text-main, #f8fafc);
   font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* Toolbar Controls */

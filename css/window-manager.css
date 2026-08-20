@@ -284,3 +284,14 @@
   opacity: 0.65;
   border-style: dashed;
 }
+
+/* App Explorer Window Customization */
+.webos-window.app-explorer {
+  background: var(--bg-main, #0f172a);
+}
+
+.webos-window.app-explorer .window-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+}

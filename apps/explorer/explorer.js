@@ -53,11 +53,41 @@
       if (window.MenuBarManager) window.MenuBarManager.init('appHeaderZone');
 
       this.initElements();
+      this.initWindow();
       this.loadSavedPreferences();
       this.bindMenuBar();
       this.bindEvents();
       this.initMarqueeSelection();
       this.handleUrlChange();
+    }
+
+    initWindow() {
+      if (!window.WindowManager) return;
+      const container = document.getElementById('explorerAppContainer');
+      if (!container) return;
+
+      const appTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('explorer')
+        : (this.t('apps.explorer.title') || "Explorateur de Galerie");
+
+      this.win = window.WindowManager.createWindow({
+        id: 'explorer-main',
+        appId: 'explorer',
+        appName: appTitle,
+        title: this.state.galleryTitle,
+        icon: '🗂️',
+        isMaximized: true,
+        state: 'maximized',
+        content: container,
+        onFocus: () => {
+          if (window.MenuBarManager) {
+            window.MenuBarManager.setActiveApp('explorer');
+          }
+        },
+        onClose: () => {
+          if (window.EventBus) window.EventBus.emit('explorer:closed');
+        }
+      });
     }
 
     initElements() {
@@ -183,11 +213,6 @@
       window.MenuBarManager.registerAppMenu('explorer', (container) => {
         container.innerHTML = `
           <div class="explorer-header-bar">
-            <!-- Breadcrumbs Nav -->
-            <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb Navigation">
-              <span class="crumb-item crumb-active">${this.escapeHtml(this.state.galleryTitle)}</span>
-            </nav>
-
             <!-- Search Box -->
             <div class="search-box">
               <span class="search-icon">🔍</span>
@@ -426,24 +451,27 @@
     // -------------------------------------------------------------
     handleUrlChange() {
       const params = new URLSearchParams(window.location.search);
-      const dir = params.get('dir') || '';
+      let dir = params.get('dir') || '';
+      if (dir === '.') dir = '';
       this.loadDirectory(dir);
     }
 
     navigateTo(dirPath) {
+      const cleanPath = (dirPath === '.' || !dirPath) ? '' : dirPath;
       const url = new URL(window.location);
-      if (dirPath) {
-        url.searchParams.set('dir', dirPath);
+      if (cleanPath) {
+        url.searchParams.set('dir', cleanPath);
       } else {
-        url.searchParams.delete('dir');
+        url.searchParams.set('dir', '.');
       }
       window.history.pushState({}, '', url);
-      this.loadDirectory(dirPath);
+      this.loadDirectory(cleanPath);
     }
 
     async loadDirectory(dirPath) {
+      const cleanPath = (dirPath === '.' || !dirPath) ? '' : dirPath;
       this.showLoading(true);
-      this.state.currentPath = dirPath;
+      this.state.currentPath = cleanPath;
 
       try {
         const res = await fetch(`api.php?dir=${encodeURIComponent(dirPath)}`);
@@ -527,8 +555,10 @@
         if (isLast) {
           return `<span class="crumb-item crumb-active">${this.escapeHtml(crumb.name)}</span>`;
         }
+        const targetPath = (crumb.path === undefined || crumb.path === null || crumb.path === '') ? '.' : crumb.path;
+        const href = (targetPath === '.') ? '?dir=.' : `?dir=${encodeURIComponent(targetPath)}`;
         return `
-          <a href="?dir=${encodeURIComponent(crumb.path)}" class="crumb-item" data-path="${crumb.path}">
+          <a href="${href}" class="crumb-item" data-path="${targetPath}">
             ${this.escapeHtml(crumb.name)}
           </a>
           <span class="crumb-separator">/</span>
@@ -573,6 +603,14 @@
           }
         };
       });
+
+      // Update Explorer Window Title
+      if (window.WindowManager) {
+        const lastCrumb = (crumbs && crumbs.length) ? crumbs[crumbs.length - 1] : null;
+        const folderName = lastCrumb ? lastCrumb.name : this.state.galleryTitle;
+        const fullTitle = (crumbs && crumbs.length > 1) ? `${this.state.galleryTitle} : ${folderName}` : this.state.galleryTitle;
+        window.WindowManager.setTitle('explorer-main', fullTitle);
+      }
     }
 
     renderFolders(folders) {
