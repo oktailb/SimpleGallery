@@ -202,11 +202,6 @@ class AppManager {
             case 'explorer':
                 if (window.explorerApp && typeof window.explorerApp.open === 'function') {
                     window.explorerApp.open(params);
-                } else if (window.WindowManager) {
-                    if (window.WindowManager.windows.has('explorer-main')) {
-                        window.WindowManager.restoreWindow('explorer-main');
-                        window.WindowManager.focusWindow('explorer-main');
-                    }
                 }
                 break;
 
