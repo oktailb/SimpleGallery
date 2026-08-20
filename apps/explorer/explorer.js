@@ -823,9 +823,7 @@
           }
           if (this.manager && this.manager.instances) {
             this.manager.instances.forEach(inst => {
-              if (inst.win && inst.win.state !== 'minimized') {
-                inst.loadDirectory(inst.state.currentPath);
-              }
+              inst.loadDirectory(inst.state.currentPath);
             });
           }
         } else {
@@ -1722,12 +1720,10 @@
       this.bindGlobalModals();
 
       // Listen for filesystem changes across all instances
-      if (window.EventBus) {
+      if (window.EventBus && typeof window.EventBus.on === 'function') {
         window.EventBus.on('fs:changed', () => {
           this.instances.forEach(inst => {
-            if (inst.win && inst.win.state !== 'minimized') {
-              inst.loadDirectory(inst.state.currentPath);
-            }
+            inst.loadDirectory(inst.state.currentPath);
           });
         });
       }
