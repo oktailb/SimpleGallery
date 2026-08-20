@@ -1071,14 +1071,25 @@
       }
 
       // Background override
-      if (this.el.webosDesktop && overrides.background) {
-        if (overrides.background.startsWith('#') || overrides.background.startsWith('rgb')) {
-          this.el.webosDesktop.style.backgroundColor = overrides.background;
-          this.el.webosDesktop.style.backgroundImage = 'none';
+      if (this.el.webosDesktop) {
+        if (overrides && overrides.background) {
+          const bg = overrides.background;
+          if (bg.startsWith('#') || bg.startsWith('rgb') || bg.startsWith('hsl') || bg.startsWith('linear-gradient') || bg.startsWith('radial-gradient')) {
+            this.el.webosDesktop.style.backgroundColor = bg;
+            this.el.webosDesktop.style.backgroundImage = 'none';
+          } else {
+            const url = bg.startsWith('url(') ? bg : `url("${bg}")`;
+            this.el.webosDesktop.style.backgroundImage = url;
+            this.el.webosDesktop.style.backgroundSize = 'cover';
+            this.el.webosDesktop.style.backgroundPosition = 'center';
+            this.el.webosDesktop.style.backgroundRepeat = 'no-repeat';
+          }
         } else {
-          this.el.webosDesktop.style.backgroundImage = `url(${overrides.background})`;
-          this.el.webosDesktop.style.backgroundSize = 'cover';
-          this.el.webosDesktop.style.backgroundPosition = 'center';
+          this.el.webosDesktop.style.backgroundImage = '';
+          this.el.webosDesktop.style.backgroundColor = '';
+          this.el.webosDesktop.style.backgroundSize = '';
+          this.el.webosDesktop.style.backgroundPosition = '';
+          this.el.webosDesktop.style.backgroundRepeat = '';
         }
       }
     }
