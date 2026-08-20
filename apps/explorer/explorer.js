@@ -811,6 +811,7 @@
           body: JSON.stringify(payload)
         });
 
+        const json = await res.json();
         if (json.success) {
           this.clearSelection();
           const targetName = targetDir ? targetDir.split('/').pop() : 'la racine';
