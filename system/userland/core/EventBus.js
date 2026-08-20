@@ -44,3 +44,4 @@ class EventBus {
 
 window.sys = window.sys || {};
 window.sys.events = new EventBus();
+window.EventBus = window.sys.events;

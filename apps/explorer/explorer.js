@@ -811,17 +811,21 @@
           body: JSON.stringify(payload)
         });
 
-        const json = await res.json();
         if (json.success) {
           this.clearSelection();
           const targetName = targetDir ? targetDir.split('/').pop() : 'la racine';
           this.showToast(json.message || `${sourcePaths.length} élément(s) déplacé(s) vers « ${targetName} »`, 'success');
 
-          // Notify all open instances in real time via EventBus
-          if (window.EventBus) {
+          // Notify all open instances (source, destination and others) in real time
+          if (window.EventBus && typeof window.EventBus.emit === 'function') {
             window.EventBus.emit('fs:changed', { sourcePaths, targetDir });
-          } else {
-            await this.loadDirectory(this.state.currentPath);
+          }
+          if (this.manager && this.manager.instances) {
+            this.manager.instances.forEach(inst => {
+              if (inst.win && inst.win.state !== 'minimized') {
+                inst.loadDirectory(inst.state.currentPath);
+              }
+            });
           }
         } else {
           this.showToast('⚠️ ' + (json.error || 'Erreur lors du déplacement'), 'error');
