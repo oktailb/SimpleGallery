@@ -133,16 +133,16 @@
           <div class="pipe-header">
             <div class="pipe-stats">
               <span class="pipe-stat-pill connected" id="connectedPill-${this.id}">
-                ⚡ <span id="connectedCount-${this.id}">0</span>/<span id="totalCellsCount-${this.id}">${this.gridSize * this.gridSize}</span> Connectés
+                ${this.t('games.pipe.connected_count', { count: 0, total: this.gridSize * this.gridSize })}
               </span>
               <span class="pipe-stat-pill ${this.isWrapAround ? 'wrap-mode' : ''}" id="wrapModePill-${this.id}">
                 ${this.isWrapAround ? this.t('games.pipe.wrap_on') : this.t('games.pipe.wrap_off')}
               </span>
-              <span class="pipe-stat-pill">
+              <span class="pipe-stat-pill" id="timerPill-${this.id}">
                 ⏱️ <span id="timerVal-${this.id}">00:00</span>
               </span>
-              <span class="pipe-stat-pill">
-                🎯 <span id="movesVal-${this.id}">0</span> Rotations
+              <span class="pipe-stat-pill" id="movesPill-${this.id}">
+                ${this.t('games.pipe.rotations', { count: 0 })}
               </span>
             </div>
 
@@ -218,10 +218,9 @@
       this.el.app = document.getElementById(`pipeApp-${this.id}`);
       this.el.grid = document.getElementById(`pipeGrid-${this.id}`);
       this.el.gridWrapper = document.getElementById(`gridWrapper-${this.id}`);
-      this.el.connectedCount = document.getElementById(`connectedCount-${this.id}`);
-      this.el.totalCellsCount = document.getElementById(`totalCellsCount-${this.id}`);
+      this.el.connectedPill = document.getElementById(`connectedPill-${this.id}`);
+      this.el.movesPill = document.getElementById(`movesPill-${this.id}`);
       this.el.timerVal = document.getElementById(`timerVal-${this.id}`);
-      this.el.movesVal = document.getElementById(`movesVal-${this.id}`);
       this.el.wrapModePill = document.getElementById(`wrapModePill-${this.id}`);
       this.el.victoryModal = document.getElementById(`victoryModal-${this.id}`);
       this.el.winMsg = document.getElementById(`winMsg-${this.id}`);
@@ -476,7 +475,9 @@
       }
 
       // Update UI connected count
-      if (this.el.connectedCount) this.el.connectedCount.textContent = connectedCount;
+      if (this.el.connectedPill) {
+        this.el.connectedPill.textContent = this.t('games.pipe.connected_count', { count: connectedCount, total: n * n });
+      }
 
       // Update DOM cell classes
       for (let r = 0; r < n; r++) {
@@ -582,7 +583,9 @@
       const cell = this.grid[r][c];
       cell.currentAngle += deltaAngle;
       this.movesCount++;
-      if (this.el.movesVal) this.el.movesVal.textContent = this.movesCount;
+      if (this.el.movesPill) {
+        this.el.movesPill.textContent = this.t('games.pipe.rotations', { count: this.movesCount });
+      }
 
       const svg = document.getElementById(`pipeSvg-${this.id}-${r}-${c}`);
       if (svg) {
@@ -718,12 +721,67 @@
       const s = (sec % 60).toString().padStart(2, '0');
       return `${m}:${s}`;
     }
+
+    updateLocale() {
+      const appTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('pipe')
+        : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+
+      if (this.win) {
+        this.win.setTitle(`${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
+      }
+
+      if (this.el.wrapModePill) {
+        this.el.wrapModePill.textContent = this.isWrapAround ? this.t('games.pipe.wrap_on') : this.t('games.pipe.wrap_off');
+      }
+
+      const hintBtn = document.getElementById(`hintBtn-${this.id}`);
+      const solveBtn = document.getElementById(`solveBtn-${this.id}`);
+      const resetBtn = document.getElementById(`resetBtn-${this.id}`);
+      const winPlayAgainBtn = document.getElementById(`winPlayAgainBtn-${this.id}`);
+      const winTitle = this.el.victoryModal ? this.el.victoryModal.querySelector('.pipe-card-title') : null;
+
+      if (hintBtn) { hintBtn.textContent = this.t('games.pipe.hint'); hintBtn.title = this.t('games.pipe.hint'); }
+      if (solveBtn) { solveBtn.textContent = this.t('games.pipe.solver'); solveBtn.title = this.t('games.pipe.solver'); }
+      if (resetBtn) { resetBtn.textContent = this.t('games.pipe.new_puzzle'); resetBtn.title = this.t('games.pipe.new_puzzle'); }
+      if (winPlayAgainBtn) winPlayAgainBtn.textContent = this.t('games.pipe.play_again');
+      if (winTitle) winTitle.textContent = this.t('games.pipe.victory_title');
+
+      if (this.isWrapAround && this.el.gridWrapper) {
+        const topInd = this.el.gridWrapper.querySelector('.wrap-indicator-top');
+        const btmInd = this.el.gridWrapper.querySelector('.wrap-indicator-bottom');
+        const leftInd = this.el.gridWrapper.querySelector('.wrap-indicator-left');
+        const rightInd = this.el.gridWrapper.querySelector('.wrap-indicator-right');
+        if (topInd) topInd.textContent = this.t('games.pipe.wrap_north');
+        if (btmInd) btmInd.textContent = this.t('games.pipe.wrap_south');
+        if (leftInd) leftInd.textContent = this.t('games.pipe.wrap_west');
+        if (rightInd) rightInd.textContent = this.t('games.pipe.wrap_east');
+      }
+
+      if (this.isWon) {
+        this.celebrateVictory();
+      }
+
+      this.recalculateFlow();
+      this.updateMenuBar();
+    }
   }
 
   class WebOSPipeApp {
     constructor() {
       this.instances = new Map();
       this.instanceCounter = 0;
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', () => {
+          this.instances.forEach(inst => inst.updateLocale());
+        });
+      }
+    }
+
+    t(key, replacements = {}) {
+      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
+      return key;
     }
 
     open(options = {}) {

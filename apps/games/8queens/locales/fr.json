@@ -3,8 +3,11 @@
     "games.8queens.title": "Jeu des 8 Dames",
     "games.8queens.queens_count": "👑 {count}/{total} Dames",
     "games.8queens.conflicts_count": "⚡ {count} Conflits",
-    "games.8queens.moves": "🎯 {count} Coups",
-    "games.8queens.time": "⏱️ Temps : {time}",
+    "games.8queens.moves_count": "🎯 {count} Coups",
+    "games.8queens.time": "⏱️ {time}",
+    "games.8queens.time_lbl": "Temps",
+    "games.8queens.moves_lbl": "Coups",
+    "games.8queens.solutions_lbl": "Solutions Possibles",
     "games.8queens.hint": "💡 Indice",
     "games.8queens.solver": "🤖 Solveur",
     "games.8queens.restart": "🔄 Recommencer",
@@ -23,6 +26,8 @@
     "games.8queens.theme_cyber": "🎨 Cyber Néon",
     "games.8queens.theme_wood": "🎨 Bois Classique",
     "games.8queens.theme_emerald": "🎨 Émeraude",
-    "games.8queens.fullscreen": "⛶ Plein Écran"
+    "games.8queens.fullscreen": "⛶ Plein Écran",
+    "games.8queens.hint_safe": "💡 Essayez de placer une dame sur une case verte mise en surbrillance !",
+    "games.8queens.hint_stuck": "⚠️ Aucun coup sûr immédiat : essayez de déplacer ou retirer une dame existante."
   }
 }

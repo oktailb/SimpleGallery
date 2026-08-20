@@ -584,12 +584,66 @@
       const s = (sec % 60).toString().padStart(2, '0');
       return `${m}:${s}`;
     }
+
+    updateLocale() {
+      const appTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('hanoi')
+        : (this.t('games.hanoi.title') || "Tours de Hanoï");
+
+      if (this.win) {
+        this.win.setTitle(`${appTitle} (${this.diskCount} disques)`);
+      }
+
+      if (this.el.diskCountVal) this.el.diskCountVal.textContent = this.diskCount;
+      if (this.el.movesLabel) {
+        this.el.movesLabel.innerHTML = this.t('games.hanoi.moves_count', { count: this.movesCount, min: this.getMinMoves() });
+      }
+
+      const hintBtn = document.getElementById(`hintBtn-${this.id}`);
+      const solveBtn = document.getElementById(`solveBtn-${this.id}`);
+      const resetBtn = document.getElementById(`resetBtn-${this.id}`);
+      const winPlayAgainBtn = document.getElementById(`winPlayAgainBtn-${this.id}`);
+      const winNextLevelBtn = document.getElementById(`winNextLevelBtn-${this.id}`);
+      const winTitle = this.el.victoryModal ? this.el.victoryModal.querySelector('.hanoi-card-title') : null;
+
+      if (hintBtn) { hintBtn.textContent = this.t('games.hanoi.hint'); hintBtn.title = this.t('games.hanoi.hint'); }
+      if (solveBtn) { solveBtn.textContent = this.autoSolveInterval ? this.t('games.hanoi.pause_demo') : this.t('games.hanoi.auto_demo'); }
+      if (resetBtn) { resetBtn.textContent = this.t('games.hanoi.restart'); resetBtn.title = this.t('games.hanoi.restart'); }
+      if (winPlayAgainBtn) winPlayAgainBtn.textContent = this.t('games.hanoi.play_again');
+      if (winNextLevelBtn) winNextLevelBtn.textContent = this.t('games.hanoi.next_level');
+      if (winTitle) winTitle.textContent = this.t('games.hanoi.victory_title');
+
+      const pegNames = [this.t('games.hanoi.peg_a'), this.t('games.hanoi.peg_b'), this.t('games.hanoi.peg_c')];
+      this.el.pegCols.forEach((col, idx) => {
+        if (col) {
+          const lbl = col.querySelector('.hanoi-peg-label');
+          if (lbl) lbl.textContent = pegNames[idx];
+        }
+      });
+
+      if (this.isWon) {
+        this.celebrateVictory();
+      }
+
+      this.updateMenuBar();
+    }
   }
 
   class WebOSHanoiApp {
     constructor() {
       this.instances = new Map();
       this.instanceCounter = 0;
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', () => {
+          this.instances.forEach(inst => inst.updateLocale());
+        });
+      }
+    }
+
+    t(key, replacements = {}) {
+      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
+      return key;
     }
 
     open(options = {}) {

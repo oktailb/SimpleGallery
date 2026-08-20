@@ -3,8 +3,11 @@
     "games.8queens.title": "8 Queens Puzzle",
     "games.8queens.queens_count": "👑 {count}/{total} Queens",
     "games.8queens.conflicts_count": "⚡ {count} Conflicts",
-    "games.8queens.moves": "🎯 {count} Moves",
-    "games.8queens.time": "⏱️ Time : {time}",
+    "games.8queens.moves_count": "🎯 {count} Moves",
+    "games.8queens.time": "⏱️ {time}",
+    "games.8queens.time_lbl": "Time",
+    "games.8queens.moves_lbl": "Moves",
+    "games.8queens.solutions_lbl": "Possible Solutions",
     "games.8queens.hint": "💡 Hint",
     "games.8queens.solver": "🤖 Solver",
     "games.8queens.restart": "🔄 Restart",
@@ -23,6 +26,8 @@
     "games.8queens.theme_cyber": "🎨 Cyber Neon",
     "games.8queens.theme_wood": "🎨 Classic Wood",
     "games.8queens.theme_emerald": "🎨 Emerald",
-    "games.8queens.fullscreen": "⛶ Fullscreen"
+    "games.8queens.fullscreen": "⛶ Fullscreen",
+    "games.8queens.hint_safe": "💡 Try placing a queen on a highlighted green square!",
+    "games.8queens.hint_stuck": "⚠️ No immediate safe square: Try moving or removing an existing queen."
   }
 }

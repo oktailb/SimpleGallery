@@ -93,16 +93,16 @@
           <div class="eight-queens-header">
             <div class="eight-queens-stats">
               <span class="eight-queens-stat-pill success" id="queensCountPill-${this.id}">
-                👑 <span id="placedCount-${this.id}">0</span>/${this.boardSize} Dames
+                ${this.t('games.8queens.queens_count', { count: 0, total: this.boardSize })}
               </span>
               <span class="eight-queens-stat-pill" id="conflictPill-${this.id}">
-                ⚡ <span id="conflictCount-${this.id}">0</span> Conflits
+                ${this.t('games.8queens.conflicts_count', { count: 0 })}
               </span>
-              <span class="eight-queens-stat-pill">
+              <span class="eight-queens-stat-pill" id="timerPill-${this.id}">
                 ⏱️ <span id="timerVal-${this.id}">00:00</span>
               </span>
-              <span class="eight-queens-stat-pill">
-                🎯 <span id="movesVal-${this.id}">0</span> Coups
+              <span class="eight-queens-stat-pill" id="movesPill-${this.id}">
+                ${this.t('games.8queens.moves_count', { count: 0 })}
               </span>
             </div>
 
@@ -145,15 +145,15 @@
                 <div class="victory-stats">
                   <div class="victory-stat-item">
                     <div class="victory-stat-val" id="winTimeVal-${this.id}">00:00</div>
-                    <div class="victory-stat-lbl">Temps</div>
+                    <div class="victory-stat-lbl" id="winTimeLbl-${this.id}">${this.t('games.8queens.time_lbl')}</div>
                   </div>
                   <div class="victory-stat-item">
                     <div class="victory-stat-val" id="winMovesVal-${this.id}">0</div>
-                    <div class="victory-stat-lbl">Coups</div>
+                    <div class="victory-stat-lbl" id="winMovesLbl-${this.id}">${this.t('games.8queens.moves_lbl')}</div>
                   </div>
                   <div class="victory-stat-item">
                     <div class="victory-stat-val">${this.allSolutions.length}</div>
-                    <div class="victory-stat-lbl">Solutions</div>
+                    <div class="victory-stat-lbl" id="winSolLbl-${this.id}">${this.t('games.8queens.solutions_lbl')}</div>
                   </div>
                 </div>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
@@ -217,9 +217,9 @@
       this.el.canvas = document.getElementById(`threatCanvas-${this.id}`);
       this.el.colLabels = document.getElementById(`colLabels-${this.id}`);
       this.el.rowLabels = document.getElementById(`rowLabels-${this.id}`);
-      this.el.placedCount = document.getElementById(`placedCount-${this.id}`);
-      this.el.conflictCount = document.getElementById(`conflictCount-${this.id}`);
+      this.el.queensCountPill = document.getElementById(`queensCountPill-${this.id}`);
       this.el.conflictPill = document.getElementById(`conflictPill-${this.id}`);
+      this.el.movesPill = document.getElementById(`movesPill-${this.id}`);
       this.el.timerVal = document.getElementById(`timerVal-${this.id}`);
       this.el.movesVal = document.getElementById(`movesVal-${this.id}`);
       this.el.victoryModal = document.getElementById(`victoryModal-${this.id}`);
@@ -481,11 +481,11 @@
       const placed = this.queens.length;
       const { count } = this.getConflicts();
 
-      if (this.el.placedCount) this.el.placedCount.textContent = placed;
-      if (this.el.conflictCount) this.el.conflictCount.textContent = count;
-      if (this.el.movesVal) this.el.movesVal.textContent = this.movesCount;
-
+      if (this.el.queensCountPill) {
+        this.el.queensCountPill.textContent = this.t('games.8queens.queens_count', { count: placed, total: n });
+      }
       if (this.el.conflictPill) {
+        this.el.conflictPill.textContent = this.t('games.8queens.conflicts_count', { count });
         if (count > 0) {
           this.el.conflictPill.className = 'eight-queens-stat-pill danger';
         } else if (placed === n) {
@@ -493,6 +493,9 @@
         } else {
           this.el.conflictPill.className = 'eight-queens-stat-pill';
         }
+      }
+      if (this.el.movesPill) {
+        this.el.movesPill.textContent = this.t('games.8queens.moves_count', { count: this.movesCount });
       }
     }
 
@@ -518,7 +521,7 @@
       }
 
       if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
-        window.sys.desktop.showToast(`🎉 VICTOIRE ! Échiquier ${this.boardSize}x${this.boardSize} résolu en ${this.formatTime(this.elapsedSeconds)} !`, 'success');
+        window.sys.desktop.showToast(`🎉 ${this.t('games.8queens.victory_title')}`, 'success');
       }
     }
 
@@ -531,6 +534,14 @@
     toggleHints() {
       this.showSafeHints = !this.showSafeHints;
       this.renderBoard();
+      if (this.showSafeHints && window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
+        const safe = this.getSafeSpots();
+        if (safe.size > 0) {
+          window.sys.desktop.showToast(this.t('games.8queens.hint_safe'), 'info');
+        } else {
+          window.sys.desktop.showToast(this.t('games.8queens.hint_stuck'), 'warning');
+        }
+      }
     }
 
     showNextSolution() {
@@ -554,7 +565,7 @@
       this.stopTimer();
 
       if (this.el.solIndexBadge) {
-        this.el.solIndexBadge.textContent = `(Solution ${idx + 1} / ${this.allSolutions.length})`;
+        this.el.solIndexBadge.textContent = this.t('games.8queens.solution_badge', { current: idx + 1, total: this.allSolutions.length });
       }
 
       this.renderBoard();
@@ -565,7 +576,7 @@
         this.stopAutoPlay();
       } else {
         const autoBtn = document.getElementById(`autoPlayBtn-${this.id}`);
-        if (autoBtn) autoBtn.textContent = '⏸ Pause';
+        if (autoBtn) autoBtn.textContent = this.t('games.8queens.pause_demo');
         this.showNextSolution();
         this.autoPlayInterval = setInterval(() => {
           this.showNextSolution();
@@ -578,7 +589,7 @@
         clearInterval(this.autoPlayInterval);
         this.autoPlayInterval = null;
         const autoBtn = document.getElementById(`autoPlayBtn-${this.id}`);
-        if (autoBtn) autoBtn.textContent = '▶ Démo Auto';
+        if (autoBtn) autoBtn.textContent = this.t('games.8queens.auto_demo');
       }
     }
 
@@ -626,14 +637,12 @@
       if (this.win) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('8queens')
-          : "Jeu des 8 Dames";
+          : (this.t('games.8queens.title') || "Jeu des 8 Dames");
         this.win.setTitle(`${appTitle} (${this.boardSize}x${this.boardSize})`);
       }
 
-      const solBar = document.getElementById(`solutionBar-${this.id}`);
-      if (solBar) {
-        const strong = solBar.querySelector('strong');
-        if (strong) strong.textContent = `${this.allSolutions.length} solutions trouvées`;
+      if (this.el.solutionBaseLabel) {
+        this.el.solutionBaseLabel.innerHTML = this.t('games.8queens.solutions_found', { count: this.allSolutions.length, size: this.boardSize });
       }
 
       this.restart();
@@ -646,12 +655,63 @@
       }
       this.renderBoard();
     }
+
+    updateLocale() {
+      const appTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('8queens')
+        : (this.t('games.8queens.title') || "Jeu des 8 Dames");
+
+      if (this.win) {
+        this.win.setTitle(`${appTitle} (${this.boardSize}x${this.boardSize})`);
+      }
+
+      this.updateStats();
+
+      const hintBtn = document.getElementById(`hintBtn-${this.id}`);
+      const solveBtn = document.getElementById(`solveBtn-${this.id}`);
+      const resetBtn = document.getElementById(`resetBtn-${this.id}`);
+      const prevSolBtn = document.getElementById(`prevSolBtn-${this.id}`);
+      const nextSolBtn = document.getElementById(`nextSolBtn-${this.id}`);
+      const autoPlayBtn = document.getElementById(`autoPlayBtn-${this.id}`);
+      const winPlayAgainBtn = document.getElementById(`winPlayAgainBtn-${this.id}`);
+      const winExploreBtn = document.getElementById(`winExploreBtn-${this.id}`);
+      const winTitle = this.el.victoryModal ? this.el.victoryModal.querySelector('.victory-title') : null;
+      const winTimeLbl = document.getElementById(`winTimeLbl-${this.id}`);
+      const winMovesLbl = document.getElementById(`winMovesLbl-${this.id}`);
+      const winSolLbl = document.getElementById(`winSolLbl-${this.id}`);
+
+      if (hintBtn) { hintBtn.textContent = this.t('games.8queens.hint'); hintBtn.title = this.t('games.8queens.hint'); }
+      if (solveBtn) { solveBtn.textContent = this.t('games.8queens.solver'); solveBtn.title = this.t('games.8queens.solver'); }
+      if (resetBtn) { resetBtn.textContent = this.t('games.8queens.restart'); resetBtn.title = this.t('games.8queens.restart'); }
+      if (prevSolBtn) prevSolBtn.textContent = this.t('games.8queens.prev_sol');
+      if (nextSolBtn) nextSolBtn.textContent = this.t('games.8queens.next_sol');
+      if (autoPlayBtn) autoPlayBtn.textContent = this.autoPlayInterval ? this.t('games.8queens.pause_demo') : this.t('games.8queens.auto_demo');
+      if (winPlayAgainBtn) winPlayAgainBtn.textContent = this.t('games.8queens.play_again');
+      if (winExploreBtn) winExploreBtn.textContent = this.t('games.8queens.explore_solutions');
+      if (winTitle) winTitle.textContent = this.t('games.8queens.victory_title');
+      if (winTimeLbl) winTimeLbl.textContent = this.t('games.8queens.time_lbl');
+      if (winMovesLbl) winMovesLbl.textContent = this.t('games.8queens.moves_lbl');
+      if (winSolLbl) winSolLbl.textContent = this.t('games.8queens.solutions_lbl');
+      if (this.el.winSubtitle) this.el.winSubtitle.textContent = this.t('games.8queens.victory_subtitle', { size: this.boardSize });
+      if (this.el.solutionBaseLabel) this.el.solutionBaseLabel.innerHTML = this.t('games.8queens.solutions_found', { count: this.allSolutions.length, size: this.boardSize });
+      if (this.solutionIndex >= 0 && this.el.solIndexBadge) {
+        this.el.solIndexBadge.textContent = this.t('games.8queens.solution_badge', { current: this.solutionIndex + 1, total: this.allSolutions.length });
+      }
+
+      this.updateMenuBar();
+    }
   }
 
   class WebOS8QueensApp {
     constructor() {
       this.instances = new Map();
       this.instanceCounter = 0;
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', () => {
+          this.instances.forEach(inst => inst.updateLocale());
+        });
+      }
     }
 
     t(key, replacements = {}) {

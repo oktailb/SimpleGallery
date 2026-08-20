@@ -780,12 +780,51 @@
 
       ctx.restore();
     }
+    updateLocale() {
+      const appTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('foot')
+        : (this.t('games.foot.title') || "Foot Pong Arcade");
+
+      if (this.win) {
+        this.win.setTitle(`${appTitle} (1v1)`);
+      }
+
+      const playerTeam = this.el.app ? this.el.app.querySelector('.foot-team.player span:first-child') : null;
+      const cpuTeam = this.el.app ? this.el.app.querySelector('.foot-team.cpu span:last-child') : null;
+      const pauseBtn = document.getElementById(`pauseBtn-${this.id}`);
+      const resetBtn = document.getElementById(`resetBtn-${this.id}`);
+      const replayBtn = document.getElementById(`modalReplayBtn-${this.id}`);
+
+      if (playerTeam) playerTeam.textContent = this.t('games.foot.player');
+      if (cpuTeam) cpuTeam.textContent = this.t('games.foot.cpu');
+      if (this.el.diffBadge) this.el.diffBadge.textContent = this.getDiffLabel();
+      if (pauseBtn) pauseBtn.textContent = this.isPaused ? this.t('games.foot.resume') : this.t('games.foot.pause');
+      if (resetBtn) resetBtn.textContent = this.t('games.foot.new_match');
+      if (replayBtn) replayBtn.textContent = this.t('games.foot.replay');
+
+      if (this.isGameOver) {
+        this.endMatch();
+      }
+
+      this.updateMenuBar();
+    }
   }
 
   class WebOSFootApp {
     constructor() {
       this.instances = new Map();
       this.instanceCounter = 0;
+
+      if (window.sys && window.sys.events) {
+        window.sys.events.on('locale:changed', () => {
+          this.instances.forEach(inst => inst.updateLocale());
+        });
+      }
+    }
+
+    t(key, replacements = {}) {
+      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
+      return key;
     }
 
     open(options = {}) {
