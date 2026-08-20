@@ -47,8 +47,7 @@
       this.currentTileLayerName = 'streets';
 
       this.emptyDragImage = new Image();
-      this.emptyDragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
+      window.explorerApp = this;
       if (window.WindowManager) window.WindowManager.init();
       if (window.MenuBarManager) window.MenuBarManager.init('appHeaderZone');
 
@@ -58,36 +57,74 @@
       this.bindMenuBar();
       this.bindEvents();
       this.initMarqueeSelection();
-      this.handleUrlChange();
+      this.loadDirectory('');
     }
 
     initWindow() {
       if (!window.WindowManager) return;
-      const container = document.getElementById('explorerAppContainer');
-      if (!container) return;
+      if (!this.containerEl) {
+        this.containerEl = document.getElementById('explorerAppContainer');
+      }
+      if (!this.containerEl) return;
 
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('explorer')
         : (this.t('apps.explorer.title') || "Explorateur de Galerie");
 
+      const lastCrumb = (this.state.currentBreadcrumbs && this.state.currentBreadcrumbs.length)
+        ? this.state.currentBreadcrumbs[this.state.currentBreadcrumbs.length - 1]
+        : null;
+      const folderName = lastCrumb ? lastCrumb.name : this.state.galleryTitle;
+      const fullTitle = (this.state.currentBreadcrumbs && this.state.currentBreadcrumbs.length > 1)
+        ? `${this.state.galleryTitle} : ${folderName}`
+        : this.state.galleryTitle;
+
       this.win = window.WindowManager.createWindow({
         id: 'explorer-main',
         appId: 'explorer',
         appName: appTitle,
-        title: this.state.galleryTitle,
+        title: fullTitle,
         icon: '🗂️',
         isMaximized: true,
         state: 'maximized',
-        content: container,
+        content: this.containerEl,
         onFocus: () => {
           if (window.MenuBarManager) {
             window.MenuBarManager.setActiveApp('explorer');
           }
         },
         onClose: () => {
+          if (this.containerEl && this.containerEl.parentNode) {
+            this.containerEl.parentNode.removeChild(this.containerEl);
+          }
+          this.win = null;
           if (window.EventBus) window.EventBus.emit('explorer:closed');
+          if (window.MenuBarManager) {
+            window.MenuBarManager.restoreDefaultMenu();
+          }
         }
       });
+
+      if (window.MenuBarManager) {
+        window.MenuBarManager.setActiveApp('explorer');
+      }
+    }
+
+    open(params = {}) {
+      if (params.dir !== undefined) {
+        this.navigateTo(params.dir);
+      }
+      if (!this.win || !window.WindowManager || !window.WindowManager.windows.has('explorer-main')) {
+        this.initWindow();
+      } else {
+        if (this.win.state === 'minimized') {
+          window.WindowManager.restoreWindow('explorer-main');
+        }
+        window.WindowManager.focusWindow('explorer-main');
+      }
+      if (window.MenuBarManager) {
+        window.MenuBarManager.setActiveApp('explorer');
+      }
     }
 
     initElements() {
@@ -449,32 +486,19 @@
     // -------------------------------------------------------------
     // NAVIGATION & DIRECTORY LOADING
     // -------------------------------------------------------------
-    handleUrlChange() {
-      const params = new URLSearchParams(window.location.search);
-      let dir = params.get('dir') || '';
-      if (dir === '.') dir = '';
-      this.loadDirectory(dir);
-    }
-
     navigateTo(dirPath) {
-      const cleanPath = (dirPath === '.' || !dirPath) ? '' : dirPath;
-      const url = new URL(window.location);
-      if (cleanPath) {
-        url.searchParams.set('dir', cleanPath);
-      } else {
-        url.searchParams.set('dir', '.');
-      }
-      window.history.pushState({}, '', url);
+      const cleanPath = (dirPath === '.' || !dirPath) ? '' : String(dirPath).trim();
       this.loadDirectory(cleanPath);
     }
 
     async loadDirectory(dirPath) {
-      const cleanPath = (dirPath === '.' || !dirPath) ? '' : dirPath;
+      const cleanPath = (dirPath === '.' || !dirPath) ? '' : String(dirPath).trim();
       this.showLoading(true);
       this.state.currentPath = cleanPath;
 
       try {
-        const res = await fetch(`api.php?dir=${encodeURIComponent(dirPath)}`);
+        const query = cleanPath ? `dir=${encodeURIComponent(cleanPath)}` : 'dir=';
+        const res = await fetch(`api.php?${query}&_t=${Date.now()}`);
         const json = await res.json();
 
         if (!json.success) {
@@ -555,38 +579,42 @@
         if (isLast) {
           return `<span class="crumb-item crumb-active">${this.escapeHtml(crumb.name)}</span>`;
         }
-        const targetPath = (crumb.path === undefined || crumb.path === null || crumb.path === '') ? '.' : crumb.path;
-        const href = (targetPath === '.') ? '?dir=.' : `?dir=${encodeURIComponent(targetPath)}`;
+        const targetPath = (crumb.path === undefined || crumb.path === null || crumb.path === '.') ? '' : crumb.path;
         return `
-          <a href="${href}" class="crumb-item" data-path="${targetPath}">
+          <button type="button" class="crumb-item crumb-btn" data-path="${targetPath}">
             ${this.escapeHtml(crumb.name)}
-          </a>
+          </button>
           <span class="crumb-separator">/</span>
         `;
       }).join('');
 
-      nav.querySelectorAll('a[data-path]').forEach(link => {
-        const destPath = link.dataset.path;
-        link.onclick = (e) => {
-          e.preventDefault();
-          this.navigateTo(destPath);
-        };
+      nav.onclick = (e) => {
+        const btn = e.target.closest('.crumb-item');
+        if (!btn || btn.classList.contains('crumb-active')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const destPath = btn.getAttribute('data-path') !== null ? btn.getAttribute('data-path') : '';
+        this.navigateTo(destPath);
+      };
+
+      nav.querySelectorAll('.crumb-btn').forEach(btn => {
+        const destPath = btn.getAttribute('data-path') !== null ? btn.getAttribute('data-path') : '';
 
         // Breadcrumb as Drop Target
-        link.ondragover = (e) => {
+        btn.ondragover = (e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
         };
-        link.ondragenter = (e) => {
+        btn.ondragenter = (e) => {
           e.preventDefault();
-          link.classList.add('drag-over');
+          btn.classList.add('drag-over');
         };
-        link.ondragleave = (e) => {
-          if (!link.contains(e.relatedTarget)) link.classList.remove('drag-over');
+        btn.ondragleave = (e) => {
+          if (!btn.contains(e.relatedTarget)) btn.classList.remove('drag-over');
         };
-        link.ondrop = async (e) => {
+        btn.ondrop = async (e) => {
           e.preventDefault();
-          link.classList.remove('drag-over');
+          btn.classList.remove('drag-over');
           if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             this.handleUploadFiles(e.dataTransfer.files, destPath);
             return;
@@ -632,7 +660,7 @@
         const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="${this.escapeHtml(this.t('folder.delete_title'))}">🗑️</button>` : '';
 
         return `
-          <a href="?dir=${encodeURIComponent(folder.path)}" class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="${isDraggable}">
+          <div class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="${isDraggable}" role="button" tabindex="0">
             ${deleteBtnHtml}
             ${badge}
             <div class="folder-icon-wrapper">
@@ -643,7 +671,7 @@
               <span>${this.escapeHtml(this.t('folder.items_count', { count: folder.item_count }))}</span>
             </div>
             ${folder.comment ? `<div class="folder-comment">💬 ${this.escapeHtml(folder.comment)}</div>` : ''}
-          </a>
+          </div>
         `;
       }).join('');
 
@@ -1864,8 +1892,6 @@
     // GLOBAL EVENTS
     // -------------------------------------------------------------
     bindEvents() {
-      window.addEventListener('popstate', () => this.handleUrlChange());
-
       // Prevent default browser behavior (opening file) for unhandled drag & drop across entire window
       ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         window.addEventListener(eventName, (e) => {

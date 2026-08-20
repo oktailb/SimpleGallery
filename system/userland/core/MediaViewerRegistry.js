@@ -93,6 +93,10 @@
       return fallback;
     }
 
+    getViewerForFile(file) {
+      return this.findViewer(file);
+    }
+
     open(file, options = {}, context = {}) {
       const viewer = this.findViewer(file);
       if (!viewer) {

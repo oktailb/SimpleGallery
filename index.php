@@ -109,12 +109,23 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <?php endif; ?>
   <?php endforeach; ?>
 
+  <?php
+  $desktop_config_file = __DIR__ . '/config/desktop.json';
+  $desktop_config = ['shortcuts' => []];
+  if (file_exists($desktop_config_file)) {
+      $parsed_desktop = json_decode((string)file_get_contents($desktop_config_file), true);
+      if (is_array($parsed_desktop)) {
+          $desktop_config = $parsed_desktop;
+      }
+  }
+  ?>
   <script>
     window.SG_I18N_CONFIG = <?php echo json_encode([
       'locales'      => $available_locales,
       'default'      => $default_locale,
       'translations' => $initial_translations
     ], JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+    window.SG_DESKTOP_CONFIG = <?php echo json_encode($desktop_config, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
     window.CSRF_TOKEN = <?php echo json_encode(get_csrf_token()); ?>;
     window.SG_CSRF_TOKEN = window.CSRF_TOKEN;
     window.IS_ADMIN = <?php echo is_admin_logged_in() ? 'true' : 'false'; ?>;
@@ -129,10 +140,19 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <!-- WebOS Top System & Application Bar (macOS Style) -->
   <header class="app-header">
     <div class="header-container">
-      <!-- 1. OS Brand Section (Apple-menu style) -->
-      <div class="brand-section">
-        <div class="brand-logo">📸</div>
-        <h1 class="brand-title"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></h1>
+      <!-- 1. OS Brand Section (Apple-menu style Application Launcher) -->
+      <div class="brand-section" id="brandSection">
+        <button type="button" id="appLauncherBtn" class="app-launcher-btn" title="Menu des Applications WebOS" data-i18n-title="nav.apps_menu">
+          <span class="brand-logo">📸</span>
+          <h1 class="brand-title"><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></h1>
+          <span class="brand-arrow">▾</span>
+        </button>
+        <div id="appLauncherMenu" class="app-launcher-menu" style="display: none;">
+          <div class="app-launcher-header">
+            <span class="app-launcher-title" data-i18n="nav.apps_menu">Applications</span>
+          </div>
+          <div id="appLauncherList" class="app-launcher-list"></div>
+        </div>
       </div>
 
       <!-- 2. Dynamic Contextual Application Zone (Colonized by Active App via MenuBarManager) -->
@@ -167,6 +187,11 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
 
   <!-- WebOS Desktop & Workspace Container -->
   <div id="webosDesktop" class="webos-desktop">
+
+    <!-- Permanent Desktop Surface & Shortcuts Grid (Non-closable WebOS Base Layer) -->
+    <div id="desktopSurface" class="desktop-surface">
+      <div id="desktopShortcuts" class="desktop-shortcuts-grid"></div>
+    </div>
 
   <!-- Lightbox Modal -->
   <div id="lightbox" class="lightbox-modal" role="dialog" aria-hidden="true">

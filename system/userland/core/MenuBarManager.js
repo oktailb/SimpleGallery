@@ -74,15 +74,15 @@
     }
 
     /**
-     * Restores default menu (e.g. Explorer)
+     * Restores default menu (Empty clean desktop bar when no windows are open)
      */
     restoreDefaultMenu() {
-      this.activeAppId = 'explorer';
-      if (this.registeredMenus.has('explorer')) {
-        this.renderMenu('explorer');
-      } else if (this.defaultMenuRenderer) {
+      this.activeAppId = null;
+      if (this.container) {
         this.container.innerHTML = '';
-        this.defaultMenuRenderer(this.container);
+        if (typeof this.defaultMenuRenderer === 'function') {
+          this.defaultMenuRenderer(this.container);
+        }
       }
     }
 

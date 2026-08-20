@@ -27,11 +27,18 @@
       this.initI18n();
       this.initAdmin();
       this.initCookieConsent();
+      this.initAppLauncher();
+      this.initDesktopShortcuts();
     }
 
     initElements() {
       this.el = {
         webosDesktop: document.getElementById('webosDesktop'),
+        appLauncherBtn: document.getElementById('appLauncherBtn'),
+        appLauncherMenu: document.getElementById('appLauncherMenu'),
+        appLauncherList: document.getElementById('appLauncherList'),
+        desktopSurface: document.getElementById('desktopSurface'),
+        desktopShortcuts: document.getElementById('desktopShortcuts'),
         langSelectorContainer: document.getElementById('langSelectorContainer'),
         langSelectorBtn: document.getElementById('langSelectorBtn'),
         langDropdownMenu: document.getElementById('langDropdownMenu'),
@@ -148,6 +155,16 @@
       return str;
     }
 
+    escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     async setLocale(code) {
       if (!code) return;
       this.state.currentLocale = code;
@@ -254,6 +271,124 @@
         const key = el.dataset.i18nPlaceholder;
         const trans = this.t(key);
         if (trans && trans !== key) el.setAttribute('placeholder', trans);
+      });
+
+      this.renderDesktopShortcuts();
+    }
+
+    // -------------------------------------------------------------
+    // APPLICATION LAUNCHER MENU & DESKTOP ICONS
+    // -------------------------------------------------------------
+    initAppLauncher() {
+      const btn = this.el.appLauncherBtn || document.getElementById('appLauncherBtn');
+      const menu = this.el.appLauncherMenu || document.getElementById('appLauncherMenu');
+      if (!btn || !menu) return;
+
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = menu.style.display !== 'none';
+        if (isOpen) {
+          this.closeAppLauncher();
+        } else {
+          this.renderAppLauncherMenu();
+          menu.style.display = 'flex';
+          btn.classList.add('active');
+        }
+      };
+
+      document.addEventListener('click', (e) => {
+        if (!btn.contains(e.target) && !menu.contains(e.target)) {
+          this.closeAppLauncher();
+        }
+      });
+    }
+
+    closeAppLauncher() {
+      const btn = this.el.appLauncherBtn || document.getElementById('appLauncherBtn');
+      const menu = this.el.appLauncherMenu || document.getElementById('appLauncherMenu');
+      if (menu) menu.style.display = 'none';
+      if (btn) btn.classList.remove('active');
+    }
+
+    renderAppLauncherMenu() {
+      const listEl = this.el.appLauncherList || document.getElementById('appLauncherList');
+      if (!listEl) return;
+
+      const appMgr = window.sys && window.sys.appManager;
+      const apps = appMgr ? appMgr.getAllApps() : [];
+
+      if (!apps || apps.length === 0) {
+        listEl.innerHTML = `<div style="padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">Aucune application enregistrée</div>`;
+        return;
+      }
+
+      listEl.innerHTML = apps.map(app => `
+        <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}">
+          <span class="app-launcher-icon">${app.icon || '🗔'}</span>
+          <div class="app-launcher-info">
+            <span class="app-launcher-name">${this.escapeHtml(app.name)}</span>
+            <span class="app-launcher-desc">${this.escapeHtml(app.description || '')}</span>
+          </div>
+        </button>
+      `).join('');
+
+      listEl.querySelectorAll('.app-launcher-item').forEach(item => {
+        item.onclick = (e) => {
+          e.stopPropagation();
+          this.closeAppLauncher();
+          const appId = item.dataset.appId;
+          if (appMgr && typeof appMgr.launchApp === 'function') {
+            appMgr.launchApp(appId);
+          }
+        };
+      });
+    }
+
+    initDesktopShortcuts() {
+      this.renderDesktopShortcuts();
+    }
+
+    renderDesktopShortcuts() {
+      const container = this.el.desktopShortcuts || document.getElementById('desktopShortcuts');
+      if (!container) return;
+
+      const config = window.SG_DESKTOP_CONFIG || {};
+      const shortcuts = (config.shortcuts || []).filter(s => s.enabled !== false);
+
+      if (shortcuts.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const appMgr = window.sys && window.sys.appManager;
+
+      container.innerHTML = shortcuts.map(shortcut => {
+        let label = shortcut.defaultName || shortcut.appId;
+        if (shortcut.nameKey) {
+          const trans = this.t(shortcut.nameKey);
+          if (trans && trans !== shortcut.nameKey) label = trans;
+        } else if (appMgr) {
+          label = appMgr.getAppTitle(shortcut.appId);
+        }
+
+        return `
+          <button type="button" class="desktop-shortcut-card" data-app-id="${this.escapeHtml(shortcut.appId)}" title="${this.escapeHtml(label)}">
+            <div class="desktop-shortcut-icon">${shortcut.icon || '🗔'}</div>
+            <span class="desktop-shortcut-label">${this.escapeHtml(label)}</span>
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.desktop-shortcut-card').forEach(card => {
+        const launch = (e) => {
+          e.stopPropagation();
+          const appId = card.dataset.appId;
+          if (appMgr && typeof appMgr.launchApp === 'function') {
+            appMgr.launchApp(appId);
+          }
+        };
+
+        card.onclick = launch;
       });
     }
 

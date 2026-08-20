@@ -379,6 +379,8 @@
       const initialLayer = this.tileLayers[this.currentLayer] || this.tileLayers.streets;
 
       this.leafletMap = window.L.map(container, {
+        center: [46.603354, 1.888334],
+        zoom: 5,
         layers: [initialLayer],
         zoomControl: true
       });
@@ -590,9 +592,12 @@
         }, 150);
       } else if (latLngs.length > 0) {
         this.recenterMap();
+      } else {
+        this.leafletMap.setView([46.603354, 1.888334], 5);
       }
 
-      setTimeout(() => { if (this.leafletMap) this.leafletMap.invalidateSize(); }, 200);
+      setTimeout(() => { if (this.leafletMap) this.leafletMap.invalidateSize(); }, 100);
+      setTimeout(() => { if (this.leafletMap) this.leafletMap.invalidateSize(); }, 350);
     }
 
     bindWindowControls() {

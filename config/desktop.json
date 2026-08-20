@@ -1,0 +1,28 @@
+{
+  "shortcuts": [
+    {
+      "id": "explorer",
+      "appId": "explorer",
+      "icon": "🗂️",
+      "nameKey": "apps.explorer.title",
+      "defaultName": "Explorateur de Galerie",
+      "enabled": true
+    },
+    {
+      "id": "maps",
+      "appId": "maps",
+      "icon": "🗺️",
+      "nameKey": "apps.maps.title",
+      "defaultName": "Carte GPS & Trajet",
+      "enabled": true
+    },
+    {
+      "id": "settings",
+      "appId": "settings",
+      "icon": "⚙️",
+      "nameKey": "nav.admin",
+      "defaultName": "Administration & Matrice",
+      "enabled": true
+    }
+  ]
+}
