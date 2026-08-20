@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -55,6 +55,18 @@ if ($action === 'get_locale') {
         'code'         => $code,
         'translations' => $translations
     ]);
+    exit;
+}
+
+if ($action === 'view_file' || $action === 'raw_file') {
+    $file_param = $_GET['file'] ?? $raw_body['file'] ?? '';
+    $file_full = sanitize_file_path($file_param, $real_base_dir);
+    if ($file_full === null || !is_file($file_full)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Fichier introuvable']);
+        exit;
+    }
+    header('Location: thumb.php?file=' . rawurlencode($file_param) . '&raw=1', true, 302);
     exit;
 }
 
@@ -690,6 +702,83 @@ if ($action === 'save_folder_settings') {
     echo json_encode([
         'success' => true,
         'message' => 'Paramètres du dossier enregistrés avec succès'
+    ]);
+    exit;
+}
+
+if ($action === 'save_desktop_shortcuts') {
+    $shortcuts = $raw_body['shortcuts'] ?? $_POST['shortcuts'] ?? null;
+    if (!is_array($shortcuts)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Liste de raccourcis invalide']);
+        exit;
+    }
+
+    $config_dir = __DIR__ . '/config';
+    if (!is_dir($config_dir)) {
+        @mkdir($config_dir, 0755, true);
+    }
+    $desktop_file = $config_dir . '/desktop.json';
+
+    $existing = ['shortcuts' => []];
+    if (file_exists($desktop_file)) {
+        $parsed = json_decode((string)file_get_contents($desktop_file), true);
+        if (is_array($parsed)) $existing = $parsed;
+    }
+
+    // Clean and validate shortcuts
+    $sanitized = [];
+    foreach ($shortcuts as $s) {
+        if (!is_array($s)) continue;
+        $sanitized[] = [
+            'id'          => (string)($s['id'] ?? uniqid('sc_')),
+            'type'        => (string)($s['type'] ?? 'app'),
+            'appId'       => isset($s['appId']) ? (string)$s['appId'] : null,
+            'path'        => isset($s['path']) ? (string)$s['path'] : null,
+            'name'        => (string)($s['name'] ?? ''),
+            'defaultName' => (string)($s['defaultName'] ?? ($s['name'] ?? '')),
+            'nameKey'     => isset($s['nameKey']) ? (string)$s['nameKey'] : null,
+            'icon'        => (string)($s['icon'] ?? '📁'),
+            'thumb_url'   => isset($s['thumb_url']) ? (string)$s['thumb_url'] : null,
+            'cover_url'   => isset($s['cover_url']) ? (string)$s['cover_url'] : null,
+            'category'    => isset($s['category']) ? (string)$s['category'] : null,
+            'extension'   => isset($s['extension']) ? (string)$s['extension'] : null,
+            'enabled'     => $s['enabled'] !== false
+        ];
+    }
+
+    $existing['shortcuts'] = $sanitized;
+    $encoded = json_encode($existing, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $written = @file_put_contents($desktop_file, $encoded);
+
+    if ($written !== false) {
+        echo json_encode([
+            'success'   => true,
+            'message'   => 'Configuration du bureau enregistrée',
+            'shortcuts' => $sanitized
+        ]);
+    } else {
+        // Return success with local_only flag so frontend continues smoothly without 500 status
+        echo json_encode([
+            'success'    => true,
+            'local_only' => true,
+            'warning'    => 'Impossible d\'écrire config/desktop.json (permissions disque)',
+            'shortcuts'  => $sanitized
+        ]);
+    }
+    exit;
+}
+
+if ($action === 'get_desktop_shortcuts') {
+    $desktop_file = __DIR__ . '/config/desktop.json';
+    $config = ['shortcuts' => []];
+    if (file_exists($desktop_file)) {
+        $parsed = json_decode((string)file_get_contents($desktop_file), true);
+        if (is_array($parsed)) $config = $parsed;
+    }
+    echo json_encode([
+        'success'   => true,
+        'shortcuts' => $config['shortcuts'] ?? []
     ]);
     exit;
 }

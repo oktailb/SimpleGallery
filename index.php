@@ -59,6 +59,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
   <!-- Userland System Runtime (Core OS Bus, WindowManager, MenuBar, Registries, Syscalls, AppManager, I18n) -->
+  <script src="system/userland/core/IconHelper.js" defer></script>
   <script src="system/userland/core/EventBus.js" defer></script>
   <script src="system/userland/core/SyscallClient.js" defer></script>
   <script src="system/userland/core/MenuBarManager.js" defer></script>

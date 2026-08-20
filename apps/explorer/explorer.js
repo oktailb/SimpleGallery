@@ -431,12 +431,11 @@
       this.el.folderSection.style.display = 'block';
       this.el.foldersGrid.innerHTML = folders.map(folder => {
         const badge = folder.is_protected ? '<span class="folder-badge lock-badge">🔒</span>' : '';
-        const isDraggable = canMove ? 'true' : 'false';
         const handleClass = canMove ? 'drag-handle' : '';
         const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="${this.escapeHtml(this.t('folder.delete_title'))}">🗑️</button>` : '';
 
         return `
-          <div class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="${isDraggable}" role="button" tabindex="0">
+          <div class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="true" role="button" tabindex="0">
             ${deleteBtnHtml}
             ${badge}
             <div class="folder-icon-wrapper">
@@ -453,6 +452,9 @@
 
       this.el.foldersGrid.querySelectorAll('.folder-card').forEach(card => {
         const folderPath = card.dataset.path;
+        const folderObj = (folders && folders.find(fd => fd.path === folderPath)) || {};
+        const folderName = folderObj.name || card.querySelector('.folder-name')?.textContent || folderPath.split('/').pop();
+        const folderCover = folderObj.cover || folderObj.cover_url || '';
 
         card.onclick = (e) => {
           e.preventDefault();
@@ -475,26 +477,37 @@
         }
 
         // Folder as Drag Source
-        if (canMove) {
-          card.ondragstart = (e) => {
-            this.state.draggingPaths = [folderPath];
-            this.state.draggingItemPath = folderPath;
-            window.SG_DRAGGING_PATHS = [folderPath];
-            window.SG_DRAG_SOURCE_INSTANCE = this.id;
-            e.dataTransfer.setData('text/plain', JSON.stringify([folderPath]));
-            e.dataTransfer.setData('application/json', JSON.stringify([folderPath]));
-            e.dataTransfer.effectAllowed = 'move';
-            card.classList.add('is-dragging');
+        card.ondragstart = (e) => {
+          this.state.draggingPaths = [folderPath];
+          this.state.draggingItemPath = folderPath;
+          window.SG_DRAGGING_PATHS = [folderPath];
+          window.SG_DRAG_SOURCE_INSTANCE = this.id;
+
+          const folderData = {
+            type: 'folder',
+            path: folderPath,
+            name: folderName,
+            icon: folderObj.icon || '📁',
+            cover_url: folderCover
           };
-          card.ondragend = () => {
-            this.state.draggingPaths = null;
-            this.state.draggingItemPath = null;
-            window.SG_DRAGGING_PATHS = null;
-            window.SG_DRAG_SOURCE_INSTANCE = null;
-            document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
-            document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-          };
-        }
+          window.SG_DRAGGING_ITEM_DATA = folderData;
+
+          e.dataTransfer.setData('text/plain', JSON.stringify([folderPath]));
+          e.dataTransfer.setData('application/json', JSON.stringify([folderPath]));
+          e.dataTransfer.setData('application/sg-item', JSON.stringify(folderData));
+          e.dataTransfer.effectAllowed = 'copyMove';
+          card.classList.add('is-dragging');
+        };
+
+        card.ondragend = () => {
+          this.state.draggingPaths = null;
+          this.state.draggingItemPath = null;
+          window.SG_DRAGGING_PATHS = null;
+          window.SG_DRAG_SOURCE_INSTANCE = null;
+          window.SG_DRAGGING_ITEM_DATA = null;
+          document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+          document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+        };
 
         // Folder as Drop Target (Cross-window & local)
         card.ondragover = (e) => {
@@ -712,9 +725,26 @@
             window.SG_DRAGGING_PATHS = pathsToMove;
             window.SG_DRAG_SOURCE_INSTANCE = this.id;
 
+            const fileIcon = window.IconHelper ? window.IconHelper.getFileIcon(file) : '📄';
+            const fileUrl = file.file_url || (`thumb.php?file=${encodeURIComponent(file.path)}&raw=1`);
+            const thumbUrl = file.thumb_url || (`thumb.php?file=${encodeURIComponent(file.path)}`);
+            const fileData = {
+              type: 'file',
+              path: file.path,
+              name: file.name,
+              category: file.category || '',
+              extension: file.extension || (file.name.split('.').pop() || '').toLowerCase(),
+              thumb_url: thumbUrl,
+              file_url: fileUrl,
+              size_formatted: file.size_formatted || '',
+              icon: fileIcon
+            };
+            window.SG_DRAGGING_ITEM_DATA = fileData;
+
             e.dataTransfer.setData('text/plain', JSON.stringify(pathsToMove));
             e.dataTransfer.setData('application/json', JSON.stringify(pathsToMove));
-            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/sg-item', JSON.stringify(fileData));
+            e.dataTransfer.effectAllowed = 'copyMove';
 
             card.classList.add('is-dragging');
             document.querySelectorAll('.media-card.selected, .polaroid-card.selected, .grid-card.selected, .list-row.selected').forEach(c => {
@@ -727,6 +757,7 @@
             this.state.draggingItemPath = null;
             window.SG_DRAGGING_PATHS = null;
             window.SG_DRAG_SOURCE_INSTANCE = null;
+            window.SG_DRAGGING_ITEM_DATA = null;
             document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
             document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
           };

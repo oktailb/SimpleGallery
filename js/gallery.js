@@ -334,7 +334,7 @@
       }
 
       listEl.innerHTML = apps.map(app => `
-        <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}">
+        <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}" draggable="true">
           <span class="app-launcher-icon">${app.icon || '🗔'}</span>
           <div class="app-launcher-info">
             <span class="app-launcher-name">${this.escapeHtml(app.name)}</span>
@@ -344,19 +344,56 @@
       `).join('');
 
       listEl.querySelectorAll('.app-launcher-item').forEach(item => {
+        const appId = item.dataset.appId;
+        const app = apps.find(a => a.id === appId) || { id: appId, name: appId, icon: '🗔' };
+
         item.onclick = (e) => {
           e.stopPropagation();
           this.closeAppLauncher();
-          const appId = item.dataset.appId;
           if (appMgr && typeof appMgr.launchApp === 'function') {
             appMgr.launchApp(appId);
           }
+        };
+
+        item.ondragstart = (e) => {
+          const appData = {
+            type: 'app',
+            appId: app.id,
+            name: app.name,
+            defaultName: app.name,
+            icon: app.icon || '🗔'
+          };
+          window.SG_DRAGGING_ITEM_DATA = appData;
+          e.dataTransfer.setData('text/plain', JSON.stringify({ appId: app.id }));
+          e.dataTransfer.setData('application/json', JSON.stringify({ appId: app.id }));
+          e.dataTransfer.setData('application/sg-item', JSON.stringify(appData));
+          e.dataTransfer.effectAllowed = 'copy';
+          item.classList.add('is-dragging');
+        };
+
+        item.ondragend = () => {
+          window.SG_DRAGGING_ITEM_DATA = null;
+          item.classList.remove('is-dragging');
+          this.closeAppLauncher();
         };
       });
     }
 
     initDesktopShortcuts() {
+      try {
+        const local = localStorage.getItem('sg_desktop_shortcuts');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            window.SG_DESKTOP_CONFIG = window.SG_DESKTOP_CONFIG || {};
+            window.SG_DESKTOP_CONFIG.shortcuts = parsed;
+          }
+        }
+      } catch (e) {}
+
       this.renderDesktopShortcuts();
+      this.initDesktopDropZone();
+      this.initDesktopContextMenu();
     }
 
     renderDesktopShortcuts() {
@@ -374,32 +411,315 @@
       const appMgr = window.sys && window.sys.appManager;
 
       container.innerHTML = shortcuts.map(shortcut => {
-        let label = shortcut.defaultName || shortcut.appId;
+        const type = shortcut.type || 'app';
+        let label = shortcut.name || shortcut.defaultName || shortcut.appId || 'Raccourci';
         if (shortcut.nameKey) {
           const trans = this.t(shortcut.nameKey);
           if (trans && trans !== shortcut.nameKey) label = trans;
-        } else if (appMgr) {
+        } else if (type === 'app' && appMgr && shortcut.appId) {
           label = appMgr.getAppTitle(shortcut.appId);
         }
 
+        let iconContent = '';
+        if (type === 'folder') {
+          if (shortcut.cover_url) {
+            iconContent = `<img src="${this.escapeHtml(shortcut.cover_url)}" class="desktop-shortcut-thumb" alt="${this.escapeHtml(label)}" /><span class="desktop-shortcut-badge">📁</span>`;
+          } else {
+            iconContent = shortcut.icon || '📁';
+          }
+        } else if (type === 'file') {
+          if (shortcut.thumb_url) {
+            iconContent = `<img src="${this.escapeHtml(shortcut.thumb_url)}" class="desktop-shortcut-thumb" alt="${this.escapeHtml(label)}" />`;
+          } else {
+            const fallbackIcon = window.IconHelper ? window.IconHelper.getFileIcon(shortcut) : '📄';
+            iconContent = shortcut.icon || fallbackIcon;
+          }
+        } else {
+          // App
+          iconContent = shortcut.icon || (appMgr && appMgr.getAppIcon ? appMgr.getAppIcon(shortcut.appId) : '🗔');
+        }
+
         return `
-          <button type="button" class="desktop-shortcut-card" data-app-id="${this.escapeHtml(shortcut.appId)}" title="${this.escapeHtml(label)}">
-            <div class="desktop-shortcut-icon">${shortcut.icon || '🗔'}</div>
+          <button type="button" class="desktop-shortcut-card" data-shortcut-id="${this.escapeHtml(shortcut.id)}" data-shortcut-type="${this.escapeHtml(type)}" title="${this.escapeHtml(label)}">
+            <div class="desktop-shortcut-icon">${iconContent}</div>
             <span class="desktop-shortcut-label">${this.escapeHtml(label)}</span>
           </button>
         `;
       }).join('');
 
       container.querySelectorAll('.desktop-shortcut-card').forEach(card => {
-        const launch = (e) => {
+        const shortcutId = card.dataset.shortcutId;
+        const shortcut = shortcuts.find(s => s.id === shortcutId);
+        if (!shortcut) return;
+
+        card.onclick = (e) => {
           e.stopPropagation();
-          const appId = card.dataset.appId;
-          if (appMgr && typeof appMgr.launchApp === 'function') {
-            appMgr.launchApp(appId);
+          this.launchDesktopShortcut(shortcut);
+        };
+      });
+    }
+
+    launchDesktopShortcut(shortcut) {
+      if (!shortcut) return;
+      const type = shortcut.type || 'app';
+
+      if (type === 'folder') {
+        if (window.explorerApp && typeof window.explorerApp.open === 'function') {
+          window.explorerApp.open({ dir: shortcut.path });
+        } else if (window.sys && window.sys.appManager) {
+          window.sys.appManager.launchApp('explorer', { dir: shortcut.path });
+        }
+      } else if (type === 'file') {
+        const fileExt = (shortcut.extension || (shortcut.name ? shortcut.name.split('.').pop() : shortcut.path.split('.').pop() || '')).toLowerCase();
+        const fileCat = shortcut.category || (window.IconHelper ? window.IconHelper.getCategory({ extension: fileExt }) : '');
+        const fileUrl = shortcut.file_url && !shortcut.file_url.includes('api.php?action=view_file')
+          ? shortcut.file_url
+          : (`thumb.php?file=${encodeURIComponent(shortcut.path)}&raw=1`);
+        const thumbUrl = shortcut.thumb_url || (`thumb.php?file=${encodeURIComponent(shortcut.path)}`);
+
+        if (window.MediaViewerRegistry) {
+          window.MediaViewerRegistry.open({
+            path: shortcut.path,
+            name: shortcut.name || shortcut.path.split('/').pop(),
+            category: fileCat,
+            extension: fileExt,
+            thumb_url: thumbUrl,
+            file_url: fileUrl,
+            size_formatted: shortcut.size_formatted || ''
+          });
+        }
+      } else {
+        // App
+        const appMgr = window.sys && window.sys.appManager;
+        if (appMgr && typeof appMgr.launchApp === 'function') {
+          appMgr.launchApp(shortcut.appId);
+        }
+      }
+    }
+
+    initDesktopDropZone() {
+      const dropTargets = [
+        document.getElementById('desktopSurface'),
+        document.getElementById('desktopShortcuts'),
+        document.getElementById('webosDesktop')
+      ].filter(Boolean);
+
+      dropTargets.forEach(target => {
+        target.addEventListener('dragover', (e) => {
+          if (e.dataTransfer.types.includes('application/sg-item') || window.SG_DRAGGING_ITEM_DATA || e.dataTransfer.types.includes('application/json')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            const grid = document.getElementById('desktopShortcuts');
+            if (grid) grid.classList.add('drag-active');
           }
+        });
+
+        target.addEventListener('dragleave', (e) => {
+          if (!target.contains(e.relatedTarget)) {
+            const grid = document.getElementById('desktopShortcuts');
+            if (grid) grid.classList.remove('drag-active');
+          }
+        });
+
+        target.addEventListener('drop', async (e) => {
+          const grid = document.getElementById('desktopShortcuts');
+          if (grid) grid.classList.remove('drag-active');
+
+          let rawData = e.dataTransfer.getData('application/sg-item');
+          let itemData = null;
+
+          if (rawData) {
+            try { itemData = JSON.parse(rawData); } catch (err) {}
+          }
+          if (!itemData && window.SG_DRAGGING_ITEM_DATA) {
+            itemData = window.SG_DRAGGING_ITEM_DATA;
+          }
+
+          if (!itemData) {
+            // Check fallback JSON paths
+            const jsonText = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
+            if (jsonText) {
+              try {
+                const paths = JSON.parse(jsonText);
+                if (Array.isArray(paths) && paths.length > 0) {
+                  const p = paths[0];
+                  itemData = {
+                    type: p.includes('.') ? 'file' : 'folder',
+                    path: p,
+                    name: p.split('/').pop()
+                  };
+                }
+              } catch (err) {}
+            }
+          }
+
+          if (!itemData || (!itemData.path && !itemData.appId)) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          window.SG_DESKTOP_CONFIG = window.SG_DESKTOP_CONFIG || { shortcuts: [] };
+          window.SG_DESKTOP_CONFIG.shortcuts = window.SG_DESKTOP_CONFIG.shortcuts || [];
+
+          if (itemData.type === 'app') {
+            const exists = window.SG_DESKTOP_CONFIG.shortcuts.some(s => (s.type === 'app' || s.appId) && s.appId === itemData.appId);
+            if (exists) {
+              this.showToast("Ce raccourci d'application existe déjà sur le bureau", 'info');
+              return;
+            }
+
+            const newShortcut = {
+              id: `sc_app_${itemData.appId}_${Date.now()}`,
+              type: 'app',
+              appId: itemData.appId,
+              name: itemData.name,
+              defaultName: itemData.defaultName || itemData.name,
+              icon: itemData.icon || '🗔',
+              enabled: true
+            };
+
+            window.SG_DESKTOP_CONFIG.shortcuts.push(newShortcut);
+            this.renderDesktopShortcuts();
+            await this.saveDesktopShortcuts();
+            this.showToast(`Raccourci d'application ajouté : « ${newShortcut.name} »`, 'success');
+            return;
+          }
+
+          // Check if folder or file shortcut already exists
+          const exists = window.SG_DESKTOP_CONFIG.shortcuts.some(s => s.path === itemData.path);
+          if (exists) {
+            this.showToast('Ce raccourci existe déjà sur le bureau', 'info');
+            return;
+          }
+
+          const newShortcut = {
+            id: `sc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            type: itemData.type || 'file',
+            path: itemData.path,
+            name: itemData.name || itemData.path.split('/').pop(),
+            defaultName: itemData.name || itemData.path.split('/').pop(),
+            icon: itemData.icon || (itemData.type === 'folder' ? '📁' : (window.IconHelper ? window.IconHelper.getFileIcon(itemData) : '📄')),
+            thumb_url: itemData.thumb_url || null,
+            cover_url: itemData.cover_url || null,
+            category: itemData.category || null,
+            extension: itemData.extension || null,
+            enabled: true
+          };
+
+          window.SG_DESKTOP_CONFIG.shortcuts.push(newShortcut);
+          this.renderDesktopShortcuts();
+          await this.saveDesktopShortcuts();
+          this.showToast(`Raccourci créé : « ${newShortcut.name} »`, 'success');
+        });
+      });
+    }
+
+    async saveDesktopShortcuts() {
+      const csrfToken = window.CSRF_TOKEN || window.SG_CSRF_TOKEN || '';
+      const shortcuts = (window.SG_DESKTOP_CONFIG && window.SG_DESKTOP_CONFIG.shortcuts) || [];
+
+      try {
+        localStorage.setItem('sg_desktop_shortcuts', JSON.stringify(shortcuts));
+      } catch (e) {}
+
+      try {
+        const res = await fetch('api.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify({
+            action: 'save_desktop_shortcuts',
+            csrf_token: csrfToken,
+            shortcuts: shortcuts
+          })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.shortcuts)) {
+            window.SG_DESKTOP_CONFIG.shortcuts = json.shortcuts;
+          }
+        }
+      } catch (e) {
+        console.error('[WebOSDesktop] Failed to save desktop shortcuts:', e);
+      }
+    }
+
+    initDesktopContextMenu() {
+      const container = this.el.desktopShortcuts || document.getElementById('desktopShortcuts');
+      if (!container) return;
+
+      container.addEventListener('contextmenu', (e) => {
+        const card = e.target.closest('.desktop-shortcut-card');
+        if (!card) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const shortcutId = card.dataset.shortcutId;
+        const config = window.SG_DESKTOP_CONFIG || {};
+        const shortcut = (config.shortcuts || []).find(s => s.id === shortcutId);
+        if (!shortcut) return;
+
+        // Remove any existing desktop context menu
+        const oldMenu = document.getElementById('desktopContextMenu');
+        if (oldMenu) oldMenu.remove();
+
+        const menu = document.createElement('div');
+        menu.id = 'desktopContextMenu';
+        menu.className = 'custom-context-menu';
+        menu.style.position = 'fixed';
+        menu.style.zIndex = '999999';
+        menu.style.left = `${Math.min(e.clientX, window.innerWidth - 200)}px`;
+        menu.style.top = `${Math.min(e.clientY, window.innerHeight - 150)}px`;
+        menu.style.display = 'flex';
+        menu.style.flexDirection = 'column';
+        menu.style.minWidth = '180px';
+
+        const icon = shortcut.icon || (shortcut.type === 'folder' ? '📁' : '📄');
+        menu.innerHTML = `
+          <div class="context-menu-header">
+            <span>${icon}</span> <span>${this.escapeHtml(shortcut.name || shortcut.defaultName || shortcut.appId)}</span>
+          </div>
+          <button type="button" class="context-menu-item" id="desktopCtxOpen">
+            <span>▶️</span> <span>Ouvrir</span>
+          </button>
+          <div class="context-menu-divider"></div>
+          <button type="button" class="context-menu-item danger" id="desktopCtxDelete">
+            <span>🗑️</span> <span>Supprimer du bureau</span>
+          </button>
+        `;
+
+        document.body.appendChild(menu);
+
+        const closeMenu = () => {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+          document.removeEventListener('contextmenu', closeMenu);
         };
 
-        card.onclick = launch;
+        setTimeout(() => {
+          document.addEventListener('click', closeMenu);
+        }, 50);
+
+        const openBtn = menu.querySelector('#desktopCtxOpen');
+        if (openBtn) {
+          openBtn.onclick = () => {
+            closeMenu();
+            this.launchDesktopShortcut(shortcut);
+          };
+        }
+
+        const deleteBtn = menu.querySelector('#desktopCtxDelete');
+        if (deleteBtn) {
+          deleteBtn.onclick = async () => {
+            closeMenu();
+            window.SG_DESKTOP_CONFIG.shortcuts = (window.SG_DESKTOP_CONFIG.shortcuts || []).filter(s => s.id !== shortcutId);
+            this.renderDesktopShortcuts();
+            await this.saveDesktopShortcuts();
+            this.showToast('Raccourci supprimé du bureau', 'info');
+          };
+        }
       });
     }
 
