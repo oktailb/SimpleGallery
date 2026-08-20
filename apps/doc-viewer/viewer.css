@@ -183,22 +183,41 @@
   margin: 0.5rem 0;
 }
 
-.doc-markdown-render .md-ul,
-.doc-markdown-render .md-ol {
-  padding-left: 2rem;
-  margin-top: 0;
-  margin-bottom: 1rem;
+.doc-markdown-render .md-ul {
+  list-style-type: disc !important;
+  padding-left: 1.75rem !important;
+  margin-top: 0.4rem !important;
+  margin-bottom: 0.9rem !important;
   color: #cbd5e1;
 }
 
-.doc-markdown-render .md-li,
+.doc-markdown-render .md-ol {
+  list-style-type: decimal !important;
+  padding-left: 1.75rem !important;
+  margin-top: 0.4rem !important;
+  margin-bottom: 0.9rem !important;
+  color: #cbd5e1;
+}
+
+.doc-markdown-render .md-li {
+  display: list-item !important;
+  list-style-type: disc !important;
+  margin-bottom: 0.3rem !important;
+  line-height: 1.65;
+}
+
 .doc-markdown-render .md-oli {
-  margin-bottom: 0.35rem;
+  display: list-item !important;
+  list-style-type: decimal !important;
+  margin-bottom: 0.3rem !important;
+  line-height: 1.65;
 }
 
 .doc-markdown-render .md-task-list {
-  list-style: none;
-  padding-left: 0.5rem;
+  list-style: none !important;
+  padding-left: 0.25rem !important;
+  margin-top: 0.4rem !important;
+  margin-bottom: 0.9rem !important;
 }
 
 .doc-markdown-render .md-task-item {
@@ -206,6 +225,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 0.35rem;
+  list-style: none !important;
 }
 
 .doc-markdown-render .md-task-item input[type="checkbox"] {
@@ -376,4 +396,31 @@
   background: rgba(234, 179, 8, 0.15);
   color: #facc15;
   border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+/* Toast UI Editor lists styling */
+.toastui-editor-contents ul {
+  list-style-type: disc !important;
+  padding-left: 1.75rem !important;
+}
+
+.toastui-editor-contents ol {
+  list-style-type: decimal !important;
+  padding-left: 1.75rem !important;
+}
+
+.toastui-editor-contents ul > li {
+  display: list-item !important;
+  list-style-type: disc !important;
+  margin-bottom: 0.3rem !important;
+}
+
+.toastui-editor-contents ol > li {
+  display: list-item !important;
+  list-style-type: decimal !important;
+  margin-bottom: 0.3rem !important;
+}
+
+.toastui-editor-contents li.task-list-item {
+  list-style-type: none !important;
 }

@@ -112,20 +112,68 @@
     // Links [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
 
-    // Task lists [ ] [x]
-    html = html.replace(/^\s*[-*+]\s+\[ \]\s+(.+)$/gm, '<li class="md-task-item"><input type="checkbox" disabled /> $1</li>');
-    html = html.replace(/^\s*[-*+]\s+\[[xX]\]\s+(.+)$/gm, '<li class="md-task-item"><input type="checkbox" checked disabled /> $1</li>');
+    // Lists: Unordered, Ordered, and Task Lists grouping
+    const processLists = (text) => {
+      const rawLines = text.split('\n');
+      const processed = [];
+      let activeList = null; // 'ul' | 'ol' | 'task'
 
-    // Unordered lists
-    html = html.replace(/^\s*[-*+]\s+(.+)$/gm, '<li class="md-li">$1</li>');
+      for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i];
 
-    // Ordered lists
-    html = html.replace(/^\s*(\d+)\.\s+(.+)$/gm, '<li class="md-oli">$2</li>');
+        // Task item: - [ ] or - [x]
+        const taskMatch = line.match(/^\s*[-*+]\s+\[([ xX])\]\s+(.+)$/);
+        if (taskMatch) {
+          const checked = taskMatch[1].toLowerCase() === 'x';
+          if (activeList !== 'task') {
+            if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+            processed.push('<ul class="md-ul md-task-list">');
+            activeList = 'task';
+          }
+          processed.push(`<li class="md-task-item"><input type="checkbox" ${checked ? 'checked ' : ''}disabled /> <span>${taskMatch[2]}</span></li>`);
+          continue;
+        }
 
-    // Wrap list items
-    html = html.replace(/(<li class="md-li">[\s\S]*?<\/li>)(?!(<li class="md-li">))/g, '<ul class="md-ul">$1</ul>');
-    html = html.replace(/(<li class="md-oli">[\s\S]*?<\/li>)(?!(<li class="md-oli">))/g, '<ol class="md-ol">$1</ol>');
-    html = html.replace(/(<li class="md-task-item">[\s\S]*?<\/li>)(?!(<li class="md-task-item">))/g, '<ul class="md-ul md-task-list">$1</ul>');
+        // Unordered item: - item, * item, + item
+        const ulMatch = line.match(/^\s*[-*+]\s+(.+)$/);
+        if (ulMatch) {
+          if (activeList !== 'ul') {
+            if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+            processed.push('<ul class="md-ul">');
+            activeList = 'ul';
+          }
+          processed.push(`<li class="md-li">${ulMatch[1]}</li>`);
+          continue;
+        }
+
+        // Ordered item: 1. item, 2. item
+        const olMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
+        if (olMatch) {
+          if (activeList !== 'ol') {
+            if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+            processed.push('<ol class="md-ol">');
+            activeList = 'ol';
+          }
+          processed.push(`<li class="md-oli">${olMatch[2]}</li>`);
+          continue;
+        }
+
+        // Regular line
+        if (activeList) {
+          processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+          activeList = null;
+        }
+        processed.push(line);
+      }
+
+      if (activeList) {
+        processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+      }
+
+      return processed.join('\n');
+    };
+
+    html = processLists(html);
 
     // Tables: | col | col |
     const lines = html.split('\n');

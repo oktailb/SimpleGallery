@@ -92,10 +92,14 @@ function serve_raw_file(string $file_path, string $ext): void {
     $size = filesize($file_path);
     $mtime = filemtime($file_path);
     $etag = '"' . md5($file_path . '-' . $mtime . '-' . $size) . '"';
+    $content_type = get_full_mime_type($ext);
     $is_text_doc = in_array(strtolower($ext), ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'], true);
 
     header('Content-Type: ' . $content_type);
     header('Accept-Ranges: bytes');
+    if (strtolower($ext) === 'pdf') {
+        header('Content-Disposition: inline; filename="' . rawurlencode(basename($file_path)) . '"');
+    }
     if ($is_text_doc) {
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');
