@@ -258,7 +258,7 @@
       const canDownloadItem = effectiveCtx.state.isAdmin || (effectiveCtx.state.userRights ? effectiveCtx.state.userRights.can_download_item : true);
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `doc-${cleanPathId}`;
-      const ext = (file.extension || '').toLowerCase();
+      const ext = (file.extension || (file.name ? file.name.split('.').pop() : '')).toLowerCase();
       const isMd = ['md', 'markdown'].includes(ext);
       const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
       const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
@@ -283,17 +283,25 @@
         let bodyHtml = '';
 
         if (ext === 'pdf') {
+          const pdfUrl = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 'v=' + (file.mtime || Date.now());
           bodyHtml = `
             <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#1e293b;">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.1);">
                 <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📄 ${effectiveCtx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;">
                   <button type="button" id="docPdfInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
-                  <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;">↗ Nouvel onglet</a>
-                  ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:#6366f1;border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
+                  <a href="${pdfUrl}" target="_blank" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;">↗ Nouvel onglet</a>
+                  ${canDownloadItem ? `<a href="${pdfUrl}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:#6366f1;border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
-              <iframe class="doc-pdf-iframe" src="${file.file_url}" title="${effectiveCtx.escapeHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"></iframe>
+              <object class="doc-pdf-iframe" data="${pdfUrl}" type="application/pdf" style="width:100%;height:100%;border:none;flex:1;">
+                <iframe class="doc-pdf-iframe" src="${pdfUrl}" title="${effectiveCtx.escapeHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;">
+                  <div style="padding:2rem;text-align:center;color:#fff;">
+                    <p>Votre navigateur ne prend pas en charge l'affichage PDF direct.</p>
+                    <a href="${pdfUrl}" target="_blank" style="color:#60a5fa;">Ouvrir le PDF</a>
+                  </div>
+                </iframe>
+              </object>
             </div>
           `;
         } else if (isText) {
