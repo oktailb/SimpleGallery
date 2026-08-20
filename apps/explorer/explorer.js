@@ -673,9 +673,7 @@
         localStorage.setItem('sg_explorer_view_mode', mode);
       } catch (e) {}
 
-      if (this.el.mediaGrid) {
-        this.renderItems(this.state.filteredFiles || this.state.files || []);
-      }
+      this.renderMedia();
 
       if (window.explorerApp && typeof window.explorerApp.updateViewModeUI === 'function') {
         window.explorerApp.updateViewModeUI();
