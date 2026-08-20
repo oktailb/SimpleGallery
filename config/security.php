@@ -31,8 +31,8 @@ $default_guest_permissions = [
     'can_upload'           => false,
     'can_delete'           => false,
     'can_move'             => false,
-    'can_comment'          => true,
+    'can_comment'          => false,
     'can_create_folder'    => false,
-    'can_download_archive' => true,
-    'can_download_item'    => true
+    'can_download_archive' => false,
+    'can_download_item'    => false
 ];
