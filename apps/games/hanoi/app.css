@@ -1,0 +1,289 @@
+/**
+ * SimpleGallery WebOS - Towers of Hanoi Puzzle
+ * Stylesheet with 3D-styled Pegs, Gradient Disks, Floating Animations & Victory Cards.
+ */
+
+.hanoi-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: radial-gradient(circle at 50% 25%, #312e81 0%, #1e1b4b 60%, #0f172a 100%);
+  color: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header & Controls */
+.hanoi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(129, 140, 248, 0.25);
+  gap: 12px;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.hanoi-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hanoi-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.hanoi-stat-pill.highlight {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(129, 140, 248, 0.4);
+  color: #a5b4fc;
+}
+
+.hanoi-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hanoi-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hanoi-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.hanoi-btn.primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-color: #818cf8;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.hanoi-btn.accent {
+  background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+  border-color: #f472b6;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+}
+
+/* Arena & Towers Platform */
+.hanoi-arena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+  position: relative;
+}
+
+.hanoi-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 820px;
+  height: 380px;
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(99, 102, 241, 0.15);
+  padding: 20px 20px 45px 20px;
+}
+
+/* Base Wooden / Acrylic Bar */
+.hanoi-base-bar {
+  position: absolute;
+  bottom: 18px;
+  left: 20px;
+  right: 20px;
+  height: 22px;
+  background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+/* Peg Column */
+.hanoi-peg-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 30%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+  padding-bottom: 2px;
+}
+
+.hanoi-peg-col:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+}
+
+.hanoi-peg-col.source-active {
+  background: rgba(99, 102, 241, 0.12);
+  border-radius: 12px;
+}
+
+.hanoi-peg-col.hint-source {
+  animation: pulse-border-src 1s infinite alternate;
+}
+
+.hanoi-peg-col.hint-target {
+  animation: pulse-border-tgt 1s infinite alternate;
+}
+
+@keyframes pulse-border-src {
+  0% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4); }
+  100% { box-shadow: 0 0 15px 4px rgba(239, 68, 68, 0.8); }
+}
+
+@keyframes pulse-border-tgt {
+  0% { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4); }
+  100% { box-shadow: 0 0 15px 4px rgba(34, 197, 94, 0.8); }
+}
+
+/* Peg Rod */
+.hanoi-peg-pole {
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 250px;
+  background: linear-gradient(90deg, #64748b 0%, #cbd5e1 50%, #475569 100%);
+  border-radius: 7px 7px 0 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Peg Label (A, B, C) */
+.hanoi-peg-label {
+  position: absolute;
+  bottom: -32px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+/* Disk Container */
+.hanoi-disks-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  width: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Disks */
+.hanoi-disk {
+  position: relative;
+  height: 28px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+  margin-top: 2px;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Floating Selected Disk */
+.hanoi-disk.selected {
+  transform: translateY(-40px) scale(1.06);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.8);
+  border-color: #fff;
+  z-index: 15;
+}
+
+/* Disk Gradient Variants */
+.disk-1 { width: 35%; background: linear-gradient(135deg, #ec4899, #f43f5e); }
+.disk-2 { width: 44%; background: linear-gradient(135deg, #f97316, #fb923c); }
+.disk-3 { width: 53%; background: linear-gradient(135deg, #eab308, #facc15); color: #1e293b; text-shadow: none; }
+.disk-4 { width: 62%; background: linear-gradient(135deg, #22c55e, #10b981); }
+.disk-5 { width: 71%; background: linear-gradient(135deg, #06b6d4, #0ea5e9); }
+.disk-6 { width: 80%; background: linear-gradient(135deg, #3b82f6, #6366f1); }
+.disk-7 { width: 89%; background: linear-gradient(135deg, #8b5cf6, #a855f7); }
+.disk-8 { width: 98%; background: linear-gradient(135deg, #d946ef, #c026d3); }
+
+/* Victory Modal */
+.hanoi-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  animation: fade-in 0.3s ease;
+}
+
+.hanoi-card {
+  background: rgba(30, 41, 59, 0.95);
+  border: 2px solid #818cf8;
+  border-radius: 20px;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 50px rgba(129, 140, 248, 0.3);
+  text-align: center;
+  max-width: 460px;
+}
+
+.hanoi-card-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 0.5rem;
+}
+
+.hanoi-stars {
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+  letter-spacing: 6px;
+}

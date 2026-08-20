@@ -1,0 +1,612 @@
+/**
+ * SimpleGallery 2026 - Towers of Hanoi Game
+ * Modern WebOS multi-instance puzzle app with 3 to 8 customizable disks,
+ * recursive optimal solver, step-by-step hints, audio synthesizers, and victory celebrations.
+ */
+(function(window) {
+  'use strict';
+
+  class HanoiSoundEngine {
+    constructor() {
+      this.ctx = null;
+    }
+
+    ensureContext() {
+      if (!this.ctx && typeof AudioContext !== 'undefined') {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+
+    playPickup() {
+      try {
+        this.ensureContext();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(660, now + 0.08);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      } catch (e) {}
+    }
+
+    playDrop() {
+      try {
+        this.ensureContext();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.1);
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      } catch (e) {}
+    }
+
+    playError() {
+      try {
+        this.ensureContext();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.setValueAtTime(120, now + 0.08);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } catch (e) {}
+    }
+
+    playVictory() {
+      try {
+        this.ensureContext();
+        if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, i) => {
+          const now = this.ctx.currentTime + i * 0.12;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        });
+      } catch (e) {}
+    }
+  }
+
+  class HanoiInstance {
+    constructor(app, id, options = {}) {
+      this.app = app;
+      this.id = id;
+      this.winId = `hanoi-${id}`;
+      this.options = options;
+
+      this.sound = new HanoiSoundEngine();
+      this.diskCount = parseInt(options.diskCount, 10) || 4; // 3 to 8
+      this.pegs = [[], [], []]; // Peg 0 (A), Peg 1 (B), Peg 2 (C)
+      this.selectedPeg = null; // index of selected source peg (0..2)
+      this.movesCount = 0;
+      this.startTime = null;
+      this.elapsedSeconds = 0;
+      this.timerInterval = null;
+      this.isWon = false;
+      this.autoSolveInterval = null;
+
+      this.win = null;
+      this.el = {};
+
+      this.initWindow();
+    }
+
+    t(key, replacements = {}) {
+      return this.app.t(key, replacements);
+    }
+
+    getMinMoves() {
+      return Math.pow(2, this.diskCount) - 1;
+    }
+
+    initWindow() {
+      const appTitle = (window.sys && window.sys.appManager)
+        ? window.sys.appManager.getAppTitle('hanoi')
+        : "Tours de Hanoï";
+
+      const defaultW = Math.min(840, Math.max(540, Math.round(window.innerWidth * 0.70)));
+      const defaultH = Math.min(680, Math.max(450, Math.round(window.innerHeight * 0.75)));
+
+      const bodyHtml = `
+        <div class="hanoi-app" id="hanoiApp-${this.id}">
+          <!-- Header Bar -->
+          <div class="hanoi-header">
+            <div class="hanoi-stats">
+              <span class="hanoi-stat-pill highlight" id="disksPill-${this.id}">
+                🗼 <span id="diskCountVal-${this.id}">${this.diskCount}</span> Disques
+              </span>
+              <span class="hanoi-stat-pill">
+                🎯 Coups : <strong id="movesVal-${this.id}">0</strong> / <span id="minMovesVal-${this.id}">${this.getMinMoves()}</span> (Optimal)
+              </span>
+              <span class="hanoi-stat-pill">
+                ⏱️ <span id="timerVal-${this.id}">00:00</span>
+              </span>
+            </div>
+
+            <div class="hanoi-controls">
+              <button type="button" class="hanoi-btn" id="hintBtn-${this.id}" title="Indication du prochain coup optimal">
+                💡 Indice
+              </button>
+              <button type="button" class="hanoi-btn accent" id="solveBtn-${this.id}" title="Résolution automatique">
+                🤖 Démo Auto
+              </button>
+              <button type="button" class="hanoi-btn primary" id="resetBtn-${this.id}" title="Recommencer la partie">
+                🔄 Recommencer
+              </button>
+            </div>
+          </div>
+
+          <!-- Playing Arena -->
+          <div class="hanoi-arena" id="hanoiArena-${this.id}">
+            <div class="hanoi-stage">
+              <!-- Base Platform -->
+              <div class="hanoi-base-bar"></div>
+
+              <!-- Peg A (0) -->
+              <div class="hanoi-peg-col" id="pegCol-${this.id}-0" data-peg="0">
+                <div class="hanoi-peg-pole"></div>
+                <div class="hanoi-disks-stack" id="pegStack-${this.id}-0"></div>
+                <div class="hanoi-peg-label">TOUR A (Départ)</div>
+              </div>
+
+              <!-- Peg B (1) -->
+              <div class="hanoi-peg-col" id="pegCol-${this.id}-1" data-peg="1">
+                <div class="hanoi-peg-pole"></div>
+                <div class="hanoi-disks-stack" id="pegStack-${this.id}-1"></div>
+                <div class="hanoi-peg-label">TOUR B (Intermédiaire)</div>
+              </div>
+
+              <!-- Peg C (2) -->
+              <div class="hanoi-peg-col" id="pegCol-${this.id}-2" data-peg="2">
+                <div class="hanoi-peg-pole"></div>
+                <div class="hanoi-disks-stack" id="pegStack-${this.id}-2"></div>
+                <div class="hanoi-peg-label">TOUR C (Arrivée)</div>
+              </div>
+            </div>
+
+            <!-- Victory Modal -->
+            <div class="hanoi-modal" id="victoryModal-${this.id}" style="display:none;">
+              <div class="hanoi-card">
+                <div class="hanoi-card-title">🎉 FÉLICITATIONS !</div>
+                <div class="hanoi-stars" id="winStars-${this.id}">⭐⭐⭐</div>
+                <p id="winMsg-${this.id}" style="color:#e2e8f0;margin-bottom:1.5rem;font-weight:600;"></p>
+                <div style="display:flex;gap:12px;justify-content:center;">
+                  <button type="button" class="hanoi-btn primary" id="winPlayAgainBtn-${this.id}">
+                    🔄 Rejouer
+                  </button>
+                  <button type="button" class="hanoi-btn accent" id="winNextLevelBtn-${this.id}">
+                    ⏫ Niveau Suivant (+1 Disque)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      this.win = window.WindowManager.createWindow({
+        id: this.winId,
+        appId: 'hanoi',
+        appName: appTitle,
+        title: `${appTitle} (${this.diskCount} disques)`,
+        icon: '🗼',
+        width: defaultW,
+        height: defaultH,
+        content: bodyHtml,
+        onFocus: () => {
+          this.updateMenuBar();
+        },
+        onClose: () => {
+          this.stopTimer();
+          this.stopAutoSolve();
+          this.app.instances.delete(this.id);
+        }
+      });
+
+      this.cacheDom();
+      this.bindEvents();
+      this.resetPuzzle();
+    }
+
+    cacheDom() {
+      this.el.app = document.getElementById(`hanoiApp-${this.id}`);
+      this.el.movesVal = document.getElementById(`movesVal-${this.id}`);
+      this.el.minMovesVal = document.getElementById(`minMovesVal-${this.id}`);
+      this.el.timerVal = document.getElementById(`timerVal-${this.id}`);
+      this.el.diskCountVal = document.getElementById(`diskCountVal-${this.id}`);
+      this.el.victoryModal = document.getElementById(`victoryModal-${this.id}`);
+      this.el.winStars = document.getElementById(`winStars-${this.id}`);
+      this.el.winMsg = document.getElementById(`winMsg-${this.id}`);
+
+      this.el.pegCols = [
+        document.getElementById(`pegCol-${this.id}-0`),
+        document.getElementById(`pegCol-${this.id}-1`),
+        document.getElementById(`pegCol-${this.id}-2`)
+      ];
+
+      this.el.pegStacks = [
+        document.getElementById(`pegStack-${this.id}-0`),
+        document.getElementById(`pegStack-${this.id}-1`),
+        document.getElementById(`pegStack-${this.id}-2`)
+      ];
+    }
+
+    bindEvents() {
+      const resetBtn = document.getElementById(`resetBtn-${this.id}`);
+      const hintBtn = document.getElementById(`hintBtn-${this.id}`);
+      const solveBtn = document.getElementById(`solveBtn-${this.id}`);
+      const winPlayAgainBtn = document.getElementById(`winPlayAgainBtn-${this.id}`);
+      const winNextLevelBtn = document.getElementById(`winNextLevelBtn-${this.id}`);
+
+      if (resetBtn) resetBtn.onclick = () => this.resetPuzzle();
+      if (hintBtn) hintBtn.onclick = () => this.showHint();
+      if (solveBtn) solveBtn.onclick = () => this.toggleAutoSolve();
+      if (winPlayAgainBtn) winPlayAgainBtn.onclick = () => { this.hideVictory(); this.resetPuzzle(); };
+      if (winNextLevelBtn) winNextLevelBtn.onclick = () => {
+        this.hideVictory();
+        this.setDiskCount(Math.min(8, this.diskCount + 1));
+      };
+
+      this.el.pegCols.forEach((col, idx) => {
+        if (col) {
+          col.onclick = () => this.onPegClick(idx);
+        }
+      });
+    }
+
+    updateMenuBar() {
+      if (!window.MenuBarManager) return;
+      window.MenuBarManager.registerAppMenu('hanoi', (container) => {
+        container.innerHTML = `
+          <div class="app-menu-left">
+            <button type="button" class="app-menu-pill" id="menuHanoiNewBtn">🔄 Recommencer</button>
+            <button type="button" class="app-menu-pill" id="menuHanoiHintBtn">💡 Indice</button>
+            <button type="button" class="app-menu-pill" id="menuHanoiSolveBtn">${this.autoSolveInterval ? '⏸ Pause' : '🤖 Résoudre'}</button>
+            <select class="app-menu-pill" id="menuHanoiDisksSelect" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;">
+              ${[3,4,5,6,7,8].map(n => `<option value="${n}" ${n === this.diskCount ? 'selected' : ''} style="background:#1e1b4b;color:#fff;">${n} Disques (${Math.pow(2,n)-1} coups)</option>`).join('')}
+            </select>
+          </div>
+          <div class="app-menu-right">
+            <button type="button" class="app-menu-pill" id="menuHanoiFsBtn">⛶ Plein Écran</button>
+          </div>
+        `;
+
+        const newBtn = container.querySelector('#menuHanoiNewBtn');
+        const hintBtn = container.querySelector('#menuHanoiHintBtn');
+        const solveBtn = container.querySelector('#menuHanoiSolveBtn');
+        const disksSelect = container.querySelector('#menuHanoiDisksSelect');
+        const fsBtn = container.querySelector('#menuHanoiFsBtn');
+
+        if (newBtn) newBtn.onclick = () => this.resetPuzzle();
+        if (hintBtn) hintBtn.onclick = () => this.showHint();
+        if (solveBtn) solveBtn.onclick = () => this.toggleAutoSolve();
+        if (disksSelect) disksSelect.onchange = (e) => this.setDiskCount(parseInt(e.target.value, 10));
+        if (fsBtn) fsBtn.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(this.winId); };
+      });
+      window.MenuBarManager.setActiveApp('hanoi');
+    }
+
+    resetPuzzle() {
+      this.stopAutoSolve();
+      this.pegs = [[], [], []];
+      for (let i = this.diskCount; i >= 1; i--) {
+        this.pegs[0].push(i);
+      }
+      this.selectedPeg = null;
+      this.movesCount = 0;
+      this.isWon = false;
+      this.clearHints();
+      this.hideVictory();
+      this.renderTowers();
+      this.startTimer();
+    }
+
+    setDiskCount(count) {
+      if (count < 3 || count > 8) return;
+      this.diskCount = count;
+      if (this.win) {
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('hanoi')
+          : "Tours de Hanoï";
+        this.win.setTitle(`${appTitle} (${this.diskCount} disques)`);
+      }
+      if (this.el.diskCountVal) this.el.diskCountVal.textContent = this.diskCount;
+      if (this.el.minMovesVal) this.el.minMovesVal.textContent = this.getMinMoves();
+      this.resetPuzzle();
+    }
+
+    onPegClick(pegIdx) {
+      if (this.isWon || this.autoSolveInterval) return;
+      this.clearHints();
+
+      // Case 1: No peg selected -> Pick up top disk of clicked peg
+      if (this.selectedPeg === null) {
+        if (this.pegs[pegIdx].length === 0) return; // empty peg
+        this.selectedPeg = pegIdx;
+        this.sound.playPickup();
+        this.renderTowers();
+        return;
+      }
+
+      // Case 2: Clicked the same peg -> Deselect
+      if (this.selectedPeg === pegIdx) {
+        this.selectedPeg = null;
+        this.renderTowers();
+        return;
+      }
+
+      // Case 3: Transfer disk from selectedPeg to pegIdx
+      const fromStack = this.pegs[this.selectedPeg];
+      const toStack = this.pegs[pegIdx];
+      const movingDisk = fromStack[fromStack.length - 1];
+      const targetTopDisk = toStack.length > 0 ? toStack[toStack.length - 1] : Infinity;
+
+      if (movingDisk > targetTopDisk) {
+        // ILLEGAL MOVE: Cannot put larger disk on top of smaller disk!
+        this.sound.playError();
+        if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
+          window.sys.desktop.showToast("⚠️ Coup impossible : un disque plus grand ne peut pas être posé sur un plus petit !", "warning");
+        }
+        this.selectedPeg = null;
+        this.renderTowers();
+        return;
+      }
+
+      // Legal move!
+      fromStack.pop();
+      toStack.push(movingDisk);
+      this.movesCount++;
+      this.selectedPeg = null;
+      this.sound.playDrop();
+      this.renderTowers();
+      this.checkWinCondition();
+    }
+
+    renderTowers() {
+      if (this.el.movesVal) this.el.movesVal.textContent = this.movesCount;
+
+      this.pegs.forEach((stack, pegIdx) => {
+        const stackEl = this.el.pegStacks[pegIdx];
+        const colEl = this.el.pegCols[pegIdx];
+        if (!stackEl || !colEl) return;
+
+        stackEl.innerHTML = '';
+        if (this.selectedPeg === pegIdx) {
+          colEl.classList.add('source-active');
+        } else {
+          colEl.classList.remove('source-active');
+        }
+
+        stack.forEach((diskVal, diskIdx) => {
+          const diskEl = document.createElement('div');
+          const isTop = (diskIdx === stack.length - 1);
+          const isSelected = (this.selectedPeg === pegIdx && isTop);
+
+          diskEl.className = `hanoi-disk disk-${diskVal} ${isSelected ? 'selected' : ''}`;
+          diskEl.textContent = diskVal;
+          stackEl.appendChild(diskEl);
+        });
+      });
+    }
+
+    checkWinCondition() {
+      // Victory if all disks are on Peg C (2)
+      if (this.pegs[2].length === this.diskCount) {
+        this.isWon = true;
+        this.stopTimer();
+        this.sound.playVictory();
+        this.celebrateVictory();
+      }
+    }
+
+    celebrateVictory() {
+      const min = this.getMinMoves();
+      const moves = this.movesCount;
+      const efficiency = Math.round((min / moves) * 100);
+
+      let stars = '⭐⭐⭐';
+      if (moves > min * 1.5) stars = '⭐';
+      else if (moves > min) stars = '⭐⭐';
+
+      if (this.el.winStars) this.el.winStars.textContent = stars;
+      if (this.el.winMsg) {
+        this.el.winMsg.textContent = `Résolu en ${moves} coups (Optimal : ${min}) en ${this.formatTime(this.elapsedSeconds)} - Efficacité : ${efficiency}% !`;
+      }
+      if (this.el.victoryModal) {
+        this.el.victoryModal.style.display = 'flex';
+      }
+
+      if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
+        window.sys.desktop.showToast(`🎉 Victoire ! Tours de Hanoï résolues en ${moves} coups !`, 'success');
+      }
+    }
+
+    hideVictory() {
+      if (this.el.victoryModal) {
+        this.el.victoryModal.style.display = 'none';
+      }
+    }
+
+    clearHints() {
+      this.el.pegCols.forEach(col => {
+        if (col) {
+          col.classList.remove('hint-source', 'hint-target');
+        }
+      });
+    }
+
+    /**
+     * Compute next optimal move using recursive solver generator
+     */
+    showHint() {
+      const moves = [];
+      const solve = (n, from, to, aux) => {
+        if (n === 1) {
+          moves.push({ from, to });
+          return;
+        }
+        solve(n - 1, from, aux, to);
+        moves.push({ from, to });
+        solve(n - 1, aux, to, from);
+      };
+
+      // In initial state, solve from 0 to 2
+      solve(this.diskCount, 0, 2, 1);
+      const nextMove = moves[this.movesCount % moves.length];
+      if (!nextMove) return;
+
+      this.clearHints();
+      if (this.el.pegCols[nextMove.from]) this.el.pegCols[nextMove.from].classList.add('hint-source');
+      if (this.el.pegCols[nextMove.to]) this.el.pegCols[nextMove.to].classList.add('hint-target');
+
+      if (window.sys && window.sys.desktop && typeof window.sys.desktop.showToast === 'function') {
+        const pegNames = ['A', 'B', 'C'];
+        window.sys.desktop.showToast(`💡 Déplacez le disque de la Tour ${pegNames[nextMove.from]} vers la Tour ${pegNames[nextMove.to]}`, 'info');
+      }
+    }
+
+    toggleAutoSolve() {
+      if (this.autoSolveInterval) {
+        this.stopAutoSolve();
+      } else {
+        this.resetPuzzle();
+        const solveBtn = document.getElementById(`solveBtn-${this.id}`);
+        if (solveBtn) solveBtn.textContent = '⏸ Pause';
+
+        const moves = [];
+        const solve = (n, from, to, aux) => {
+          if (n === 1) {
+            moves.push({ from, to });
+            return;
+          }
+          solve(n - 1, from, aux, to);
+          moves.push({ from, to });
+          solve(n - 1, aux, to, from);
+        };
+        solve(this.diskCount, 0, 2, 1);
+
+        let step = 0;
+        this.autoSolveInterval = setInterval(() => {
+          if (step >= moves.length) {
+            this.stopAutoSolve();
+            return;
+          }
+          const m = moves[step];
+          const disk = this.pegs[m.from].pop();
+          this.pegs[m.to].push(disk);
+          this.movesCount++;
+          this.sound.playDrop();
+          this.renderTowers();
+          step++;
+
+          if (step >= moves.length) {
+            this.stopAutoSolve();
+            this.checkWinCondition();
+          }
+        }, 550);
+      }
+    }
+
+    stopAutoSolve() {
+      if (this.autoSolveInterval) {
+        clearInterval(this.autoSolveInterval);
+        this.autoSolveInterval = null;
+        const solveBtn = document.getElementById(`solveBtn-${this.id}`);
+        if (solveBtn) solveBtn.textContent = '🤖 Démo Auto';
+      }
+    }
+
+    startTimer() {
+      this.stopTimer();
+      this.startTime = Date.now();
+      this.timerInterval = setInterval(() => {
+        this.elapsedSeconds = Math.floor((Date.now() - this.startTime) / 1000);
+        if (this.el.timerVal) {
+          this.el.timerVal.textContent = this.formatTime(this.elapsedSeconds);
+        }
+      }, 1000);
+    }
+
+    stopTimer() {
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+    }
+
+    formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+  }
+
+  class WebOSHanoiApp {
+    constructor() {
+      this.instances = new Map();
+      this.instanceCounter = 0;
+    }
+
+    open(options = {}) {
+      this.instanceCounter++;
+      const id = this.instanceCounter;
+      const instance = new HanoiInstance(this, id, options);
+      this.instances.set(id, instance);
+      return instance;
+    }
+  }
+
+  // Instantiate and mount WebOS Hanoi App
+  const hanoiApp = new WebOSHanoiApp();
+  window.HanoiApp = hanoiApp;
+  window.hanoiApp = hanoiApp;
+
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('hanoi', hanoiApp);
+  }
+
+})(window);

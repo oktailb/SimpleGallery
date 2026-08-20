@@ -1,0 +1,26 @@
+{
+  "id": "hanoi",
+  "name": "Tours de Hanoï",
+  "version": "2.0.0",
+  "icon": "🗼",
+  "author": "SimpleGallery WebOS",
+  "category": "game",
+  "locales": {
+    "fr": {
+      "title": "Tours de Hanoï",
+      "description": "Casse-tête classique des Tours de Hanoï avec 3 à 8 disques, indices et solveur automatique"
+    },
+    "en": {
+      "title": "Towers of Hanoi",
+      "description": "Classic Towers of Hanoi puzzle with 3 to 8 disks, hints, and automated recursive solver"
+    },
+    "ja": {
+      "title": "ハノイの塔",
+      "description": "古典的なハノイの塔パズル（3〜8枚のディスク、ヒント、自動再帰ソルバー）"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "app.css"
+  }
+}
