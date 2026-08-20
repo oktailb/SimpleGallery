@@ -9,7 +9,7 @@ class SecurityManager {
 
     public static function ensureSessionStarted(?string $session_save_path = null): void {
         if (session_status() === PHP_SESSION_NONE) {
-            if ($session_save_path && is_dir($session_save_path) && is_writable($session_save_path)) {
+            if (php_sapi_name() !== 'cli' && $session_save_path && is_dir($session_save_path) && is_writable($session_save_path)) {
                 @session_save_path($session_save_path);
             }
             if (!headers_sent()) {

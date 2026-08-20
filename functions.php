@@ -590,6 +590,10 @@ function create_archive(string $format, string $target_dir, string $output_file,
     $real_target = realpath($target_dir);
     if (!$real_target) return false;
 
+    if (!is_dir_accessible($real_target, $base_dir)) {
+        return false;
+    }
+
     if ($format === 'zip' && (extension_loaded('zip') || class_exists('ZipArchive'))) {
         $zip = new ZipArchive();
         if ($zip->open($output_file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
@@ -601,19 +605,28 @@ function create_archive(string $format, string $target_dir, string $output_file,
             RecursiveIteratorIterator::LEAVES_ONLY
         );
 
+        $added_count = 0;
         foreach ($files as $file) {
             if ($file->isDir()) continue;
             $filePath = str_replace('\\', '/', $file->getRealPath());
             if (is_path_ignored($filePath, $base_dir, $ignore_list)) continue;
 
+            $fileParent = dirname($filePath);
+            if (!is_dir_accessible($fileParent, $base_dir)) continue;
+
+            $filename = $file->getFilename();
+            if ($filename[0] === '.') continue;
+
             $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-            if (in_array($ext, ['php', 'htaccess', 'ini', 'hash'], true)) continue;
+            if (in_array($ext, ['php', 'htaccess', 'ini', 'hash', 'phtml', 'phar'], true)) continue;
 
             $localPath = get_relative_path($filePath, $real_target);
             $zip->addFile($filePath, $localPath);
+            $added_count++;
         }
 
-        return $zip->close();
+        $closed = $zip->close();
+        return $closed && file_exists($output_file);
     }
 
     if ($format === 'zip') {

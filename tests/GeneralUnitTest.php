@@ -26,11 +26,18 @@ class GeneralUnitTestSuite {
         $this->base_dir = realpath(dirname(__DIR__)) ?: dirname(__DIR__);
         $this->base_dir = str_replace('\\', '/', $this->base_dir);
 
-        // Create temporary test environment folder
-        $this->test_dir = $this->base_dir . '/tmp_general_unit_test_' . time() . '_' . mt_rand(1000, 9999);
-        if (!is_dir($this->test_dir)) {
-            @mkdir($this->test_dir, 0755, true);
+        // Create temporary test environment folder in ignored directory (.thumbnails)
+        $sandbox = $this->base_dir . '/.thumbnails/test_sandbox_gen_' . md5(uniqid('', true));
+        if (!is_dir($sandbox)) {
+            @mkdir($sandbox, 0755, true);
         }
+        if (!is_dir($sandbox) || !is_writable($sandbox)) {
+            $sandbox = sys_get_temp_dir() . '/sg_test_sandbox_gen_' . md5(uniqid('', true));
+            if (!is_dir($sandbox)) {
+                @mkdir($sandbox, 0755, true);
+            }
+        }
+        $this->test_dir = str_replace('\\', '/', $sandbox);
 
     }
 
@@ -220,19 +227,19 @@ class GeneralUnitTestSuite {
         ];
 
         // 1. Category Filter Test
-        $img_results = search_gallery_recursive($search_dir, $this->base_dir, [
+        $img_results = search_gallery_recursive($search_dir, $search_dir, [
             'category' => 'image',
             'recursive' => true
-        ], $ignore_list ?: [], $media_types_config);
+        ], [], $media_types_config);
 
         $this->assert("Filtre catégorie 'image' trouve uniquement les photos", count($img_results) === 1 && $img_results[0]['name'] === 'vacances_plage.jpg');
 
         // 2. Word Search in Comments
-        $comment_results = search_gallery_recursive($search_dir, $this->base_dir, [
+        $comment_results = search_gallery_recursive($search_dir, $search_dir, [
             'words' => 'festival',
             'category' => 'all',
             'recursive' => true
-        ], $ignore_list ?: [], $media_types_config);
+        ], [], $media_types_config);
 
         $this->assert("Recherche de mots dans les légendes .comment", count($comment_results) === 1 && $comment_results[0]['name'] === 'concert_rock.mp4');
     }
@@ -244,14 +251,20 @@ class GeneralUnitTestSuite {
         echo "\n📦 [6/7] Test de la Génération d'Archives Zip...\n";
 
         $arch_dir = $this->test_dir . '/archive_test';
-        mkdir($arch_dir, 0755, true);
+        @mkdir($arch_dir, 0755, true);
         file_put_contents($arch_dir . '/photo.jpg', 'fake image data');
         file_put_contents($arch_dir . '/secret.php', '<?php echo "hidden";'); // Should be excluded!
+        file_put_contents($arch_dir . '/.dotfile_secret', 'sensitive'); // Should be excluded!
+
+        // Create a private subfolder inside archive_test
+        $private_sub = $arch_dir . '/private_subfolder';
+        @mkdir($private_sub, 0755, true);
+        file_put_contents($private_sub . '/.private', "1\n");
+        file_put_contents($private_sub . '/private_pic.jpg', 'private content');
 
         $out_zip = $this->test_dir . '/test_output.zip';
-        global $ignore_list;
 
-        $created = create_archive('zip', $arch_dir, $out_zip, $this->base_dir, $ignore_list ?: []);
+        $created = create_archive('zip', $arch_dir, $out_zip, $arch_dir, []);
         $this->assert("Création d'archive Zip", $created === true && file_exists($out_zip) && filesize($out_zip) > 0);
 
         if ($created && class_exists('ZipArchive')) {
@@ -259,11 +272,18 @@ class GeneralUnitTestSuite {
             if ($zip->open($out_zip) === true) {
                 $has_jpg = ($zip->locateName('photo.jpg') !== false);
                 $has_php = ($zip->locateName('secret.php') !== false);
+                $has_dotfile = ($zip->locateName('.dotfile_secret') !== false);
+                $has_private_pic = ($zip->locateName('private_subfolder/private_pic.jpg') !== false || $zip->locateName('private_pic.jpg') !== false);
                 $zip->close();
-                $this->assert("L'archive contient les photos", $has_jpg === true);
+                $this->assert("L'archive contient les photos publiques", $has_jpg === true);
                 $this->assert("L'archive exclut le code PHP de sécurité", $has_php === false);
+                $this->assert("L'archive exclut les fichiers dotfiles masqués", $has_dotfile === false);
+                $this->assert("L'archive exclut les sous-dossiers privés non-admin", $has_private_pic === false);
             }
         }
+
+        // Test existence of archive.php
+        $this->assert("Point d'accès archive.php présent à la racine", file_exists($this->base_dir . '/archive.php'));
 
         if (file_exists($out_zip)) @unlink($out_zip);
     }

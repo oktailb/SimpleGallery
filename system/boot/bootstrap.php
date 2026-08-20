@@ -89,5 +89,6 @@ if ($resolved_storage !== false && is_dir($resolved_storage)) {
 $ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'includes', 'css', 'js', 'locales', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh', 'system', 'config', 'storage', 'themes', 'apps'];
 
 // 9. Start secure session
-use SimpleGallery\Kernel\Security\SecurityManager;
-SecurityManager::ensureSessionStarted($storage_session_dir);
+if (php_sapi_name() !== 'cli') {
+    \SimpleGallery\Kernel\Security\SecurityManager::ensureSessionStarted($storage_session_dir);
+}

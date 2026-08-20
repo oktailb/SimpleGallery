@@ -219,19 +219,42 @@ if ($action === 'download_archive') {
         exit;
     }
 
+    if (!is_dir_accessible($dir_target, $real_base_dir)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Accès refusé : Ce dossier est protégé ou privé.']);
+        exit;
+    }
+
+    $available_formats = find_archive_binaries();
+    if (!isset($available_formats[$format])) {
+        $format = 'zip';
+    }
+
     $tmp_dir = sys_get_temp_dir() . '/simplegallery_archives';
     if (!is_dir($tmp_dir)) @mkdir($tmp_dir, 0755, true);
 
     $ext_map = ['zip' => '.zip', '7z' => '.7z', 'tar' => '.tar.gz'];
+    $mime_map = ['zip' => 'application/zip', '7z' => 'application/x-7z-compressed', 'tar' => 'application/gzip'];
+
     $file_ext = $ext_map[$format] ?? '.zip';
-    $archive_name = 'gallery_' . date('Ymd_His') . '_' . substr(md5($dir_target), 0, 6) . $file_ext;
+    $mime_type = $mime_map[$format] ?? 'application/octet-stream';
+
+    $folder_name = ($dir_target === $real_base_dir) ? 'gallery' : basename($dir_target);
+    $folder_name_safe = preg_replace('/[^\w\.\-\s]/u', '_', $folder_name);
+    $archive_name = $folder_name_safe . '_' . date('Ymd_His') . $file_ext;
     $archive_path = $tmp_dir . '/' . $archive_name;
 
     if (create_archive($format, $dir_target, $archive_path, $real_base_dir, $ignore_list)) {
-        header('Content-Type: application/octet-stream');
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        header('Content-Type: ' . $mime_type);
         header('Content-Disposition: attachment; filename="' . $archive_name . '"');
         header('Content-Length: ' . filesize($archive_path));
         header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
         readfile($archive_path);
         @unlink($archive_path);
         exit;
