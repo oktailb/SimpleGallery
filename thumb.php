@@ -92,11 +92,17 @@ function serve_raw_file(string $file_path, string $ext): void {
     $size = filesize($file_path);
     $mtime = filemtime($file_path);
     $etag = '"' . md5($file_path . '-' . $mtime . '-' . $size) . '"';
-    $content_type = get_full_mime_type($ext);
+    $is_text_doc = in_array(strtolower($ext), ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'], true);
 
     header('Content-Type: ' . $content_type);
     header('Accept-Ranges: bytes');
-    header('Cache-Control: public, max-age=31536000');
+    if ($is_text_doc) {
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    } else {
+        header('Cache-Control: public, max-age=31536000');
+    }
     header('ETag: ' . $etag);
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
 

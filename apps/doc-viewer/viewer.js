@@ -406,6 +406,7 @@
 
             if (json.success) {
               currentRawText = newContent;
+              file.file_url = file.file_url.replace(/([?&])t=\d+/, '') + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
               if (badge) {
                 badge.className = 'doc-status-badge saved';
                 badge.textContent = '● Enregistré';
@@ -536,7 +537,8 @@
         // Load Text / Markdown Asynchronously
         if (isText) {
           try {
-            const res = await fetch(file.file_url);
+            const fetchUrl = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+            const res = await fetch(fetchUrl, { cache: 'no-store' });
             const text = await res.text();
             currentRawText = text;
             updateReaderDisplay();
