@@ -666,6 +666,22 @@
       this.bindMediaCardEvents();
     }
 
+    setViewMode(mode) {
+      if (!mode) return;
+      this.state.viewMode = mode;
+      try {
+        localStorage.setItem('sg_explorer_view_mode', mode);
+      } catch (e) {}
+
+      if (this.el.mediaGrid) {
+        this.renderItems(this.state.filteredFiles || this.state.files || []);
+      }
+
+      if (window.explorerApp && typeof window.explorerApp.updateViewModeUI === 'function') {
+        window.explorerApp.updateViewModeUI();
+      }
+    }
+
     bindMediaCardEvents() {
       if (!this.el.mediaGrid) return;
       const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
@@ -2097,6 +2113,13 @@
           }
         };
       });
+    }
+
+    setViewMode(mode) {
+      const inst = this.getActiveInstance();
+      if (inst && typeof inst.setViewMode === 'function') {
+        inst.setViewMode(mode);
+      }
     }
 
     getViewModeIcon(mode) {
