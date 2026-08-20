@@ -61,6 +61,122 @@
     return toastUiLoadingPromise;
   }
 
+  /**
+   * Pure JS Markdown-to-HTML parser for secure, rich client-side rendering
+   */
+  function renderMarkdownHtml(md) {
+    if (!md || typeof md !== 'string') return '';
+    let html = md;
+
+    // Escape HTML entities to prevent raw script injections
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Code blocks ```lang ... ```
+    html = html.replace(/```([\w-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      const cleanLang = lang ? ` class="language-${lang}"` : '';
+      return `<pre class="md-codeblock"><code${cleanLang}>${code.trim()}</code></pre>`;
+    });
+
+    // Inline code `code`
+    html = html.replace(/`([^`\n]+)`/g, '<code class="md-inline-code">$1</code>');
+
+    // Headers # -> h1..h6
+    html = html.replace(/^#{6}\s+(.+)$/gm, '<h6 class="md-h6">$1</h6>');
+    html = html.replace(/^#{5}\s+(.+)$/gm, '<h5 class="md-h5">$1</h5>');
+    html = html.replace(/^#{4}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>');
+    html = html.replace(/^#{3}\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>');
+    html = html.replace(/^#{2}\s+(.+)$/gm, '<h2 class="md-h2">$1</h2>');
+    html = html.replace(/^#{1}\s+(.+)$/gm, '<h1 class="md-h1">$1</h1>');
+
+    // Horizontal rules (---, ***, ___)
+    html = html.replace(/^(\*{3,}|-{3,}|_{3,})$/gm, '<hr class="md-hr">');
+
+    // Blockquotes
+    html = html.replace(/^>\s+(.+)$/gm, '<blockquote class="md-blockquote"><p>$1</p></blockquote>');
+
+    // Bold & Italic
+    html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/___([^_]+)___/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+    html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+
+    // Images ![alt](url)
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="md-img" />');
+
+    // Links [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
+
+    // Task lists [ ] [x]
+    html = html.replace(/^\s*[-*+]\s+\[ \]\s+(.+)$/gm, '<li class="md-task-item"><input type="checkbox" disabled /> $1</li>');
+    html = html.replace(/^\s*[-*+]\s+\[[xX]\]\s+(.+)$/gm, '<li class="md-task-item"><input type="checkbox" checked disabled /> $1</li>');
+
+    // Unordered lists
+    html = html.replace(/^\s*[-*+]\s+(.+)$/gm, '<li class="md-li">$1</li>');
+
+    // Ordered lists
+    html = html.replace(/^\s*(\d+)\.\s+(.+)$/gm, '<li class="md-oli">$2</li>');
+
+    // Wrap list items
+    html = html.replace(/(<li class="md-li">[\s\S]*?<\/li>)(?!(<li class="md-li">))/g, '<ul class="md-ul">$1</ul>');
+    html = html.replace(/(<li class="md-oli">[\s\S]*?<\/li>)(?!(<li class="md-oli">))/g, '<ol class="md-ol">$1</ol>');
+    html = html.replace(/(<li class="md-task-item">[\s\S]*?<\/li>)(?!(<li class="md-task-item">))/g, '<ul class="md-ul md-task-list">$1</ul>');
+
+    // Tables: | col | col |
+    const lines = html.split('\n');
+    let inTable = false;
+    let tableHtml = '';
+    const newLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('|') && line.endsWith('|')) {
+        if (!inTable) {
+          inTable = true;
+          tableHtml = '<table class="md-table"><tbody>';
+        }
+        if (/^\|[\s\-:|]+\|$/.test(line)) {
+          continue;
+        }
+        const cells = line.slice(1, -1).split('|').map(c => c.trim());
+        const isHeader = (i > 0 && i + 1 < lines.length && /^\|[\s\-:|]+\|$/.test(lines[i + 1].trim()));
+        const tag = isHeader ? 'th' : 'td';
+        tableHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+      } else {
+        if (inTable) {
+          inTable = false;
+          tableHtml += '</tbody></table>';
+          newLines.push(tableHtml);
+          tableHtml = '';
+        }
+        newLines.push(lines[i]);
+      }
+    }
+    if (inTable) {
+      tableHtml += '</tbody></table>';
+      newLines.push(tableHtml);
+    }
+    html = newLines.join('\n');
+
+    // Paragraphs
+    const blocks = html.split(/\n{2,}/);
+    html = blocks.map(block => {
+      block = block.trim();
+      if (!block) return '';
+      if (/^<(h[1-6]|ul|ol|pre|blockquote|table|hr|img)/i.test(block)) {
+        return block;
+      }
+      return `<p class="md-p">${block.replace(/\n/g, '<br/>')}</p>`;
+    }).join('\n\n');
+
+    return html;
+  }
+
   const DocViewerPlugin = {
     id: 'generic-doc',
     nameKey: 'viewer.doc',
@@ -81,14 +197,15 @@
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `doc-${cleanPathId}`;
       const ext = (file.extension || '').toLowerCase();
+      const isMd = ['md', 'markdown'].includes(ext);
       const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
       const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
       const canEdit = (ctx.state.isAdmin || window.IS_ADMIN || (ctx.state.userRights && ctx.state.userRights.can_upload)) && isEditableText;
 
       // 1. WebOS Window Mode (Primary)
       if (window.WindowManager) {
-        const defaultW = Math.min(940, Math.max(520, Math.round(window.innerWidth * 0.75)));
-        const defaultH = Math.min(680, Math.max(400, Math.round(window.innerHeight * 0.75)));
+        const defaultW = Math.min(960, Math.max(540, Math.round(window.innerWidth * 0.75)));
+        const defaultH = Math.min(700, Math.max(420, Math.round(window.innerHeight * 0.75)));
 
         let bodyHtml = '';
 
@@ -111,18 +228,19 @@
             <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#0d1117;color:#c9d1d9;position:relative;">
               <!-- Reader View Toolbar -->
               <div id="docReaderToolbar-${cleanPathId}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);">
-                <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">📝 ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
+                <span style="font-size:0.85rem;font-weight:600;color:#f8fafc;">${isMd ? '📖' : '📝'} ${ctx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;align-items:center;">
                   <button type="button" id="docTextInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
                   <button type="button" id="docWinCopyBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;">📋 Copier</button>
+                  ${isMd ? `<button type="button" id="docMdViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:rgba(255,255,255,0.12);color:#fff;border-radius:8px;">📄 Code Source</button>` : ''}
                   ${canEdit ? `<button type="button" id="docEditToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--accent-primary,#6366f1);color:#fff;border-radius:8px;font-weight:600;"><span data-i18n="doc_editor.edit_btn">✏️ Éditer (WYSIWYG)</span></button>` : ''}
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
 
-              <!-- Reader Text Content -->
-              <div id="docWinTextContainer-${cleanPathId}" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-                <div id="docWinTextBody-${cleanPathId}" style="flex:1;padding:1rem 1.25rem;overflow:auto;font-family:Consolas,Monaco,'Courier New',monospace;font-size:0.88rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;user-select:text;">Chargement du contenu texte...</div>
+              <!-- Reader Text / Markdown Content -->
+              <div id="docWinTextContainer-${cleanPathId}" style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d1117;">
+                <div id="docWinTextBody-${cleanPathId}" class="doc-text-body ${isMd ? 'doc-markdown-render' : 'doc-code-render'}">Chargement du document...</div>
               </div>
 
               <!-- WYSIWYG & Markdown Editor View -->
@@ -134,7 +252,7 @@
                   </div>
                   <div style="display:flex;align-items:center;gap:6px;">
                     <button type="button" id="docSaveBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 12px;background:#22c55e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">💾 Enregistrer</button>
-                    <button type="button" id="docCloseEditBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;cursor:pointer;">👁️ Mode Lecture</button>
+                    <button type="button" id="docCloseEditBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;cursor:pointer;">👁️ Mode Lecture (Rendu)</button>
                   </div>
                 </div>
                 <div id="docEditorHost-${cleanPathId}" style="flex:1;height:calc(100% - 42px);overflow:hidden;"></div>
@@ -164,7 +282,24 @@
 
         let activeEditorInstance = null;
         let isEditing = false;
+        let isRawSourceMode = false;
         let currentRawText = '';
+
+        const updateReaderDisplay = () => {
+          const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
+          const mdToggleBtn = document.getElementById(`docMdViewToggleBtn-${cleanPathId}`);
+          if (!bodyEl) return;
+
+          if (isMd && !isRawSourceMode) {
+            bodyEl.className = 'doc-text-body doc-markdown-render';
+            bodyEl.innerHTML = renderMarkdownHtml(currentRawText);
+            if (mdToggleBtn) mdToggleBtn.textContent = '📄 Code Source';
+          } else {
+            bodyEl.className = 'doc-text-body doc-code-render';
+            bodyEl.textContent = currentRawText;
+            if (mdToggleBtn) mdToggleBtn.textContent = '👁️ Rendu Final';
+          }
+        };
 
         const win = window.WindowManager.createWindow({
           id: winId,
@@ -172,7 +307,7 @@
           appName: appTitle,
           fileName: file.name,
           title: `${appTitle} : ${file.name}`,
-          icon: '📄',
+          icon: isMd ? '📖' : '📄',
           width: defaultW,
           height: defaultH,
           content: bodyHtml,
@@ -181,9 +316,9 @@
               window.MenuBarManager.registerAppMenu('doc-viewer', (container) => {
                 container.innerHTML = `
                   <div class="app-menu-left">
-                    <span class="app-menu-pill active" style="font-weight:600;">📄 ${ctx.escapeHtml(file.name)}</span>
+                    <span class="app-menu-pill active" style="font-weight:600;">${isMd ? '📖' : '📄'} ${ctx.escapeHtml(file.name)}</span>
                     <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${ctx.escapeHtml(ctx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
-                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${ctx.escapeHtml(ctx.t('doc_editor.edit_btn') || 'Éditer')}</button>` : ''}
+                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${ctx.escapeHtml(ctx.t('doc_editor.edit_btn') || 'Éditer (WYSIWYG)')}</button>` : ''}
                     ${canDownloadItem ? `<a href="${file.file_url}" download="${ctx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${ctx.escapeHtml(ctx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
                     <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
@@ -250,8 +385,7 @@
                 badge.className = 'doc-status-badge saved';
                 badge.textContent = '● Enregistré';
               }
-              const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
-              if (bodyEl) bodyEl.textContent = newContent;
+              updateReaderDisplay();
 
               if (typeof ctx.showToast === 'function') {
                 ctx.showToast(json.message || 'Document enregistré avec succès !', 'success');
@@ -297,7 +431,6 @@
               if (typeof ctx.showToast === 'function') ctx.showToast('Chargement de l\'éditeur WYSIWYG...', 'info');
               try {
                 const Editor = await loadToastUiEditor();
-                const isMd = ['md', 'markdown'].includes(ext);
 
                 activeEditorInstance = new Editor({
                   el: hostEl,
@@ -333,10 +466,13 @@
             } else if (activeEditorInstance) {
               activeEditorInstance.setMarkdown(currentRawText);
             }
+          } else {
+            // Returning to reader mode: refresh rendered HTML preview
+            updateReaderDisplay();
           }
         };
 
-        // Bind in-window info buttons
+        // Bind in-window info & action buttons
         setTimeout(() => {
           const pdfInfo = document.getElementById(`docPdfInfoBtn-${cleanPathId}`);
           const textInfo = document.getElementById(`docTextInfoBtn-${cleanPathId}`);
@@ -344,6 +480,7 @@
           const editBtn = document.getElementById(`docEditToggleBtn-${cleanPathId}`);
           const closeEditBtn = document.getElementById(`docCloseEditBtn-${cleanPathId}`);
           const saveBtn = document.getElementById(`docSaveBtn-${cleanPathId}`);
+          const mdToggleBtn = document.getElementById(`docMdViewToggleBtn-${cleanPathId}`);
 
           const onInfo = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
           if (pdfInfo) pdfInfo.onclick = onInfo;
@@ -352,6 +489,13 @@
           if (editBtn) editBtn.onclick = () => toggleEditor(true);
           if (closeEditBtn) closeEditBtn.onclick = () => toggleEditor(false);
           if (saveBtn) saveBtn.onclick = () => saveDocument();
+
+          if (mdToggleBtn) {
+            mdToggleBtn.onclick = () => {
+              isRawSourceMode = !isRawSourceMode;
+              updateReaderDisplay();
+            };
+          }
         }, 50);
 
         // Shortcut I (info) & Ctrl+S (save)
@@ -373,16 +517,14 @@
         };
         window.addEventListener('keydown', keyHandler);
 
-        // Load Text Asynchronously if applicable
+        // Load Text / Markdown Asynchronously
         if (isText) {
           try {
             const res = await fetch(file.file_url);
             const text = await res.text();
             currentRawText = text;
-            const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
-            if (bodyEl) {
-              bodyEl.textContent = text;
-            }
+            updateReaderDisplay();
+
             const copyBtn = document.getElementById(`docWinCopyBtn-${cleanPathId}`);
             if (copyBtn) {
               copyBtn.onclick = () => {
@@ -394,7 +536,7 @@
             }
           } catch (err) {
             const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
-            if (bodyEl) bodyEl.textContent = `Erreur lors de la lecture du fichier texte: ${err.message}`;
+            if (bodyEl) bodyEl.textContent = `Erreur lors de la lecture du fichier : ${err.message}`;
           }
         }
 
