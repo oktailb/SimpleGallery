@@ -676,6 +676,13 @@
   }
 
   // Instantiate and mount WebOS Eight Queens Game App
-  window.EightQueensApp = new WebOS8QueensApp();
+  const eightQueensApp = new WebOS8QueensApp();
+  window.EightQueensApp = eightQueensApp;
+  window['8queensApp'] = eightQueensApp;
+  window.eightQueensApp = eightQueensApp;
+
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('8queens', eightQueensApp);
+  }
 
 })(window);

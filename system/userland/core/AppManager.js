@@ -63,6 +63,23 @@ class AppManager {
         }
     }
 
+    /**
+     * Registers or binds a live application instance to its manifest ID
+     */
+    registerInstance(appId, appInstance) {
+        if (!appId || !appInstance) return;
+        const entry = this.apps.get(appId);
+        if (entry) {
+            entry.instance = appInstance;
+        } else {
+            this.apps.set(appId, {
+                manifest: { id: appId },
+                instance: appInstance,
+                running: false
+            });
+        }
+    }
+
     getAppForFile(file) {
         if (!file) return null;
         const ext = (file.extension || '').toLowerCase();
@@ -151,7 +168,6 @@ class AppManager {
         }
 
         // 2. Generic naming conventions for loaded global app instances
-        // Handles: explorerApp, MapsApp, EightQueensApp, docViewerApp, archiveManagerApp, settingsApp, etc.
         const camelId = appId.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
         const pascalId = camelId.charAt(0).toUpperCase() + camelId.slice(1);
 
@@ -159,6 +175,9 @@ class AppManager {
             window[appId + 'App'],
             window[camelId + 'App'],
             window[pascalId + 'App'],
+            window.EightQueensApp,
+            window.MapsApp,
+            window.explorerApp,
             window[appId],
             window[camelId],
             window[pascalId],
@@ -168,7 +187,7 @@ class AppManager {
 
         for (const candidate of candidates) {
             if (candidate && typeof candidate.open === 'function') {
-                candidate.open(params);
+                candidate.open(params.file || params, params, window.desktop || window.explorerApp);
                 if (window.EventBus) window.EventBus.emit('app:launch', { appId, params });
                 return;
             }
@@ -200,8 +219,17 @@ class AppManager {
             return;
         }
 
-        // 5. If no file was provided and app has file associations, open interactive file picker
-        this.openFilePicker(appId);
+        // 5. If application has file associations, open file picker
+        const hasFileAssociations = entry && entry.manifest && (
+            (Array.isArray(entry.manifest.extensions) && entry.manifest.extensions.length > 0) ||
+            (Array.isArray(entry.manifest.mimeTypes) && entry.manifest.mimeTypes.length > 0)
+        );
+
+        if (hasFileAssociations) {
+            this.openFilePicker(appId);
+        } else {
+            console.warn(`[AppManager] No runnable instance found for app: "${appId}"`);
+        }
 
         if (window.EventBus) {
             window.EventBus.emit('app:launch', { appId, params });
