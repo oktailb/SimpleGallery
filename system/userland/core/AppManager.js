@@ -205,8 +205,7 @@ class AppManager {
 
             case 'maps':
                 if (window.sys && typeof window.sys.openMaps === 'function') {
-                    const files = (window.explorerApp && window.explorerApp.state && window.explorerApp.state.files) || [];
-                    window.sys.openMaps({ files, mode: 'folder', ...params });
+                    window.sys.openMaps(params);
                 }
                 break;
 

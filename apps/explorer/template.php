@@ -26,6 +26,9 @@
       </div>
 
       <div class="gallery-stats" data-i18n="stats.loading">Chargement...</div>
+      <button type="button" class="folder-map-btn" style="display: none;" title="Explorer la carte et le trajet GPS interactif des photos du dossier" data-i18n-title="nav.map">
+        🗺️ <span data-i18n="nav.map">Carte GPS</span>
+      </button>
     </div>
 
     <!-- Main Workspace -->
