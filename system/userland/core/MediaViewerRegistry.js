@@ -97,15 +97,29 @@
       return this.findViewer(file);
     }
 
-    open(file, options = {}, context = {}) {
+    open(file, options = {}, context = null) {
       const viewer = this.findViewer(file);
       if (!viewer) {
         console.warn('No media viewer plugin found for file:', file);
         return false;
       }
 
+      const effectiveCtx = (context && context.state) ? context : (
+        (window.explorerApp && typeof window.explorerApp.getActiveInstance === 'function' && window.explorerApp.getActiveInstance())
+        || {
+          state: {
+            filteredFiles: [file],
+            files: [file],
+            isAdmin: !!window.IS_ADMIN,
+            userRights: {}
+          },
+          t: (k, p) => (window.I18nEngine ? window.I18nEngine.t(k, p) : k),
+          escapeHtml: (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '')
+        }
+      );
+
       if (typeof viewer.open === 'function') {
-        return viewer.open(file, options, context);
+        return viewer.open(file, options, effectiveCtx);
       }
       return false;
     }

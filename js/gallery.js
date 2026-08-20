@@ -9,6 +9,13 @@
 (function(window) {
   'use strict';
 
+  // Automatically keep browser address bar URL clean (hide ?dir= and query parameters)
+  try {
+    if (typeof window !== 'undefined' && window.history && window.history.replaceState && window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  } catch (e) {}
+
   class WebOSDesktop {
     constructor() {
       this.state = {
@@ -239,11 +246,15 @@
 
       // Notify running apps of locale change
       if (window.explorerApp) {
-        if (typeof window.explorerApp.bindMenuBar === 'function') {
-          window.explorerApp.bindMenuBar();
+        if (typeof window.explorerApp.updateMenuBarForActiveInstance === 'function') {
+          window.explorerApp.updateMenuBarForActiveInstance();
         }
-        if (typeof window.explorerApp.applyFilterAndRender === 'function') {
-          window.explorerApp.applyFilterAndRender();
+        if (window.explorerApp.instances) {
+          window.explorerApp.instances.forEach(inst => {
+            if (typeof inst.applyFilterAndRender === 'function') {
+              inst.applyFilterAndRender();
+            }
+          });
         }
       }
     }

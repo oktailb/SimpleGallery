@@ -554,7 +554,20 @@
           const thumbEl = document.getElementById(`popupThumb-${cleanId}`);
           const openAction = () => {
             if (window.MediaViewerRegistry) {
-              window.MediaViewerRegistry.open(file);
+              const activeInst = (window.explorerApp && typeof window.explorerApp.getActiveInstance === 'function')
+                ? window.explorerApp.getActiveInstance()
+                : null;
+              const ctx = activeInst || {
+                state: {
+                  filteredFiles: this.files || [file],
+                  files: this.files || [file],
+                  isAdmin: !!window.IS_ADMIN,
+                  userRights: {}
+                },
+                t: (k, p) => (window.I18nEngine ? window.I18nEngine.t(k, p) : k),
+                escapeHtml: (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '')
+              };
+              window.MediaViewerRegistry.open(file, {}, ctx);
             }
           };
           if (openBtn) openBtn.onclick = openAction;

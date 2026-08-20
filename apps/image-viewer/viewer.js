@@ -52,16 +52,30 @@
     /**
      * Opens an image file in a WebOS Floating Window
      */
-    open(file, options, ctx) {
-      if (!ctx) return false;
-      const index = (typeof options.index === 'number') ? options.index : ctx.state.filteredFiles.findIndex(f => f.path === file.path);
-      if (index === -1) return false;
+    open(file, options = {}, ctx = null) {
+      const effectiveCtx = (ctx && ctx.state) ? ctx : (
+        (window.explorerApp && typeof window.explorerApp.getActiveInstance === 'function' && window.explorerApp.getActiveInstance())
+        || {
+          state: {
+            filteredFiles: [file],
+            files: [file],
+            isAdmin: !!window.IS_ADMIN,
+            userRights: {}
+          },
+          t: (k, p) => (window.I18nEngine ? window.I18nEngine.t(k, p) : k),
+          escapeHtml: (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '')
+        }
+      );
 
-      this.currentCtx = ctx;
+      const filesList = (effectiveCtx.state && Array.isArray(effectiveCtx.state.filteredFiles)) ? effectiveCtx.state.filteredFiles : [file];
+      const foundIdx = filesList.findIndex(f => f.path === file.path);
+      const index = (typeof options.index === 'number') ? options.index : (foundIdx !== -1 ? foundIdx : 0);
+
+      this.currentCtx = effectiveCtx;
       this.currentFile = file;
       this.currentIndex = index;
 
-      const isEditableImage = ctx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
+      const isEditableImage = effectiveCtx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `image-${cleanPathId}`;
 

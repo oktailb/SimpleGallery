@@ -16,12 +16,26 @@
     supportsPip: true,
     cssPath: 'apps/archive-manager/manager.css',
 
-    async open(file, options, ctx) {
-      if (!ctx) return false;
-      const index = (typeof options.index === 'number') ? options.index : ctx.state.filteredFiles.findIndex(f => f.path === file.path);
-      if (index === -1) return false;
+    async open(file, options = {}, ctx = null) {
+      const effectiveCtx = (ctx && ctx.state) ? ctx : (
+        (window.explorerApp && typeof window.explorerApp.getActiveInstance === 'function' && window.explorerApp.getActiveInstance())
+        || {
+          state: {
+            filteredFiles: [file],
+            files: [file],
+            isAdmin: !!window.IS_ADMIN,
+            userRights: {}
+          },
+          t: (k, p) => (window.I18nEngine ? window.I18nEngine.t(k, p) : k),
+          escapeHtml: (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '')
+        }
+      );
 
-      const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item : true);
+      const filesList = (effectiveCtx.state && Array.isArray(effectiveCtx.state.filteredFiles)) ? effectiveCtx.state.filteredFiles : [file];
+      const foundIdx = filesList.findIndex(f => f.path === file.path);
+      const index = (typeof options.index === 'number') ? options.index : (foundIdx !== -1 ? foundIdx : 0);
+
+      const canDownloadItem = effectiveCtx.state.isAdmin || (effectiveCtx.state.userRights ? effectiveCtx.state.userRights.can_download_item : true);
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `archive-${cleanPathId}`;
 
@@ -31,7 +45,7 @@
         const defaultH = Math.min(580, Math.max(360, Math.round(window.innerHeight * 0.70)));
         const appTitle = (window.sys && window.sys.appManager) 
           ? window.sys.appManager.getAppTitle('archive-manager') 
-          : (ctx.t('apps.archive-manager.title') || "Gestionnaire d'Archives");
+          : (effectiveCtx.t('apps.archive-manager.title') || "Gestionnaire d'Archives");
 
         const win = window.WindowManager.createWindow({
           id: winId,

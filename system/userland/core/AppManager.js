@@ -129,8 +129,6 @@ class AppManager {
                 this.mimeMap.set(mime.toLowerCase(), manifest.id);
             });
         }
-
-        console.log(`[AppManager] Registered application: ${manifest.name} (${manifest.id})`);
     }
 
     getAppForFile(file) {

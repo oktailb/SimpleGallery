@@ -188,19 +188,33 @@
     supportsPip: true,
     cssPath: 'apps/doc-viewer/viewer.css',
 
-    async open(file, options, ctx) {
-      if (!ctx) return false;
-      const index = (typeof options.index === 'number') ? options.index : ctx.state.filteredFiles.findIndex(f => f.path === file.path);
-      if (index === -1) return false;
+    async open(file, options = {}, ctx = null) {
+      const effectiveCtx = (ctx && ctx.state) ? ctx : (
+        (window.explorerApp && typeof window.explorerApp.getActiveInstance === 'function' && window.explorerApp.getActiveInstance())
+        || {
+          state: {
+            filteredFiles: [file],
+            files: [file],
+            isAdmin: !!window.IS_ADMIN,
+            userRights: {}
+          },
+          t: (k, p) => (window.I18nEngine ? window.I18nEngine.t(k, p) : k),
+          escapeHtml: (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '')
+        }
+      );
 
-      const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item : true);
+      const filesList = (effectiveCtx.state && Array.isArray(effectiveCtx.state.filteredFiles)) ? effectiveCtx.state.filteredFiles : [file];
+      const foundIdx = filesList.findIndex(f => f.path === file.path);
+      const index = (typeof options.index === 'number') ? options.index : (foundIdx !== -1 ? foundIdx : 0);
+
+      const canDownloadItem = effectiveCtx.state.isAdmin || (effectiveCtx.state.userRights ? effectiveCtx.state.userRights.can_download_item : true);
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `doc-${cleanPathId}`;
       const ext = (file.extension || '').toLowerCase();
       const isMd = ['md', 'markdown'].includes(ext);
       const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
       const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
-      const canEdit = (ctx.state.isAdmin || window.IS_ADMIN || (ctx.state.userRights && ctx.state.userRights.can_upload)) && isEditableText;
+      const canEdit = (effectiveCtx.state.isAdmin || window.IS_ADMIN || (effectiveCtx.state.userRights && effectiveCtx.state.userRights.can_upload)) && isEditableText;
 
       // 1. WebOS Window Mode (Primary)
       if (window.WindowManager) {

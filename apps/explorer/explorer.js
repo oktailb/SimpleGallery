@@ -1859,13 +1859,7 @@
                 <span id="currentViewLabel">${this.getViewModeLabel(activeState.viewMode || 'polaroid')}</span>
                 <span class="view-dropdown-arrow">▾</span>
               </button>
-              <div id="viewDropdownMenu" class="view-dropdown-menu" style="display: none;">
-                ${((window.GalleryViewRegistry && window.GalleryViewRegistry.getAll()) || []).map(v => `
-                  <button type="button" class="view-option-btn ${activeState.viewMode === v.id ? 'active' : ''}" data-view-mode="${v.id}">
-                    <span>${v.icon || '🖼️'}</span> <span>${this.escapeHtml(this.t(v.nameKey) || v.name || v.id)}</span>
-                  </button>
-                `).join('')}
-              </div>
+              <div id="viewDropdownMenu" class="view-dropdown-menu" style="display: none;"></div>
             </div>
 
             <!-- New Window / Instance Action -->
@@ -1889,9 +1883,10 @@
 
         this.bindMenuBarEvents();
         this.updateArchiveMenuUI();
+        this.updateViewDropdownUI();
       });
 
-      window.MenuBarManager.restoreDefaultMenu();
+      window.MenuBarManager.setActiveApp('explorer');
     }
 
     bindMenuBarEvents() {

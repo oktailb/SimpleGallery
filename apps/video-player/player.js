@@ -19,10 +19,22 @@
     supportsPip: true,
     cssPath: 'apps/video-player/player.css',
 
-    open(file, options, ctx) {
-      if (!ctx) return false;
+    open(file, options = {}, ctx = null) {
+      const effectiveCtx = (ctx && ctx.state) ? ctx : (
+        (window.explorerApp && typeof window.explorerApp.getActiveInstance === 'function' && window.explorerApp.getActiveInstance())
+        || {
+          state: {
+            filteredFiles: [file],
+            files: [file],
+            isAdmin: !!window.IS_ADMIN,
+            userRights: {}
+          },
+          t: (k, p) => (window.I18nEngine ? window.I18nEngine.t(k, p) : k),
+          escapeHtml: (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '')
+        }
+      );
 
-      const canDownloadItem = ctx.state.isAdmin || (ctx.state.userRights ? ctx.state.userRights.can_download_item !== false : true);
+      const canDownloadItem = effectiveCtx.state.isAdmin || (effectiveCtx.state.userRights ? effectiveCtx.state.userRights.can_download_item !== false : true);
       const controlsListAttr = canDownloadItem ? '' : 'controlsList="nodownload"';
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `video-${cleanPathId}`;
@@ -31,7 +43,7 @@
       if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager) 
           ? window.sys.appManager.getAppTitle('video-player') 
-          : (ctx.t('apps.video-player.title') || "Lecteur Vidéo");
+          : (effectiveCtx.t('apps.video-player.title') || "Lecteur Vidéo");
 
         const win = window.WindowManager.createWindow({
           id: winId,
