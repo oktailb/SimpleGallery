@@ -1135,6 +1135,12 @@ function load_locale_translations(string $base_dir, string $code): array {
     if (!$content) return [];
     $data = @json_decode($content, true);
     $base_translations = (isset($data['translations']) && is_array($data['translations'])) ? $data['translations'] : [];
+    if (!class_exists('\SimpleGallery\Kernel\PluginDiscovery')) {
+        $plugin_disc_file = __DIR__ . '/system/kernel/PluginDiscovery.php';
+        if (is_file($plugin_disc_file)) {
+            require_once $plugin_disc_file;
+        }
+    }
     $app_translations = class_exists('\SimpleGallery\Kernel\PluginDiscovery') 
         ? \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations(__DIR__, $clean_code) 
         : [];

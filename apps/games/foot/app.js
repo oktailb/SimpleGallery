@@ -190,7 +190,15 @@
       this.ctx = null;
       this.el = {};
 
+      if (window.sys && window.sys.events) {
+        this.localeUnsub = window.sys.events.on('locale:changed', () => this.updateLocale());
+      }
+
       this.initWindow();
+    }
+
+    t(key, replacements = {}) {
+      return this.app.t(key, replacements);
     }
 
     initWindow() {
@@ -262,7 +270,11 @@
         onFocus: () => {
           this.updateMenuBar();
         },
+        onLocaleChanged: () => {
+          this.updateLocale();
+        },
         onClose: () => {
+          if (this.localeUnsub) this.localeUnsub();
           this.stopLoop();
           this.app.instances.delete(this.id);
         },

@@ -132,6 +132,10 @@
       this.win = null;
       this.el = {};
 
+      if (window.sys && window.sys.events) {
+        this.localeUnsub = window.sys.events.on('locale:changed', () => this.updateLocale());
+      }
+
       this.initWindow();
     }
 
@@ -240,7 +244,11 @@
         onFocus: () => {
           this.updateMenuBar();
         },
+        onLocaleChanged: () => {
+          this.updateLocale();
+        },
         onClose: () => {
+          if (this.localeUnsub) this.localeUnsub();
           this.stopTimer();
           this.stopAutoSolve();
           this.app.instances.delete(this.id);

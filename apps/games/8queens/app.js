@@ -32,6 +32,9 @@
       this.el = {};
 
       this.computeSolutions();
+      if (window.sys && window.sys.events) {
+        this.localeUnsub = window.sys.events.on('locale:changed', () => this.updateLocale());
+      }
       this.initWindow();
     }
 
@@ -195,7 +198,11 @@
         onFocus: () => {
           this.updateMenuBar();
         },
+        onLocaleChanged: () => {
+          this.updateLocale();
+        },
         onClose: () => {
+          if (this.localeUnsub) this.localeUnsub();
           this.stopTimer();
           this.stopAutoPlay();
           this.app.instances.delete(this.id);
