@@ -1,7 +1,6 @@
 /**
  * SimpleGallery 2026 - Explorer App Core Stylesheet (apps/explorer/explorer.css)
- * Common styles for badges, overlays, selection marquee, modals, and explorer tools.
- * View-specific layouts are loaded from apps/explorer/views/*.css.
+ * Fully Theme-Adaptive Badges, Dropdowns, Overlays, Selection Marquee, and Modals
  */
 
 /* -------------------------------------------------------------
@@ -19,11 +18,11 @@
   top: 100%;
   right: 0;
   margin-top: 6px;
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--menu-bar-bg, var(--bg-card, rgba(15, 23, 42, 0.95)));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
   border-radius: 12px;
   padding: 6px;
   min-width: 170px;
@@ -45,7 +44,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   font-size: 0.85rem;
   font-weight: 500;
   border-radius: 8px;
@@ -62,12 +61,12 @@
 .archive-menu-item:hover,
 .archive-option-item:hover,
 .view-option-btn:hover {
-  background: rgba(99, 102, 241, 0.2);
-  color: #ffffff;
+  background: var(--border-color-hover, rgba(99, 102, 241, 0.2));
+  color: var(--text-main, #ffffff);
 }
 
 .view-option-btn.active {
-  background: rgba(99, 102, 241, 0.35);
+  background: var(--accent-primary, #6366f1);
   color: #ffffff;
   font-weight: 600;
 }
@@ -83,7 +82,7 @@
   transform: translate(-50%, -50%);
   width: 48px;
   height: 48px;
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--menu-bar-bg, rgba(15, 23, 42, 0.75));
   backdrop-filter: blur(6px);
   border-radius: 50%;
   display: flex;
@@ -92,7 +91,7 @@
   font-size: 1.3rem;
   color: #ffffff;
   border: 1.5px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   transition: all 0.3s ease;
 }
@@ -101,14 +100,14 @@
 .grid-card:hover .video-play-overlay,
 .mosaic-card:hover .video-play-overlay {
   transform: translate(-50%, -50%) scale(1.15);
-  background: rgba(99, 102, 241, 0.85);
+  background: var(--accent-primary, #6366f1);
   border-color: #ffffff;
 }
 
 .gps-badge {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: var(--bg-card, rgba(99, 102, 241, 0.2));
+  color: var(--accent-primary, #818cf8);
+  border: 1px solid var(--border-color, rgba(99, 102, 241, 0.4));
   border-radius: 6px;
   padding: 2px 6px;
   font-size: 0.7rem;
@@ -120,7 +119,7 @@
 }
 
 .gps-badge:hover {
-  background: rgba(99, 102, 241, 0.4);
+  background: var(--accent-primary, #6366f1);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -135,11 +134,11 @@
 .delete-item-btn,
 .favorite-btn,
 .pip-card-btn {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--menu-bar-bg, rgba(15, 23, 42, 0.6));
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--text-main, #ffffff);
   cursor: pointer;
   padding: 4px;
   font-size: 0.75rem;
@@ -152,12 +151,14 @@
 .edit-media-comment-btn:hover,
 .favorite-btn:hover,
 .pip-card-btn:hover {
-  background: rgba(99, 102, 241, 0.8);
+  background: var(--accent-primary, #6366f1);
+  color: #ffffff;
   transform: scale(1.1);
 }
 
 .delete-item-btn:hover {
   background: rgba(239, 68, 68, 0.8);
+  color: #ffffff;
   transform: scale(1.1);
 }
 
@@ -166,7 +167,7 @@
    ------------------------------------------------------------- */
 .selection-marquee {
   position: absolute;
-  border: 1.5px solid #6366f1;
+  border: 1.5px solid var(--accent-primary, #6366f1);
   background: rgba(99, 102, 241, 0.15);
   pointer-events: none;
   z-index: 9999;
@@ -178,25 +179,25 @@
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.9);
+  background: var(--menu-bar-bg, rgba(15, 23, 42, 0.9));
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
   padding: 0.6rem 1.25rem;
   border-radius: 30px;
   display: flex;
   align-items: center;
   gap: 1rem;
   z-index: 1000;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   font-size: 0.85rem;
   font-weight: 500;
 }
 
 .selection-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--bg-card, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+  color: var(--text-main, #ffffff);
   padding: 4px 10px;
   border-radius: 15px;
   cursor: pointer;
@@ -205,8 +206,9 @@
 }
 
 .selection-btn:hover {
-  background: #6366f1;
-  border-color: #6366f1;
+  background: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary, #6366f1);
+  color: #ffffff;
 }
 
 /* -------------------------------------------------------------
@@ -216,7 +218,7 @@
 .map-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -225,18 +227,19 @@
 }
 
 .search-modal-card {
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  background: var(--window-bg, var(--bg-main, #0f172a));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 14px;
   width: 90%;
   max-width: 580px;
   padding: 1.5rem;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8);
+  color: var(--text-main, #f8fafc);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
 }
 
 .map-modal-card {
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--window-bg, var(--bg-main, #0f172a));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   border-radius: 14px;
   width: 92%;
   max-width: 1080px;
@@ -244,11 +247,12 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  color: var(--text-main, #f8fafc);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
 
 .map-canvas {
   width: 100%;
   flex: 1;
-  background: #020617;
+  background: var(--bg-main, #020617);
 }

@@ -73,13 +73,13 @@
       };
 
       const renderBody = (meta, isLoading = false) => `
-        <div class="webos-metadata-inspector-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:#0d1117;color:#c9d1d9;overflow:hidden;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);gap:10px;">
+        <div class="webos-metadata-inspector-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--window-bg, var(--bg-main, #0d1117));color:var(--text-main, #c9d1d9);overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--header-bg, var(--bg-card, rgba(255,255,255,0.03)));border-bottom:1px solid var(--border-color, rgba(255,255,255,0.08));gap:10px;">
             <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
               <span style="font-size:1.2rem;">ℹ️</span>
-              <strong style="font-size:0.95rem;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.escapeHtml(file.name)}</strong>
+              <strong style="font-size:0.95rem;color:var(--text-main, #f8fafc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.escapeHtml(file.name)}</strong>
             </div>
-            ${isLoading ? '<div style="font-size:0.8rem;color:#818cf8;animation:pulse 1.5s infinite;">⏳ Chargement...</div>' : ''}
+            ${isLoading ? '<div style="font-size:0.8rem;color:var(--accent-primary, #818cf8);animation:pulse 1.5s infinite;">⏳ Chargement...</div>' : ''}
           </div>
           <div id="metaInspectorBody-${cleanPathId}" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
             ${this.buildHtml(file, meta)}

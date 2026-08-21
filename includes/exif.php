@@ -449,7 +449,7 @@ function transfer_jpeg_exif(string $orig_path, string $new_jpeg): string {
 
         if ($marker === 0xE1) {
             $payload = substr($orig, $pos + 4, $seg_len - 2);
-            if (str_starts_with($payload, "Exif\0\0")) {
+            if (strncmp($payload, "Exif\0\0", 6) === 0) {
                 $exif_seg = substr($orig, $pos, $seg_len + 2);
                 break;
             }

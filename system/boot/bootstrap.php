@@ -14,6 +14,23 @@ if (PHP_VERSION_ID < 70200) {
     die('SimpleGallery requires PHP 7.2 or higher. Current version: ' . PHP_VERSION);
 }
 
+// 1.1 PHP 8.0 Polyfills for PHP 7.2 - 7.4 environments
+if (!function_exists('str_starts_with')) {
+    function str_starts_with(string $haystack, string $needle): bool {
+        return (string)$needle === '' || strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
+}
+if (!function_exists('str_ends_with')) {
+    function str_ends_with(string $haystack, string $needle): bool {
+        return (string)$needle === '' || substr($haystack, -strlen($needle)) === (string)$needle;
+    }
+}
+if (!function_exists('str_contains')) {
+    function str_contains(string $haystack, string $needle): bool {
+        return (string)$needle === '' || strpos($haystack, $needle) !== false;
+    }
+}
+
 // 2. Send standard security headers
 if (!headers_sent()) {
     header('X-Content-Type-Options: nosniff');
@@ -34,8 +51,12 @@ require_once $project_root . '/config/security.php';
 require_once $project_root . '/config/mime_types.php';
 require_once $project_root . '/config/themes.php';
 
-// 6. Theme Initialization
-$theme_preset = $theme_preset ?? 'polaroid-classic';
+// 6. Theme Initialization (supports user cookie override)
+if (!empty($_COOKIE['sg_theme']) && isset($theme_colors[$_COOKIE['sg_theme']])) {
+    $theme_preset = $_COOKIE['sg_theme'];
+} else {
+    $theme_preset = $theme_preset ?? 'polaroid-classic';
+}
 $active_theme = $theme_colors[$theme_preset] ?? $theme_colors['polaroid-classic'];
 
 // 7. Storage Mounting & Path Resolution Subsystem

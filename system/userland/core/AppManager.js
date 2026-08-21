@@ -193,8 +193,18 @@ class AppManager {
             }
         }
 
-        // 3. Built-in Special Modals (Settings / Admin)
-        if (appId === 'settings' || appId === 'admin') {
+        // 3. Built-in Special Modals & Windows (Settings / Admin)
+        if (appId === 'settings') {
+            if (window.SettingsApp && typeof window.SettingsApp.open === 'function') {
+                window.SettingsApp.open(params.tab || null);
+            } else if (window.desktop && typeof window.desktop.openAdminModal === 'function') {
+                window.desktop.openAdminModal();
+            }
+            if (window.EventBus) window.EventBus.emit('app:launch', { appId, params });
+            return;
+        }
+
+        if (appId === 'admin') {
             if (window.desktop && typeof window.desktop.openAdminModal === 'function') {
                 window.desktop.openAdminModal();
             } else {

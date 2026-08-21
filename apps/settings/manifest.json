@@ -1,20 +1,21 @@
 {
   "id": "settings",
-  "name": "System & Folder Settings",
-  "version": "2.0.0",
+  "name": "Control Panel",
+  "version": "2.1.0",
   "icon": "⚙️",
+  "category": "system",
   "locales": {
     "fr": {
-      "title": "Paramètres Système & Dossiers",
-      "description": "Panneau d'administration, permissions, gestion des dotfiles et thèmes visuels"
+      "title": "Panneau de Configuration",
+      "description": "Gestion des droits, fonds d'écran, thèmes visuels, diagnostics système et extensions"
     },
     "en": {
-      "title": "System & Folder Settings",
-      "description": "Admin panel, permissions, dotfiles management, and visual themes"
+      "title": "Control Panel",
+      "description": "Permissions matrix, desktop wallpapers, visual themes, system diagnostics, and extensions"
     },
     "ja": {
-      "title": "システム＆フォルダ設定",
-      "description": "管理パネル、権限、ドットファイル管理、ビジュアルテーマ"
+      "title": "コントロールパネル",
+      "description": "権限マトリクス、デスクトップ壁紙、テーマ、システム診断、アプリ拡張設定"
     }
   },
   "entry": {
@@ -24,9 +25,11 @@
   },
   "capabilities": [
     "admin_auth",
-    "dotfiles_editor",
     "permissions_matrix",
+    "wallpaper_manager",
     "theme_switcher",
+    "system_diagnostics",
+    "plugin_settings_registry",
     "cookie_consent"
   ]
 }

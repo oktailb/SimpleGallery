@@ -39,7 +39,19 @@
 
       if (window.sys && window.sys.events) {
         window.sys.events.on('locale:changed', ({ code }) => this.onLocaleChanged(code));
+        window.sys.events.on('theme:changed', ({ themeId }) => this.onThemeChanged(themeId));
       }
+      if (window.EventBus) {
+        window.EventBus.on('theme:changed', ({ themeId }) => this.onThemeChanged(themeId));
+      }
+    }
+
+    onThemeChanged(themeId) {
+      this.windows.forEach(win => {
+        if (win.element) {
+          win.element.setAttribute('data-theme', themeId);
+        }
+      });
     }
 
     /**
@@ -89,13 +101,14 @@
         element: null,
         headerEl: null,
         bodyEl: null,
-        actionsEl: null,
+        taskbarEl: null,
         onClose: config.onClose || null,
+        onResize: config.onResize || null,
         onFocus: config.onFocus || null
       };
 
-      this.renderWindowDOM(win, config);
       this.windows.set(id, win);
+      this.renderWindowDOM(win, config);
       this.updateTaskbar();
       this.focusWindow(id);
 
@@ -117,6 +130,9 @@
       el.id = `window-${win.id}`;
       el.className = `webos-window app-${win.appId} ${win.state === 'maximized' ? 'is-maximized' : ''}`;
       el.style.zIndex = win.zIndex;
+      
+      const curTheme = document.documentElement.getAttribute('data-theme') || (window.localStorage && window.localStorage.getItem('sg_active_theme')) || 'dark-glass';
+      el.setAttribute('data-theme', curTheme);
 
       el.innerHTML = `
         <div class="window-header">

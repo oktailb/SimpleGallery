@@ -70,15 +70,35 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="system/userland/i18n/I18nEngine.js" defer></script>
   <script src="system/userland/ui/MetadataInspector.js" defer></script>
 
-  <!-- Dynamic Theme Injection from config.php -->
+  <!-- Synchronous theme restore to avoid flash of unstyled theme -->
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('sg_active_theme') || (document.cookie.match(/(?:^|;\s*)sg_theme=([^;]+)/) || [])[1];
+        if (t) {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Dynamic Theme Injection from config/themes.php -->
   <style id="dynamic-theme-vars">
-    :root {
+    :root, :root[data-theme="<?php echo $theme_preset; ?>"], body[data-theme="<?php echo $theme_preset; ?>"] {
       --bg-main: <?php echo $active_theme['bg_main']; ?>;
+      --window-bg: <?php echo $active_theme['window_bg'] ?? $active_theme['bg_main']; ?>;
+      --header-bg: <?php echo $active_theme['header_bg'] ?? $active_theme['card_bg']; ?>;
+      --menu-bar-bg: <?php echo $active_theme['menu_bar_bg'] ?? $active_theme['bg_main']; ?>;
+      --sidebar-bg: <?php echo $active_theme['sidebar_bg'] ?? 'rgba(0, 0, 0, 0.25)'; ?>;
       --polaroid-bg: <?php echo $active_theme['polaroid_bg']; ?>;
       --polaroid-text: <?php echo $active_theme['polaroid_text']; ?>;
       --polaroid-sub: <?php echo $active_theme['polaroid_sub']; ?>;
       --accent-primary: <?php echo $active_theme['accent']; ?>;
+      --accent: <?php echo $active_theme['accent']; ?>;
       --bg-card: <?php echo $active_theme['card_bg']; ?>;
+      --card-bg: <?php echo $active_theme['card_bg']; ?>;
+      --border-color: <?php echo $active_theme['border_color'] ?? 'rgba(255, 255, 255, 0.08)'; ?>;
+      --border-color-hover: <?php echo $active_theme['border_color_hover'] ?? 'rgba(99, 102, 241, 0.4)'; ?>;
       --text-main: <?php echo $active_theme['text_main']; ?>;
       --text-muted: <?php echo $active_theme['text_muted']; ?>;
     }
@@ -137,7 +157,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>
 
 </head>
-<body>
+<body data-theme="<?php echo htmlspecialchars($theme_preset, ENT_QUOTES, 'UTF-8'); ?>">
 
   <!-- WebOS Top System & Application Bar (macOS Style) -->
   <header class="app-header">

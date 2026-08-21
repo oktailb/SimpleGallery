@@ -746,6 +746,11 @@
   }
 
   // Instantiate and mount Maps App
-  window.MapsApp = new WebOSMapsApp();
+  const mapsApp = new WebOSMapsApp();
+  window.MapsApp = mapsApp;
+  window.mapsApp = mapsApp;
 
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('maps', mapsApp);
+  }
 })(window);

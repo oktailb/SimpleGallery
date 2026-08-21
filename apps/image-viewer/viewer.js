@@ -99,16 +99,16 @@
           width: defaultW,
           height: defaultH,
           content: `
-            <div class="webos-image-window-content" id="imgWinContent-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#090a0f;">
+            <div class="webos-image-window-content" id="imgWinContent-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--window-bg, var(--bg-main, #090a0f));">
               <div class="image-viewer-container" id="imageViewerContainer-${cleanPathId}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:grab;">
                 <img id="imgExplorer-${cleanPathId}" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" style="max-width:100%;max-height:100%;object-fit:contain;user-select:none;transition:transform 0.15s cubic-bezier(0.2,0,0,1);" draggable="false" />
               </div>
-              <div class="image-floating-toolbar" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(15,23,42,0.85);backdrop-filter:blur(16px);padding:4px 10px;border-radius:9999px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:10;">
+              <div class="image-floating-toolbar" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--menu-bar-bg, var(--bg-card, rgba(15,23,42,0.85)));backdrop-filter:blur(16px);padding:4px 10px;border-radius:9999px;border:1px solid var(--border-color, rgba(255,255,255,0.15));box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:10;">
                 <button type="button" class="image-explorer-btn" id="imgZoomIn-${cleanPathId}" data-i18n-title="lightbox.zoom_in" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_in') || 'Zoom avant (+)')}">➕</button>
                 <button type="button" class="image-explorer-btn" id="imgZoomOut-${cleanPathId}" data-i18n-title="lightbox.zoom_out" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_out') || 'Zoom arrière (-)')}">➖</button>
                 <button type="button" class="image-explorer-btn" id="imgReset-${cleanPathId}" data-i18n-title="lightbox.reset_zoom" title="${ctx.escapeHtml(ctx.t('lightbox.reset_zoom') || 'Réinitialiser (0)')}">🔄</button>
                 <button type="button" class="image-explorer-btn" id="imgRotate-${cleanPathId}" data-i18n-title="lightbox.rotate" title="${ctx.escapeHtml(ctx.t('lightbox.rotate') || 'Pivoter 90° (R)')}">⟳</button>
-                <span id="imgZoomBadge-${cleanPathId}" style="font-size:0.75rem;font-weight:700;color:#f8fafc;padding:0 4px;">100%</span>
+                <span id="imgZoomBadge-${cleanPathId}" style="font-size:0.75rem;font-weight:700;color:var(--text-main, #f8fafc);padding:0 4px;">100%</span>
                 <button type="button" class="image-explorer-btn" id="imgInfoBtn-${cleanPathId}" data-i18n-title="lightbox.metadata_btn" title="${ctx.escapeHtml(ctx.t('lightbox.metadata_btn') || 'Informations & Propriétés (I)')}">ℹ️</button>
                 ${isEditableImage ? `<button type="button" class="image-explorer-btn" id="imgEdit-${cleanPathId}" data-i18n-title="lightbox.edit_image" style="background:var(--accent-primary,#6366f1);color:#fff;border-radius:12px;padding:0 8px;width:auto;font-size:0.75rem;font-weight:600;" title="${ctx.escapeHtml(ctx.t('lightbox.edit_image') || 'Éditer l\'image')}"><span data-i18n="lightbox.edit_image_btn">🎨 ${ctx.escapeHtml(ctx.t('lightbox.edit_image_btn') || 'Éditer')}</span></button>` : ''}
               </div>
@@ -889,7 +889,14 @@
     }
   };
 
+  window.ImageViewerApp = ImageViewerPlugin;
+  window.imageViewerApp = ImageViewerPlugin;
+
   if (window.MediaViewerRegistry) {
     window.MediaViewerRegistry.register(ImageViewerPlugin);
+  }
+
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('image-viewer', ImageViewerPlugin);
   }
 })(window);

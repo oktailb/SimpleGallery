@@ -5,9 +5,10 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #0f172a;
+  background: var(--window-bg, var(--bg-main, #0f172a));
   position: relative;
   overflow: hidden;
+  color: var(--text-main, #f8fafc);
 }
 
 .map-toolbar-inner {
@@ -15,9 +16,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--header-bg, var(--bg-card, rgba(15, 23, 42, 0.85)));
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   z-index: 1000;
   gap: 10px;
   flex-wrap: wrap;
@@ -32,16 +33,16 @@
 .map-title-text {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .map-count-badge {
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.4);
-  color: #a5b4fc;
+  background: var(--bg-card, rgba(99, 102, 241, 0.2));
+  border: 1px solid var(--border-color, rgba(99, 102, 241, 0.4));
+  color: var(--accent-primary, #a5b4fc);
   font-size: 0.775rem;
   font-weight: 600;
   padding: 3px 10px;
@@ -57,68 +58,73 @@
 
 .map-layer-selector {
   display: inline-flex;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 3px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
 .map-layer-btn {
   background: transparent;
   border: none;
   color: var(--text-muted, #94a3b8);
-  font-size: 0.775rem;
-  font-weight: 500;
   padding: 4px 10px;
-  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .map-layer-btn:hover {
-  color: #f8fafc;
+  color: var(--text-main, #ffffff);
 }
 
 .map-layer-btn.active {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--accent-primary, #6366f1);
   color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-.map-ctrl-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
+.map-action-btn {
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  color: var(--text-main, #ffffff);
+  padding: 5px 12px;
+  border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 10px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 5px;
+  transition: all 0.2s ease;
 }
 
-.map-ctrl-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
+.map-action-btn:hover {
+  background: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary, #6366f1);
   color: #ffffff;
 }
 
-.map-ctrl-btn.active {
-  background: rgba(99, 102, 241, 0.3);
-  border-color: rgba(99, 102, 241, 0.6);
-  color: #c7d2fe;
+.map-action-btn.active {
+  background: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary, #6366f1);
+  color: #ffffff;
+}
+
+.map-content-area {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
 }
 
 .map-canvas-container {
   flex: 1;
-  width: 100%;
   height: 100%;
   position: relative;
-  background: #0b1120;
+  background: var(--bg-main, #0b1120);
 }
 
 /* Custom Marker Pins with Photo Thumbnails */
@@ -228,12 +234,11 @@
 
 /* Custom Leaflet Popups */
 .sg-leaflet-popup .leaflet-popup-content-wrapper {
-  background: #182030;
-  background-image: linear-gradient(180deg, #1e293b 0%, #111827 100%);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--window-bg, #182030);
+  color: var(--text-main, #f8fafc);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
   border-radius: 16px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
   padding: 0;
   overflow: hidden;
 }
@@ -244,7 +249,7 @@
 }
 
 .sg-leaflet-popup .leaflet-popup-tip {
-  background: #111827;
+  background: var(--window-bg, #111827);
 }
 
 .map-popup-card {
@@ -256,7 +261,7 @@
   height: 130px;
   object-fit: cover;
   display: block;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   transition: transform 0.3s ease;
   cursor: pointer;
 }
@@ -272,7 +277,7 @@
 .map-popup-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -291,8 +296,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: #6366f1;
-  background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: var(--accent-primary, #6366f1);
   color: #ffffff;
   border: none;
   padding: 6px 10px;
@@ -304,6 +308,6 @@
 }
 
 .map-popup-btn:hover {
-  background: #4f46e5;
+  filter: brightness(1.1);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }

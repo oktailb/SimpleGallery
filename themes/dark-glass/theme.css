@@ -1,13 +1,21 @@
 /**
- * Theme: Dark Glassmorphism
+ * SimpleGallery 2026 - Theme: Dark Glassmorphism
  */
-:root[data-theme="dark-glass"], body[data-theme="dark-glass"] {
+:root, :root[data-theme="dark-glass"], body[data-theme="dark-glass"] {
   --bg-main: #090d16;
+  --window-bg: rgba(12, 17, 29, 0.96);
+  --header-bg: rgba(24, 32, 50, 0.9);
+  --menu-bar-bg: rgba(9, 13, 22, 0.85);
+  --sidebar-bg: rgba(0, 0, 0, 0.3);
   --polaroid-bg: #182032;
   --polaroid-text: #f1f5f9;
   --polaroid-sub: #94a3b8;
+  --accent-primary: #8b5cf6;
   --accent: #8b5cf6;
+  --bg-card: rgba(255, 255, 255, 0.04);
   --card-bg: rgba(255, 255, 255, 0.04);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-hover: rgba(139, 92, 246, 0.4);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
 }

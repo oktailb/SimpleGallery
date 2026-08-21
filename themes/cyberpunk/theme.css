@@ -1,13 +1,21 @@
 /**
- * Theme: Cyberpunk Neon
+ * SimpleGallery 2026 - Theme: Cyberpunk Neon
  */
-:root[data-theme="cyberpunk"], body[data-theme="cyberpunk"] {
+:root, :root[data-theme="cyberpunk"], body[data-theme="cyberpunk"] {
   --bg-main: #0d0221;
+  --window-bg: rgba(18, 5, 38, 0.96);
+  --header-bg: rgba(36, 12, 65, 0.9);
+  --menu-bar-bg: rgba(13, 2, 33, 0.9);
+  --sidebar-bg: rgba(255, 0, 127, 0.08);
   --polaroid-bg: #1d1135;
   --polaroid-text: #00f5d4;
-  --polaroid-sub: #7b2cbf;
+  --polaroid-sub: #a855f7;
+  --accent-primary: #ff007f;
   --accent: #ff007f;
-  --card-bg: rgba(255, 0, 127, 0.1);
+  --bg-card: rgba(255, 0, 127, 0.08);
+  --card-bg: rgba(255, 0, 127, 0.08);
+  --border-color: rgba(255, 0, 127, 0.25);
+  --border-color-hover: rgba(0, 245, 212, 0.6);
   --text-main: #00f5d4;
-  --text-muted: #b5179e;
+  --text-muted: #d946ef;
 }

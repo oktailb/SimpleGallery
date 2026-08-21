@@ -4,83 +4,59 @@
  * Injected automatically by the Kernel into the workspace.
  */
 ?>
-<!-- Admin Authentication Modal -->
+<!-- Admin Authentication Modal (Streamlined & Pure Auth) -->
 <div id="adminModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
-  <div class="admin-modal-content">
+  <div class="admin-modal-content admin-auth-modal-card">
     <div class="admin-modal-header">
       <h3 data-i18n="admin.login_title">🔐 Connexion Administrateur</h3>
       <button id="adminModalCloseBtn" class="lightbox-btn" title="Fermer" data-i18n-title="common.close">✕</button>
     </div>
     <div class="admin-modal-body">
+      <!-- Non-authenticated login form -->
       <div id="adminLoginState">
-        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;" data-i18n="admin.password_placeholder">
+        <p class="admin-auth-instruction" data-i18n="admin.password_placeholder">
           Saisissez votre mot de passe administrateur pour déverrouiller la gestion.
         </p>
         <form id="adminLoginForm">
-          <input type="password" id="adminPasswordInput" class="admin-input" placeholder="Mot de passe administrateur..." data-i18n-placeholder="admin.password_placeholder" required />
+          <input type="password" id="adminPasswordInput" class="admin-input" placeholder="Mot de passe administrateur..." data-i18n-placeholder="admin.password_placeholder" required autocomplete="current-password" />
           <div id="adminLoginError" class="admin-error-msg" style="display: none;"></div>
-          <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;" data-i18n="admin.login_btn">
+          <button type="submit" class="pill-btn active admin-auth-submit-btn" data-i18n="admin.login_btn">
             Se connecter
           </button>
         </form>
       </div>
-      <div id="adminActiveState" style="display: none;">
-        <p class="admin-active-notice" style="margin-bottom: 1.25rem; color: #94a3b8; font-size: 0.875rem; line-height: 1.4;" data-i18n="admin.active_notice">
-          Mode Administrateur activé. Vous pouvez créer des dossiers, uploader, éditer les images et gérer les permissions.
-        </p>
 
-        <div class="admin-section" style="margin-bottom: 1.25rem;">
-          <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 600; color: #f8fafc;" data-i18n="admin.change_password">Changer le mot de passe</h4>
-          <form id="changePasswordForm">
-            <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="Nouveau mot de passe..." data-i18n-placeholder="admin.new_password_placeholder" required minlength="4" />
+      <!-- Authenticated status & actions -->
+      <div id="adminActiveState" style="display: none;">
+        <div class="admin-auth-status-badge">
+          <span class="status-icon">🛡️</span>
+          <div>
+            <h4 data-i18n="admin.status_connected">✅ Connecté en tant qu'administrateur</h4>
+            <p data-i18n="admin.manage_settings_hint">Gérez la matrice des droits, le fond d'écran et les options globales dans le Panneau de Configuration.</p>
+          </div>
+        </div>
+
+        <div class="admin-auth-actions-group">
+          <!-- Primary button: Open Control Panel -->
+          <button type="button" id="adminOpenControlPanelBtn" class="pill-btn active admin-open-settings-btn" data-i18n="admin.open_settings">
+            <span>⚙️</span> Panneau de Configuration
+          </button>
+        </div>
+
+        <!-- Collapsible / Compact Change Password section -->
+        <details class="admin-auth-details">
+          <summary data-i18n="admin.change_password">🔑 Changer le mot de passe</summary>
+          <form id="changePasswordForm" style="margin-top: 0.75rem;">
+            <input type="password" id="newAdminPasswordInput" class="admin-input" placeholder="Nouveau mot de passe..." data-i18n-placeholder="admin.new_password_placeholder" required minlength="4" autocomplete="new-password" />
             <button type="submit" class="pill-btn" style="width: 100%; margin-top: 0.5rem; justify-content: center; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);" data-i18n="admin.save_new_password">
               Mettre à jour
             </button>
             <div id="adminChangePassMsg" class="admin-success-msg" style="display: none; margin-top: 0.5rem;"></div>
           </form>
-        </div>
+        </details>
 
-        <div class="permissions-matrix-section">
-          <div class="permissions-matrix-title">
-            <span data-i18n="admin.perms_title">🛡️ Matrice des Droits Invités</span>
-          </div>
-          <div class="permissions-matrix-grid">
-            <label class="permission-item-card" for="perm_can_upload">
-              <input type="checkbox" id="perm_can_upload" />
-              <span data-i18n="admin.perm_upload">📤 Upload de fichiers</span>
-            </label>
-            <label class="permission-item-card" for="perm_can_delete">
-              <input type="checkbox" id="perm_can_delete" />
-              <span data-i18n="admin.perm_delete">🗑️ Suppression d'éléments</span>
-            </label>
-            <label class="permission-item-card" for="perm_can_move">
-              <input type="checkbox" id="perm_can_move" />
-              <span data-i18n="admin.perm_move">🖐️ Déplacement d'éléments</span>
-            </label>
-            <label class="permission-item-card" for="perm_can_comment">
-              <input type="checkbox" id="perm_can_comment" />
-              <span data-i18n="admin.perm_comment">✏️ Édition des légendes</span>
-            </label>
-            <label class="permission-item-card" for="perm_can_create_folder">
-              <input type="checkbox" id="perm_can_create_folder" />
-              <span data-i18n="admin.perm_create_folder">📁+ Création de dossiers</span>
-            </label>
-            <label class="permission-item-card" for="perm_can_download_archive">
-              <input type="checkbox" id="perm_can_download_archive" />
-              <span data-i18n="admin.perm_download_archive">📦 Téléchargement d'archives</span>
-            </label>
-            <label class="permission-item-card" for="perm_can_download_item" style="grid-column: span 2;">
-              <input type="checkbox" id="perm_can_download_item" />
-              <span data-i18n="admin.perm_download_item">⬇️ Téléchargement direct des médias seuls</span>
-            </label>
-          </div>
-          <button type="button" id="savePermissionsBtn" class="save-permissions-btn" data-i18n="admin.perm_save_btn">
-            💾 Enregistrer la matrice de droits
-          </button>
-        </div>
-
-        <button id="adminLogoutBtn" type="button" class="admin-logout-btn" data-i18n="admin.logout_btn">
-          Déconnexion
+        <button id="adminLogoutBtn" type="button" class="admin-logout-btn" data-i18n="admin.logout_btn" style="margin-top: 1rem;">
+          🚪 Déconnexion
         </button>
       </div>
     </div>
@@ -275,77 +251,6 @@
       <button type="button" id="cookieCustomizeBtn" class="cookie-btn cookie-btn-ghost" data-i18n="cookie.customize">
         ⚙️ Personnaliser
       </button>
-    </div>
-  </div>
-</div>
-
-<!-- Detailed Cookie Settings Modal -->
-<div id="cookieSettingsModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="cookieModalTitle" style="display: none;">
-  <div class="admin-modal-content cookie-modal-card">
-    <div class="admin-modal-header">
-      <h3 id="cookieModalTitle" data-i18n="cookie.modal_title">🍪 Gestion des Préférences &amp; Cookies</h3>
-      <button type="button" id="cookieSettingsCloseBtn" class="lightbox-btn" title="Fermer (Échap)" data-i18n-title="common.close">✕</button>
-    </div>
-    <div class="admin-modal-body">
-      <p class="cookie-modal-intro" data-i18n="cookie.modal_desc">
-        Personnalisez ci-dessous vos choix en matière de cookies et stockage local.
-      </p>
-
-      <div class="cookie-options-list">
-        <!-- Option 1: Strictly Necessary -->
-        <div class="cookie-option-card">
-          <div class="cookie-option-info">
-            <div class="cookie-option-title-row">
-              <span class="cookie-option-name" data-i18n="cookie.opt_necessary_title">1. Cookies Strictement Nécessaires</span>
-              <span class="cookie-badge cookie-badge-required" data-i18n="cookie.opt_necessary_badge">Toujours actif</span>
-            </div>
-            <p class="cookie-option-desc" data-i18n="cookie.opt_necessary_desc">
-              Indispensables au fonctionnement sécurisé de la galerie : maintien de la session d'administration, protection contre les attaques CSRF et accès aux dossiers protégés par mot de passe.
-            </p>
-          </div>
-          <div class="cookie-toggle-wrap">
-            <input type="checkbox" id="cookieOptNecessary" checked disabled aria-label="Cookies strictement nécessaires">
-          </div>
-        </div>
-
-        <!-- Option 2: Local Preferences & Favorites -->
-        <div class="cookie-option-card">
-          <div class="cookie-option-info">
-            <div class="cookie-option-title-row">
-              <span class="cookie-option-name" data-i18n="cookie.opt_pref_title">2. Préférences d'Affichage &amp; Favoris</span>
-              <span class="cookie-badge cookie-badge-optional" data-i18n="cookie.opt_pref_badge">Optionnel</span>
-            </div>
-            <p class="cookie-option-desc" data-i18n="cookie.opt_pref_desc">
-              Permet à votre navigateur d'enregistrer localement vos favoris ❤️ et votre mode de vue préféré.
-            </p>
-          </div>
-          <div class="cookie-toggle-wrap">
-            <input type="checkbox" id="cookieOptPreferences" checked aria-label="Préférences d'affichage et favoris">
-          </div>
-        </div>
-
-        <!-- Option 3: External CDN Resources -->
-        <div class="cookie-option-card">
-          <div class="cookie-option-info">
-            <div class="cookie-option-title-row">
-              <span class="cookie-option-name" data-i18n="cookie.opt_cdn_title">3. Typographies &amp; Cartographie (CDN)</span>
-              <span class="cookie-badge cookie-badge-optional" data-i18n="cookie.opt_cdn_badge">Optionnel</span>
-            </div>
-            <p class="cookie-option-desc" data-i18n="cookie.opt_cdn_desc">
-              Chargement des polices stylisées Google Fonts et des cartes interactives OpenStreetMap / Leaflet sans pistage publicitaire.
-            </p>
-          </div>
-          <div class="cookie-toggle-wrap">
-            <input type="checkbox" id="cookieOptCdn" checked aria-label="Ressources externes CDN">
-          </div>
-        </div>
-      </div>
-
-      <div class="cookie-modal-actions">
-        <button type="button" id="cookieSavePreferencesBtn" class="cookie-btn cookie-btn-primary" style="width: 100%; justify-content: center;" data-i18n="cookie.save_preferences">
-          Enregistrer mes choix
-        </button>
-      </div>
     </div>
   </div>
 </div>

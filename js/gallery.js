@@ -755,6 +755,17 @@
       if (logoutBtn) {
         logoutBtn.onclick = () => this.logoutAdmin();
       }
+      const openSettingsBtn = document.getElementById('adminOpenControlPanelBtn');
+      if (openSettingsBtn) {
+        openSettingsBtn.onclick = () => {
+          this.closeAdminModal();
+          if (window.SettingsApp && typeof window.SettingsApp.open === 'function') {
+            window.SettingsApp.open('security');
+          } else if (window.sys && window.sys.appManager) {
+            window.sys.appManager.launchApp('settings');
+          }
+        };
+      }
       const changePassForm = document.getElementById('changePasswordForm') || this.el.changePasswordForm;
       if (changePassForm) {
         changePassForm.onsubmit = (e) => {
@@ -767,6 +778,11 @@
       this.state.isAdmin = window.IS_ADMIN || false;
       if (this.state.isAdmin && adminBtn) {
         adminBtn.classList.add('active');
+      }
+
+      // Apply saved desktop wallpaper if SettingsApp is present
+      if (window.SettingsApp && typeof window.SettingsApp.applySavedWallpaper === 'function') {
+        window.SettingsApp.applySavedWallpaper();
       }
     }
 
@@ -872,7 +888,9 @@
           if (loginState) loginState.style.display = 'none';
           if (activeState) activeState.style.display = 'block';
 
-          this.loadAdminPermissions();
+          if (window.SettingsApp && typeof window.SettingsApp.loadPermissions === 'function') {
+            window.SettingsApp.loadPermissions();
+          }
 
           if (window.explorerApp) {
             window.explorerApp.state.isAdmin = true;
@@ -906,6 +924,10 @@
 
         const adminBtn = document.getElementById('adminBtn');
         if (adminBtn) adminBtn.classList.remove('active');
+
+        if (window.SettingsApp && typeof window.SettingsApp.loadPermissions === 'function') {
+          window.SettingsApp.loadPermissions();
+        }
 
         if (window.explorerApp) {
           window.explorerApp.state.isAdmin = false;
@@ -1009,47 +1031,59 @@
     // -------------------------------------------------------------
     initCookieConsent() {
       const banner = document.getElementById('cookieConsentBanner');
-      const settingsModal = document.getElementById('cookieSettingsModal');
       const openSettingsBtn = document.getElementById('openCookieSettingsBtn');
       const acceptAllBtn = document.getElementById('cookieAcceptAllBtn');
-      const refuseBtn = document.getElementById('cookieRefuseBtn');
+      const refuseBtn = document.getElementById('cookieRefuseBtn') || document.getElementById('cookieRejectNonEssentialBtn');
       const customizeBtn = document.getElementById('cookieCustomizeBtn');
-      const closeSettingsBtn = document.getElementById('cookieSettingsCloseBtn');
-      const saveSettingsBtn = document.getElementById('cookieSettingsSaveBtn');
 
       const isConsentGiven = localStorage.getItem('sg_cookie_consent');
       if (!isConsentGiven && banner) {
         banner.style.display = 'flex';
       }
 
-      if (openSettingsBtn && settingsModal) {
-        openSettingsBtn.onclick = () => { settingsModal.style.display = 'block'; };
+      const openPrivacyTab = () => {
+        if (banner) banner.style.display = 'none';
+        if (window.SettingsApp && typeof window.SettingsApp.open === 'function') {
+          window.SettingsApp.open('privacy');
+        } else if (window.sys && window.sys.appManager) {
+          window.sys.appManager.launchApp('settings', { tab: 'privacy' });
+        }
+      };
+
+      if (openSettingsBtn) {
+        openSettingsBtn.onclick = (e) => {
+          e.preventDefault();
+          openPrivacyTab();
+        };
       }
-      if (closeSettingsBtn && settingsModal) {
-        closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
+      if (customizeBtn) {
+        customizeBtn.onclick = (e) => {
+          e.preventDefault();
+          openPrivacyTab();
+        };
       }
       if (acceptAllBtn && banner) {
         acceptAllBtn.onclick = () => {
-          localStorage.setItem('sg_cookie_consent', 'all');
+          localStorage.setItem('sg_cookie_consent', JSON.stringify({
+            necessary: true,
+            preferences: true,
+            cdn: true,
+            timestamp: Date.now()
+          }));
           banner.style.display = 'none';
+          this.showToast(this.t('settings.cookie_saved', 'Préférences cookies enregistrées !'), 'success');
         };
       }
       if (refuseBtn && banner) {
         refuseBtn.onclick = () => {
-          localStorage.setItem('sg_cookie_consent', 'essential');
+          localStorage.setItem('sg_cookie_consent', JSON.stringify({
+            necessary: true,
+            preferences: false,
+            cdn: false,
+            timestamp: Date.now()
+          }));
           banner.style.display = 'none';
-        };
-      }
-      if (customizeBtn && settingsModal) {
-        customizeBtn.onclick = () => {
-          if (banner) banner.style.display = 'none';
-          settingsModal.style.display = 'block';
-        };
-      }
-      if (saveSettingsBtn && settingsModal) {
-        saveSettingsBtn.onclick = () => {
-          localStorage.setItem('sg_cookie_consent', 'custom');
-          settingsModal.style.display = 'none';
+          this.showToast(this.t('settings.cookie_saved', 'Cookies essentiels uniquement activés'), 'info');
         };
       }
     }

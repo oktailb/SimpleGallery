@@ -95,6 +95,122 @@ if ($action === 'get_metadata') {
     exit;
 }
 
+if ($action === 'get_system_info') {
+    $has_gd = extension_loaded('gd');
+    $gd_info = $has_gd ? gd_info() : [];
+    $has_ffmpeg = false;
+    if (function_exists('exec')) {
+        @exec('ffmpeg -version 2>&1', $ff_out, $ff_code);
+        $has_ffmpeg = ($ff_code === 0);
+    }
+
+    echo json_encode([
+        'success'     => true,
+        'system_info' => [
+            'php_version'        => PHP_VERSION,
+            'server_software'    => $_SERVER['SERVER_SOFTWARE'] ?? 'PHP CLI / Built-in',
+            'gd_available'       => $has_gd,
+            'gd_webp'            => !empty($gd_info['WebP Support']),
+            'gd_avif'            => !empty($gd_info['AVIF Support']),
+            'exif_available'     => extension_loaded('exif'),
+            'zip_available'      => class_exists('ZipArchive'),
+            'ffmpeg_available'   => $has_ffmpeg,
+            'upload_max_filesize'=> ini_get('upload_max_filesize'),
+            'post_max_size'      => ini_get('post_max_size'),
+            'memory_limit'       => ini_get('memory_limit'),
+            'is_admin'           => !empty($_SESSION['is_admin'])
+        ]
+    ]);
+    exit;
+}
+
+if ($action === 'run_unit_tests') {
+    if (!defined('SG_RUNNING_TESTS_VIA_API')) {
+        define('SG_RUNNING_TESTS_VIA_API', true);
+    }
+
+    $start_time = microtime(true);
+    ob_start();
+
+    $suites = [];
+    $total_passed = 0;
+    $total_failed = 0;
+
+    try {
+        require_once __DIR__ . '/tests/SecurityUnitTest.php';
+        $sec_suite = new SecurityUnitTestSuite();
+        $sec_suite->runAll();
+        $sec_counts = $sec_suite->getCounts();
+        $sec_results = $sec_suite->getResults();
+
+        $suites[] = [
+            'id'      => 'security',
+            'name'    => 'Tests de Sécurité (SecurityUnitTest)',
+            'passed'  => $sec_counts['passed'],
+            'failed'  => $sec_counts['failed'],
+            'total'   => $sec_counts['total'],
+            'tests'   => $sec_results
+        ];
+        $total_passed += $sec_counts['passed'];
+        $total_failed += $sec_counts['failed'];
+    } catch (\Throwable $e) {
+        $suites[] = [
+            'id'      => 'security',
+            'name'    => 'Tests de Sécurité',
+            'passed'  => 0,
+            'failed'  => 1,
+            'total'   => 1,
+            'tests'   => [['name' => 'Exception: ' . $e->getMessage(), 'status' => 'FAIL', 'details' => $e->getTraceAsString()]]
+        ];
+        $total_failed++;
+    }
+
+    try {
+        require_once __DIR__ . '/tests/GeneralUnitTest.php';
+        $gen_suite = new GeneralUnitTestSuite();
+        $gen_suite->runAll();
+        $gen_counts = $gen_suite->getCounts();
+        $gen_results = $gen_suite->getResults();
+
+        $suites[] = [
+            'id'      => 'general',
+            'name'    => 'Tests Fonctionnels Généraux (GeneralUnitTest)',
+            'passed'  => $gen_counts['passed'],
+            'failed'  => $gen_counts['failed'],
+            'total'   => $gen_counts['total'],
+            'tests'   => $gen_results
+        ];
+        $total_passed += $gen_counts['passed'];
+        $total_failed += $gen_counts['failed'];
+    } catch (\Throwable $e) {
+        $suites[] = [
+            'id'      => 'general',
+            'name'    => 'Tests Fonctionnels Généraux',
+            'passed'  => 0,
+            'failed'  => 1,
+            'total'   => 1,
+            'tests'   => [['name' => 'Exception: ' . $e->getMessage(), 'status' => 'FAIL', 'details' => $e->getTraceAsString()]]
+        ];
+        $total_failed++;
+    }
+
+    ob_end_clean();
+    $duration_ms = round((microtime(true) - $start_time) * 1000, 1);
+
+    echo json_encode([
+        'success'  => true,
+        'summary'  => [
+            'total'       => $total_passed + $total_failed,
+            'passed'      => $total_passed,
+            'failed'      => $total_failed,
+            'duration_ms' => $duration_ms,
+            'all_passed'  => ($total_failed === 0)
+        ],
+        'suites'   => $suites
+    ]);
+    exit;
+}
+
 if ($action === 'login') {
     if (!check_rate_limit('admin_login')) {
         http_response_code(429);

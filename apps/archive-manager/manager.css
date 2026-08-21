@@ -1,5 +1,6 @@
 /**
  * SimpleGallery 2026 - Archive Manager App Stylesheet
+ * Fully Theme-Adaptive Archive Inspector and Extractor
  */
 
 .archive-viewer-modal-content {
@@ -17,19 +18,20 @@
   width: 85vw;
   height: 78vh;
   max-width: 900px;
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--window-bg, var(--bg-main, #0f172a));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   border-radius: var(--radius-lg, 12px);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  color: var(--text-main, #f8fafc);
 }
 
 .archive-inspector-header {
   padding: 14px 20px;
-  background: rgba(30, 41, 59, 0.9);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--header-bg, var(--bg-card, rgba(30, 41, 59, 0.9)));
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -38,7 +40,7 @@
 .archive-inspector-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -48,8 +50,8 @@
   display: flex;
   gap: 1rem;
   padding: 10px 20px;
-  background: rgba(15, 23, 42, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-card, rgba(15, 23, 42, 0.6));
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   font-size: 0.825rem;
   color: var(--text-muted, #94a3b8);
 }
@@ -61,7 +63,7 @@
 }
 
 .archive-stat-item strong {
-  color: #38bdf8;
+  color: var(--accent-primary, #38bdf8);
 }
 
 .archive-file-list {
@@ -70,6 +72,7 @@
   padding: 0.5rem 0;
   display: flex;
   flex-direction: column;
+  background: var(--bg-main, transparent);
 }
 
 .archive-file-row {
@@ -77,14 +80,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.04));
   font-size: 0.85rem;
-  color: #cbd5e1;
+  color: var(--text-main, #cbd5e1);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  transition: background 0.15s ease;
 }
 
 .archive-file-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
 }
 
 .archive-file-name {

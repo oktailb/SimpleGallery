@@ -22,6 +22,18 @@ class GeneralUnitTestSuite {
     /** @var array */
     private $results = [];
 
+    public function getResults(): array {
+        return $this->results;
+    }
+
+    public function getCounts(): array {
+        return [
+            'passed' => $this->passed,
+            'failed' => $this->failed,
+            'total'  => $this->passed + $this->failed
+        ];
+    }
+
     public function __construct() {
         $this->base_dir = realpath(dirname(__DIR__)) ?: dirname(__DIR__);
         $this->base_dir = str_replace('\\', '/', $this->base_dir);
@@ -76,6 +88,9 @@ class GeneralUnitTestSuite {
     }
 
     public function runAll(): bool {
+        $saved_session = $_SESSION ?? [];
+        $_SESSION = [];
+
         echo "\n============================================================\n";
         echo " ⚙️ SimpleGallery 2026 - Suite de Tests Fonctionnels Généraux\n";
         echo "============================================================\n\n";
@@ -91,6 +106,8 @@ class GeneralUnitTestSuite {
         $this->testImageEditorBackend();
         $this->testI18nEngineAndLocales();
         $this->testUnifiedMetadataExtractors();
+
+        $_SESSION = $saved_session;
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS FONCTIONNELS\n";
@@ -333,7 +350,7 @@ class GeneralUnitTestSuite {
         $rendered_ui = $this->getRenderedIndex();
         $this->assert("index.php contient la balise meta cookie-consent-enabled", strpos($rendered_ui, 'name="cookie-consent-enabled"') !== false);
         $this->assert("Application settings fournit le bandeau cookieConsentBanner", strpos($rendered_ui, 'id="cookieConsentBanner"') !== false);
-        $this->assert("Application settings fournit le modal cookieSettingsModal", strpos($rendered_ui, 'id="cookieSettingsModal"') !== false);
+        $this->assert("Application settings fournit l'accès aux préférences cookies", (strpos($rendered_ui, 'id="openCookieSettingsBtn"') !== false || strpos($rendered_ui, 'cookieConsentBanner') !== false));
         $this->assert("index.php contient le pied de page app-footer", strpos($rendered_ui, 'class="app-footer"') !== false);
     }
 

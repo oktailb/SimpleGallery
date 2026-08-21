@@ -209,7 +209,14 @@
     }
   };
 
+  window.ArchiveManagerApp = ArchiveViewerPlugin;
+  window.archiveManagerApp = ArchiveViewerPlugin;
+
   if (window.MediaViewerRegistry) {
     window.MediaViewerRegistry.register(ArchiveViewerPlugin);
+  }
+
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('archive-manager', ArchiveViewerPlugin);
   }
 })(window);

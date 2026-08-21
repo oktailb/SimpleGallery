@@ -52,9 +52,9 @@
           width: 480,
           height: 220,
           content: `
-            <div class="webos-audio-card" style="padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;height:100%;background:linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));">
+            <div class="webos-audio-card" style="padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;height:100%;background:var(--window-bg, var(--bg-main));color:var(--text-main);">
               <div style="font-size:2.5rem;animation:pulse 2s infinite ease-in-out;">🎵</div>
-              <div style="font-weight:600;color:#f8fafc;text-align:center;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ctx.escapeHtml(file.comment || file.name)}</div>
+              <div style="font-weight:600;color:var(--text-main);text-align:center;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ctx.escapeHtml(file.comment || file.name)}</div>
               <audio id="audio-${cleanPathId}" src="${file.file_url}" controls ${controlsListAttr} autoplay style="width:100%;max-width:380px;"></audio>
             </div>
           `,
@@ -123,7 +123,14 @@
     }
   };
 
+  window.AudioPlayerApp = AudioViewerPlugin;
+  window.audioPlayerApp = AudioViewerPlugin;
+
   if (window.MediaViewerRegistry) {
     window.MediaViewerRegistry.register(AudioViewerPlugin);
+  }
+
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('audio-player', AudioViewerPlugin);
   }
 })(window);

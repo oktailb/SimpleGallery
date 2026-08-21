@@ -4,7 +4,7 @@
  * Zero-dependency standalone security test suite.
  */
 
-if (php_sapi_name() !== 'cli') {
+if (php_sapi_name() !== 'cli' && !defined('SG_RUNNING_TESTS_VIA_API')) {
     die("Error: Security unit tests must be executed from CLI.\n");
 }
 
@@ -22,6 +22,18 @@ class SecurityUnitTestSuite {
     private $base_dir;
     /** @var string */
     private $temp_test_dir;
+
+    public function getResults(): array {
+        return $this->results;
+    }
+
+    public function getCounts(): array {
+        return [
+            'passed' => $this->passed,
+            'failed' => $this->failed,
+            'total'  => $this->passed + $this->failed
+        ];
+    }
 
     public function __construct() {
         $this->base_dir = realpath(__DIR__ . '/..') ?: str_replace('\\', '/', __DIR__ . '/..');
@@ -81,6 +93,9 @@ class SecurityUnitTestSuite {
     }
 
     public function runAll(): bool {
+        $saved_session = $_SESSION ?? [];
+        $_SESSION = [];
+
         echo "\n============================================================\n";
         echo " 🛡️ SimpleGallery 2026 - Suite de Tests de Sécurité Unitaires\n";
         echo "============================================================\n\n";
@@ -96,6 +111,8 @@ class SecurityUnitTestSuite {
         $this->testNewFeatures();
         $this->testExtractedModules();
         $this->testMutatingActionsAndCsrfIntegrity();
+
+        $_SESSION = $saved_session;
 
         echo "\n============================================================\n";
         echo " 📊 RÉSULTAT FINAL DES TESTS DE SÉCURITÉ\n";

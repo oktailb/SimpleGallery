@@ -20,8 +20,8 @@
       "id": "settings",
       "appId": "settings",
       "icon": "⚙️",
-      "nameKey": "nav.admin",
-      "defaultName": "Administration & Matrice",
+      "nameKey": "settings.app_title",
+      "defaultName": "Panneau de Configuration",
       "enabled": true
     }
   ]

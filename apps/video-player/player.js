@@ -690,9 +690,18 @@
     }
   };
 
+  window.VideoPlayerApp = VideoViewerPlugin;
+  window.videoPlayerApp = VideoViewerPlugin;
+  window.VideoWallApp = VideoWallViewerPlugin;
+  window.videoWallApp = VideoWallViewerPlugin;
+
   // Register with system MediaViewerRegistry
   if (window.MediaViewerRegistry) {
     window.MediaViewerRegistry.register(VideoViewerPlugin);
     window.MediaViewerRegistry.register(VideoWallViewerPlugin);
+  }
+
+  if (window.sys && window.sys.appManager) {
+    window.sys.appManager.registerInstance('video-player', VideoViewerPlugin);
   }
 })(window);

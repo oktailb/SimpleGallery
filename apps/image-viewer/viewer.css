@@ -33,17 +33,17 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--menu-bar-bg, rgba(15, 23, 42, 0.75));
   backdrop-filter: blur(12px);
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
 }
 
 .image-explorer-btn {
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text-main, #ffffff);
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -56,6 +56,6 @@
 }
 
 .image-explorer-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-color-hover, rgba(255, 255, 255, 0.15));
   transform: scale(1.1);
 }
