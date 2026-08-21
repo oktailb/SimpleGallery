@@ -4,3 +4,5 @@
 /storage/.thumbnails/*
 /storage/session/
 /storage/media/*
+.admin_password_hash
+.permissions.json
