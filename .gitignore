@@ -1,3 +1,6 @@
 
 /.thumbnails
 /storage/session/*
+/storage/.thumbnails/*
+/storage/session/
+*/storage/media/*
