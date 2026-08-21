@@ -739,12 +739,16 @@
     initDesktopDropZone() {
       const dropTargets = [
         document.getElementById('desktopSurface'),
-        document.getElementById('desktopShortcuts'),
-        document.getElementById('webosDesktop')
+        document.getElementById('desktopShortcuts')
       ].filter(Boolean);
 
       dropTargets.forEach(target => {
         target.addEventListener('dragover', (e) => {
+          // Ignore if drag is over a window or taskbar
+          if (e.target && (e.target.closest('.webos-window') || e.target.closest('.webos-taskbar'))) {
+            return;
+          }
+
           if (e.dataTransfer.types.includes('application/sg-item') || window.SG_DRAGGING_ITEM_DATA || e.dataTransfer.types.includes('application/json')) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
@@ -763,6 +767,11 @@
         target.addEventListener('drop', async (e) => {
           const grid = document.getElementById('desktopShortcuts');
           if (grid) grid.classList.remove('drag-active');
+
+          // Strict isolation: if drop was inside a window, taskbar, or already handled, ignore it
+          if (e.defaultPrevented || (e.target && (e.target.closest('.webos-window') || e.target.closest('.webos-taskbar')))) {
+            return;
+          }
 
           let rawData = e.dataTransfer.getData('application/sg-item');
           let itemData = null;

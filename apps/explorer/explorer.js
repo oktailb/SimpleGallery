@@ -419,6 +419,7 @@
         };
         btn.ondrop = async (e) => {
           e.preventDefault();
+          e.stopPropagation();
           btn.classList.remove('drag-over');
           if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             this.handleUploadFiles(e.dataTransfer.files, destPath);
@@ -553,6 +554,7 @@
         };
         card.ondrop = async (e) => {
           e.preventDefault();
+          e.stopPropagation();
           card.classList.remove('drag-over');
 
           if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -1724,6 +1726,7 @@
         }
 
         e.preventDefault();
+        e.stopPropagation();
 
         // 1. External files from OS
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0 && !window.SG_DRAGGING_PATHS) {
