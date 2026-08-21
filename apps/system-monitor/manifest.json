@@ -1,0 +1,26 @@
+{
+  "id": "system-monitor",
+  "name": "Moniteur Système",
+  "version": "1.0.0",
+  "icon": "📊",
+  "author": "SimpleGallery Team",
+  "category": "system",
+  "locales": {
+    "fr": {
+      "title": "Moniteur Système & Tâches",
+      "description": "Gestionnaire des tâches WebOS, télémétrie serveur PHP, consommation mémoire, stockage et purge des caches"
+    },
+    "en": {
+      "title": "System Monitor & Task Manager",
+      "description": "WebOS task manager, live PHP server telemetry, memory usage, storage diagnostics and cache cleaner"
+    },
+    "ja": {
+      "title": "システムモニター＆タスクマネージャー",
+      "description": "WebOSタスクマネージャー、PHPサーバーテレメトリ、メモリ使用量、ストレージ診断およびキャッシュ消去"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "app.css"
+  }
+}

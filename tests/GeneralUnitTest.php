@@ -106,6 +106,7 @@ class GeneralUnitTestSuite {
         $this->testImageEditorBackend();
         $this->testI18nEngineAndLocales();
         $this->testUnifiedMetadataExtractors();
+        $this->testSystemMonitorAppAndTelemetry();
 
         $_SESSION = $saved_session;
 
@@ -553,6 +554,38 @@ class GeneralUnitTestSuite {
         if (file_exists($mp4_test)) @unlink($mp4_test);
         if (file_exists($doc_path)) @unlink($doc_path);
     }
+
+    /**
+     * 12. System Monitor App & Telemetry API Test
+     */
+    private function testSystemMonitorAppAndTelemetry(): void {
+        echo "\n📊 [12/12] Test de l'Application Moniteur Système & Télémétrie Serveur...\n";
+
+        // 1. App Discovery
+        $discovered = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir);
+        $this->assert("Application 'system-monitor' découverte par PluginDiscovery", isset($discovered['system-monitor']));
+        $this->assert("Manifeste system-monitor valide", !empty($discovered['system-monitor']['manifest']['id']));
+        $this->assert("Point d'entrée JS de system-monitor présent", file_exists($this->base_dir . '/' . $discovered['system-monitor']['js_entry']));
+        $this->assert("Feuille de style CSS de system-monitor présente", file_exists($this->base_dir . '/' . $discovered['system-monitor']['css_entry']));
+
+        // 2. Translations
+        $fr_trans = \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations($this->base_dir, 'fr');
+        $this->assert("Traduction FR de system-monitor chargée", !empty($fr_trans['apps.system-monitor.title']) || !empty($discovered['system-monitor']['locales']['fr']['title']));
+
+        $en_trans = \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations($this->base_dir, 'en');
+        $this->assert("Traduction EN de system-monitor chargée", !empty($en_trans['apps.system-monitor.title']) || !empty($discovered['system-monitor']['locales']['en']['title']));
+
+        $ja_trans = \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations($this->base_dir, 'ja');
+        $this->assert("Traduction JA de system-monitor chargée", !empty($ja_trans['apps.system-monitor.title']) || !empty($discovered['system-monitor']['locales']['ja']['title']));
+
+        // 3. API Declarations
+        $api_code = @file_get_contents($this->base_dir . '/api.php');
+        $this->assert("api.php déclare l'action get_system_info", strpos($api_code, "\$action === 'get_system_info'") !== false);
+        $this->assert("api.php déclare l'action clear_all_caches dans les actions mutantes", strpos($api_code, "'clear_all_caches'") !== false);
+        $this->assert("api.php fournit les métriques de mémoire RAM (current & peak)", strpos($api_code, "'memory_current'") !== false && strpos($api_code, "'memory_peak'") !== false);
+        $this->assert("api.php fournit les métriques d'espace disque (total, free, used)", strpos($api_code, "'disk_total'") !== false && strpos($api_code, "'disk_free'") !== false);
+        $this->assert("api.php fournit les métriques de caches et miniatures", strpos($api_code, "'cache_count'") !== false && strpos($api_code, "'thumbs_count'") !== false);
+    }
 }
 
 
@@ -562,4 +595,5 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     $success = $suite->runAll();
     exit($success ? 0 : 1);
 }
+
 

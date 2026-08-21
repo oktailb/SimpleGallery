@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -104,22 +104,119 @@ if ($action === 'get_system_info') {
         $has_ffmpeg = ($ff_code === 0);
     }
 
+    $storage_dir = get_cache_storage_dir($real_base_dir, $thumbnail_dir ?? '.thumbnails');
+    $cache_count = 0;
+    $cache_size = 0;
+    $thumbs_count = 0;
+    $thumbs_size = 0;
+
+    if (is_dir($storage_dir)) {
+        $files = @scandir($storage_dir) ?: [];
+        foreach ($files as $f) {
+            if ($f[0] === '.') continue;
+            $f_path = $storage_dir . '/' . $f;
+            if (is_file($f_path)) {
+                $f_size = @filesize($f_path) ?: 0;
+                if (str_starts_with($f, 'cache_') && str_ends_with($f, '.json')) {
+                    $cache_count++;
+                    $cache_size += $f_size;
+                } else {
+                    $thumbs_count++;
+                    $thumbs_size += $f_size;
+                }
+            }
+        }
+    }
+
+    $mem_current = memory_get_usage(true);
+    $mem_peak = memory_get_peak_usage(true);
+    $disk_total = @disk_total_space($real_base_dir) ?: 0;
+    $disk_free = @disk_free_space($real_base_dir) ?: 0;
+    $disk_used = max(0, $disk_total - $disk_free);
+    $disk_percent = $disk_total > 0 ? round(($disk_used / $disk_total) * 100, 1) : 0;
+
+    $load_avg = function_exists('sys_getloadavg') ? @sys_getloadavg() : null;
+
     echo json_encode([
         'success'     => true,
         'system_info' => [
-            'php_version'        => PHP_VERSION,
-            'server_software'    => $_SERVER['SERVER_SOFTWARE'] ?? 'PHP CLI / Built-in',
-            'gd_available'       => $has_gd,
-            'gd_webp'            => !empty($gd_info['WebP Support']),
-            'gd_avif'            => !empty($gd_info['AVIF Support']),
-            'exif_available'     => extension_loaded('exif'),
-            'zip_available'      => class_exists('ZipArchive'),
-            'ffmpeg_available'   => $has_ffmpeg,
-            'upload_max_filesize'=> ini_get('upload_max_filesize'),
-            'post_max_size'      => ini_get('post_max_size'),
-            'memory_limit'       => ini_get('memory_limit'),
-            'is_admin'           => !empty($_SESSION['is_admin'])
+            'php_version'          => PHP_VERSION,
+            'php_os'               => PHP_OS_FAMILY . ' (' . PHP_OS . ')',
+            'php_sapi'             => PHP_SAPI,
+            'zend_version'         => zend_version(),
+            'server_software'      => $_SERVER['SERVER_SOFTWARE'] ?? 'PHP CLI / Built-in',
+            'gd_available'         => $has_gd,
+            'gd_webp'              => !empty($gd_info['WebP Support']),
+            'gd_avif'              => !empty($gd_info['AVIF Support']),
+            'exif_available'       => extension_loaded('exif'),
+            'zip_available'        => class_exists('ZipArchive'),
+            'intl_available'       => extension_loaded('intl'),
+            'pdo_available'        => extension_loaded('pdo'),
+            'sqlite_available'     => extension_loaded('pdo_sqlite') || extension_loaded('sqlite3'),
+            'curl_available'       => extension_loaded('curl'),
+            'mbstring_available'   => extension_loaded('mbstring'),
+            'opcache_available'    => extension_loaded('Zend OPcache') || extension_loaded('opcache'),
+            'ffmpeg_available'     => $has_ffmpeg,
+            'upload_max_filesize'  => ini_get('upload_max_filesize'),
+            'post_max_size'        => ini_get('post_max_size'),
+            'memory_limit'         => ini_get('memory_limit'),
+            'memory_current'       => $mem_current,
+            'memory_current_fmt'   => format_bytes($mem_current),
+            'memory_peak'          => $mem_peak,
+            'memory_peak_fmt'      => format_bytes($mem_peak),
+            'disk_total'           => $disk_total,
+            'disk_total_fmt'       => format_bytes((int)$disk_total),
+            'disk_free'            => $disk_free,
+            'disk_free_fmt'        => format_bytes((int)$disk_free),
+            'disk_used'            => $disk_used,
+            'disk_used_fmt'        => format_bytes((int)$disk_used),
+            'disk_used_percent'    => $disk_percent,
+            'cache_count'          => $cache_count,
+            'cache_size'           => $cache_size,
+            'cache_size_fmt'       => format_bytes($cache_size),
+            'thumbs_count'         => $thumbs_count,
+            'thumbs_size'          => $thumbs_size,
+            'thumbs_size_fmt'      => format_bytes($thumbs_size),
+            'server_load'          => $load_avg,
+            'is_admin'             => !empty($_SESSION['is_admin'])
         ]
+    ]);
+    exit;
+}
+
+if ($action === 'clear_all_caches') {
+    if (empty($_SESSION['is_admin'])) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Action réservée à l\'administrateur.'
+        ]);
+        exit;
+    }
+
+    $storage_dir = get_cache_storage_dir($real_base_dir, $thumbnail_dir ?? '.thumbnails');
+    $deleted_count = 0;
+    $freed_bytes = 0;
+
+    if (is_dir($storage_dir)) {
+        $files = @scandir($storage_dir) ?: [];
+        foreach ($files as $f) {
+            if ($f[0] === '.') continue;
+            $f_path = $storage_dir . '/' . $f;
+            if (is_file($f_path)) {
+                $freed_bytes += @filesize($f_path) ?: 0;
+                if (@unlink($f_path)) {
+                    $deleted_count++;
+                }
+            }
+        }
+    }
+
+    echo json_encode([
+        'success'       => true,
+        'deleted_count' => $deleted_count,
+        'freed_bytes'   => $freed_bytes,
+        'freed_fmt'     => format_bytes($freed_bytes)
     ]);
     exit;
 }
