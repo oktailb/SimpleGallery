@@ -135,10 +135,15 @@ class AppManager {
 
         const list = [];
         this.apps.forEach((entry, id) => {
+            const manifestCat = (entry.manifest && entry.manifest.category) ? String(entry.manifest.category).trim() : '';
+            const discoveredCat = (window.SG_DISCOVERED_APPS && window.SG_DISCOVERED_APPS[id] && window.SG_DISCOVERED_APPS[id].category) ? window.SG_DISCOVERED_APPS[id].category : '';
+            const cat = manifestCat || discoveredCat || '';
+
             list.push({
                 id,
                 name: this.getAppTitle(id),
                 icon: (entry.manifest && entry.manifest.icon) || '🗔',
+                category: cat,
                 description: this.getAppDescription(id),
                 manifest: entry.manifest,
                 instance: entry.instance

@@ -484,6 +484,18 @@
     "sysmon.charts_title": "Real-Time Telemetry Graphs",
     "sysmon.chart_fps": "Rendering Fluidity (FPS)",
     "sysmon.chart_mem": "JS Heap Memory (MB)",
-    "sysmon.chart_cpu": "Main Thread Load (CPU %)"
+    "sysmon.chart_cpu": "Main Thread Load (CPU %)",
+
+    "categories.productivity": "📁 Files & Productivity",
+    "categories.media": "🎬 Media & Creation",
+    "categories.games": "🎮 Games & Arcade",
+    "categories.system": "⚙️ System & Settings",
+    "taskbar.show_desktop": "Show Desktop",
+    "taskbar.running": "Running",
+    "taskbar.minimized": "Minimized",
+    "taskbar.focused": "Focused",
+    "taskbar.close": "Close Window",
+    "taskbar.quick_sysmon": "System Monitor (Telemetry)",
+    "nav.search_apps": "Search applications..."
   }
 }

@@ -107,6 +107,7 @@ class GeneralUnitTestSuite {
         $this->testI18nEngineAndLocales();
         $this->testUnifiedMetadataExtractors();
         $this->testSystemMonitorAppAndTelemetry();
+        $this->testNextGenTaskbarAndAppCategories();
 
         $_SESSION = $saved_session;
 
@@ -352,7 +353,7 @@ class GeneralUnitTestSuite {
         $this->assert("index.php contient la balise meta cookie-consent-enabled", strpos($rendered_ui, 'name="cookie-consent-enabled"') !== false);
         $this->assert("Application settings fournit le bandeau cookieConsentBanner", strpos($rendered_ui, 'id="cookieConsentBanner"') !== false);
         $this->assert("Application settings fournit l'accès aux préférences cookies", (strpos($rendered_ui, 'id="openCookieSettingsBtn"') !== false || strpos($rendered_ui, 'cookieConsentBanner') !== false));
-        $this->assert("index.php contient le pied de page app-footer", strpos($rendered_ui, 'class="app-footer"') !== false);
+        $this->assert("index.php contient le pied de page app-footer ou la taskbar intégrée", (strpos($rendered_ui, 'app-footer') !== false || strpos($rendered_ui, 'webos-taskbar') !== false));
     }
 
     /**
@@ -586,6 +587,34 @@ class GeneralUnitTestSuite {
         $this->assert("api.php fournit les métriques d'espace disque (total, free, used)", strpos($api_code, "'disk_total'") !== false && strpos($api_code, "'disk_free'") !== false);
         $this->assert("api.php fournit les métriques de caches et miniatures", strpos($api_code, "'cache_count'") !== false && strpos($api_code, "'thumbs_count'") !== false);
     }
+
+    /**
+     * 13. Next-Gen Taskbar & App Category Organization Test
+     */
+    private function testNextGenTaskbarAndAppCategories(): void {
+        echo "\n🖥️ [13/13] Test de la Barre des Tâches Évoluée & Catégories d'Applications...\n";
+
+        // 1. Dynamic App Categories Discovery (from manifest.json or subfolder name, else empty string for root)
+        $discovered = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir);
+        $this->assert("Catégorie de 'system-monitor' vient du manifest ('system')", ($discovered['system-monitor']['category'] ?? '') === 'system');
+        $this->assert("Catégorie de '8queens' vient du manifest ou sous-dossier ('game' ou 'games')", in_array($discovered['8queens']['category'] ?? '', ['game', 'games'], true));
+        $this->assert("Catégorie de 'explorer' vient du manifest ('view')", ($discovered['explorer']['category'] ?? '') === 'view');
+        $this->assert("Catégorie de 'image-viewer' vient du manifest ('viewer')", ($discovered['image-viewer']['category'] ?? '') === 'viewer');
+
+        // 2. WindowManager Next-Gen Taskbar Elements
+        $wm_code = @file_get_contents($this->base_dir . '/system/userland/core/WindowManager.js');
+        $this->assert("WindowManager implémente le conteneur d'applications taskbar-apps-container", strpos($wm_code, 'taskbarAppsContainer') !== false);
+        $this->assert("WindowManager implémente le System Tray taskbar-tray-container", strpos($wm_code, 'taskbarTrayContainer') !== false);
+        $this->assert("WindowManager implémente le bouton horloge taskbarCalendarBtn", strpos($wm_code, 'taskbarCalendarBtn') !== false);
+        $this->assert("WindowManager implémente le bouton 'Afficher le Bureau' taskbarShowDesktopBtn", strpos($wm_code, 'taskbarShowDesktopBtn') !== false);
+        $this->assert("WindowManager implémente la prévisualisation au survol taskbarPreviewCard", strpos($wm_code, 'taskbarPreviewCard') !== false);
+
+        // 3. Category Translations
+        $fr_trans = load_locale_translations($this->base_dir, 'fr');
+        $this->assert("Traduction FR de categories.productivity présente", !empty($fr_trans['categories.productivity']));
+        $this->assert("Traduction FR de categories.games présente", !empty($fr_trans['categories.games']));
+        $this->assert("Traduction FR de taskbar.show_desktop présente", !empty($fr_trans['taskbar.show_desktop']));
+    }
 }
 
 
@@ -595,5 +624,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     $success = $suite->runAll();
     exit($success ? 0 : 1);
 }
+
 
 

@@ -484,6 +484,18 @@
     "sysmon.charts_title": "リアルタイムテレメトリグラフ",
     "sysmon.chart_fps": "描画フレームレート (FPS)",
     "sysmon.chart_mem": "JSヒープメモリ (MB)",
-    "sysmon.chart_cpu": "メインスレッド負荷 (CPU %)"
+    "sysmon.chart_cpu": "メインスレッド負荷 (CPU %)",
+
+    "categories.productivity": "📁 ファイル＆生産性",
+    "categories.media": "🎬 メディア＆クリエイション",
+    "categories.games": "🎮 ゲーム＆アーケード",
+    "categories.system": "⚙️ システム＆設定",
+    "taskbar.show_desktop": "デスクトップを表示",
+    "taskbar.running": "実行中",
+    "taskbar.minimized": "最小化",
+    "taskbar.focused": "最前面",
+    "taskbar.close": "ウィンドウを閉じる",
+    "taskbar.quick_sysmon": "システムモニター（テレメトリ）",
+    "nav.search_apps": "アプリケーションを検索..."
   }
 }

@@ -80,11 +80,23 @@ class PluginDiscovery {
             }
 
             $app_id = $manifest['id'] ?? $folder;
+
+            // Category resolution:
+            // 1. From manifest.json if present and non-empty
+            // 2. Else if inside a subfolder (e.g. apps/games/*), use the subfolder name
+            // 3. Otherwise empty string (root)
+            $cat = !empty($manifest['category']) ? trim((string)$manifest['category']) : '';
+            if ($cat === '' && strpos($rel_key, '/') !== false) {
+                $cat = dirname($rel_key);
+            }
+
             $apps[$app_id] = [
                 'id'             => $app_id,
                 'name'           => $manifest['name'] ?? ucfirst($folder),
                 'version'        => $manifest['version'] ?? '1.0.0',
                 'icon'           => $manifest['icon'] ?? '📱',
+                'category'       => $cat,
+                'parent_folder'  => (strpos($rel_key, '/') !== false ? dirname($rel_key) : ''),
                 'manifest'       => $manifest,
                 'locales'        => $manifest['locales'] ?? [],
                 'js_entry'       => $js_entry,

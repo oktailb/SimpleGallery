@@ -286,27 +286,45 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <?php endif; ?>
   <?php endforeach; ?>
 
-  <!-- App Footer -->
-  <footer class="app-footer">
-    <div class="footer-container">
-      <div class="footer-info">
-        <a href="https://github.com/oktailb/SimpleGallery" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="SimpleGallery on GitHub">
-          📸 <strong><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></strong>
-        </a>
-        <span class="footer-separator">•</span>
-        <span class="footer-tech">PHP &amp; Vanilla JS</span>
-      </div>
-      <div class="footer-links">
-        <button type="button" id="openCookieSettingsBtn" class="footer-link-btn" title="Gérer vos préférences de confidentialité et cookies" data-i18n-title="cookie.footer_link" data-i18n="cookie.footer_link">
-          🍪 Préférences Cookies
-        </button>
-      </div>
+  </div><!-- /#webosDesktop -->
+
+  <!-- WebOS Integrated Bottom Taskbar & Footer -->
+  <footer id="webosTaskbar" class="webos-taskbar app-footer">
+    <!-- Left: Brand info & Cookie Settings -->
+    <div class="taskbar-left-zone">
+      <a href="https://github.com/oktailb/SimpleGallery" target="_blank" rel="noopener noreferrer" class="taskbar-brand-link" title="SimpleGallery on GitHub">
+        📸 <strong><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></strong>
+      </a>
+      <span class="taskbar-tech">PHP &amp; JS</span>
+      <span class="taskbar-separator">•</span>
+      <button type="button" id="openCookieSettingsBtn" class="taskbar-cookie-btn" title="Gérer vos préférences de confidentialité et cookies" data-i18n-title="cookie.footer_link" data-i18n="cookie.footer_link">
+        🍪 Cookies
+      </button>
+    </div>
+
+    <!-- Center: Running Applications & Pinned Apps -->
+    <div class="taskbar-apps-container" id="taskbarAppsContainer"></div>
+
+    <!-- Right: System Tray (Telemetry, Clock, Show Desktop) -->
+    <div class="taskbar-tray-container" id="taskbarTrayContainer">
+      <button type="button" class="taskbar-tray-btn" id="taskbarSysmonBtn" title="Moniteur Système (Télémétrie)">
+        <span class="taskbar-tray-icon">📊</span>
+        <span id="taskbarFpsPill" class="taskbar-tray-pill">60 FPS</span>
+      </button>
+
+      <button type="button" class="taskbar-clock-btn" id="taskbarCalendarBtn" title="Calendrier &amp; Horloge">
+        <span id="taskbarClockTime" class="taskbar-clock-time">--:--</span>
+        <span id="taskbarClockDate" class="taskbar-clock-date">--/--</span>
+      </button>
+
+      <button type="button" class="taskbar-show-desktop" id="taskbarShowDesktopBtn" title="Afficher le Bureau"></button>
     </div>
   </footer>
 
-  </div><!-- /#webosDesktop -->
+  <!-- Floating Hover Preview Card (Window Peeking) -->
+  <div id="taskbarPreviewCard" class="taskbar-preview-card" style="display: none;"></div>
 
-  <!-- WebOS Bottom Dock & Taskbar -->
-  <div id="webosTaskbar" class="webos-taskbar"></div>
+  <!-- Mini Calendar Popover -->
+  <div id="taskbarCalendarPopover" class="taskbar-calendar-popover" style="display: none;"></div>
 </body>
 </html>

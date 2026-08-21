@@ -484,6 +484,18 @@
     "sysmon.charts_title": "Télémétrie Graphique Temps Réel",
     "sysmon.chart_fps": "Fluidité de Rendu (FPS)",
     "sysmon.chart_mem": "Mémoire Tas JS (Heap Mo)",
-    "sysmon.chart_cpu": "Charge Thread Principal (CPU %)"
+    "sysmon.chart_cpu": "Charge Thread Principal (CPU %)",
+
+    "categories.productivity": "📁 Fichiers & Productivité",
+    "categories.media": "🎬 Médias & Création",
+    "categories.games": "🎮 Jeux & Arcade",
+    "categories.system": "⚙️ Système & Configuration",
+    "taskbar.show_desktop": "Afficher le Bureau",
+    "taskbar.running": "En cours d'exécution",
+    "taskbar.minimized": "Minimisée",
+    "taskbar.focused": "Au premier plan",
+    "taskbar.close": "Fermer la fenêtre",
+    "taskbar.quick_sysmon": "Moniteur Système (Télémétrie)",
+    "nav.search_apps": "Rechercher une application..."
   }
 }

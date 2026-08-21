@@ -315,35 +315,274 @@
     }
 
     closeAppLauncher() {
-      const btn = this.el.appLauncherBtn || document.getElementById('appLauncherBtn');
       const menu = this.el.appLauncherMenu || document.getElementById('appLauncherMenu');
+      const btn = this.el.appLauncherBtn || document.getElementById('appLauncherBtn');
+      this.closeFlyoutSubmenu();
       if (menu) menu.style.display = 'none';
       if (btn) btn.classList.remove('active');
     }
 
+    closeFlyoutSubmenu() {
+      const flyout = document.getElementById('appLauncherFlyoutSubmenu');
+      if (flyout && flyout.parentNode) {
+        flyout.parentNode.removeChild(flyout);
+      }
+      const activeRows = document.querySelectorAll('.app-launcher-cat-row.active');
+      activeRows.forEach(r => r.classList.remove('active'));
+    }
+
     renderAppLauncherMenu() {
+      const menuEl = this.el.appLauncherMenu || document.getElementById('appLauncherMenu');
       const listEl = this.el.appLauncherList || document.getElementById('appLauncherList');
-      if (!listEl) return;
+      if (!menuEl || !listEl) return;
 
       const appMgr = window.sys && window.sys.appManager;
-      const apps = appMgr ? appMgr.getAllApps() : [];
+      const allApps = appMgr ? appMgr.getAllApps() : [];
 
-      if (!apps || apps.length === 0) {
+      if (!allApps || allApps.length === 0) {
         listEl.innerHTML = `<div style="padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">Aucune application enregistrée</div>`;
         return;
       }
 
-      listEl.innerHTML = apps.map(app => `
-        <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}" draggable="true">
-          <span class="app-launcher-icon">${app.icon || '🗔'}</span>
-          <div class="app-launcher-info">
-            <span class="app-launcher-name">${this.escapeHtml(app.name)}</span>
-            <span class="app-launcher-desc">${this.escapeHtml(app.description || '')}</span>
-          </div>
-        </button>
-      `).join('');
+      // Add search input if not present
+      let searchBox = menuEl.querySelector('.app-launcher-search-box');
+      if (!searchBox) {
+        searchBox = document.createElement('div');
+        searchBox.className = 'app-launcher-search-box';
+        searchBox.innerHTML = `
+          <span class="app-launcher-search-icon">🔍</span>
+          <input type="text" class="app-launcher-search-input" placeholder="${this.escapeHtml(this.t('nav.search_apps') || 'Rechercher une application...')}" />
+        `;
+        menuEl.insertBefore(searchBox, listEl);
 
-      listEl.querySelectorAll('.app-launcher-item').forEach(item => {
+        const input = searchBox.querySelector('.app-launcher-search-input');
+        input.oninput = (e) => {
+          this.filterAppLauncher(e.target.value.trim().toLowerCase());
+        };
+        input.onclick = (e) => e.stopPropagation();
+      }
+
+      this._allLauncherApps = allApps;
+      this.populateAppLauncherCategories(allApps, listEl, appMgr, false);
+    }
+
+    filterAppLauncher(query) {
+      const listEl = this.el.appLauncherList || document.getElementById('appLauncherList');
+      const appMgr = window.sys && window.sys.appManager;
+      if (!listEl || !this._allLauncherApps) return;
+
+      this.closeFlyoutSubmenu();
+
+      if (!query) {
+        this.populateAppLauncherCategories(this._allLauncherApps, listEl, appMgr, false);
+        return;
+      }
+
+      const filtered = this._allLauncherApps.filter(a => 
+        (a.name || '').toLowerCase().includes(query) || 
+        (a.description || '').toLowerCase().includes(query) || 
+        (a.id || '').toLowerCase().includes(query) || 
+        (a.category || '').toLowerCase().includes(query)
+      );
+
+      this.populateAppLauncherCategories(filtered, listEl, appMgr, true);
+    }
+
+    getCategoryDisplayInfo(catKey) {
+      if (!catKey) {
+        return {
+          id: '',
+          icon: '📁',
+          label: this.t('categories.root') || this.t('nav.apps_menu') || 'Applications'
+        };
+      }
+
+      const transKey = `categories.${catKey}`;
+      const trans = this.t(transKey);
+      if (trans && trans !== transKey) {
+        return { id: catKey, label: trans, icon: '📁' };
+      }
+
+      const iconMap = {
+        games: '🎮',
+        game: '🎮',
+        system: '⚙️',
+        media: '🎬',
+        viewer: '🖼️',
+        player: '🎵',
+        utility: '🛠️',
+        tools: '🛠️',
+        productivity: '📂',
+        office: '📑'
+      };
+
+      const icon = iconMap[catKey.toLowerCase()] || '📁';
+      const formattedName = catKey.charAt(0).toUpperCase() + catKey.slice(1);
+      return {
+        id: catKey,
+        icon,
+        label: `${icon} ${formattedName}`
+      };
+    }
+
+    populateAppLauncherCategories(apps, listEl, appMgr, isFiltered) {
+      if (!apps || apps.length === 0) {
+        listEl.innerHTML = `<div style="padding: 1rem; font-size: 0.8rem; color: var(--text-muted); text-align: center;">Aucun résultat trouvé</div>`;
+        return;
+      }
+
+      // If filtered via search, show flat list of matching items with category tag
+      if (isFiltered) {
+        listEl.innerHTML = apps.map(app => `
+          <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}" draggable="true">
+            <span class="app-launcher-icon">${app.icon || '🗔'}</span>
+            <div class="app-launcher-info">
+              <span class="app-launcher-name">${this.escapeHtml(app.name)}</span>
+              <span class="app-launcher-desc">${this.escapeHtml(app.description || '')}</span>
+            </div>
+            ${app.category ? `<span class="app-launcher-cat-count">${this.escapeHtml(app.category)}</span>` : ''}
+          </button>
+        `).join('');
+
+        this.bindAppLauncherItemEvents(listEl, apps, appMgr);
+        return;
+      }
+
+      // Group apps by category
+      const groups = new Map();
+      apps.forEach(app => {
+        const cat = (app.category || '').trim();
+        if (!groups.has(cat)) {
+          groups.set(cat, []);
+        }
+        groups.get(cat).push(app);
+      });
+
+      // Distinct named categories vs root
+      const namedCatKeys = Array.from(groups.keys()).filter(k => k !== '').sort();
+      const rootApps = groups.get('') || [];
+
+      let html = '';
+
+      // 1. Render Category Rows with Flyout Submenus
+      namedCatKeys.forEach(catKey => {
+        const catApps = groups.get(catKey);
+        const catInfo = this.getCategoryDisplayInfo(catKey);
+        html += `
+          <button type="button" class="app-launcher-cat-row" data-category="${this.escapeHtml(catKey)}">
+            <div class="app-launcher-cat-left">
+              <span style="font-size: 1.15rem;">${catInfo.icon || '📁'}</span>
+              <span class="app-launcher-cat-name">${this.escapeHtml(catInfo.label)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="app-launcher-cat-count">${catApps.length}</span>
+              <span class="app-launcher-cat-arrow">›</span>
+            </div>
+          </button>
+        `;
+      });
+
+      // 2. Render Direct Root Apps if any
+      if (rootApps.length > 0) {
+        if (namedCatKeys.length > 0) {
+          html += `<div style="height: 1px; background: rgba(255,255,255,0.08); margin: 0.3rem 0.2rem;"></div>`;
+        }
+        rootApps.forEach(app => {
+          html += `
+            <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}" draggable="true">
+              <span class="app-launcher-icon">${app.icon || '🗔'}</span>
+              <div class="app-launcher-info">
+                <span class="app-launcher-name">${this.escapeHtml(app.name)}</span>
+                <span class="app-launcher-desc">${this.escapeHtml(app.description || '')}</span>
+              </div>
+            </button>
+          `;
+        });
+      }
+
+      listEl.innerHTML = html;
+
+      // Bind Category Row Hover / Click to Flyout Submenu
+      listEl.querySelectorAll('.app-launcher-cat-row').forEach(row => {
+        const catKey = row.dataset.category;
+        const catApps = groups.get(catKey) || [];
+        const catInfo = this.getCategoryDisplayInfo(catKey);
+
+        let flyoutTimer = null;
+        row.onmouseenter = () => {
+          flyoutTimer = setTimeout(() => {
+            this.openFlyoutSubmenu(row, catInfo, catApps, appMgr);
+          }, 80);
+        };
+
+        row.onmouseleave = (e) => {
+          if (flyoutTimer) clearTimeout(flyoutTimer);
+          const flyout = document.getElementById('appLauncherFlyoutSubmenu');
+          if (flyout && !flyout.contains(e.relatedTarget)) {
+            setTimeout(() => {
+              if (!this._isHoveringFlyout) this.closeFlyoutSubmenu();
+            }, 100);
+          }
+        };
+
+        row.onclick = (e) => {
+          e.stopPropagation();
+          this.openFlyoutSubmenu(row, catInfo, catApps, appMgr);
+        };
+      });
+
+      // Bind Root Items
+      this.bindAppLauncherItemEvents(listEl, rootApps, appMgr);
+    }
+
+    openFlyoutSubmenu(triggerRow, catInfo, catApps, appMgr) {
+      this.closeFlyoutSubmenu();
+      triggerRow.classList.add('active');
+
+      const menuEl = this.el.appLauncherMenu || document.getElementById('appLauncherMenu');
+      if (!menuEl) return;
+
+      const flyout = document.createElement('div');
+      flyout.id = 'appLauncherFlyoutSubmenu';
+      flyout.className = 'app-launcher-flyout-submenu';
+
+      const rowRect = triggerRow.getBoundingClientRect();
+      const menuRect = menuEl.getBoundingClientRect();
+
+      flyout.innerHTML = `
+        <div class="app-launcher-flyout-header">${this.escapeHtml(catInfo.label)}</div>
+        <div class="app-launcher-flyout-list" style="display: flex; flex-direction: column; gap: 0.2rem;">
+          ${catApps.map(app => `
+            <button type="button" class="app-launcher-item" data-app-id="${this.escapeHtml(app.id)}" draggable="true">
+              <span class="app-launcher-icon">${app.icon || '🗔'}</span>
+              <div class="app-launcher-info">
+                <span class="app-launcher-name">${this.escapeHtml(app.name)}</span>
+                <span class="app-launcher-desc">${this.escapeHtml(app.description || '')}</span>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      // Set vertical positioning relative to category row
+      const topOffset = Math.max(0, rowRect.top - menuRect.top - 8);
+      flyout.style.top = `${topOffset}px`;
+
+      flyout.onmouseenter = () => {
+        this._isHoveringFlyout = true;
+      };
+
+      flyout.onmouseleave = () => {
+        this._isHoveringFlyout = false;
+        this.closeFlyoutSubmenu();
+      };
+
+      menuEl.appendChild(flyout);
+      this.bindAppLauncherItemEvents(flyout, catApps, appMgr);
+    }
+
+    bindAppLauncherItemEvents(containerEl, apps, appMgr) {
+      containerEl.querySelectorAll('.app-launcher-item').forEach(item => {
         const appId = item.dataset.appId;
         const app = apps.find(a => a.id === appId) || { id: appId, name: appId, icon: '🗔' };
 

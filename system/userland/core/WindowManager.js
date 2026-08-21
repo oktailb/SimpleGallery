@@ -27,13 +27,26 @@
         document.body.appendChild(this.taskbar);
       }
 
+      this.initTaskbarDOM();
+      this.startClock();
+
       // Close on Escape or click outside handlers
       window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && this.activeWindowId) {
-          const win = this.windows.get(this.activeWindowId);
-          if (win && win.isModal) {
-            this.closeWindow(win.id);
+        if (e.key === 'Escape') {
+          this.hidePreview();
+          this.hideCalendar();
+          if (this.activeWindowId) {
+            const win = this.windows.get(this.activeWindowId);
+            if (win && win.isModal) {
+              this.closeWindow(win.id);
+            }
           }
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#taskbarCalendarBtn') && !e.target.closest('#taskbarCalendarPopover')) {
+          this.hideCalendar();
         }
       });
 
@@ -46,12 +59,305 @@
       }
     }
 
+    initTaskbarDOM() {
+      if (!this.taskbar) return;
+
+      // If taskbar structure doesn't exist yet, populate standard layout
+      if (!this.taskbar.querySelector('#taskbarAppsContainer')) {
+        this.taskbar.innerHTML = `
+          <!-- Left: Brand info & Cookie Settings -->
+          <div class="taskbar-left-zone">
+            <a href="https://github.com/oktailb/SimpleGallery" target="_blank" rel="noopener noreferrer" class="taskbar-brand-link" title="SimpleGallery on GitHub">
+              📸 <strong>SimpleGallery</strong>
+            </a>
+            <span class="taskbar-tech">PHP &amp; JS</span>
+            <span class="taskbar-separator">•</span>
+            <button type="button" id="openCookieSettingsBtn" class="taskbar-cookie-btn" title="Gérer vos préférences de confidentialité et cookies">
+              🍪 Cookies
+            </button>
+          </div>
+
+          <!-- Center: Running Applications & Pinned Apps -->
+          <div class="taskbar-apps-container" id="taskbarAppsContainer"></div>
+
+          <!-- Right: System Tray & Quick Widgets -->
+          <div class="taskbar-tray-container" id="taskbarTrayContainer">
+            <button type="button" class="taskbar-tray-btn" id="taskbarSysmonBtn" title="Moniteur Système (Télémétrie)">
+              <span class="taskbar-tray-icon">📊</span>
+              <span id="taskbarFpsPill" class="taskbar-tray-pill">60 FPS</span>
+            </button>
+
+            <button type="button" class="taskbar-clock-btn" id="taskbarCalendarBtn" title="Calendrier &amp; Horloge">
+              <span id="taskbarClockTime" class="taskbar-clock-time">--:--</span>
+              <span id="taskbarClockDate" class="taskbar-clock-date">--/--</span>
+            </button>
+
+            <button type="button" class="taskbar-show-desktop" id="taskbarShowDesktopBtn" title="Afficher le Bureau"></button>
+          </div>
+        `;
+      }
+
+      // Ensure Preview Card and Calendar Popover elements exist in DOM
+      if (!document.getElementById('taskbarPreviewCard')) {
+        const prevEl = document.createElement('div');
+        prevEl.id = 'taskbarPreviewCard';
+        prevEl.className = 'taskbar-preview-card';
+        prevEl.style.display = 'none';
+        document.body.appendChild(prevEl);
+      }
+
+      if (!document.getElementById('taskbarCalendarPopover')) {
+        const calEl = document.createElement('div');
+        calEl.id = 'taskbarCalendarPopover';
+        calEl.className = 'taskbar-calendar-popover';
+        calEl.style.display = 'none';
+        document.body.appendChild(calEl);
+      }
+
+      // Wire System Tray Buttons
+      const sysmonBtn = this.taskbar.querySelector('#taskbarSysmonBtn');
+      if (sysmonBtn) {
+        sysmonBtn.onclick = () => {
+          if (window.SystemMonitorApp && typeof window.SystemMonitorApp.open === 'function') {
+            window.SystemMonitorApp.open();
+          } else if (window.sys && window.sys.appManager) {
+            window.sys.appManager.launchApp('system-monitor');
+          }
+        };
+      }
+
+      const calBtn = this.taskbar.querySelector('#taskbarCalendarBtn');
+      if (calBtn) {
+        calBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.toggleCalendar();
+        };
+      }
+
+      const showDesktopBtn = this.taskbar.querySelector('#taskbarShowDesktopBtn');
+      if (showDesktopBtn) {
+        showDesktopBtn.onclick = () => this.toggleShowDesktop();
+      }
+    }
+
+    startClock() {
+      const update = () => {
+        const now = new Date();
+        const timeEl = document.getElementById('taskbarClockTime');
+        const dateEl = document.getElementById('taskbarClockDate');
+        if (timeEl) {
+          const h = String(now.getHours()).padStart(2, '0');
+          const m = String(now.getMinutes()).padStart(2, '0');
+          timeEl.textContent = `${h}:${m}`;
+        }
+        if (dateEl) {
+          const d = String(now.getDate()).padStart(2, '0');
+          const mo = String(now.getMonth() + 1).padStart(2, '0');
+          dateEl.textContent = `${d}/${mo}`;
+        }
+      };
+      update();
+      setInterval(update, 1000);
+    }
+
+    toggleShowDesktop() {
+      const windows = Array.from(this.windows.values());
+      if (windows.length === 0) return;
+
+      const nonMin = windows.filter(w => w.state !== 'minimized');
+      if (nonMin.length > 0) {
+        // Minimize all
+        this._previouslyOpen = nonMin.map(w => w.id);
+        windows.forEach(w => this.minimizeWindow(w.id));
+      } else if (this._previouslyOpen && this._previouslyOpen.length > 0) {
+        // Restore all previously open
+        this._previouslyOpen.forEach(id => this.restoreWindow(id));
+        this._previouslyOpen = null;
+      } else {
+        // Restore all
+        windows.forEach(w => this.restoreWindow(w.id));
+      }
+    }
+
+    toggleCalendar() {
+      const popover = document.getElementById('taskbarCalendarPopover');
+      if (!popover) return;
+
+      if (popover.style.display !== 'none') {
+        this.hideCalendar();
+        return;
+      }
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const today = now.getDate();
+
+      const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+      const dayNames = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
+
+      const firstDay = new Date(year, month, 1).getDay(); // 0 is Sun
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const startingCol = (firstDay === 0 ? 6 : firstDay - 1); // Monday based
+
+      let daysHtml = '';
+      for (let i = 0; i < startingCol; i++) {
+        daysHtml += `<div class="cal-day empty"></div>`;
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const isToday = (d === today);
+        daysHtml += `<div class="cal-day ${isToday ? 'today' : ''}">${d}</div>`;
+      }
+
+      popover.innerHTML = `
+        <div class="cal-header">
+          <span class="cal-title">📅 ${monthNames[month]} ${year}</span>
+          <span class="cal-time">${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}</span>
+        </div>
+        <div class="cal-grid">
+          ${dayNames.map(dn => `<div class="cal-day-name">${dn}</div>`).join('')}
+          ${daysHtml}
+        </div>
+      `;
+      popover.style.display = 'block';
+    }
+
+    hideCalendar() {
+      const popover = document.getElementById('taskbarCalendarPopover');
+      if (popover) popover.style.display = 'none';
+    }
+
+    showPreview(win, targetEl) {
+      let preview = document.getElementById('taskbarPreviewCard');
+      if (!preview) {
+        preview = document.createElement('div');
+        prevEl.id = 'taskbarPreviewCard';
+        prevEl.className = 'taskbar-preview-card';
+        document.body.appendChild(prevEl);
+      }
+      if (!win || !targetEl) return;
+
+      const rect = targetEl.getBoundingClientRect();
+      const snippet = win.fileName ? `Fichier : ${win.fileName}` : (win.appName || 'Application WebOS');
+
+      preview.innerHTML = `
+        <div class="preview-header">
+          <span class="preview-icon">${win.icon}</span>
+          <span class="preview-title">${this.escapeHtml(win.title)}</span>
+          <button type="button" class="preview-close-btn" title="Fermer (✕)">✕</button>
+        </div>
+        <div class="preview-body">
+          <div class="preview-snapshot">
+            <span style="font-size: 2rem; margin-bottom: 4px;">${win.icon}</span>
+            <span style="font-size: 0.78rem; font-weight: 500; color: var(--text-main); margin-bottom: 2px;">${this.escapeHtml(snippet)}</span>
+            <span style="font-size: 0.7rem; color: ${win.state === 'minimized' ? 'var(--text-muted)' : 'var(--accent-primary)'}; margin-top: 4px;">${win.state === 'minimized' ? '● Minimisée' : '● Au premier plan'}</span>
+          </div>
+        </div>
+      `;
+
+      const closeBtn = preview.querySelector('.preview-close-btn');
+      if (closeBtn) {
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.closeWindow(win.id);
+          this.hidePreview();
+        };
+      }
+
+      preview.onclick = (e) => {
+        if (e.target.closest('.preview-close-btn')) return;
+        if (win.state === 'minimized') this.restoreWindow(win.id);
+        else this.focusWindow(win.id);
+        this.hidePreview();
+      };
+
+      preview.onmouseenter = () => {
+        this._isHoveringPreview = true;
+      };
+
+      preview.onmouseleave = () => {
+        this._isHoveringPreview = false;
+        this.hidePreview();
+      };
+
+      preview.style.display = 'block';
+      const previewWidth = preview.offsetWidth || 230;
+      const leftPos = Math.max(10, Math.min(window.innerWidth - previewWidth - 10, rect.left + (rect.width / 2) - (previewWidth / 2)));
+      preview.style.left = `${leftPos}px`;
+      preview.style.bottom = `${Math.max(48, window.innerHeight - rect.top + 8)}px`;
+    }
+
+    hidePreview() {
+      const preview = document.getElementById('taskbarPreviewCard');
+      if (preview) preview.style.display = 'none';
+    }
+
+    updateTaskbar() {
+      if (!this.taskbar) return;
+      let appsContainer = document.getElementById('taskbarAppsContainer');
+      if (!appsContainer) {
+        this.initTaskbarDOM();
+        appsContainer = document.getElementById('taskbarAppsContainer');
+      }
+      if (!appsContainer) return;
+
+      appsContainer.innerHTML = '';
+
+      // Render items for each open window
+      this.windows.forEach(win => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        const isActive = (this.activeWindowId === win.id && win.state !== 'minimized');
+        const isMin = (win.state === 'minimized');
+
+        item.className = `taskbar-item ${isActive ? 'active' : ''} ${isMin ? 'minimized' : ''}`;
+        item.title = win.title;
+        item.innerHTML = `
+          <span class="taskbar-icon">${win.icon}</span>
+          <span class="taskbar-label">${this.escapeHtml(win.title)}</span>
+          <span class="taskbar-indicator"></span>
+        `;
+
+        // Click Handling
+        item.onclick = () => {
+          this.hidePreview();
+          if (win.state === 'minimized') {
+            this.restoreWindow(win.id);
+          } else if (this.activeWindowId === win.id) {
+            this.minimizeWindow(win.id);
+          } else {
+            this.focusWindow(win.id);
+          }
+        };
+
+        // Hover Window Peeking Preview
+        item.onmouseenter = () => {
+          if (this._hoverTimer) clearTimeout(this._hoverTimer);
+          this._hoverTimer = setTimeout(() => {
+            this.showPreview(win, item);
+          }, 150);
+        };
+
+        item.onmouseleave = (e) => {
+          if (this._hoverTimer) clearTimeout(this._hoverTimer);
+          setTimeout(() => {
+            if (!this._isHoveringPreview) {
+              this.hidePreview();
+            }
+          }, 120);
+        };
+
+        appsContainer.appendChild(item);
+      });
+    }
+
     onThemeChanged(themeId) {
       this.windows.forEach(win => {
         if (win.element) {
           win.element.setAttribute('data-theme', themeId);
         }
       });
+      this.updateTaskbar();
     }
 
     /**
@@ -138,7 +444,7 @@
         <div class="window-header">
           <div class="window-traffic-lights">
             ${win.isClosable ? `<button type="button" class="win-btn win-close" title="Fermer (✕)">✕</button>` : ''}
-            ${win.isMinimizable ? `<button type="button" class="win-btn win-minimize" title="Minimiser (🗕)">−</button>` : ''}
+            ${win.isMinimizable ? `<button type="button" class="win-btn win-minimize" title="Minimiser (—)">−</button>` : ''}
             ${win.isMaximizable ? `<button type="button" class="win-btn win-maximize" title="Maximiser / Restaurer (🗖)">🗖</button>` : ''}
           </div>
           <div class="window-title-group">
@@ -531,34 +837,6 @@
           window.MenuBarManager.restoreDefaultMenu();
         }
       }
-    }
-
-    updateTaskbar() {
-      if (!this.taskbar) return;
-      this.taskbar.innerHTML = '';
-
-      this.windows.forEach(win => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = `taskbar-item ${this.activeWindowId === win.id ? 'active' : ''} ${win.state === 'minimized' ? 'minimized' : ''}`;
-        item.title = win.title;
-        item.innerHTML = `
-          <span class="taskbar-icon">${win.icon}</span>
-          <span class="taskbar-label">${this.escapeHtml(win.title)}</span>
-        `;
-
-        item.onclick = () => {
-          if (win.state === 'minimized') {
-            this.restoreWindow(win.id);
-          } else if (this.activeWindowId === win.id) {
-            this.minimizeWindow(win.id);
-          } else {
-            this.focusWindow(win.id);
-          }
-        };
-
-        this.taskbar.appendChild(item);
-      });
     }
 
     setTitle(id, title) {
