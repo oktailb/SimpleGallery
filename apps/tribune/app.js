@@ -75,7 +75,7 @@
                 oauthStatus.style.color = '#34d399';
               }
             }
-            alert('Connexion OAuth2 réussie avec ' + (this.boards[targetBoard]?.name || targetBoard) + ' ! 🔑');
+            alert((this.t('tribune.oauth_success') || 'Connexion OAuth2 réussie avec ') + (this.boards[targetBoard]?.name || targetBoard) + ' ! 🔑');
           }
         });
         window._tribuneOauthListenerBound = true;
@@ -209,10 +209,11 @@
       this.fetchPosts(this.currentBoard, false, true);
       this.refreshScheduledList();
 
-      // Auto-poll remote tribunes every 10s asynchronously; SSE streams local board instantly
+      // Auto-poll remote tribunes & refresh scheduled badge every 10s
       if (this.pollInterval) clearInterval(this.pollInterval);
       this.pollInterval = setInterval(() => {
         if (!this.container) return;
+        this.refreshScheduledList();
         const bKeys = Object.keys(this.boards).filter(k => k !== 'local' || !this.sseSource);
         Promise.allSettled(bKeys.map(bKey => this.fetchPosts(bKey, true, false)));
       }, 10000);
@@ -246,6 +247,18 @@
         } catch (e) {}
         this.sseSource = null;
       }
+    }
+
+    formatLocalIsoString(d) {
+      if (!d || isNaN(d.getTime())) return '';
+      const pad = (n) => String(n).padStart(2, '0');
+      const year = d.getFullYear();
+      const month = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const hours = pad(d.getHours());
+      const minutes = pad(d.getMinutes());
+      const seconds = pad(d.getSeconds());
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
 
     parseLocalDateTime(val) {
@@ -799,7 +812,7 @@
             this.saveBoardAuth();
             if (cookieInput) cookieInput.value = cookies;
           } else {
-            alert('Aucun cookie de navigateur trouvé sur cette origine.');
+            alert(this.t('tribune.no_cookie_found') || 'Aucun cookie de navigateur trouvé sur cette origine.');
           }
         });
       }
@@ -1016,10 +1029,8 @@
           if (!isVisible) {
             const now = new Date(Date.now() + 5 * 60 * 1000);
             now.setSeconds(0, 0);
-            const tzOffset = now.getTimezoneOffset() * 60000;
-            const localIso = (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 19);
             if (scheduleDatetime) {
-              scheduleDatetime.value = localIso;
+              scheduleDatetime.value = this.formatLocalIsoString(now);
             }
             this.updateScheduleTimezonePreview();
             this.refreshScheduledList();
@@ -1042,21 +1053,21 @@
         scheduleConfirmBtn.addEventListener('click', async () => {
           const msg = msgInput.value.trim();
           if (!msg) {
-            alert('Veuillez d\'abord saisir un message à programmer.');
+            alert(this.t('tribune.schedule_empty_msg') || 'Veuillez d\'abord saisir un message à programmer.');
             msgInput.focus();
             return;
           }
 
           const val = scheduleDatetime.value;
           if (!val) {
-            alert('Veuillez sélectionner une date et une heure de programmation.');
+            alert(this.t('tribune.schedule_select_datetime') || 'Veuillez sélectionner une date et une heure de programmation.');
             return;
           }
 
           const dt = this.parseLocalDateTime(val);
           const unixTs = dt ? Math.floor(dt.getTime() / 1000) : 0;
-          if (isNaN(unixTs) || unixTs <= Math.floor(Date.now() / 1000)) {
-            alert('L\'heure programmée doit être située dans le futur.');
+          if (isNaN(unixTs) || unixTs <= (Math.floor(Date.now() / 1000) - 30)) {
+            alert(this.t('tribune.schedule_future_required') || 'L\'heure programmée doit être située dans le futur.');
             return;
           }
 
@@ -1849,11 +1860,11 @@
           if (this.soundEnabled) this.playCoincoinSound();
           return true;
         } else {
-          alert('Erreur lors du post: ' + (data.error || 'Impossible de poster.'));
+          alert((this.t('tribune.post_error') || 'Erreur lors du post : ') + (data.error || 'Impossible de poster.'));
           return false;
         }
       } catch (err) {
-        alert('Erreur de connexion au serveur lors du post: ' + err.message);
+        alert((this.t('tribune.post_network_error') || 'Erreur de connexion au serveur lors du post : ') + err.message);
         return false;
       }
     }

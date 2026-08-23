@@ -48,5 +48,12 @@
   "tribune.schedule_success": "Message programmé avec succès !",
   "tribune.schedule_error": "Erreur lors de la programmation.",
   "tribune.scheduled_empty": "Aucun message programmé en attente.",
-  "tribune.cancel": "Annuler"
+  "tribune.cancel": "Annuler",
+  "tribune.schedule_empty_msg": "Veuillez d'abord saisir un message à programmer.",
+  "tribune.schedule_select_datetime": "Veuillez sélectionner une date et une heure de programmation.",
+  "tribune.schedule_future_required": "L'heure programmée doit être située dans le futur.",
+  "tribune.no_cookie_found": "Aucun cookie de navigateur trouvé sur cette origine.",
+  "tribune.post_error": "Erreur lors du post : ",
+  "tribune.post_network_error": "Erreur de connexion au serveur lors du post : ",
+  "tribune.oauth_success": "Connexion OAuth2 réussie avec "
 }

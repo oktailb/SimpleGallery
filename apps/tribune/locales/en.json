@@ -48,5 +48,12 @@
   "tribune.schedule_success": "Message scheduled successfully!",
   "tribune.schedule_error": "Error scheduling message.",
   "tribune.scheduled_empty": "No pending scheduled messages.",
-  "tribune.cancel": "Cancel"
+  "tribune.cancel": "Cancel",
+  "tribune.schedule_empty_msg": "Please enter a message to schedule.",
+  "tribune.schedule_select_datetime": "Please select a date and time.",
+  "tribune.schedule_future_required": "Scheduled time must be in the future.",
+  "tribune.no_cookie_found": "No browser cookie found on this origin.",
+  "tribune.post_error": "Error posting: ",
+  "tribune.post_network_error": "Server connection error while posting: ",
+  "tribune.oauth_success": "OAuth2 connection successful with "
 }

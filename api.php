@@ -582,9 +582,9 @@ if ($action === 'tribune_schedule_post') {
         exit;
     }
 
-    if ($sched_ts <= time()) {
+    if ($sched_ts <= (time() - 30)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'L\'heure programmée doit être dans le futur.']);
+        echo json_encode(['success' => false, 'error' => 'L\'heure programmée doit être située dans le futur.']);
         exit;
     }
 
