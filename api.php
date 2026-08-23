@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches', 'tribune_clear_history', 'tribune_boards_save', 'tribune_file_upload'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches', 'tribune_clear_history', 'tribune_boards_save', 'tribune_file_upload', 'tribune_schedule_post', 'tribune_schedule_cancel'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -468,7 +468,208 @@ if ($action === 'tribune_oauth_callback') {
     exit;
 }
 
+function process_scheduled_tribune_posts($real_base_dir) {
+    $sched_file = $real_base_dir . '/storage/tribune_scheduled_posts.json';
+    if (!file_exists($sched_file)) return;
+
+    $fp = @fopen($sched_file, 'c+');
+    if (!$fp) return;
+
+    if (@flock($fp, LOCK_EX)) {
+        $content = '';
+        while (!feof($fp)) {
+            $content .= fread($fp, 8192);
+        }
+        $scheduled = @json_decode($content, true) ?: [];
+        if (empty($scheduled)) {
+            @flock($fp, LOCK_UN);
+            @fclose($fp);
+            return;
+        }
+
+        $now = time();
+        $remaining = [];
+        $due_posts = [];
+
+        foreach ($scheduled as $item) {
+            if (!empty($item['scheduled_at']) && $now >= (int)$item['scheduled_at']) {
+                $due_posts[] = $item;
+            } else {
+                $remaining[] = $item;
+            }
+        }
+
+        if (!empty($due_posts)) {
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, json_encode(array_values($remaining), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            fflush($fp);
+            @flock($fp, LOCK_UN);
+            @fclose($fp);
+
+            foreach ($due_posts as $post) {
+                $board = $post['board'] ?? 'local';
+                if ($board === 'local') {
+                    $storage_file = $real_base_dir . '/storage/tribune_messages.json';
+                    $messages = [];
+                    if (file_exists($storage_file)) {
+                        $messages = @json_decode(@file_get_contents($storage_file), true) ?: [];
+                    }
+
+                    $max_id = 0;
+                    foreach ($messages as $m) {
+                        if (isset($m['id']) && $m['id'] > $max_id) $max_id = (int)$m['id'];
+                    }
+
+                    $post_time = $post['scheduled_at'] ?? time();
+                    $new_post = [
+                        'id'        => $max_id + 1,
+                        'time'      => date('YmdHis', $post_time),
+                        'clock'     => date('H:i:s', $post_time),
+                        'login'     => $post['login'] ?? 'Anonyme',
+                        'info'      => $post['info'] ?? 'SimpleGallery Scheduled',
+                        'message'   => $post['message'] ?? '',
+                        'is_admin'  => !empty($post['is_admin']),
+                        'board'     => 'local'
+                    ];
+
+                    $messages[] = $new_post;
+                    if (count($messages) > 300) {
+                        $messages = array_slice($messages, -300);
+                    }
+                    @file_put_contents($storage_file, json_encode($messages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                } else {
+                    if (!empty($post['target_url'])) {
+                        $headers = [
+                            "User-Agent: " . ($post['user_agent'] ?? 'SimpleGallery-Scheduled/1.0'),
+                            "Content-Type: application/x-www-form-urlencoded"
+                        ];
+                        if (!empty($post['cookie'])) {
+                            $headers[] = "Cookie: " . $post['cookie'];
+                        }
+
+                        $post_fields = [];
+                        $field_name = $post['post_field'] ?? 'message';
+                        $post_fields[$field_name] = $post['message'];
+
+                        http_request_proxy($post['target_url'], 'POST', $headers, http_build_query($post_fields), 6);
+                    }
+                }
+            }
+        } else {
+            @flock($fp, LOCK_UN);
+            @fclose($fp);
+        }
+    } else {
+        @fclose($fp);
+    }
+}
+
+if ($action === 'tribune_schedule_post') {
+    $msg_text    = trim($_POST['message'] ?? $raw_body['message'] ?? '');
+    $login       = trim($_POST['login'] ?? $raw_body['login'] ?? 'Anonyme');
+    $info        = trim($_POST['info'] ?? $raw_body['info'] ?? 'SimpleGallery Client');
+    $board       = trim($_POST['board'] ?? $raw_body['board'] ?? 'local');
+    $sched_ts    = (int)($_POST['scheduled_at'] ?? $raw_body['scheduled_at'] ?? 0);
+    $target_url  = trim($_POST['target_url'] ?? $raw_body['target_url'] ?? '');
+    $post_field  = trim($_POST['post_field'] ?? $raw_body['post_field'] ?? 'message');
+    $cookie_hdr  = trim($_POST['cookie'] ?? $raw_body['cookie'] ?? '');
+    $user_agent  = trim($_POST['user_agent'] ?? $raw_body['user_agent'] ?? 'SimpleGallery Client');
+
+    if (empty($msg_text)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Le message ne peut pas être vide.']);
+        exit;
+    }
+
+    if ($sched_ts <= time()) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'L\'heure programmée doit être dans le futur.']);
+        exit;
+    }
+
+    $sched_file = $real_base_dir . '/storage/tribune_scheduled_posts.json';
+    $scheduled = [];
+    if (file_exists($sched_file)) {
+        $scheduled = @json_decode(@file_get_contents($sched_file), true) ?: [];
+    }
+
+    $id = bin2hex(random_bytes(10));
+    $scheduled_item = [
+        'id'           => $id,
+        'message'      => $msg_text,
+        'login'        => $login,
+        'info'         => $info,
+        'board'        => $board,
+        'scheduled_at' => $sched_ts,
+        'target_url'   => $target_url,
+        'post_field'   => $post_field,
+        'cookie'       => $cookie_hdr,
+        'user_agent'   => $user_agent,
+        'is_admin'     => !empty($_SESSION['is_admin']),
+        'created_at'   => time()
+    ];
+
+    $scheduled[] = $scheduled_item;
+    @file_put_contents($sched_file, json_encode(array_values($scheduled), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+
+    echo json_encode([
+        'success'   => true,
+        'message'   => 'Message programmé avec succès.',
+        'item'      => $scheduled_item,
+        'count'     => count($scheduled)
+    ]);
+    exit;
+}
+
+if ($action === 'tribune_scheduled_list') {
+    process_scheduled_tribune_posts($real_base_dir);
+
+    $sched_file = $real_base_dir . '/storage/tribune_scheduled_posts.json';
+    $scheduled = [];
+    if (file_exists($sched_file)) {
+        $scheduled = @json_decode(@file_get_contents($sched_file), true) ?: [];
+    }
+
+    echo json_encode([
+        'success'   => true,
+        'scheduled' => array_values($scheduled),
+        'count'     => count($scheduled),
+        'server_ts' => time()
+    ]);
+    exit;
+}
+
+if ($action === 'tribune_schedule_cancel') {
+    $id = trim($_POST['id'] ?? $raw_body['id'] ?? '');
+    if (empty($id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'ID de message programmé manquant.']);
+        exit;
+    }
+
+    $sched_file = $real_base_dir . '/storage/tribune_scheduled_posts.json';
+    $scheduled = [];
+    if (file_exists($sched_file)) {
+        $scheduled = @json_decode(@file_get_contents($sched_file), true) ?: [];
+    }
+
+    $filtered = array_filter($scheduled, function ($item) use ($id) {
+        return ($item['id'] ?? '') !== $id;
+    });
+
+    @file_put_contents($sched_file, json_encode(array_values($filtered), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Programmation annulée avec succès.',
+        'count'   => count($filtered)
+    ]);
+    exit;
+}
+
 if ($action === 'tribune_get') {
+    process_scheduled_tribune_posts($real_base_dir);
     $storage_file = $real_base_dir . '/storage/tribune_messages.json';
     $messages = [];
     if (file_exists($storage_file)) {
@@ -532,6 +733,8 @@ if ($action === 'tribune_stream') {
         if (connection_aborted()) {
             break;
         }
+
+        process_scheduled_tribune_posts($real_base_dir);
 
         clearstatcache(true, $storage_file);
         $mtime = file_exists($storage_file) ? filemtime($storage_file) : 0;

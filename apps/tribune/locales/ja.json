@@ -38,5 +38,15 @@
   "tribune.uploading": "アップロード中...",
   "tribune.upload_success": "アップロード完了！",
   "tribune.upload_error": "アップロードエラー。",
-  "tribune.login_tooltip": "クリックして呼び出し (bigorno)"
+  "tribune.login_tooltip": "クリックして呼び出し (bigorno)",
+  "tribune.schedule_btn": "送信を予約...",
+  "tribune.schedule_title": "予約送信 ⏰",
+  "tribune.your_time": "あなたの時間 (ローカル)",
+  "tribune.paris_time": "フランス時間 (パリ)",
+  "tribune.schedule_confirm": "送信を予約する",
+  "tribune.scheduled_list_btn": "予約一覧",
+  "tribune.schedule_success": "メッセージを予約しました！",
+  "tribune.schedule_error": "予約エラー。",
+  "tribune.scheduled_empty": "予約されたメッセージはありません。",
+  "tribune.cancel": "キャンセル"
 }

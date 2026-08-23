@@ -38,5 +38,15 @@
   "tribune.uploading": "Téléversement...",
   "tribune.upload_success": "Fichier téléversé !",
   "tribune.upload_error": "Erreur lors du téléversement du fichier.",
-  "tribune.login_tooltip": "Cliquer pour interpeller (bigorno)"
+  "tribune.login_tooltip": "Cliquer pour interpeller (bigorno)",
+  "tribune.schedule_btn": "Programmer l'envoi...",
+  "tribune.schedule_title": "Action Programmée ⏰",
+  "tribune.your_time": "Votre heure (Locale)",
+  "tribune.paris_time": "Heure de France (Paris)",
+  "tribune.schedule_confirm": "Programmer l'envoi",
+  "tribune.scheduled_list_btn": "Liste des envois",
+  "tribune.schedule_success": "Message programmé avec succès !",
+  "tribune.schedule_error": "Erreur lors de la programmation.",
+  "tribune.scheduled_empty": "Aucun message programmé en attente.",
+  "tribune.cancel": "Annuler"
 }

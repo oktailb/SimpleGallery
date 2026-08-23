@@ -38,5 +38,15 @@
   "tribune.uploading": "Uploading...",
   "tribune.upload_success": "File uploaded!",
   "tribune.upload_error": "Error uploading file.",
-  "tribune.login_tooltip": "Click to ping user (bigorno)"
+  "tribune.login_tooltip": "Click to ping user (bigorno)",
+  "tribune.schedule_btn": "Schedule send...",
+  "tribune.schedule_title": "Scheduled Action ⏰",
+  "tribune.your_time": "Your Time (Local)",
+  "tribune.paris_time": "France Time (Paris)",
+  "tribune.schedule_confirm": "Schedule Send",
+  "tribune.scheduled_list_btn": "Scheduled list",
+  "tribune.schedule_success": "Message scheduled successfully!",
+  "tribune.schedule_error": "Error scheduling message.",
+  "tribune.scheduled_empty": "No pending scheduled messages.",
+  "tribune.cancel": "Cancel"
 }
