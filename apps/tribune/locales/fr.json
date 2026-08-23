@@ -33,5 +33,9 @@
   "tribune.new_posts": "Nouveaux messages ⬇️",
   "tribune.oauth_login_btn": "Se connecter avec OAuth2",
   "tribune.oauth_connected": "Token API / OAuth Actif",
-  "tribune.oauth_disconnected": "Non connecté via OAuth"
+  "tribune.oauth_disconnected": "Non connecté via OAuth",
+  "tribune.upload_file": "Joindre un fichier (upload temporaire)",
+  "tribune.uploading": "Téléversement...",
+  "tribune.upload_success": "Fichier téléversé !",
+  "tribune.upload_error": "Erreur lors du téléversement du fichier."
 }

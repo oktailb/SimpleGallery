@@ -33,5 +33,9 @@
   "tribune.new_posts": "新しい投稿 ⬇️",
   "tribune.oauth_login_btn": "OAuth2 でログイン",
   "tribune.oauth_connected": "APIトークン / OAuth 有効",
-  "tribune.oauth_disconnected": "OAuth 未接続"
+  "tribune.oauth_disconnected": "OAuth 未接続",
+  "tribune.upload_file": "ファイルを添付 (一時アップロード)",
+  "tribune.uploading": "アップロード中...",
+  "tribune.upload_success": "アップロード完了！",
+  "tribune.upload_error": "アップロードエラー。"
 }

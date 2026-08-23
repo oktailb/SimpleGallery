@@ -33,5 +33,9 @@
   "tribune.new_posts": "New messages ⬇️",
   "tribune.oauth_login_btn": "Connect via OAuth2",
   "tribune.oauth_connected": "API Token / OAuth Active",
-  "tribune.oauth_disconnected": "Not connected via OAuth"
+  "tribune.oauth_disconnected": "Not connected via OAuth",
+  "tribune.upload_file": "Attach a file (temporary upload)",
+  "tribune.uploading": "Uploading...",
+  "tribune.upload_success": "File uploaded!",
+  "tribune.upload_error": "Error uploading file."
 }

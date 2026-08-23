@@ -640,13 +640,50 @@ class GeneralUnitTestSuite {
         $this->assert("api.php déclare l'action tribune_get", strpos($api_code, "action === 'tribune_get'") !== false);
         $this->assert("api.php déclare l'action tribune_post dans les actions mutantes", strpos($api_code, "'tribune_post'") !== false);
         $this->assert("api.php déclare l'action tribune_proxy_fetch", strpos($api_code, "action === 'tribune_proxy_fetch'") !== false);
+        $this->assert("api.php déclare l'action tribune_file_upload dans les actions mutantes", strpos($api_code, "'tribune_file_upload'") !== false);
+        $this->assert("api.php déclare l'action tribune_file_get", strpos($api_code, "action === 'tribune_file_get'") !== false);
 
-        // 4. Storage file check
+        // 4. App UI Elements
+        $app_js = @file_get_contents($this->base_dir . '/apps/tribune/app.js');
+        $this->assert("Application tribune fournit le bouton d'upload 📎", strpos($app_js, 'tribuneUploadBtn') !== false);
+        $this->assert("Application tribune fournit l'input file masqué", strpos($app_js, 'tribuneFileInput') !== false);
+
+        // 5. Storage file check
         $storage_file = $this->base_dir . '/storage/tribune_messages.json';
         $this->assert("Fichier de stockage storage/tribune_messages.json présent", file_exists($storage_file));
         $content = @file_get_contents($storage_file);
         $json = @json_decode($content, true);
         $this->assert("Fichier storage/tribune_messages.json contient une liste valide", is_array($json) && count($json) >= 1);
+
+        // 6. Test direct de stockage et récupération anonymisée de fichier
+        $test_upload_dir = $this->base_dir . '/storage/tribune_uploads';
+        if (!is_dir($test_upload_dir)) {
+            @mkdir($test_upload_dir, 0755, true);
+        }
+        $test_token = bin2hex(random_bytes(16));
+        $test_bin = $test_upload_dir . '/' . $test_token . '.bin';
+        $test_meta = $test_upload_dir . '/' . $test_token . '.json';
+
+        $dummy_content = "PNG DUMMY IMAGE CONTENT FOR TRIBUNE TEST";
+        file_put_contents($test_bin, $dummy_content);
+        file_put_contents($test_meta, json_encode([
+            'token'         => $test_token,
+            'original_name' => 'sample_image.png',
+            'mime_type'     => 'image/png',
+            'size'          => strlen($dummy_content),
+            'uploaded_at'   => time(),
+            'ext'           => 'png'
+        ]));
+
+        $this->assert("Fichier binaire temporaire créé dans storage/tribune_uploads/", file_exists($test_bin));
+        $this->assert("Métadonnées JSON temporaires créées avec jeton 32 hex", file_exists($test_meta));
+
+        $meta_decoded = json_decode(file_get_contents($test_meta), true);
+        $this->assert("Le type MIME enregistré est bien préservé (image/png)", ($meta_decoded['mime_type'] ?? '') === 'image/png');
+        $this->assert("Le nom original est conservé (sample_image.png)", ($meta_decoded['original_name'] ?? '') === 'sample_image.png');
+
+        @unlink($test_bin);
+        @unlink($test_meta);
     }
 }
 

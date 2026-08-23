@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches', 'tribune_clear_history', 'tribune_boards_save'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches', 'tribune_clear_history', 'tribune_boards_save', 'tribune_file_upload'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -582,10 +582,8 @@ if ($action === 'tribune_post') {
     exit;
 }
 
-function http_request_proxy($url, $method = 'GET', $headers = [], $post_data = null, $timeout = 12) {
+function http_request_proxy($url, $method = 'GET', $headers = [], $post_data = null, $timeout = 6) {
     $is_post = (strtoupper($method) === 'POST');
-    @ini_set('default_socket_timeout', $timeout);
-
     $header_lines = [];
     if (is_array($headers)) {
         foreach ($headers as $h) {
@@ -601,13 +599,61 @@ function http_request_proxy($url, $method = 'GET', $headers = [], $post_data = n
         }
     }
 
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, max(2, min($timeout, 6)));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header_lines);
+
+        if ($is_post) {
+            curl_setopt($ch, CURLOPT_POST, true);
+            if ($post_data !== null) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+            }
+        } else {
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+        }
+
+        $response = curl_exec($ch);
+        $curl_error = curl_error($ch);
+        $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($response !== false) {
+            $raw_headers = substr($response, 0, $header_size);
+            $body = substr($response, $header_size);
+            $resp_headers = explode("\r\n", $raw_headers);
+
+            $success = ($status_code >= 200 && $status_code < 400);
+            return [
+                'success'     => $success,
+                'status_code' => $status_code,
+                'headers'     => $resp_headers,
+                'body'        => $body ?: '',
+                'location'    => '',
+                'cookies'     => [],
+                'error'       => $success ? '' : ($curl_error ?: "Code HTTP {$status_code}")
+            ];
+        }
+    }
+
+    @ini_set('default_socket_timeout', $timeout);
     $header_str = implode("\r\n", $header_lines);
     $opts = [
         'http' => [
             'method'          => strtoupper($method),
             'timeout'         => $timeout,
             'follow_location' => $is_post ? 0 : 1,
-            'max_redirects'   => 5,
+            'max_redirects'   => 3,
             'ignore_errors'   => true,
             'header'          => $header_str,
             'content'         => $post_data
@@ -651,7 +697,7 @@ function http_request_proxy($url, $method = 'GET', $headers = [], $post_data = n
         'body'        => $body ?: '',
         'location'    => $location,
         'cookies'     => $cookies,
-        'error'       => $success ? '' : "Le serveur distant a répondu avec le code HTTP {$status_code}"
+        'error'       => $success ? '' : "Code HTTP {$status_code}"
     ];
 }
 
@@ -687,10 +733,11 @@ if ($action === 'tribune_proxy_fetch') {
         $headers[] = "Cookie: {$cookie_hdr}";
     }
 
-    $res = http_request_proxy($remote_url, 'GET', $headers, null, 12);
+    @session_write_close();
+
+    $res = http_request_proxy($remote_url, 'GET', $headers, null, 5);
 
     if (!$res['success'] || empty($res['body'])) {
-        http_response_code(502);
         echo json_encode([
             'success'     => false,
             'status_code' => $res['status_code'] ?? 0,
@@ -932,6 +979,148 @@ if ($action === 'tribune_clear_history') {
         'success' => true,
         'message' => 'Historique de la tribune réinitialisé.'
     ]);
+    exit;
+}
+
+if ($action === 'tribune_file_upload') {
+    if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Aucun fichier valide n\'a été transmis ou erreur lors du téléversement.'
+        ]);
+        exit;
+    }
+
+    $file = $_FILES['file'];
+
+    $max_size = 50 * 1024 * 1024;
+    if ($file['size'] > $max_size) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Le fichier dépasse la taille maximale autorisée de 50 Mo.'
+        ]);
+        exit;
+    }
+
+    $orig_name = basename($file['name']);
+    $ext = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
+
+    $mime_type = 'application/octet-stream';
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $detected = finfo_file($finfo, $file['tmp_name']);
+            if ($detected) {
+                $mime_type = $detected;
+            }
+            finfo_close($finfo);
+        }
+    } elseif (function_exists('mime_content_type')) {
+        $detected = @mime_content_type($file['tmp_name']);
+        if ($detected) {
+            $mime_type = $detected;
+        }
+    }
+    if ($mime_type === 'application/octet-stream' && !empty($file['type'])) {
+        $mime_type = $file['type'];
+    }
+
+    $upload_dir = $real_base_dir . '/storage/tribune_uploads';
+    if (!is_dir($upload_dir)) {
+        @mkdir($upload_dir, 0755, true);
+    }
+
+    $now = time();
+    $files = @scandir($upload_dir) ?: [];
+    foreach ($files as $f) {
+        if (str_ends_with($f, '.json')) {
+            $json_p = $upload_dir . '/' . $f;
+            $meta = @json_decode(@file_get_contents($json_p), true);
+            if ($meta && !empty($meta['uploaded_at']) && ($now - $meta['uploaded_at']) > 7 * 86400) {
+                $token_id = substr($f, 0, -5);
+                @unlink($json_p);
+                @unlink($upload_dir . '/' . $token_id . '.bin');
+            }
+        }
+    }
+
+    $token = bin2hex(random_bytes(16));
+    $bin_path = $upload_dir . '/' . $token . '.bin';
+    $meta_path = $upload_dir . '/' . $token . '.json';
+
+    if (!move_uploaded_file($file['tmp_name'], $bin_path)) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Échec de l\'enregistrement du fichier temporaire sur le serveur.'
+        ]);
+        exit;
+    }
+
+    $meta_data = [
+        'token'         => $token,
+        'original_name' => $orig_name,
+        'mime_type'     => $mime_type,
+        'size'          => $file['size'],
+        'uploaded_at'   => $now,
+        'ext'           => $ext
+    ];
+
+    file_put_contents($meta_path, json_encode($meta_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+    $relative_url = 'api.php?action=tribune_file_get&token=' . $token;
+
+    echo json_encode([
+        'success'   => true,
+        'token'     => $token,
+        'url'       => $relative_url,
+        'filename'  => $orig_name,
+        'mime_type' => $mime_type
+    ]);
+    exit;
+}
+
+if ($action === 'tribune_file_get') {
+    $token = $_GET['token'] ?? '';
+    if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Jeton de fichier invalide.'
+        ]);
+        exit;
+    }
+
+    $upload_dir = $real_base_dir . '/storage/tribune_uploads';
+    $bin_path = $upload_dir . '/' . $token . '.bin';
+    $meta_path = $upload_dir . '/' . $token . '.json';
+
+    if (!is_file($bin_path) || !is_file($meta_path)) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Fichier introuvable ou expiré.'
+        ]);
+        exit;
+    }
+
+    $meta = json_decode(file_get_contents($meta_path), true) ?: [];
+    $mime_type = $meta['mime_type'] ?? 'application/octet-stream';
+    $orig_name = $meta['original_name'] ?? ('file_' . $token);
+
+    if (ob_get_level()) {
+        @ob_end_clean();
+    }
+
+    header('Content-Type: ' . $mime_type);
+    header('Content-Length: ' . filesize($bin_path));
+    header('Content-Disposition: inline; filename="' . rawurlencode($orig_name) . '"');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: public, max-age=86400');
+
+    readfile($bin_path);
     exit;
 }
 

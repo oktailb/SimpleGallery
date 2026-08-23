@@ -535,6 +535,34 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
 }
 
+.tribune-upload-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  color: var(--text-main, #fff);
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.tribune-upload-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--accent-primary, #3b82f6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.tribune-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .tribune-send-btn {
   background: var(--accent-primary, #3b82f6);
   color: #fff;

@@ -183,6 +183,9 @@
         content: wrapper,
         onClose: () => {
           if (this.pollInterval) clearInterval(this.pollInterval);
+          this.pollInterval = null;
+          this.container = null;
+          this.window = null;
         }
       });
 
@@ -190,19 +193,25 @@
       return win;
     }
 
-    init(container, win) {
+    async init(container, win) {
       this.container = container;
       this.window = win;
+
+      if (!this.boardsLoaded) {
+        await this.loadBoardsAsync();
+        this.boardsLoaded = true;
+      }
+
       this.renderUI();
       this.bindEvents();
       this.fetchPosts(this.currentBoard, false, true);
 
-      // Auto-poll all active tribunes every 10 seconds in parallel without interfering
+      // Auto-poll all active tribunes every 10 seconds asynchronously in parallel without blocking each other
       if (this.pollInterval) clearInterval(this.pollInterval);
       this.pollInterval = setInterval(() => {
-        Object.keys(this.boards).forEach(bKey => {
-          this.fetchPosts(bKey, true, false);
-        });
+        if (!this.container) return;
+        const bKeys = Object.keys(this.boards);
+        Promise.allSettled(bKeys.map(bKey => this.fetchPosts(bKey, true, false)));
       }, 10000);
     }
 
@@ -350,13 +359,11 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (typeof parsed === 'object' && parsed !== null) {
-            setTimeout(() => this.loadBoardsAsync(), 10);
             return { ...defaultBoards, ...parsed };
           }
         }
       } catch (e) {}
 
-      setTimeout(() => this.loadBoardsAsync(), 10);
       return defaultBoards;
     }
 
@@ -543,6 +550,10 @@
             <div class="tribune-input-row">
               <input type="text" class="tribune-login-input" id="tribuneLoginInput" placeholder="${this.t('tribune.pseudo') || 'Pseudo'}" value="${this.escapeHtml(userLogin)}" />
               <input type="text" class="tribune-message-input" id="tribuneMsgInput" placeholder="${this.t('tribune.post_placeholder') || this.t('tribune.placeholder') || 'Entrez votre message... (ex: [:totoz], horloges 14:25:30)'}" autocomplete="off" />
+              <input type="file" id="tribuneFileInput" style="display: none;" />
+              <button type="button" class="tribune-upload-btn" id="tribuneUploadBtn" title="${this.t('tribune.upload_file') || 'Joindre un fichier (upload temporaire)'}">
+                <span>📎</span>
+              </button>
               <button class="tribune-send-btn" id="tribuneSendBtn">
                 <span>🦆</span>
                 <span>${this.t('tribune.send') || 'Coincoin !'}</span>
@@ -560,6 +571,8 @@
       const msgInput = this.container.querySelector('#tribuneMsgInput');
       const loginInput = this.container.querySelector('#tribuneLoginInput');
       const sendBtn = this.container.querySelector('#tribuneSendBtn');
+      const uploadBtn = this.container.querySelector('#tribuneUploadBtn');
+      const fileInput = this.container.querySelector('#tribuneFileInput');
       const tabs = this.container.querySelector('#tribuneBoardTabs');
       const soundBtn = this.container.querySelector('#tribuneSoundToggle');
       const nsfwBtn = this.container.querySelector('#tribuneNsfwToggle');
@@ -778,6 +791,61 @@
       };
 
       if (sendBtn) sendBtn.addEventListener('click', doSend);
+
+      if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener('click', () => {
+          fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+
+          const origHtml = uploadBtn.innerHTML;
+          uploadBtn.disabled = true;
+          uploadBtn.innerHTML = '<span>⏳</span>';
+
+          try {
+            const formData = new FormData();
+            formData.append('action', 'tribune_file_upload');
+            formData.append('file', file);
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || window.CSRF_TOKEN || '';
+            if (csrfToken) {
+              formData.append('csrf_token', csrfToken);
+            }
+
+            const headers = {};
+            if (csrfToken) {
+              headers['X-CSRF-Token'] = csrfToken;
+            }
+
+            const response = await fetch('api.php', {
+              method: 'POST',
+              headers: headers,
+              body: formData
+            });
+
+            const resData = await response.json();
+            if (resData && resData.success && resData.url) {
+              const fullUrl = new URL(resData.url, window.location.href).href;
+              if (msgInput) {
+                const curVal = msgInput.value;
+                msgInput.value = curVal ? (curVal.trimEnd() + ' ' + fullUrl) : fullUrl;
+                msgInput.focus();
+              }
+            } else {
+              alert(resData?.error || (this.t('tribune.upload_error') || 'Erreur lors du téléversement du fichier.'));
+            }
+          } catch (err) {
+            alert(this.t('tribune.upload_error') || 'Erreur lors du téléversement du fichier.');
+          } finally {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = origHtml;
+            fileInput.value = '';
+          }
+        });
+      }
 
       // Validate post via Enter key & handle Esc key to close popover
       if (msgInput) {
@@ -1280,6 +1348,8 @@
     }
 
     async fetchPosts(targetBoardKey = null, silent = false, forceScrollBottom = false) {
+      if (!this.container) return;
+
       if (typeof targetBoardKey === 'boolean') {
         forceScrollBottom = silent;
         silent = targetBoardKey;
