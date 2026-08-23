@@ -400,7 +400,8 @@ if ($action === 'tribune_oauth_callback') {
         (function() {
             var payload = ' . $json_payload . ';
             if (window.opener) {
-                window.opener.postMessage(payload, "*");
+                try { window.opener.postMessage(payload, "*"); } catch (e) {}
+                try { window.opener.postMessage(JSON.stringify(payload), "*"); } catch (e) {}
             }
             setTimeout(function() { window.close(); }, 1200);
         })();

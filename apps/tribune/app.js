@@ -45,8 +45,15 @@
       // Listen for OAuth2 callback postMessage
       if (!window._tribuneOauthListenerBound) {
         window.addEventListener('message', (event) => {
-          const data = event.data;
-          if (data && data.type === 'tribune_oauth_success' && data.board_id) {
+          let data = event.data;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              return;
+            }
+          }
+          if (data && typeof data === 'object' && data.type === 'tribune_oauth_success' && data.board_id) {
             const targetBoard = data.board_id;
             this.boardAuth[targetBoard] = this.boardAuth[targetBoard] || {};
             if (data.access_token) {
