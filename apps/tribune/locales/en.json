@@ -27,7 +27,7 @@
   "tribune.troll_hot": "Hot Troll! 🔥",
   "tribune.troll_overheat": "TROLL OVERHEAT! 💥",
   "tribune.bak": "Boîte à Con (BAK)",
-  "tribune.bak_empty": "No blocked handles in BAK yet. Click on a handle to block/unblock.",
+  "tribune.bak_empty": "No blocked handles in BAK yet. Enter a handle above to block it.",
   "tribune.bak_add_placeholder": "Block a handle...",
   "tribune.bak_block_btn": "Block",
   "tribune.new_posts": "New messages ⬇️",
@@ -37,5 +37,6 @@
   "tribune.upload_file": "Attach a file (temporary upload)",
   "tribune.uploading": "Uploading...",
   "tribune.upload_success": "File uploaded!",
-  "tribune.upload_error": "Error uploading file."
+  "tribune.upload_error": "Error uploading file.",
+  "tribune.login_tooltip": "Click to ping user (bigorno)"
 }

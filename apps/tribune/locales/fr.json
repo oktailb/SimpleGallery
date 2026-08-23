@@ -27,7 +27,7 @@
   "tribune.troll_hot": "Troll Chaud ! 🔥",
   "tribune.troll_overheat": "SURCHAUFFE TROLL ! 💥",
   "tribune.bak": "Boîte à Con (BAK)",
-  "tribune.bak_empty": "Aucun login bloqué dans la Boîte à Con (BAK). Cliquez sur un pseudo pour le bloquer/débloquer.",
+  "tribune.bak_empty": "Aucun login bloqué dans la Boîte à Con (BAK). Saisissez un pseudo ci-dessus pour le bloquer.",
   "tribune.bak_add_placeholder": "Bloquer un login...",
   "tribune.bak_block_btn": "Bloquer",
   "tribune.new_posts": "Nouveaux messages ⬇️",
@@ -37,5 +37,6 @@
   "tribune.upload_file": "Joindre un fichier (upload temporaire)",
   "tribune.uploading": "Téléversement...",
   "tribune.upload_success": "Fichier téléversé !",
-  "tribune.upload_error": "Erreur lors du téléversement du fichier."
+  "tribune.upload_error": "Erreur lors du téléversement du fichier.",
+  "tribune.login_tooltip": "Cliquer pour interpeller (bigorno)"
 }

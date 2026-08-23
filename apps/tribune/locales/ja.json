@@ -27,7 +27,7 @@
   "tribune.troll_hot": "トロール熱い！ 🔥",
   "tribune.troll_overheat": "トロールオーバーヒート！ 💥",
   "tribune.bak": "Boîte à Con (BAK)",
-  "tribune.bak_empty": "ブロックされたログインはありません。ハンドル名をクリックしてブロック/解除します。",
+  "tribune.bak_empty": "ブロックされたログインはありません。上の入力欄でログインをブロックします。",
   "tribune.bak_add_placeholder": "ログインをブロック...",
   "tribune.bak_block_btn": "ブロック",
   "tribune.new_posts": "新しい投稿 ⬇️",
@@ -37,5 +37,6 @@
   "tribune.upload_file": "ファイルを添付 (一時アップロード)",
   "tribune.uploading": "アップロード中...",
   "tribune.upload_success": "アップロード完了！",
-  "tribune.upload_error": "アップロードエラー。"
+  "tribune.upload_error": "アップロードエラー。",
+  "tribune.login_tooltip": "クリックして呼び出し (bigorno)"
 }
