@@ -48,5 +48,12 @@
   "tribune.schedule_success": "メッセージを予約しました！",
   "tribune.schedule_error": "予約エラー。",
   "tribune.scheduled_empty": "予約されたメッセージはありません。",
-  "tribune.cancel": "キャンセル"
+  "tribune.cancel": "キャンセル",
+  "tribune.schedule_empty_msg": "予約するメッセージを入力してください。",
+  "tribune.schedule_select_datetime": "日付と時間を選択してください。",
+  "tribune.schedule_future_required": "予約時間は未来である必要があります。",
+  "tribune.no_cookie_found": "このオリジンでクッキーは見つかりませんでした。",
+  "tribune.post_error": "投稿エラー: ",
+  "tribune.post_network_error": "投稿中にサーバー接続エラーが発生しました: ",
+  "tribune.oauth_success": "OAuth2 ログイン成功: "
 }
