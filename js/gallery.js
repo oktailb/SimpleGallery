@@ -36,6 +36,41 @@
       this.initCookieConsent();
       this.initAppLauncher();
       this.initDesktopShortcuts();
+      this.initAutostartApps();
+    }
+
+    initAutostartApps() {
+      let cfg = null;
+      try {
+        const local = localStorage.getItem('sg_autostart_config');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && typeof parsed === 'object') cfg = parsed;
+        }
+      } catch (e) {}
+
+      if (!cfg) {
+        cfg = window.SG_AUTOSTART_CONFIG || { enabled: true, apps: [{ appId: 'explorer', state: 'maximized', enabled: true }] };
+      }
+
+      if (cfg.enabled === false) return;
+      const apps = cfg.apps || [];
+
+      setTimeout(() => {
+        apps.forEach(item => {
+          if (!item.enabled) return;
+          const targetState = item.state || 'normal';
+          if (item.appId === 'explorer') {
+            if (window.explorerApp && typeof window.explorerApp.open === 'function') {
+              window.explorerApp.open({ state: targetState });
+            }
+          } else {
+            if (window.sys && window.sys.appManager && typeof window.sys.appManager.launchApp === 'function') {
+              window.sys.appManager.launchApp(item.appId, { state: targetState });
+            }
+          }
+        });
+      }, 50);
     }
 
     initElements() {

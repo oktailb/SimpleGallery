@@ -148,6 +148,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
       'translations' => $initial_translations
     ], JSON_HEX_TAG | JSON_HEX_AMP); ?>;
     window.SG_DESKTOP_CONFIG = <?php echo json_encode($desktop_config, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+    window.SG_AUTOSTART_CONFIG = <?php echo json_encode(get_autostart_config(__DIR__), JSON_HEX_TAG | JSON_HEX_AMP); ?>;
     window.CSRF_TOKEN = <?php echo json_encode(get_csrf_token()); ?>;
     window.SG_CSRF_TOKEN = window.CSRF_TOKEN;
     window.IS_ADMIN = <?php echo is_admin_logged_in() ? 'true' : 'false'; ?>;

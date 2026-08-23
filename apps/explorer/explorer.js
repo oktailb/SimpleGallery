@@ -89,6 +89,7 @@
       const defaultH = Math.min(660, Math.max(420, Math.round(window.innerHeight * 0.72)));
       const defaultX = Math.max(20, Math.round((window.innerWidth - defaultW) / 2) + offset);
       const defaultY = Math.max(50, Math.round((window.innerHeight - defaultH) / 2) + offset);
+      const targetWindowState = options.state || ((isFirst && !options.dir) ? 'maximized' : 'floating');
 
       this.win = window.WindowManager.createWindow({
         id: this.winId,
@@ -100,8 +101,8 @@
         y: defaultY,
         width: defaultW,
         height: defaultH,
-        isMaximized: isFirst && !options.dir,
-        state: (isFirst && !options.dir) ? 'maximized' : 'floating',
+        isMaximized: targetWindowState === 'maximized',
+        state: targetWindowState,
         content: this.containerEl,
         onFocus: () => {
           this.manager.setActiveInstance(this);
@@ -1806,8 +1807,10 @@
         });
       }
 
-      // Initial window on DOMContentLoaded
-      this.createInstance();
+      // Initial window on DOMContentLoaded handled by OS Boot / Autostart Processor
+      if (!window.SG_AUTOSTART_CONFIG) {
+        this.createInstance();
+      }
     }
 
     get state() {

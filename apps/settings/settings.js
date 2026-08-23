@@ -265,6 +265,7 @@
       this.renderWindowContent(win.bodyEl);
       this.loadPermissions();
       this.loadSystemInfo();
+      this.loadAutostartConfig();
 
       if (window.EventBus) {
         window.EventBus.emit('app:launch', { appId: 'settings', tab: this.activeTab });
@@ -287,6 +288,7 @@
       const standardTabs = [
         { id: 'security', icon: '🛡️', titleKey: 'settings.tab_security', defaultTitle: 'Sécurité & Droits' },
         { id: 'appearance', icon: '🎨', titleKey: 'settings.tab_appearance', defaultTitle: 'Bureau & Apparence' },
+        { id: 'autostart', icon: '🚀', titleKey: 'settings.tab_autostart', defaultTitle: 'Démarrage' },
         { id: 'system', icon: '⚙️', titleKey: 'settings.tab_system', defaultTitle: 'Système & Diagnostic' },
         { id: 'privacy', icon: '🍪', titleKey: 'settings.tab_privacy', defaultTitle: 'Confidentialité & Cookies' },
         { id: 'plugins', icon: '🧩', titleKey: 'settings.tab_plugins', defaultTitle: 'Applications & Modules' }
@@ -356,6 +358,9 @@
           break;
         case 'appearance':
           this.renderAppearanceTab(container);
+          break;
+        case 'autostart':
+          this.renderAutostartTab(container);
           break;
         case 'system':
           this.renderSystemTab(container);
@@ -590,7 +595,214 @@
     },
 
     // -------------------------------------------------------------
-    // TAB 3: SYSTEM & ENVIRONMENT DIAGNOSTICS & UNIT TESTS
+    // TAB 3: SYSTEM & APP AUTOSTART CONFIGURATION
+    // -------------------------------------------------------------
+    async loadAutostartConfig() {
+      try {
+        const local = localStorage.getItem('sg_autostart_config');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && typeof parsed === 'object') {
+            this.state.autostartConfig = parsed;
+            window.SG_AUTOSTART_CONFIG = parsed;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const res = await fetch('api.php?action=get_autostart_settings');
+        const data = await res.json();
+        if (data && data.success && data.config) {
+          if (!localStorage.getItem('sg_autostart_config')) {
+            this.state.autostartConfig = data.config;
+            window.SG_AUTOSTART_CONFIG = data.config;
+          }
+        }
+      } catch (e) {}
+    },
+
+    escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    },
+
+    renderAutostartTab(container) {
+      const isAdmin = (window.desktop && window.desktop.state && window.desktop.state.isAdmin) || window.IS_ADMIN || false;
+      const discoveredApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getDiscoveredApps === 'function')
+        ? window.sys.appManager.getDiscoveredApps()
+        : [
+            { id: 'explorer', name: 'Explorateur de Média', icon: '🗂️', description: 'Explorateur multi-vues (Polaroid, Grille, Mosaïque, Liste)' },
+            { id: 'tribune', name: 'Tribune Libre', icon: '🦆', description: 'Messagerie instantanée & client bouchot' },
+            { id: 'system-monitor', name: 'Moniteur Système', icon: '📊', description: 'Surveillance télémétrique et diagnostic serveur' },
+            { id: 'audio-player', name: 'Lecteur Audio', icon: '🎵', description: 'Lecteur audio et visualiseur' },
+            { id: 'video-player', name: 'Lecteur Vidéo', icon: '🎥', description: 'Lecteur vidéo flottant PiP' },
+            { id: 'doc-viewer', name: 'Visualiseur de Document', icon: '📄', description: 'Éditeur et visualiseur Markdown' },
+            { id: 'image-viewer', name: 'Visionneuse d\'Image', icon: '🖼️', description: 'Visionneuse et studio retouche photo' },
+            { id: 'archive-manager', name: 'Gestionnaire d\'Archive', icon: '📦', description: 'Inspecteur d\'archives ZIP / TAR' },
+            { id: 'maps', name: 'Cartographie GPS', icon: '🗺️', description: 'Carte interactive et trajets photo' },
+            { id: 'settings', name: 'Panneau de Configuration', icon: '⚙️', description: 'Réglages système et préférences' }
+          ];
+
+      const autostartCfg = this.state.autostartConfig || (window.SG_AUTOSTART_CONFIG || { enabled: true, apps: [{ appId: 'explorer', state: 'maximized', enabled: true }] });
+      const masterEnabled = autostartCfg.enabled !== false;
+      const appsList = autostartCfg.apps || [];
+
+      const getAppCfg = (appId) => {
+        const item = appsList.find(a => a.appId === appId);
+        if (item) return item;
+        if (appId === 'explorer') return { appId: 'explorer', state: 'maximized', enabled: true };
+        return { appId: appId, state: 'normal', enabled: false };
+      };
+
+      let html = `
+        <div class="settings-panel-header">
+          <h2>🚀 ${this.t('autostart.title', 'Démarrage du Système & Applications')}</h2>
+          <p>${this.t('autostart.desc', 'Configurez les applications lancées au démarrage du WebOS et leur état d\'affichage initial (plein écran, fenêtré, réduit).')}</p>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">⚡ ${this.t('autostart.global_title', 'Option Globale de Démarrage')}</div>
+          <div class="settings-card">
+            <label class="permission-toggle-row" for="autostart_master_toggle">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.4rem;">🚀</span>
+                <div>
+                  <div style="font-weight:600;color:var(--text-main);">${this.t('autostart.master_toggle', 'Activer les applications au démarrage de WebOS')}</div>
+                  <div style="font-size:0.8rem;color:var(--text-muted);">${this.t('autostart.master_hint', 'Décochez cette option pour démarrer sur un bureau complètement vierge.')}</div>
+                </div>
+              </div>
+              <input type="checkbox" id="autostart_master_toggle" ${masterEnabled ? 'checked' : ''} />
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">🗔 ${this.t('autostart.apps_title', 'Configuration par Application')}</div>
+          <div class="settings-card">
+            <div class="autostart-apps-table-container">
+              ${discoveredApps.map(app => {
+                const cfg = getAppCfg(app.id);
+                return `
+                  <div class="autostart-app-row" data-app-id="${app.id}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border-color, rgba(255,255,255,0.06));gap:12px;">
+                    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+                      <span style="font-size:1.4rem;flex-shrink:0;">${app.icon || '🗔'}</span>
+                      <div style="min-width:0;">
+                        <div style="font-weight:600;color:var(--text-main);font-size:0.9rem;">${this.escapeHtml(app.name || app.id)}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.escapeHtml(app.description || '')}</div>
+                      </div>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                      <select class="sort-select autostart-state-select" data-app-id="${app.id}" ${cfg.enabled ? '' : 'disabled'} style="font-size:0.8rem;padding:6px 10px;">
+                        <option value="maximized" ${cfg.state === 'maximized' ? 'selected' : ''}>${this.t('autostart.state_maximized', '🗖 Plein écran (Maximisé)')}</option>
+                        <option value="normal" ${(cfg.state === 'normal' || cfg.state === 'floating') ? 'selected' : ''}>${this.t('autostart.state_normal', '🗔 Fenêtré (Normal)')}</option>
+                        <option value="minimized" ${cfg.state === 'minimized' ? 'selected' : ''}>${this.t('autostart.state_minimized', '🗕 Réduit (Barre des tâches)')}</option>
+                      </select>
+
+                      <label class="permission-toggle-row" style="margin:0;padding:0;border:none;">
+                        <input type="checkbox" class="autostart-app-enable-toggle" data-app-id="${app.id}" ${cfg.enabled ? 'checked' : ''} />
+                      </label>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;">
+              <button type="button" id="settingsSaveAutostartBtn" class="pill-btn active" style="flex:1;justify-content:center;padding:0.75rem;">
+                💾 ${this.t('autostart.save_btn', 'Enregistrer la configuration de démarrage')}
+              </button>
+            </div>
+            <div id="settingsAutostartMsg" class="admin-success-msg" style="display:none;margin-top:0.75rem;"></div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+
+      container.querySelectorAll('.autostart-app-enable-toggle').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const appId = e.target.dataset.appId;
+          const sel = container.querySelector(`.autostart-state-select[data-app-id="${appId}"]`);
+          if (sel) sel.disabled = !e.target.checked;
+        });
+      });
+
+      const saveBtn = container.querySelector('#settingsSaveAutostartBtn');
+      if (saveBtn) {
+        saveBtn.onclick = () => this.saveAutostartConfig(container);
+      }
+    },
+
+    async saveAutostartConfig(container) {
+      const msgEl = container.querySelector('#settingsAutostartMsg');
+      const masterToggle = container.querySelector('#autostart_master_toggle');
+      const isMasterEnabled = masterToggle ? masterToggle.checked : true;
+
+      const appRows = container.querySelectorAll('.autostart-app-row');
+      const apps = [];
+
+      appRows.forEach(row => {
+        const appId = row.dataset.appId;
+        const chk = row.querySelector('.autostart-app-enable-toggle');
+        const sel = row.querySelector('.autostart-state-select');
+
+        if (appId) {
+          apps.push({
+            appId: appId,
+            enabled: chk ? chk.checked : false,
+            state: sel ? sel.value : 'normal'
+          });
+        }
+      });
+
+      const configData = {
+        enabled: isMasterEnabled,
+        apps: apps
+      };
+
+      this.state.autostartConfig = configData;
+      window.SG_AUTOSTART_CONFIG = configData;
+
+      try {
+        localStorage.setItem('sg_autostart_config', JSON.stringify(configData));
+      } catch (e) {}
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'save_autostart_settings');
+        formData.append('config', JSON.stringify(configData));
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || window.CSRF_TOKEN || '';
+        if (csrfToken) formData.append('csrf_token', csrfToken);
+
+        const res = await fetch('api.php', {
+          method: 'POST',
+          body: formData,
+          headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
+        });
+
+        const data = await res.json();
+        if (!data || !data.success) {
+          console.warn('[Settings] Failed server persistence for autostart:', data?.error);
+        }
+      } catch (err) {
+        console.warn('[Settings] Network error during server autostart save:', err);
+      }
+
+      if (msgEl) {
+        msgEl.textContent = '✅ ' + (this.t('autostart.save_success') || 'Configuration de démarrage enregistrée avec succès !');
+        msgEl.style.display = 'block';
+        setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+      }
+    },
+
+    // -------------------------------------------------------------
+    // TAB 4: SYSTEM & ENVIRONMENT DIAGNOSTICS & UNIT TESTS
     // -------------------------------------------------------------
     renderSystemTab(container) {
       const diag = this.state.systemInfo || {};

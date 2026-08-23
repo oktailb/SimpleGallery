@@ -109,6 +109,7 @@ class GeneralUnitTestSuite {
         $this->testSystemMonitorAppAndTelemetry();
         $this->testNextGenTaskbarAndAppCategories();
         $this->testTribuneAppAndMultiBouchot();
+        $this->testAutostartConfiguration();
 
         $_SESSION = $saved_session;
 
@@ -689,6 +690,29 @@ class GeneralUnitTestSuite {
 
         @unlink($test_bin);
         @unlink($test_meta);
+    }
+
+    public function testAutostartConfiguration() {
+        echo "\n🚀 [15/15] Test de la Configuration du Démarrage Système & Autostart...\n";
+
+        // 1. Helper function
+        $this->assert("Fonction get_autostart_config présente", function_exists('get_autostart_config'));
+        $config = get_autostart_config($this->base_dir);
+        $this->assert("get_autostart_config renvoie une configuration valide", is_array($config) && isset($config['enabled']));
+
+        // 2. API Actions
+        $api_code = file_get_contents($this->base_dir . '/api.php');
+        $this->assert("api.php déclare l'action get_autostart_settings", strpos($api_code, "action === 'get_autostart_settings'") !== false);
+        $this->assert("api.php déclare l'action save_autostart_settings dans les actions mutantes", strpos($api_code, "'save_autostart_settings'") !== false);
+
+        // 3. Settings App UI & Boot Process
+        $settings_js = file_get_contents($this->base_dir . '/apps/settings/settings.js');
+        $this->assert("Panneau de configuration contient l'onglet autostart", strpos($settings_js, "id: 'autostart'") !== false);
+        $this->assert("SettingsApp implémente renderAutostartTab", strpos($settings_js, "renderAutostartTab") !== false);
+        $this->assert("SettingsApp implémente saveAutostartConfig", strpos($settings_js, "saveAutostartConfig") !== false);
+
+        $gallery_js = file_get_contents($this->base_dir . '/js/gallery.js');
+        $this->assert("WebOS Desktop implémente initAutostartApps au démarrage", strpos($gallery_js, "initAutostartApps") !== false);
     }
 }
 

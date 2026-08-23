@@ -1192,4 +1192,33 @@ function __t(string $key, array $replacements = [], ?string $locale = null, stri
     return $msg;
 }
 
+/**
+ * Returns WebOS startup configuration from storage/autostart.json or config/autostart.json (with defaults).
+ */
+function get_autostart_config(string $base_dir): array {
+    $default = [
+        'enabled' => true,
+        'apps'    => [
+            ['appId' => 'explorer', 'state' => 'maximized', 'enabled' => true]
+        ]
+    ];
+
+    $paths = [
+        $base_dir . '/storage/autostart.json',
+        $base_dir . '/config/autostart.json'
+    ];
+
+    foreach ($paths as $file) {
+        if (file_exists($file)) {
+            $parsed = @json_decode((string)file_get_contents($file), true);
+            if (is_array($parsed)) {
+                return array_merge($default, $parsed);
+            }
+        }
+    }
+
+    return $default;
+}
+
+
 
