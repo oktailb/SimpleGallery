@@ -172,6 +172,7 @@
       wrapper.style.width = '100%';
       wrapper.style.height = '100%';
 
+      const targetState = params.state || 'normal';
       win = window.WindowManager.createWindow({
         id: this.winId,
         appId: 'tribune',
@@ -180,6 +181,8 @@
         icon: '🦆',
         width: defaultW,
         height: defaultH,
+        isMaximized: targetState === 'maximized',
+        state: targetState,
         content: wrapper,
         onClose: () => {
           this.stopSSE();

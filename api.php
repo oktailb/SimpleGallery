@@ -2400,7 +2400,7 @@ if ($action === 'get_desktop_shortcuts') {
 }
 
 if ($action === 'get_autostart_settings') {
-    $cfg = get_autostart_config($real_base_dir);
+    $cfg = get_autostart_config(__DIR__);
     echo json_encode([
         'success' => true,
         'config'  => $cfg
@@ -2426,7 +2426,7 @@ if ($action === 'save_autostart_settings') {
         exit;
     }
 
-    $storage_dir = $real_base_dir . '/storage';
+    $storage_dir = __DIR__ . '/storage';
     if (!is_dir($storage_dir)) {
         @mkdir($storage_dir, 0755, true);
     }
@@ -2434,11 +2434,6 @@ if ($action === 'save_autostart_settings') {
 
     $encoded = json_encode($raw_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $written = @file_put_contents($autostart_file, $encoded, LOCK_EX);
-
-    $config_dir = $real_base_dir . '/config';
-    if (is_dir($config_dir)) {
-        @file_put_contents($config_dir . '/autostart.json', $encoded, LOCK_EX);
-    }
 
     if ($written !== false) {
         echo json_encode(['success' => true]);

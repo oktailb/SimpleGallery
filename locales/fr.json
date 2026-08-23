@@ -307,6 +307,8 @@
     "autostart.state_maximized": "🗖 Plein écran (Maximisé)",
     "autostart.state_normal": "🗔 Fenêtré (Normal)",
     "autostart.state_minimized": "🗕 Réduit (Barre des tâches)",
+    "autostart.move_up": "Monter (priorité z-index)",
+    "autostart.move_down": "Descendre (priorité z-index)",
     "autostart.save_btn": "Enregistrer la configuration de démarrage",
     "autostart.save_success": "Configuration de démarrage enregistrée avec succès !",
     "settings.wallpaper_title": "Fond d'Écran du Bureau",

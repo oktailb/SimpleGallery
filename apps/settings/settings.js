@@ -599,24 +599,11 @@
     // -------------------------------------------------------------
     async loadAutostartConfig() {
       try {
-        const local = localStorage.getItem('sg_autostart_config');
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (parsed && typeof parsed === 'object') {
-            this.state.autostartConfig = parsed;
-            window.SG_AUTOSTART_CONFIG = parsed;
-          }
-        }
-      } catch (e) {}
-
-      try {
         const res = await fetch('api.php?action=get_autostart_settings');
         const data = await res.json();
         if (data && data.success && data.config) {
-          if (!localStorage.getItem('sg_autostart_config')) {
-            this.state.autostartConfig = data.config;
-            window.SG_AUTOSTART_CONFIG = data.config;
-          }
+          this.state.autostartConfig = data.config;
+          window.SG_AUTOSTART_CONFIG = data.config;
         }
       } catch (e) {}
     },
@@ -655,14 +642,24 @@
       const getAppCfg = (appId) => {
         const item = appsList.find(a => a.appId === appId);
         if (item) return item;
-        if (appId === 'explorer') return { appId: 'explorer', state: 'maximized', enabled: true };
+        if (appId === 'explorer') return { appId: 'explorer', state: 'normal', enabled: true };
         return { appId: appId, state: 'normal', enabled: false };
       };
+
+      // Order discoveredApps according to saved autostartConfig apps sequence
+      const sortedApps = [...discoveredApps].sort((a, b) => {
+        const idxA = appsList.findIndex(item => item.appId === a.id);
+        const idxB = appsList.findIndex(item => item.appId === b.id);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return 0;
+      });
 
       let html = `
         <div class="settings-panel-header">
           <h2>🚀 ${this.t('autostart.title', 'Démarrage du Système & Applications')}</h2>
-          <p>${this.t('autostart.desc', 'Configurez les applications lancées au démarrage du WebOS et leur état d\'affichage initial (plein écran, fenêtré, réduit).')}</p>
+          <p>${this.t('autostart.desc', 'Configurez les applications lancées au démarrage du WebOS, leur état initial (plein écran, fenêtré, réduit) et leur ordre de superposition (z-index).')}</p>
         </div>
 
         ${isAdmin ? '' : `
@@ -691,13 +688,18 @@
         </div>
 
         <div class="settings-group">
-          <div class="settings-group-title">🗔 ${this.t('autostart.apps_title', 'Configuration par Application')}</div>
+          <div class="settings-group-title">🗔 ${this.t('autostart.apps_title', 'Configuration & Ordre de Superposition (Priorité Z-Index)')}</div>
           <div class="settings-card">
             <div class="autostart-apps-table-container">
-              ${discoveredApps.map(app => {
+              ${sortedApps.map(app => {
                 const cfg = getAppCfg(app.id);
                 return `
                   <div class="autostart-app-row" data-app-id="${app.id}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border-color, rgba(255,255,255,0.06));gap:12px;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                      <button type="button" class="btn-toggle autostart-move-btn autostart-move-up" data-app-id="${app.id}" title="${this.t('autostart.move_up', 'Monter (priorité z-index)')}" ${isAdmin ? '' : 'disabled'} style="padding:4px 8px;font-size:0.75rem;line-height:1;">▲</button>
+                      <button type="button" class="btn-toggle autostart-move-btn autostart-move-down" data-app-id="${app.id}" title="${this.t('autostart.move_down', 'Descendre (priorité z-index)')}" ${isAdmin ? '' : 'disabled'} style="padding:4px 8px;font-size:0.75rem;line-height:1;">▼</button>
+                    </div>
+
                     <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
                       <span style="font-size:1.4rem;flex-shrink:0;">${app.icon || '🗔'}</span>
                       <div style="min-width:0;">
@@ -733,6 +735,40 @@
       `;
 
       container.innerHTML = html;
+
+      const updateMoveButtonStates = () => {
+        const rows = container.querySelectorAll('.autostart-app-row');
+        rows.forEach((r, idx) => {
+          const upBtn = r.querySelector('.autostart-move-up');
+          const downBtn = r.querySelector('.autostart-move-down');
+          if (upBtn) upBtn.disabled = !isAdmin || idx === 0;
+          if (downBtn) downBtn.disabled = !isAdmin || idx === rows.length - 1;
+        });
+      };
+
+      container.querySelectorAll('.autostart-move-up').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (!isAdmin) return;
+          const row = e.target.closest('.autostart-app-row');
+          if (row && row.previousElementSibling && row.previousElementSibling.classList.contains('autostart-app-row')) {
+            row.parentNode.insertBefore(row, row.previousElementSibling);
+            updateMoveButtonStates();
+          }
+        });
+      });
+
+      container.querySelectorAll('.autostart-move-down').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (!isAdmin) return;
+          const row = e.target.closest('.autostart-app-row');
+          if (row && row.nextElementSibling && row.nextElementSibling.classList.contains('autostart-app-row')) {
+            row.parentNode.insertBefore(row.nextElementSibling, row);
+            updateMoveButtonStates();
+          }
+        });
+      });
+
+      updateMoveButtonStates();
 
       container.querySelectorAll('.autostart-app-enable-toggle').forEach(chk => {
         chk.addEventListener('change', (e) => {

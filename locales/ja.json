@@ -307,6 +307,8 @@
     "autostart.state_maximized": "🗖 全画面（最大化）",
     "autostart.state_normal": "🗔 ウィンドウ（通常）",
     "autostart.state_minimized": "🗕 最小化（タスクバー）",
+    "autostart.move_up": "上に移動（優先度）",
+    "autostart.move_down": "下に移動（優先度）",
     "autostart.save_btn": "スタートアップ設定を保存",
     "autostart.save_success": "スタートアップ設定を保存しました！",
     "settings.wallpaper_title": "デスクトップの壁紙",

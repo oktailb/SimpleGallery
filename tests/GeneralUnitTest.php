@@ -713,6 +713,7 @@ class GeneralUnitTestSuite {
 
         $gallery_js = file_get_contents($this->base_dir . '/js/gallery.js');
         $this->assert("WebOS Desktop implémente initAutostartApps au démarrage", strpos($gallery_js, "initAutostartApps") !== false);
+        $this->assert("SettingsApp implémente le réordonnancement par flèches autostart-move-up / down", strpos($settings_js, "autostart-move-up") !== false && strpos($settings_js, "autostart-move-down") !== false);
     }
 }
 

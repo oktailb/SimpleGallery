@@ -44,10 +44,10 @@
       if (cfg.enabled === false) return;
       const apps = cfg.apps || [];
 
-      setTimeout(() => {
-        apps.forEach(item => {
-          if (!item.enabled) return;
-          const targetState = item.state || 'normal';
+      apps.forEach((item, index) => {
+        if (!item.enabled) return;
+        const targetState = item.state || 'normal';
+        setTimeout(() => {
           if (item.appId === 'explorer') {
             if (window.explorerApp && typeof window.explorerApp.open === 'function') {
               window.explorerApp.open({ state: targetState });
@@ -57,8 +57,8 @@
               window.sys.appManager.launchApp(item.appId, { state: targetState });
             }
           }
-        });
-      }, 50);
+        }, 50 + (index * 60));
+      });
     }
 
     initElements() {

@@ -1,0 +1,55 @@
+{
+  "enabled": true,
+  "apps": [
+    {
+      "appId": "explorer",
+      "enabled": true,
+      "state": "normal"
+    },
+    {
+      "appId": "tribune",
+      "enabled": true,
+      "state": "maximized"
+    },
+    {
+      "appId": "system-monitor",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "audio-player",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "video-player",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "doc-viewer",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "image-viewer",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "archive-manager",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "maps",
+      "enabled": false,
+      "state": "normal"
+    },
+    {
+      "appId": "settings",
+      "enabled": false,
+      "state": "normal"
+    }
+  ]
+}

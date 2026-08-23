@@ -420,6 +420,8 @@
 
       if (win.state === 'maximized') {
         this.applyMaximized(win);
+      } else if (win.state === 'minimized') {
+        this.minimizeWindow(win.id);
       } else {
         this.applyBounds(win);
       }

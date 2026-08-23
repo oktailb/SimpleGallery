@@ -1199,7 +1199,7 @@ function get_autostart_config(string $base_dir): array {
     $default = [
         'enabled' => true,
         'apps'    => [
-            ['appId' => 'explorer', 'state' => 'maximized', 'enabled' => true]
+            ['appId' => 'explorer', 'state' => 'normal', 'enabled' => true]
         ]
     ];
 

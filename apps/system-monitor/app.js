@@ -179,6 +179,7 @@
       const defaultW = Math.min(880, Math.max(560, Math.round(window.innerWidth * 0.75)));
       const defaultH = Math.min(620, Math.max(460, Math.round(window.innerHeight * 0.75)));
 
+      const targetState = params.state || 'normal';
       win = window.WindowManager.createWindow({
         id: this.winId,
         appId: 'system-monitor',
@@ -187,6 +188,8 @@
         icon: '📊',
         width: defaultW,
         height: defaultH,
+        isMaximized: targetState === 'maximized',
+        state: targetState,
         content: this.buildAppShell(),
         onClose: () => {
           this.stopAutoRefresh();
