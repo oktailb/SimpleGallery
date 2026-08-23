@@ -433,21 +433,27 @@ if ($action === 'tribune_oauth_callback') {
         'login'        => $login
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>OAuth Success</title></head>
-    <body style="font-family:sans-serif; text-align:center; padding:40px; background:#0f172a; color:#f8fafc;">
-    <h2> Connexion Réussie !</h2>
-    <p>Authentification OAuth2 validée. Fermeture de la fenêtre...</p>
-    <script>
-        (function() {
-            var payload = ' . $json_payload . ';
-            if (window.opener) {
-                try { window.opener.postMessage(payload, "*"); } catch (e) {}
-                try { window.opener.postMessage(JSON.stringify(payload), "*"); } catch (e) {}
-            }
-            setTimeout(function() { window.close(); }, 1200);
-        })();
-    </script>
-    </body></html>';
+    echo '<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Authentification Réussie</title>
+</head>
+<body style="font-family:sans-serif; background:#0f172a; color:#f8fafc; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0;">
+  <div style="font-size:3rem; margin-bottom:12px;">🔑</div>
+  <h2 style="margin:0 0 8px 0; color:#34d399;">Connexion OAuth2 Réussie !</h2>
+  <p style="color:#94a3b8; margin:0;">Fermeture de la fenêtre...</p>
+  <script>
+    (function() {
+      var payload = ' . $json_payload . ';
+      if (window.opener && !window.opener.closed) {
+        try { window.opener.postMessage(payload, "*"); } catch (e) {}
+      }
+      setTimeout(function() { window.close(); }, 500);
+    })();
+  </script>
+</body>
+</html>';
     exit;
 }
 
