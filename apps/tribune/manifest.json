@@ -1,0 +1,26 @@
+{
+  "id": "tribune",
+  "name": "Tribune Libre / Bouchot",
+  "version": "1.1.0",
+  "icon": "🦆",
+  "author": "SimpleGallery Team",
+  "category": "communication",
+  "locales": {
+    "fr": {
+      "title": "Tribune Libre & Client Bouchot Multi-Tribunes",
+      "description": "Messagerie instantanée chronologique, horloges interactives, Totoz, Trollomètre et Boîte à Con (BAK)"
+    },
+    "en": {
+      "title": "Free Tribune & Multi-Board Bouchot Client",
+      "description": "Chronological chat system, interactive clocks, Totoz memes, Trollometer and Boîte à Con (BAK)"
+    },
+    "ja": {
+      "title": "フリー掲示板 & マルチブショウクライナ",
+      "description": "時 me ログ掲示板、クロックトラッキング、Totoz、トロロメーター、Boîte à Con (BAK)"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "app.css"
+  }
+}

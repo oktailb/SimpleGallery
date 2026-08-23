@@ -152,9 +152,7 @@ class PluginDiscovery {
                 $json = @json_decode($content, true) ?: [];
                 $t = $json['translations'] ?? $json;
                 if (is_array($t)) {
-                    foreach ($t as $k => $v) {
-                        $translations[$k] = $v;
-                    }
+                    self::flattenTranslations($t, '', $translations);
                 }
             }
 
@@ -242,5 +240,19 @@ class PluginDiscovery {
         }
 
         return $views;
+    }
+
+    /**
+     * Recursively flattens a nested array into dot-separated string keys
+     */
+    private static function flattenTranslations(array $array, string $prefix, array &$result): void {
+        foreach ($array as $key => $val) {
+            $fullKey = $prefix === '' ? $key : $prefix . '.' . $key;
+            if (is_array($val)) {
+                self::flattenTranslations($val, $fullKey, $result);
+            } else {
+                $result[$fullKey] = (string)$val;
+            }
+        }
     }
 }

@@ -1,0 +1,71 @@
+{
+  "local": {
+    "name": "Tribune Locale",
+    "type": "local",
+    "auth_type": "none",
+    "url": "",
+    "post_url": "",
+    "icon": "🏠",
+    "cookie_help": "Session locale SimpleGallery."
+  },
+  "linuxfr": {
+    "name": "LinuxFR",
+    "type": "remote_xml",
+    "auth_type": "oauth2",
+    "url": "https://linuxfr.org/board/index.xml",
+    "post_url": "https://linuxfr.org/api/v1/board",
+    "post_param": "message",
+    "extra_params": {},
+    "extract_csrf": false,
+    "oauth": {
+      "authorize_url": "https://linuxfr.org/api/oauth/authorize",
+      "token_url": "https://linuxfr.org/api/oauth/token",
+      "scope": "account board",
+      "client_id": "24af3824faafc68f68efaaacb7a18a9b05aa780a2775de1baa42c53b770b2ab9",
+      "client_secret": "4fccecfb22e89219e3b01d97ede63df5243fdaf4d48b2d5fcae7ade5b6b8f20a",
+      "redirect_uri": "https://oktail.org/webos/api.php?action=tribune_oauth_callback&board_id=linuxfr"
+    },
+    "icon": "🐧",
+    "cookie_help": "Connectez-vous via OAuth2 ou collez un Jeton d'accès API (Bearer token)."
+  },
+  "moules": {
+    "name": "Moules.org",
+    "type": "remote_tsv",
+    "auth_type": "none",
+    "url": "https://moules.org/board/backend/tsv",
+    "post_url": "https://moules.org/board/add.php?backend=tsv",
+    "post_param": "message",
+    "icon": "🦪",
+    "cookie_help": "Tribune publique anonyme Moules.org."
+  },
+  "euromussels": {
+    "name": "Euromussels",
+    "type": "remote_tsv",
+    "auth_type": "none",
+    "url": "https://faab.euromussels.eu/data/backend.tsv",
+    "post_url": "https://faab.euromussels.eu/add.php",
+    "post_param": "message",
+    "icon": "🇪🇺",
+    "cookie_help": "Tribune publique Euromussels."
+  },
+  "ototu": {
+    "name": "Ototu",
+    "type": "remote_tsv",
+    "auth_type": "none",
+    "url": "https://www.ototu.me/goboard/backend/tsv",
+    "post_url": "https://www.ototu.me/goboard/post",
+    "post_param": "message",
+    "icon": "🦉",
+    "cookie_help": "Tribune Ototu.me."
+  },
+  "devnewton": {
+    "name": "Devnewton GB3",
+    "type": "remote_tsv",
+    "auth_type": "none",
+    "url": "https://gb3.devnewton.fr/gb0/tsv",
+    "post_url": "https://gb3.devnewton.fr/gb0/post",
+    "post_param": "message",
+    "icon": "👨‍💻",
+    "cookie_help": "Instance GB3 Devnewton."
+  }
+}

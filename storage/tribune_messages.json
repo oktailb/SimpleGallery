@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "time": "20260822070000",
+    "clock": "07:00:00",
+    "login": "oktail",
+    "info": "SimpleGallery WebOS",
+    "message": "Bienvenue sur la Tribune Libre de SimpleGallery ! [:totoz] Horloge cliquable, Totoz, Trollomètre et BAK sont activés. 🦆",
+    "is_admin": true,
+    "board": "local"
+  },
+  {
+    "id": 2,
+    "time": "20260822071500",
+    "clock": "07:15:00",
+    "login": "Coincoin",
+    "info": "Linux 6.8 / Firefox",
+    "message": "Coincoin ! N'hésitez pas à répondre en cliquant sur une horloge comme 07:00:00. [:hop]",
+    "is_admin": false,
+    "board": "local"
+  }
+]

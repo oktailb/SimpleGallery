@@ -36,6 +36,9 @@ class AppManager {
     }
 
     registerApp(manifest, appInstance) {
+        if (typeof manifest === 'string') {
+            manifest = { id: manifest };
+        }
         if (!manifest || !manifest.id) {
             console.error('[AppManager] Invalid app manifest:', manifest);
             return;
@@ -99,11 +102,6 @@ class AppManager {
     getAppTitle(appId) {
         const entry = this.apps.get(appId);
         const manifest = entry ? entry.manifest : null;
-        const currentLocale = (window.desktop && window.desktop.state && window.desktop.state.currentLocale) || document.documentElement.lang || 'fr';
-        
-        if (manifest && manifest.locales && manifest.locales[currentLocale] && manifest.locales[currentLocale].title) {
-            return manifest.locales[currentLocale].title;
-        }
         
         const key = `apps.${appId}.title`;
         const trans = window.desktop ? window.desktop.t(key) : (window.I18nEngine ? window.I18nEngine.t(key) : key);
@@ -180,9 +178,6 @@ class AppManager {
             window[appId + 'App'],
             window[camelId + 'App'],
             window[pascalId + 'App'],
-            window.EightQueensApp,
-            window.MapsApp,
-            window.explorerApp,
             window[appId],
             window[camelId],
             window[pascalId],

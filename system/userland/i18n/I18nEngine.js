@@ -36,6 +36,10 @@ class I18nEngine {
         return text;
     }
 
+    translate(key, replacements = {}) {
+        return this.t(key, replacements);
+    }
+
     setTranslations(code, translations) {
         this.currentLocale = code;
         this.translations = translations || {};

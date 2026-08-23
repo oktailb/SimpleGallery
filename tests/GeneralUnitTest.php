@@ -108,6 +108,7 @@ class GeneralUnitTestSuite {
         $this->testUnifiedMetadataExtractors();
         $this->testSystemMonitorAppAndTelemetry();
         $this->testNextGenTaskbarAndAppCategories();
+        $this->testTribuneAppAndMultiBouchot();
 
         $_SESSION = $saved_session;
 
@@ -614,6 +615,38 @@ class GeneralUnitTestSuite {
         $this->assert("Traduction FR de categories.productivity présente", !empty($fr_trans['categories.productivity']));
         $this->assert("Traduction FR de categories.games présente", !empty($fr_trans['categories.games']));
         $this->assert("Traduction FR de taskbar.show_desktop présente", !empty($fr_trans['taskbar.show_desktop']));
+    }
+
+    /**
+     * 14. Tribune Libre & Multi-Bouchot App Test
+     */
+    private function testTribuneAppAndMultiBouchot(): void {
+        echo "\n🦆 [14/14] Test de l'Application Tribune Libre & Client Bouchot...\n";
+
+        // 1. App Discovery
+        $discovered = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir);
+        $this->assert("Application 'tribune' découverte par PluginDiscovery", isset($discovered['tribune']));
+        $this->assert("Manifeste tribune valide (ID='tribune')", ($discovered['tribune']['manifest']['id'] ?? '') === 'tribune');
+        $this->assert("Point d'entrée JS de tribune présent", file_exists($this->base_dir . '/' . $discovered['tribune']['js_entry']));
+        $this->assert("Feuille de style CSS de tribune présente", file_exists($this->base_dir . '/' . $discovered['tribune']['css_entry']));
+        $this->assert("Catégorie de 'tribune' vient du manifest ('communication')", ($discovered['tribune']['category'] ?? '') === 'communication');
+
+        // 2. Translations
+        $fr_trans = \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations($this->base_dir, 'fr');
+        $this->assert("Traduction FR de tribune chargée", !empty($fr_trans['apps.tribune.title']) || !empty($discovered['tribune']['locales']['fr']['title']));
+
+        // 3. Backend Endpoints in api.php
+        $api_code = @file_get_contents($this->base_dir . '/api.php');
+        $this->assert("api.php déclare l'action tribune_get", strpos($api_code, "action === 'tribune_get'") !== false);
+        $this->assert("api.php déclare l'action tribune_post dans les actions mutantes", strpos($api_code, "'tribune_post'") !== false);
+        $this->assert("api.php déclare l'action tribune_proxy_fetch", strpos($api_code, "action === 'tribune_proxy_fetch'") !== false);
+
+        // 4. Storage file check
+        $storage_file = $this->base_dir . '/storage/tribune_messages.json';
+        $this->assert("Fichier de stockage storage/tribune_messages.json présent", file_exists($storage_file));
+        $content = @file_get_contents($storage_file);
+        $json = @json_decode($content, true);
+        $this->assert("Fichier storage/tribune_messages.json contient une liste valide", is_array($json) && count($json) >= 1);
     }
 }
 

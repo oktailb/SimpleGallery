@@ -23,7 +23,7 @@ $raw_body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? $_POST['action'] ?? $raw_body['action'] ?? null;
 
 // Validate CSRF token for all state-changing actions
-$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches'];
+$mutating_actions = ['change_password', 'update_dotfile', 'lock_folder', 'unlock_folder', 'logout', 'login', 'upload_file', 'upload_media', 'create_folder', 'move_item', 'delete_item', 'delete_file', 'delete_folder', 'save_permissions', 'edit_image', 'save_text_file', 'save_comment', 'save_folder_settings', 'save_desktop_shortcuts', 'clear_all_caches', 'tribune_clear_history', 'tribune_boards_save'];
 if (in_array($action, $mutating_actions, true)) {
     $submitted_csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $raw_body['csrf_token'] ?? $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($submitted_csrf)) {
@@ -218,6 +218,853 @@ if ($action === 'clear_all_caches') {
         'freed_bytes'   => $freed_bytes,
         'freed_fmt'     => format_bytes($freed_bytes)
     ]);
+    exit;
+}
+
+function get_tribune_boards_file_path() {
+    $p1 = __DIR__ . '/storage/tribune_boards.json';
+    if (file_exists($p1)) return $p1;
+    global $real_base_dir;
+    $p2 = $real_base_dir . '/storage/tribune_boards.json';
+    if (file_exists($p2)) return $p2;
+    return $p1;
+}
+
+function get_tribune_messages_file_path() {
+    $p1 = __DIR__ . '/storage/tribune_messages.json';
+    if (file_exists($p1)) return $p1;
+    global $real_base_dir;
+    $p2 = $real_base_dir . '/storage/tribune_messages.json';
+    if (file_exists($p2)) return $p2;
+    return $p1;
+}
+
+function get_tribune_boards_config() {
+    $storage_file = get_tribune_boards_file_path();
+    if (file_exists($storage_file)) {
+        $raw = @file_get_contents($storage_file);
+        $data = @json_decode($raw, true);
+        if (is_array($data) && !empty($data)) {
+            return $data;
+        }
+    }
+    return [
+        'local' => [
+            'name' => 'Tribune Locale',
+            'type' => 'local',
+            'url'  => '',
+            'post_url' => '',
+            'icon' => '🏠',
+            'cookie_help' => 'Session locale SimpleGallery.'
+        ]
+    ];
+}
+
+if ($action === 'tribune_boards_get') {
+    $boards = get_tribune_boards_config();
+    echo json_encode([
+        'success'    => true,
+        'boards'     => $boards,
+        'debug_dir'  => __DIR__,
+        'debug_file' => get_tribune_boards_file_path()
+    ]);
+    exit;
+}
+
+if ($action === 'tribune_boards_save') {
+    $new_boards = $_POST['boards'] ?? $raw_body['boards'] ?? null;
+    if (!is_array($new_boards)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Format de configuration invalide.']);
+        exit;
+    }
+
+    $storage_file = get_tribune_boards_file_path();
+    @file_put_contents($storage_file, json_encode($new_boards, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Configuration des tribunes sauvegardée.'
+    ]);
+    exit;
+}
+
+if ($action === 'tribune_oauth_authorize') {
+    $board_id = trim($_GET['board_id'] ?? $_POST['board_id'] ?? $raw_body['board_id'] ?? '');
+    $all_boards = get_tribune_boards_config();
+    $board_cfg = $all_boards[$board_id] ?? null;
+    $oauth_cfg = $board_cfg['oauth'] ?? null;
+
+    if (!$oauth_cfg || empty($oauth_cfg['authorize_url'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Configuration OAuth2 manquante pour cette tribune.']);
+        exit;
+    }
+
+    $client_id = !empty($oauth_cfg['client_id']) ? $oauth_cfg['client_id'] : getenv('GB2C_LINUXFR_CLIENT_ID');
+    if (empty($client_id)) {
+        $client_id = 'simplegallery_webos';
+    }
+
+    $state = bin2hex(random_bytes(16));
+    $_SESSION['tribune_oauth_state_' . $board_id] = $state;
+
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
+    $base_uri = $scheme . '://' . $host . strtok($_SERVER['REQUEST_URI'], '?');
+    $redirect_uri = !empty($oauth_cfg['redirect_uri']) ? $oauth_cfg['redirect_uri'] : ($base_uri . '?action=tribune_oauth_callback&board_id=' . urlencode($board_id));
+
+    $params = [
+        'client_id'     => $client_id,
+        'response_type' => 'code',
+        'scope'         => $oauth_cfg['scope'] ?? 'account board',
+        'redirect_uri'  => $redirect_uri,
+        'state'         => $state
+    ];
+
+    $authorize_url = $oauth_cfg['authorize_url'] . '?' . http_build_query($params);
+
+    if (isset($_GET['raw_url']) || isset($raw_body['raw_url'])) {
+        echo json_encode(['success' => true, 'authorize_url' => $authorize_url]);
+        exit;
+    }
+
+    header('Location: ' . $authorize_url, true, 302);
+    exit;
+}
+
+if ($action === 'tribune_oauth_callback') {
+    $board_id = trim($_GET['board_id'] ?? '');
+    $code = trim($_GET['code'] ?? '');
+    $state = trim($_GET['state'] ?? '');
+
+    $all_boards = get_tribune_boards_config();
+    $board_cfg = $all_boards[$board_id] ?? null;
+    $oauth_cfg = $board_cfg['oauth'] ?? null;
+
+    if (!$oauth_cfg || empty($oauth_cfg['token_url']) || empty($code)) {
+        echo '<!DOCTYPE html><html><body><script>
+            alert("Erreur lors de l\'authentification OAuth : Code ou configuration manquant.");
+            window.close();
+        </script></body></html>';
+        exit;
+    }
+
+    $client_id = !empty($oauth_cfg['client_id']) ? $oauth_cfg['client_id'] : getenv('GB2C_LINUXFR_CLIENT_ID');
+    $client_secret = !empty($oauth_cfg['client_secret']) ? $oauth_cfg['client_secret'] : getenv('GB2C_LINUXFR_CLIENT_SECRET');
+
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
+    $base_uri = $scheme . '://' . $host . strtok($_SERVER['REQUEST_URI'], '?');
+    $redirect_uri = !empty($oauth_cfg['redirect_uri']) ? $oauth_cfg['redirect_uri'] : ($base_uri . '?action=tribune_oauth_callback&board_id=' . urlencode($board_id));
+
+    $post_fields = [
+        'client_id'     => $client_id,
+        'client_secret' => $client_secret,
+        'code'          => $code,
+        'grant_type'    => 'authorization_code',
+        'redirect_uri'  => $redirect_uri
+    ];
+
+    $post_data = http_build_query($post_fields);
+    $headers = [
+        "Content-Type: application/x-www-form-urlencoded",
+        "User-Agent: SimpleGallery-WebOS/1.0"
+    ];
+
+    $res = http_request_proxy($oauth_cfg['token_url'], 'POST', $headers, $post_data, 10);
+    $data = @json_decode($res['body'], true) ?: [];
+    $token = $data['access_token'] ?? '';
+    $login = $data['login'] ?? '';
+
+    if (empty($login) && !empty($token)) {
+        $me_res = http_request_proxy("https://linuxfr.org/api/v1/me?bearer_token=" . urlencode($token), 'GET', ["User-Agent: SimpleGallery-WebOS/1.0"], null, 5);
+        $me_data = @json_decode($me_res['body'], true) ?: [];
+        $login = $me_data['login'] ?? $me_data['account']['login'] ?? '';
+    }
+
+    $json_payload = json_encode([
+        'type'         => 'tribune_oauth_success',
+        'board_id'     => $board_id,
+        'access_token' => $token,
+        'refresh_token'=> $data['refresh_token'] ?? '',
+        'expires_in'   => $data['expires_in'] ?? 0,
+        'login'        => $login
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>OAuth Success</title></head>
+    <body style="font-family:sans-serif; text-align:center; padding:40px; background:#0f172a; color:#f8fafc;">
+    <h2> Connexion Réussie !</h2>
+    <p>Authentification OAuth2 validée. Fermeture de la fenêtre...</p>
+    <script>
+        (function() {
+            var payload = ' . $json_payload . ';
+            if (window.opener) {
+                window.opener.postMessage(payload, "*");
+            }
+            setTimeout(function() { window.close(); }, 1200);
+        })();
+    </script>
+    </body></html>';
+    exit;
+}
+
+if ($action === 'tribune_get') {
+    $storage_file = $real_base_dir . '/storage/tribune_messages.json';
+    $messages = [];
+    if (file_exists($storage_file)) {
+        $content = @file_get_contents($storage_file);
+        $messages = @json_decode($content, true) ?: [];
+    } else {
+        $messages = [
+            [
+                'id'        => 1,
+                'time'      => date('YmdHis', time() - 3600),
+                'clock'     => date('H:i:s', time() - 3600),
+                'login'     => 'oktail',
+                'info'      => 'SimpleGallery WebOS',
+                'message'   => 'Bienvenue sur la Tribune Libre de SimpleGallery ! [:totoz] Horloge cliquable, Totoz, Trollomètre et BAK sont activés. 🦆',
+                'is_admin'  => true,
+                'board'     => 'local'
+            ],
+            [
+                'id'        => 2,
+                'time'      => date('YmdHis', time() - 1800),
+                'clock'     => date('H:i:s', time() - 1800),
+                'login'     => 'Coincoin',
+                'info'      => 'Linux 6.8 / Firefox',
+                'message'   => 'Coincoin ! N\'hésitez pas à répondre en cliquant sur une horloge comme 07:00:00. [:hop]',
+                'is_admin'  => false,
+                'board'     => 'local'
+            ]
+        ];
+        @file_put_contents($storage_file, json_encode($messages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    }
+
+    echo json_encode([
+        'success'   => true,
+        'messages'  => $messages,
+        'count'     => count($messages),
+        'server_now'=> date('H:i:s')
+    ]);
+    exit;
+}
+
+if ($action === 'tribune_post') {
+    $msg_text = trim($_POST['message'] ?? $raw_body['message'] ?? '');
+    $login    = trim($_POST['login'] ?? $raw_body['login'] ?? 'Anonyme');
+    $info     = trim($_POST['info'] ?? $raw_body['info'] ?? ($_SERVER['HTTP_USER_AGENT'] ?? 'SimpleGallery Client'));
+
+    if (empty($msg_text)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Le message ne peut pas être vide.'
+        ]);
+        exit;
+    }
+
+    if (mb_strlen($msg_text) > 1000) {
+        $msg_text = mb_substr($msg_text, 0, 1000);
+    }
+
+    if (empty($login)) {
+        $login = 'Anonyme';
+    }
+    if (mb_strlen($login) > 40) {
+        $login = mb_substr($login, 0, 40);
+    }
+    if (mb_strlen($info) > 100) {
+        $info = mb_substr($info, 0, 100);
+    }
+
+    $storage_file = $real_base_dir . '/storage/tribune_messages.json';
+    $messages = [];
+    if (file_exists($storage_file)) {
+        $content = @file_get_contents($storage_file);
+        $messages = @json_decode($content, true) ?: [];
+    }
+
+    $last_id = 0;
+    foreach ($messages as $m) {
+        if (isset($m['id']) && $m['id'] > $last_id) {
+            $last_id = $m['id'];
+        }
+    }
+
+    $now_ts   = time();
+    $time_id  = date('YmdHis', $now_ts);
+    $clock    = date('H:i:s', $now_ts);
+    $is_admin = !empty($_SESSION['is_admin']);
+
+    $new_post = [
+        'id'       => $last_id + 1,
+        'time'     => $time_id,
+        'clock'    => $clock,
+        'login'    => htmlspecialchars($login, ENT_QUOTES, 'UTF-8'),
+        'info'     => htmlspecialchars($info, ENT_QUOTES, 'UTF-8'),
+        'message'  => htmlspecialchars($msg_text, ENT_QUOTES, 'UTF-8'),
+        'is_admin' => $is_admin,
+        'board'    => 'local'
+    ];
+
+    $messages[] = $new_post;
+    if (count($messages) > 300) {
+        $messages = array_slice($messages, -300);
+    }
+
+    @file_put_contents($storage_file, json_encode($messages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+
+    echo json_encode([
+        'success' => true,
+        'post'    => $new_post,
+        'messages'=> $messages
+    ]);
+    exit;
+}
+
+function http_request_proxy($url, $method = 'GET', $headers = [], $post_data = null, $timeout = 12) {
+    $is_post = (strtoupper($method) === 'POST');
+    @ini_set('default_socket_timeout', $timeout);
+
+    $header_lines = [];
+    if (is_array($headers)) {
+        foreach ($headers as $h) {
+            if (is_string($h) && trim($h) !== '') {
+                $header_lines[] = trim($h);
+            }
+        }
+    } elseif (is_string($headers)) {
+        foreach (explode("\r\n", $headers) as $h) {
+            if (trim($h) !== '') {
+                $header_lines[] = trim($h);
+            }
+        }
+    }
+
+    $header_str = implode("\r\n", $header_lines);
+    $opts = [
+        'http' => [
+            'method'          => strtoupper($method),
+            'timeout'         => $timeout,
+            'follow_location' => $is_post ? 0 : 1,
+            'max_redirects'   => 5,
+            'ignore_errors'   => true,
+            'header'          => $header_str,
+            'content'         => $post_data
+        ],
+        'ssl' => [
+            'verify_peer'      => false,
+            'verify_peer_name' => false
+        ]
+    ];
+
+    $context = stream_context_create($opts);
+    $body = @file_get_contents($url, false, $context);
+
+    $status_code = 200;
+    $location = '';
+    $cookies = [];
+    $resp_headers = $http_response_header ?? [];
+
+    if (is_array($resp_headers)) {
+        foreach ($resp_headers as $line) {
+            if (preg_match('/HTTP\/\d\.\d\s+(\d+)/i', $line, $m)) {
+                $status_code = (int)$m[1];
+            }
+            if (stripos($line, 'Location:') === 0) {
+                $location = trim(substr($line, 9));
+            }
+            if (stripos($line, 'Set-Cookie:') === 0) {
+                if (preg_match('/^Set-Cookie:\s*([^;]+)/i', $line, $mc)) {
+                    $cookies[] = trim($mc[1]);
+                }
+            }
+        }
+    }
+
+    $success = ($body !== false && $status_code >= 200 && $status_code < 400);
+
+    return [
+        'success'     => $success,
+        'status_code' => $status_code,
+        'headers'     => $resp_headers,
+        'body'        => $body ?: '',
+        'location'    => $location,
+        'cookies'     => $cookies,
+        'error'       => $success ? '' : "Le serveur distant a répondu avec le code HTTP {$status_code}"
+    ];
+}
+
+if ($action === 'tribune_proxy_fetch') {
+    $remote_url = trim($_GET['url'] ?? $_POST['url'] ?? $raw_body['url'] ?? '');
+    $cookie_hdr = trim($_GET['cookie'] ?? $_POST['cookie'] ?? $raw_body['cookie'] ?? '');
+    $user_agent = trim($_GET['user_agent'] ?? $_POST['user_agent'] ?? $raw_body['user_agent'] ?? 'SimpleGallery-TribuneProxy/1.0');
+
+    if (empty($remote_url) || !filter_var($remote_url, FILTER_VALIDATE_URL)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'URL distante invalide.'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $scheme = parse_url($remote_url, PHP_URL_SCHEME);
+    if (!in_array(strtolower($scheme), ['http', 'https'], true)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Seuls les protocole HTTP et HTTPS sont autorisés.'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $headers = [
+        "User-Agent: {$user_agent}",
+        "Accept: application/xml, text/xml, text/plain, application/json, */*"
+    ];
+    if (!empty($cookie_hdr)) {
+        $headers[] = "Cookie: {$cookie_hdr}";
+    }
+
+    $res = http_request_proxy($remote_url, 'GET', $headers, null, 12);
+
+    if (!$res['success'] || empty($res['body'])) {
+        http_response_code(502);
+        echo json_encode([
+            'success'     => false,
+            'status_code' => $res['status_code'] ?? 0,
+            'error'       => 'Impossible d\'obtenir le flux distant (serveur injoignable ou délai dépassé).',
+            'details'     => $res['error'] ?? ''
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'content' => $res['body']
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($action === 'tribune_proxy_post') {
+    $board_id        = trim($_POST['board_id'] ?? $raw_body['board_id'] ?? '');
+    $remote_url      = trim($_POST['url'] ?? $raw_body['url'] ?? '');
+    $custom_post_url = trim($_POST['post_url'] ?? $raw_body['post_url'] ?? '');
+    $msg_text        = trim($_POST['message'] ?? $raw_body['message'] ?? '');
+    $login           = trim($_POST['login'] ?? $raw_body['login'] ?? 'Anonyme');
+    $cookie_hdr      = trim($_POST['cookie'] ?? $raw_body['cookie'] ?? '');
+    $user_agent      = trim($_POST['user_agent'] ?? $raw_body['user_agent'] ?? 'Mozilla/5.0 (SimpleGallery Tribune)');
+
+    // Look up board configuration dynamically from JSON storage
+    $all_boards = get_tribune_boards_config();
+    $board_cfg  = $all_boards[$board_id] ?? null;
+
+    if (!$board_cfg) {
+        if (!empty($remote_url)) {
+            foreach ($all_boards as $bid => $cfg) {
+                if (!empty($cfg['url']) && strtolower(trim($cfg['url'])) === strtolower($remote_url)) {
+                    $board_cfg = $cfg;
+                    $board_id  = $bid;
+                    break;
+                }
+            }
+        }
+        if (!$board_cfg && isset($all_boards['linuxfr'])) {
+            $board_cfg = $all_boards['linuxfr'];
+            $board_id  = 'linuxfr';
+        }
+    }
+
+    if (empty($msg_text)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Le message ne peut pas être vide.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // Resolve post_url
+    $post_url = '';
+    if (!empty($custom_post_url) && filter_var($custom_post_url, FILTER_VALIDATE_URL)) {
+        $post_url = $custom_post_url;
+    } elseif ($board_cfg && !empty($board_cfg['post_url']) && filter_var($board_cfg['post_url'], FILTER_VALIDATE_URL)) {
+        $post_url = $board_cfg['post_url'];
+    } elseif (!empty($remote_url) && filter_var($remote_url, FILTER_VALIDATE_URL)) {
+        $post_url = preg_replace('/\/index\.xml$/i', '', $remote_url);
+        if (strrpos($post_url, '.xml') !== false) {
+            $post_url = preg_replace('/\.xml$/i', '', $post_url);
+        }
+    }
+
+    if (empty($post_url) || !filter_var($post_url, FILTER_VALIDATE_URL)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'URL de soumission distante invalide.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $parsed_post_url = parse_url($post_url);
+    $origin = ($parsed_post_url['scheme'] ?? 'https') . '://' . ($parsed_post_url['host'] ?? '');
+
+    // Step 1: Pre-fetch GET request to extract CSRF token if enabled/needed
+    // Step 1: Resolve CSRF token (use cached session token if available to save latency)
+    $csrf_token = $_SESSION['tribune_csrf_' . $board_id] ?? '';
+    $should_extract_csrf = isset($board_cfg['extract_csrf']) ? (bool)$board_cfg['extract_csrf'] : true;
+
+    $fetch_csrf_token = function() use ($post_url, $user_agent, &$cookie_hdr) {
+        $get_headers = [
+            "User-Agent: {$user_agent}",
+            "Accept: text/html,application/xhtml+xml,*/*"
+        ];
+        if (!empty($cookie_hdr)) {
+            $get_headers[] = "Cookie: {$cookie_hdr}";
+        }
+
+        $get_res = http_request_proxy($post_url, 'GET', $get_headers, null, 5);
+        $tok = '';
+        if (!empty($get_res['body'])) {
+            if (preg_match('/input[^>]+name="authenticity_token"[^>]+value="([^"]+)"/i', $get_res['body'], $m_tok)) {
+                $tok = $m_tok[1];
+            } elseif (preg_match('/meta[^>]+name="csrf-token"[^>]+content="([^"]+)"/i', $get_res['body'], $m_meta)) {
+                $tok = $m_meta[1];
+            }
+
+            if (!empty($get_res['cookies'])) {
+                $existing_keys = [];
+                foreach (explode(';', $cookie_hdr) as $part) {
+                    $kv = explode('=', trim($part), 2);
+                    if (!empty($kv[0])) {
+                        $existing_keys[trim($kv[0])] = true;
+                    }
+                }
+                foreach ($get_res['cookies'] as $ck) {
+                    $kv = explode('=', trim($ck), 2);
+                    $key = trim($kv[0] ?? '');
+                    if (!empty($key) && !isset($existing_keys[$key])) {
+                        $cookie_hdr = ($cookie_hdr ? $cookie_hdr . '; ' : '') . $ck;
+                        $existing_keys[$key] = true;
+                    }
+                }
+            }
+        }
+        return $tok;
+    };
+
+    if (empty($csrf_token) && $should_extract_csrf) {
+        $csrf_token = $fetch_csrf_token();
+        if (!empty($csrf_token)) {
+            $_SESSION['tribune_csrf_' . $board_id] = $csrf_token;
+        }
+    }
+
+    // Step 2: Helper to perform POST
+    $execute_post = function($token) use ($board_cfg, $msg_text, $login, $user_agent, $post_url, $origin, $cookie_hdr) {
+        $post_params = [];
+        $is_api_endpoint = (strpos($post_url, '/api/') !== false);
+
+        if ($is_api_endpoint) {
+            $post_param_name = ($board_cfg && !empty($board_cfg['post_param'])) ? $board_cfg['post_param'] : 'message';
+            $post_params[$post_param_name] = $msg_text;
+        } else {
+            $post_params['utf8'] = '✓';
+            $post_params['authenticity_token'] = $token;
+
+            if ($board_cfg && !empty($board_cfg['extra_params']) && is_array($board_cfg['extra_params'])) {
+                foreach ($board_cfg['extra_params'] as $k => $v) {
+                    if ($k !== 'utf8' && $k !== 'authenticity_token') {
+                        $post_params[$k] = $v;
+                    }
+                }
+            }
+
+            $post_param_name = ($board_cfg && !empty($board_cfg['post_param'])) ? $board_cfg['post_param'] : 'message';
+            $post_params[$post_param_name] = $msg_text;
+            $post_params['login'] = $login;
+        }
+
+        $post_data = http_build_query($post_params);
+
+        $post_headers = [
+            "User-Agent: {$user_agent}",
+            "Content-Type: application/x-www-form-urlencoded",
+            "Referer: {$post_url}",
+            "Origin: {$origin}"
+        ];
+        if (!empty($token) && !$is_api_endpoint) {
+            $post_headers[] = "X-CSRF-Token: {$token}";
+        }
+        if (!empty($cookie_hdr)) {
+            if (stripos($cookie_hdr, 'Bearer ') === 0 || strpos($cookie_hdr, '=') === false) {
+                $token_val = preg_replace('/^Bearer\s+/i', '', trim($cookie_hdr));
+                $post_headers[] = "Authorization: Bearer {$token_val}";
+            } else {
+                $post_headers[] = "Cookie: {$cookie_hdr}";
+                if (preg_match('/(?:access_token|bearer|token)=([^;]+)/i', $cookie_hdr, $m_bearer)) {
+                    $post_headers[] = "Authorization: Bearer {$m_bearer[1]}";
+                }
+            }
+        }
+
+        return http_request_proxy($post_url, 'POST', $post_headers, $post_data, 6);
+    };
+
+    $post_res = $execute_post($csrf_token);
+    $status_code  = $post_res['status_code'];
+    $location_hdr = $post_res['location'];
+
+    // Retry once if token expired or invalid (HTTP 422 or HTTP 400 with token error)
+    if (($status_code === 422 || $status_code === 400) && $should_extract_csrf) {
+        unset($_SESSION['tribune_csrf_' . $board_id]);
+        $csrf_token = $fetch_csrf_token();
+        if (!empty($csrf_token)) {
+            $_SESSION['tribune_csrf_' . $board_id] = $csrf_token;
+            $post_res = $execute_post($csrf_token);
+            $status_code  = $post_res['status_code'];
+            $location_hdr = $post_res['location'];
+        }
+    }
+
+    if (strpos($location_hdr, 'connexion') !== false || $status_code === 401 || $status_code === 403) {
+        http_response_code(401);
+        echo json_encode([
+            'success'     => false,
+            'status_code' => $status_code,
+            'location'    => $location_hdr,
+            'error'       => 'Authentification refusée par le backend distant (cookie de session linuxfr.org manquant ou expiré).'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if ($status_code >= 200 && $status_code < 400) {
+        echo json_encode([
+            'success'     => true,
+            'status_code' => $status_code,
+            'location'    => $location_hdr,
+            'csrf_used'   => !empty($csrf_token),
+            'message'     => 'Post envoyé au backend distant avec succès.',
+            'target'      => $post_url
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    } else {
+        http_response_code(400);
+        echo json_encode([
+            'success'     => false,
+            'status_code' => $status_code,
+            'error'       => "Le backend distant a répondu avec le code HTTP {$status_code}.",
+            'details'     => mb_substr(trim(strip_tags($post_res['body'] ?? '')), 0, 300)
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if ($action === 'tribune_clear_history') {
+    if (empty($_SESSION['is_admin'])) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Action réservée à l\'administrateur.'
+        ]);
+        exit;
+    }
+
+    $storage_file = $real_base_dir . '/storage/tribune_messages.json';
+    @file_put_contents($storage_file, json_encode([], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Historique de la tribune réinitialisé.'
+    ]);
+    exit;
+}
+
+if ($action === 'totoz_proxy') {
+    $name = trim($_GET['name'] ?? $raw_body['name'] ?? 'totoz');
+    $name = preg_replace('/[^a-zA-Z0-9_\.: -]/', '', $name);
+    if (empty($name)) $name = 'totoz';
+
+    $remote_url = "https://totoz.eu/img/" . rawurlencode($name);
+    $opts = [
+        'http' => [
+            'method'          => 'GET',
+            'timeout'         => 5,
+            'follow_location' => 1,
+            'max_redirects'   => 5,
+            'header'          => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+        ],
+        'ssl' => [
+            'verify_peer'      => false,
+            'verify_peer_name' => false
+        ]
+    ];
+    $context = stream_context_create($opts);
+    $img_data = @file_get_contents($remote_url, false, $context);
+
+    if ($img_data === false || empty($img_data)) {
+        header('Content-Type: image/svg+xml');
+        echo '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"><text y="18" font-size="16">🦆</text></svg>';
+        exit;
+    }
+
+    $content_type = 'image/gif';
+    if (isset($http_response_header) && is_array($http_response_header)) {
+        foreach ($http_response_header as $hdr) {
+            if (stripos($hdr, 'Content-Type:') === 0) {
+                $content_type = trim(substr($hdr, 13));
+                break;
+            }
+        }
+    }
+
+    header('Content-Type: ' . $content_type);
+    header('Cache-Control: public, max-age=604800');
+    echo $img_data;
+    exit;
+}
+
+if ($action === 'totoz_search') {
+    $q = trim($_GET['q'] ?? $raw_body['q'] ?? '');
+    $q = preg_replace('/[^a-zA-Z0-9_\.: -]/', '', $q);
+
+    $remote_url = "https://totoz.eu/search.xml?terms=" . urlencode($q);
+    $opts = [
+        'http' => [
+            'method'  => 'GET',
+            'timeout' => 4,
+            'header'  => "User-Agent: Mozilla/5.0 (SimpleGallery Tribune Client)\r\n"
+        ]
+    ];
+    $context = stream_context_create($opts);
+    $xml_data = @file_get_contents($remote_url, false, $context);
+
+    $results = [];
+    if ($xml_data !== false) {
+        $xml = @simplexml_load_string($xml_data);
+        if ($xml && isset($xml->totoz)) {
+            foreach ($xml->totoz as $t) {
+                $name = (string)$t->name;
+                $nsfw = isset($t->nsfw) ? ((string)$t->nsfw === 'true' || (string)$t->nsfw === '1') : false;
+                if ($name) {
+                    $results[] = ['name' => $name, 'nsfw' => $nsfw];
+                }
+            }
+        }
+    }
+
+    echo json_encode(['success' => true, 'totoz' => array_slice($results, 0, 15)]);
+    exit;
+}
+
+if ($action === 'url_preview') {
+    $url = trim($_GET['url'] ?? $raw_body['url'] ?? '');
+    if (empty($url) || !preg_match('#^https?://#i', $url)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'URL invalide']);
+        exit;
+    }
+
+    // Security check: prevent SSRF to local/internal IP addresses
+    $parsed_host = parse_url($url, PHP_URL_HOST);
+    if (!$parsed_host || in_array(strtolower($parsed_host), ['localhost', '127.0.0.1', '::1', '0.0.0.0'])) {
+        echo json_encode(['success' => false, 'error' => 'Accès restreint']);
+        exit;
+    }
+
+    // Cache lookup
+    $cache_file = $real_base_dir . '/storage/url_preview_cache.json';
+    $cache = [];
+    if (file_exists($cache_file)) {
+        $cache = @json_decode(@file_get_contents($cache_file), true) ?: [];
+    }
+
+    $url_hash = md5($url);
+    if (isset($cache[$url_hash]) && (time() - ($cache[$url_hash]['cached_at'] ?? 0)) < 86400 * 7) {
+        echo json_encode(['success' => true, 'preview' => $cache[$url_hash]]);
+        exit;
+    }
+
+    // Default metadata
+    $title = '';
+    $description = '';
+    $image = '';
+    $site_name = $parsed_host;
+
+    // Check for YouTube oEmbed
+    if (preg_match('#(?:youtube\.com/(?:watch\?v=|embed/|v/)|youtu\.be/)([a-zA-Z0-9_-]{11})#i', $url, $yt_matches)) {
+        $yt_id = $yt_matches[1];
+        $site_name = 'YouTube';
+        $image = "https://img.youtube.com/vi/{$yt_id}/hqdefault.jpg";
+
+        $oembed_url = "https://www.youtube.com/oembed?url=" . urlencode($url) . "&format=json";
+        $ctx = stream_context_create([
+            'http' => ['timeout' => 3, 'user_agent' => 'SimpleGallery/1.0', 'ignore_errors' => true]
+        ]);
+        $oembed_json = @file_get_contents($oembed_url, false, $ctx);
+        if ($oembed_json) {
+            $oembed_data = @json_decode($oembed_json, true);
+            if ($oembed_data && !empty($oembed_data['title'])) {
+                $title = $oembed_data['title'];
+                if (!empty($oembed_data['author_name'])) {
+                    $description = "Vidéo par " . $oembed_data['author_name'];
+                }
+            }
+        }
+    }
+    // Check if direct image link
+    else if (preg_match('#\.(jpg|jpeg|png|gif|webp|svg)$#i', parse_url($url, PHP_URL_PATH) ?? '')) {
+        $title = basename(parse_url($url, PHP_URL_PATH));
+        $image = $url;
+        $description = "Image en ligne";
+    }
+    else {
+        // Fetch HTML head for OpenGraph tags
+        $ctx = stream_context_create([
+            'http' => [
+                'timeout' => 3,
+                'header'  => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) SimpleGalleryBot/1.0\r\nAccept: text/html\r\n",
+                'ignore_errors' => true
+            ]
+        ]);
+        $html = @file_get_contents($url, false, $ctx, 0, 150000);
+        if ($html) {
+            // Extract og:title or <title>
+            if (preg_match('#<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']#i', $html, $m) ||
+                preg_match('#<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:title["\']#i', $html, $m)) {
+                $title = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+            } elseif (preg_match('#<title[^>]*>(.*?)</title>#is', $html, $m)) {
+                $title = trim(html_entity_decode(strip_tags($m[1]), ENT_QUOTES, 'UTF-8'));
+            }
+
+            // Extract og:image
+            if (preg_match('#<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']#i', $html, $m) ||
+                preg_match('#<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']#i', $html, $m)) {
+                $image = $m[1];
+            }
+
+            // Extract og:description or <meta name="description">
+            if (preg_match('#<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)["\']#i', $html, $m) ||
+                preg_match('#<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)["\']#i', $html, $m)) {
+                $description = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+            }
+
+            // Extract og:site_name
+            if (preg_match('#<meta[^>]+property=["\']og:site_name["\'][^>]+content=["\']([^"\']+)["\']#i', $html, $m)) {
+                $site_name = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+            }
+        }
+    }
+
+    $preview_data = [
+        'url'         => $url,
+        'site_name'   => $site_name ?: $parsed_host,
+        'title'       => $title ?: $parsed_host,
+        'description' => mb_strlen($description) > 140 ? mb_substr($description, 0, 137) . '…' : $description,
+        'image'       => $image,
+        'cached_at'   => time()
+    ];
+
+    $cache[$url_hash] = $preview_data;
+    @file_put_contents($cache_file, json_encode($cache, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+    echo json_encode(['success' => true, 'preview' => $preview_data]);
     exit;
 }
 
