@@ -1007,6 +1007,16 @@ if ($action === 'tribune_file_upload') {
     $orig_name = basename($file['name']);
     $ext = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
 
+    $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phps', 'cgi', 'pl', 'py', 'sh', 'exe', 'bat', 'cmd', 'vbs', 'msi', 'phar'];
+    if (in_array($ext, $forbidden_exts, true)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Type de fichier exécutable interdit pour des raisons de sécurité.'
+        ]);
+        exit;
+    }
+
     $mime_type = 'application/octet-stream';
     if (function_exists('finfo_open')) {
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -1032,17 +1042,47 @@ if ($action === 'tribune_file_upload') {
         @mkdir($upload_dir, 0755, true);
     }
 
+    $htaccess_path = $upload_dir . '/.htaccess';
+    if (!file_exists($htaccess_path)) {
+        @file_put_contents($htaccess_path, "Options -Indexes -ExecCGI\n<FilesMatch \"\\.(php|phtml|php3|php4|php5|php7|php8|phps|cgi|pl|py|sh)$\">\n    Require all denied\n</FilesMatch>\n");
+    }
+
     $now = time();
     $files = @scandir($upload_dir) ?: [];
+    $records = [];
+    $total_size = 0;
+
     foreach ($files as $f) {
         if (str_ends_with($f, '.json')) {
             $json_p = $upload_dir . '/' . $f;
             $meta = @json_decode(@file_get_contents($json_p), true);
+            $token_id = substr($f, 0, -5);
+            $bin_p = $upload_dir . '/' . $token_id . '.bin';
+
             if ($meta && !empty($meta['uploaded_at']) && ($now - $meta['uploaded_at']) > 7 * 86400) {
-                $token_id = substr($f, 0, -5);
                 @unlink($json_p);
-                @unlink($upload_dir . '/' . $token_id . '.bin');
+                @unlink($bin_p);
+            } else if (file_exists($bin_p)) {
+                $fsize = filesize($bin_p);
+                $total_size += $fsize;
+                $records[] = [
+                    'token' => $token_id,
+                    'time'  => $meta['uploaded_at'] ?? 0,
+                    'size'  => $fsize
+                ];
             }
+        }
+    }
+
+    if ($total_size > 500 * 1024 * 1024) {
+        usort($records, function ($a, $b) {
+            return $a['time'] <=> $b['time'];
+        });
+        foreach ($records as $rec) {
+            @unlink($upload_dir . '/' . $rec['token'] . '.json');
+            @unlink($upload_dir . '/' . $rec['token'] . '.bin');
+            $total_size -= $rec['size'];
+            if ($total_size < 400 * 1024 * 1024) break;
         }
     }
 
@@ -1107,8 +1147,17 @@ if ($action === 'tribune_file_get') {
     }
 
     $meta = json_decode(file_get_contents($meta_path), true) ?: [];
-    $mime_type = $meta['mime_type'] ?? 'application/octet-stream';
+    $mime_type = strtolower($meta['mime_type'] ?? 'application/octet-stream');
     $orig_name = $meta['original_name'] ?? ('file_' . $token);
+
+    $safe_inline_mimes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+        'video/mp4', 'video/webm', 'video/ogg',
+        'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/flac',
+        'application/pdf', 'text/plain'
+    ];
+
+    $disposition = in_array($mime_type, $safe_inline_mimes, true) ? 'inline' : 'attachment';
 
     if (ob_get_level()) {
         @ob_end_clean();
@@ -1116,8 +1165,9 @@ if ($action === 'tribune_file_get') {
 
     header('Content-Type: ' . $mime_type);
     header('Content-Length: ' . filesize($bin_path));
-    header('Content-Disposition: inline; filename="' . rawurlencode($orig_name) . '"');
+    header('Content-Disposition: ' . $disposition . '; filename="' . rawurlencode($orig_name) . '"');
     header('X-Content-Type-Options: nosniff');
+    header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'");
     header('Cache-Control: public, max-age=86400');
 
     readfile($bin_path);
@@ -1125,6 +1175,7 @@ if ($action === 'tribune_file_get') {
 }
 
 if ($action === 'totoz_proxy') {
+    @session_write_close();
     $name = trim($_GET['name'] ?? $raw_body['name'] ?? 'totoz');
     $name = preg_replace('/[^a-zA-Z0-9_\.: -]/', '', $name);
     if (empty($name)) $name = 'totoz';
@@ -1169,6 +1220,7 @@ if ($action === 'totoz_proxy') {
 }
 
 if ($action === 'totoz_search') {
+    @session_write_close();
     $q = trim($_GET['q'] ?? $raw_body['q'] ?? '');
     $q = preg_replace('/[^a-zA-Z0-9_\.: -]/', '', $q);
 
@@ -1202,6 +1254,7 @@ if ($action === 'totoz_search') {
 }
 
 if ($action === 'url_preview') {
+    @session_write_close();
     $url = trim($_GET['url'] ?? $raw_body['url'] ?? '');
     if (empty($url) || !preg_match('#^https?://#i', $url)) {
         http_response_code(400);
