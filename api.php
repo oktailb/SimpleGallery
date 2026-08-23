@@ -424,15 +424,26 @@ if ($action === 'tribune_oauth_callback') {
         $login = $me_data['login'] ?? $me_data['account']['login'] ?? '';
     }
 
-    $json_payload = json_encode([
+    $payload_assoc = [
+        'success'      => true,
         'type'         => 'tribune_oauth_success',
         'board_id'     => $board_id,
         'access_token' => $token,
         'refresh_token'=> $data['refresh_token'] ?? '',
         'expires_in'   => $data['expires_in'] ?? 0,
         'login'        => $login
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    ];
 
+    if ((isset($_GET['format']) && $_GET['format'] === 'json') ||
+        (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($payload_assoc, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $json_payload = json_encode($payload_assoc, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    header('Content-Type: text/html; charset=utf-8');
     echo '<!DOCTYPE html>
 <html>
 <head>
