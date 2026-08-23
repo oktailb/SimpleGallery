@@ -665,6 +665,15 @@
           <p>${this.t('autostart.desc', 'Configurez les applications lancées au démarrage du WebOS et leur état d\'affichage initial (plein écran, fenêtré, réduit).')}</p>
         </div>
 
+        ${isAdmin ? '' : `
+          <div class="admin-notice-bar" style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.3);color:#facc15;padding:12px 16px;border-radius:8px;margin-bottom:1.2rem;font-size:0.85rem;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.3rem;">🔒</span>
+            <div>
+              <strong>${this.t('autostart.admin_only_title', 'Accès Administrateur requis')}</strong> — ${this.t('autostart.admin_only_desc', 'Seul l\'administrateur système peut modifier et enregistrer la configuration de démarrage.')}
+            </div>
+          </div>
+        `}
+
         <div class="settings-group">
           <div class="settings-group-title">⚡ ${this.t('autostart.global_title', 'Option Globale de Démarrage')}</div>
           <div class="settings-card">
@@ -676,7 +685,7 @@
                   <div style="font-size:0.8rem;color:var(--text-muted);">${this.t('autostart.master_hint', 'Décochez cette option pour démarrer sur un bureau complètement vierge.')}</div>
                 </div>
               </div>
-              <input type="checkbox" id="autostart_master_toggle" ${masterEnabled ? 'checked' : ''} />
+              <input type="checkbox" id="autostart_master_toggle" ${masterEnabled ? 'checked' : ''} ${isAdmin ? '' : 'disabled'} />
             </label>
           </div>
         </div>
@@ -698,14 +707,14 @@
                     </div>
 
                     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-                      <select class="sort-select autostart-state-select" data-app-id="${app.id}" ${cfg.enabled ? '' : 'disabled'} style="font-size:0.8rem;padding:6px 10px;">
+                      <select class="sort-select autostart-state-select" data-app-id="${app.id}" ${cfg.enabled ? '' : 'disabled'} ${isAdmin ? '' : 'disabled'} style="font-size:0.8rem;padding:6px 10px;">
                         <option value="maximized" ${cfg.state === 'maximized' ? 'selected' : ''}>${this.t('autostart.state_maximized', '🗖 Plein écran (Maximisé)')}</option>
                         <option value="normal" ${(cfg.state === 'normal' || cfg.state === 'floating') ? 'selected' : ''}>${this.t('autostart.state_normal', '🗔 Fenêtré (Normal)')}</option>
                         <option value="minimized" ${cfg.state === 'minimized' ? 'selected' : ''}>${this.t('autostart.state_minimized', '🗕 Réduit (Barre des tâches)')}</option>
                       </select>
 
                       <label class="permission-toggle-row" style="margin:0;padding:0;border:none;">
-                        <input type="checkbox" class="autostart-app-enable-toggle" data-app-id="${app.id}" ${cfg.enabled ? 'checked' : ''} />
+                        <input type="checkbox" class="autostart-app-enable-toggle" data-app-id="${app.id}" ${cfg.enabled ? 'checked' : ''} ${isAdmin ? '' : 'disabled'} />
                       </label>
                     </div>
                   </div>
@@ -714,7 +723,7 @@
             </div>
 
             <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;">
-              <button type="button" id="settingsSaveAutostartBtn" class="pill-btn active" style="flex:1;justify-content:center;padding:0.75rem;">
+              <button type="button" id="settingsSaveAutostartBtn" class="pill-btn active" style="flex:1;justify-content:center;padding:0.75rem;" ${isAdmin ? '' : 'disabled'}>
                 💾 ${this.t('autostart.save_btn', 'Enregistrer la configuration de démarrage')}
               </button>
             </div>
@@ -729,17 +738,23 @@
         chk.addEventListener('change', (e) => {
           const appId = e.target.dataset.appId;
           const sel = container.querySelector(`.autostart-state-select[data-app-id="${appId}"]`);
-          if (sel) sel.disabled = !e.target.checked;
+          if (sel) sel.disabled = !e.target.checked || !isAdmin;
         });
       });
 
       const saveBtn = container.querySelector('#settingsSaveAutostartBtn');
-      if (saveBtn) {
+      if (saveBtn && isAdmin) {
         saveBtn.onclick = () => this.saveAutostartConfig(container);
       }
     },
 
     async saveAutostartConfig(container) {
+      const isAdmin = (window.desktop && window.desktop.state && window.desktop.state.isAdmin) || window.IS_ADMIN || false;
+      if (!isAdmin) {
+        alert(this.t('autostart.admin_only_desc', 'Action réservée à l\'administrateur.'));
+        return;
+      }
+
       const msgEl = container.querySelector('#settingsAutostartMsg');
       const masterToggle = container.querySelector('#autostart_master_toggle');
       const isMasterEnabled = masterToggle ? masterToggle.checked : true;
@@ -770,10 +785,6 @@
       window.SG_AUTOSTART_CONFIG = configData;
 
       try {
-        localStorage.setItem('sg_autostart_config', JSON.stringify(configData));
-      } catch (e) {}
-
-      try {
         const formData = new FormData();
         formData.append('action', 'save_autostart_settings');
         formData.append('config', JSON.stringify(configData));
@@ -787,17 +798,17 @@
         });
 
         const data = await res.json();
-        if (!data || !data.success) {
-          console.warn('[Settings] Failed server persistence for autostart:', data?.error);
+        if (data && data.success) {
+          if (msgEl) {
+            msgEl.textContent = '✅ ' + (this.t('autostart.save_success') || 'Configuration de démarrage enregistrée avec succès !');
+            msgEl.style.display = 'block';
+            setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+          }
+        } else {
+          alert(data.error || 'Erreur lors de l\'enregistrement de la configuration de démarrage.');
         }
       } catch (err) {
-        console.warn('[Settings] Network error during server autostart save:', err);
-      }
-
-      if (msgEl) {
-        msgEl.textContent = '✅ ' + (this.t('autostart.save_success') || 'Configuration de démarrage enregistrée avec succès !');
-        msgEl.style.display = 'block';
-        setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+        alert('Erreur réseau lors de la sauvegarde du démarrage.');
       }
     },
 

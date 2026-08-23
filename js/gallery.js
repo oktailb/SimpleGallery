@@ -40,19 +40,7 @@
     }
 
     initAutostartApps() {
-      let cfg = null;
-      try {
-        const local = localStorage.getItem('sg_autostart_config');
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (parsed && typeof parsed === 'object') cfg = parsed;
-        }
-      } catch (e) {}
-
-      if (!cfg) {
-        cfg = window.SG_AUTOSTART_CONFIG || { enabled: true, apps: [{ appId: 'explorer', state: 'maximized', enabled: true }] };
-      }
-
+      const cfg = window.SG_AUTOSTART_CONFIG || { enabled: true, apps: [{ appId: 'explorer', state: 'maximized', enabled: true }] };
       if (cfg.enabled === false) return;
       const apps = cfg.apps || [];
 

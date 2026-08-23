@@ -2409,6 +2409,12 @@ if ($action === 'get_autostart_settings') {
 }
 
 if ($action === 'save_autostart_settings') {
+    if (empty($_SESSION['is_admin'])) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Action réservée à l\'administrateur.']);
+        exit;
+    }
+
     $raw_config = $_POST['config'] ?? $raw_body['config'] ?? null;
     if (is_string($raw_config)) {
         $raw_config = json_decode($raw_config, true);
