@@ -248,6 +248,23 @@
       }
     }
 
+    parseLocalDateTime(val) {
+      if (!val) return null;
+      const parts = val.split('T');
+      if (parts.length !== 2) {
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const [dPart, tPart] = parts;
+      const [year, month, day] = dPart.split('-').map(Number);
+      const [hours, minutes, seconds] = tPart.split(':').map(Number);
+      if (!year || !month || !day) {
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+    }
+
     updateScheduleTimezonePreview() {
       if (!this.container) return;
       const dtInput = this.container.querySelector('#tribuneScheduleDatetime');
@@ -262,8 +279,8 @@
         return;
       }
 
-      const dt = new Date(val);
-      if (isNaN(dt.getTime())) {
+      const dt = this.parseLocalDateTime(val);
+      if (!dt || isNaN(dt.getTime())) {
         userTimeElem.textContent = 'Invalide';
         parisTimeElem.textContent = 'Invalide';
         return;
@@ -275,9 +292,8 @@
       try {
         const parisStr = new Intl.DateTimeFormat('fr-FR', {
           timeZone: 'Europe/Paris',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
+          dateStyle: 'short',
+          timeStyle: 'medium'
         }).format(dt);
         parisTimeElem.textContent = parisStr + ' (Paris)';
       } catch (e) {
@@ -306,7 +322,7 @@
             } else {
               listView.innerHTML = data.scheduled.map(item => {
                 const dt = new Date((item.scheduled_at || 0) * 1000);
-                const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 return `
                   <div class="scheduled-item-card">
                     <div class="scheduled-item-text">
@@ -678,7 +694,7 @@
                 <span>⏰ ${this.t('tribune.schedule_title') || 'Action Programmée'}</span>
                 <button type="button" id="schedulePopoverClose" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1rem;">✖</button>
               </div>
-              <input type="datetime-local" class="schedule-datetime-input" id="tribuneScheduleDatetime" />
+              <input type="datetime-local" class="schedule-datetime-input" id="tribuneScheduleDatetime" step="1" />
               <div class="schedule-tz-box" id="tribuneScheduleTzBox">
                 <div class="schedule-tz-row">
                   <span>🏠 ${this.t('tribune.your_time') || 'Votre heure (Locale)'} :</span>
@@ -1001,7 +1017,7 @@
             const now = new Date(Date.now() + 5 * 60 * 1000);
             now.setSeconds(0, 0);
             const tzOffset = now.getTimezoneOffset() * 60000;
-            const localIso = (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 16);
+            const localIso = (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 19);
             if (scheduleDatetime) {
               scheduleDatetime.value = localIso;
             }
@@ -1037,8 +1053,8 @@
             return;
           }
 
-          const dt = new Date(val);
-          const unixTs = Math.floor(dt.getTime() / 1000);
+          const dt = this.parseLocalDateTime(val);
+          const unixTs = dt ? Math.floor(dt.getTime() / 1000) : 0;
           if (isNaN(unixTs) || unixTs <= Math.floor(Date.now() / 1000)) {
             alert('L\'heure programmée doit être située dans le futur.');
             return;
