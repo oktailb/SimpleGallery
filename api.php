@@ -509,6 +509,58 @@ if ($action === 'tribune_get') {
     exit;
 }
 
+if ($action === 'tribune_stream') {
+    @session_write_close();
+
+    if (function_exists('apache_setenv')) {
+        @apache_setenv('no-gzip', '1');
+    }
+    @ini_set('zlib.output_compression', '0');
+    @ini_set('implicit_flush', '1');
+
+    header('Content-Type: text/event-stream; charset=utf-8');
+    header('Cache-Control: no-cache, no-transform');
+    header('Connection: keep-alive');
+    header('X-Accel-Buffering: no');
+
+    $storage_file = $real_base_dir . '/storage/tribune_messages.json';
+    $last_mtime = 0;
+    $start_time = time();
+    $max_duration = 30;
+
+    while ((time() - $start_time) < $max_duration) {
+        if (connection_aborted()) {
+            break;
+        }
+
+        clearstatcache(true, $storage_file);
+        $mtime = file_exists($storage_file) ? filemtime($storage_file) : 0;
+
+        if ($mtime > $last_mtime) {
+            $last_mtime = $mtime;
+            $content = @file_get_contents($storage_file);
+            $messages = @json_decode($content, true) ?: [];
+
+            echo "event: message\n";
+            echo "data: " . json_encode([
+                'success'  => true,
+                'messages' => $messages,
+                'ts'       => time()
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n\n";
+
+            if (ob_get_level()) @ob_flush();
+            @flush();
+        }
+
+        usleep(500000);
+    }
+
+    echo "event: ping\ndata: {}\n\n";
+    if (ob_get_level()) @ob_flush();
+    @flush();
+    exit;
+}
+
 if ($action === 'tribune_post') {
     $msg_text = trim($_POST['message'] ?? $raw_body['message'] ?? '');
     $login    = trim($_POST['login'] ?? $raw_body['login'] ?? 'Anonyme');

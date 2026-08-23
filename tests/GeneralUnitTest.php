@@ -642,11 +642,13 @@ class GeneralUnitTestSuite {
         $this->assert("api.php déclare l'action tribune_proxy_fetch", strpos($api_code, "action === 'tribune_proxy_fetch'") !== false);
         $this->assert("api.php déclare l'action tribune_file_upload dans les actions mutantes", strpos($api_code, "'tribune_file_upload'") !== false);
         $this->assert("api.php déclare l'action tribune_file_get", strpos($api_code, "action === 'tribune_file_get'") !== false);
+        $this->assert("api.php déclare l'action tribune_stream (SSE EventSource)", strpos($api_code, "action === 'tribune_stream'") !== false);
 
         // 4. App UI Elements
         $app_js = @file_get_contents($this->base_dir . '/apps/tribune/app.js');
         $this->assert("Application tribune fournit le bouton d'upload 📎", strpos($app_js, 'tribuneUploadBtn') !== false);
         $this->assert("Application tribune fournit l'input file masqué", strpos($app_js, 'tribuneFileInput') !== false);
+        $this->assert("Application tribune intègre EventSource (SSE)", strpos($app_js, 'startSSE') !== false);
 
         // 5. Storage file check
         $storage_file = $this->base_dir . '/storage/tribune_messages.json';

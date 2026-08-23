@@ -182,6 +182,7 @@
         height: defaultH,
         content: wrapper,
         onClose: () => {
+          this.stopSSE();
           if (this.pollInterval) clearInterval(this.pollInterval);
           this.pollInterval = null;
           this.container = null;
@@ -204,15 +205,46 @@
 
       this.renderUI();
       this.bindEvents();
+      this.startSSE();
       this.fetchPosts(this.currentBoard, false, true);
 
-      // Auto-poll all active tribunes every 10 seconds asynchronously in parallel without blocking each other
+      // Auto-poll remote tribunes every 10s asynchronously; SSE streams local board instantly
       if (this.pollInterval) clearInterval(this.pollInterval);
       this.pollInterval = setInterval(() => {
         if (!this.container) return;
-        const bKeys = Object.keys(this.boards);
+        const bKeys = Object.keys(this.boards).filter(k => k !== 'local' || !this.sseSource);
         Promise.allSettled(bKeys.map(bKey => this.fetchPosts(bKey, true, false)));
       }, 10000);
+    }
+
+    startSSE() {
+      if (!window.EventSource || this.sseSource || !this.container) return;
+
+      try {
+        this.sseSource = new EventSource('api.php?action=tribune_stream');
+        this.sseSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data && data.success && Array.isArray(data.messages)) {
+              this.boardPosts['local'] = data.messages;
+              if (this.currentBoard === 'local') {
+                this.posts = data.messages;
+                this.renderPosts(false);
+              }
+            }
+          } catch (e) {}
+        };
+        this.sseSource.onerror = () => {};
+      } catch (e) {}
+    }
+
+    stopSSE() {
+      if (this.sseSource) {
+        try {
+          this.sseSource.close();
+        } catch (e) {}
+        this.sseSource = null;
+      }
     }
 
     onLocaleChanged() {
@@ -265,7 +297,7 @@
 
     renderBAKList() {
       if (!this.bakLogins || this.bakLogins.size === 0) {
-        return `<div style="color:var(--text-muted, #94a3b8); font-size:0.78rem; text-align:center; padding:12px;">${this.t('tribune.bak_empty') || 'Aucun login bloqué dans la Boîte à Con (BAK). Cliquez sur un pseudo pour le bloquer/débloquer.'}</div>`;
+        return `<div style="color:var(--text-muted, #94a3b8); font-size:0.78rem; text-align:center; padding:12px;">${this.t('tribune.bak_empty') || 'Aucun login bloqué dans la Boîte à Con (BAK). Saisissez un pseudo ci-dessus pour le bloquer.'}</div>`;
       }
 
       return Array.from(this.bakLogins).map(login => `
@@ -1722,7 +1754,7 @@
         return `
           <div class="${rowClasses}" data-id="${p.id}" data-clock="${p.clockDisplay}" data-clean-clock="${p.cleanClock}" data-clock-index="${p.subIndex}" data-time-id="${p.time}">
             <span class="tribune-clock" data-clock="${p.clockDisplay}" data-clean-clock="${p.cleanClock}" data-clock-index="${p.subIndex}">${p.clockDisplay}</span>
-            <span class="tribune-login ${p.is_admin ? 'is-admin' : ''} ${isMe ? 'my-pseudo' : ''}" title="Cliquer pour bloquer/débloquer dans la BAK">${this.escapeHtml(p.login)} :</span>
+            <span class="tribune-login ${p.is_admin ? 'is-admin' : ''} ${isMe ? 'my-pseudo' : ''}" title="${this.t('tribune.login_tooltip') || 'Cliquer pour interpeller (bigorno)'}">${this.escapeHtml(p.login)} :</span>
             ${isBakVisible ? '<span class="bak-indicator" title="Utilisateur dans la Boîte à Con (BAK)">🚫 [BAK]</span>' : ''}
             <div class="tribune-message">${formattedMsg}</div>
             ${isPending ? '<span class="tribune-pending-spinner" title="Envoi en cours...">⏳</span>' : ''}
