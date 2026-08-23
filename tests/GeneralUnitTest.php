@@ -653,6 +653,7 @@ class GeneralUnitTestSuite {
         $this->assert("Application tribune fournit l'input file masqué", strpos($app_js, 'tribuneFileInput') !== false);
         $this->assert("Application tribune intègre EventSource (SSE)", strpos($app_js, 'startSSE') !== false);
         $this->assert("Application tribune fournit le bouton de programmation ⏰", strpos($app_js, 'tribuneScheduleBtn') !== false);
+        $this->assert("Application tribune implémente les raccourcis clavier Alt (handleAltShortcut)", strpos($app_js, 'handleAltShortcut') !== false);
 
         // 5. Storage file check
         $storage_file = $this->base_dir . '/storage/tribune_messages.json';

@@ -1173,6 +1173,13 @@
             this.hideTotozPopover();
           }
         });
+
+        msgInput.addEventListener('keydown', (e) => {
+          if (e.altKey && this.handleAltShortcut(e, msgInput)) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
       }
 
       // Close popover on click outside
@@ -1820,6 +1827,82 @@
       return parsed.reverse();
     }
 
+    getSelectedText(input) {
+      if (!input) return '';
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      return input.value.substring(start, end);
+    }
+
+    insertTextInMsgInput(input, text, cursorOffset) {
+      if (!input) return;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const val = input.value || '';
+      const before = val.substring(0, start);
+      const after = val.substring(end);
+
+      input.value = before + text + after;
+      input.focus();
+
+      const newCursorPos = (cursorOffset !== undefined) ? (start + cursorOffset) : (start + text.length);
+      input.setSelectionRange(newCursorPos, newCursorPos);
+    }
+
+    handleAltShortcut(e, input) {
+      if (!e || !e.altKey || !input) return false;
+      const key = (e.key || '').toLowerCase();
+      const sel = this.getSelectedText(input);
+
+      switch (key) {
+        case 'b': // Bold
+          this.insertTextInMsgInput(input, `<b>${sel}</b>`, sel ? 7 + sel.length : 3);
+          return true;
+        case 'i': // Italic
+          this.insertTextInMsgInput(input, `<i>${sel}</i>`, sel ? 7 + sel.length : 3);
+          return true;
+        case 'u': // Underline
+          this.insertTextInMsgInput(input, `<u>${sel}</u>`, sel ? 7 + sel.length : 3);
+          return true;
+        case 's': // Strike-through
+          this.insertTextInMsgInput(input, `<s>${sel}</s>`, sel ? 7 + sel.length : 3);
+          return true;
+        case 't': // Teletext (monospace)
+          this.insertTextInMsgInput(input, `<tt>${sel}</tt>`, sel ? 9 + sel.length : 4);
+          return true;
+        case 'c': // Code
+          this.insertTextInMsgInput(input, `<code>${sel}</code>`, sel ? 13 + sel.length : 6);
+          return true;
+        case 'd': // Spoiler
+          this.insertTextInMsgInput(input, `<spoiler>${sel}</spoiler>`, sel ? 19 + sel.length : 9);
+          return true;
+        case 'm': // Moment
+          this.insertTextInMsgInput(input, `====> <b>Moment ${sel}</b> <====`, sel ? 27 + sel.length : 16);
+          return true;
+        case 'o': // Blam!
+          this.insertTextInMsgInput(input, '_o/* <b>BLAM</b>! ');
+          return true;
+        case 'p': // Paf!
+          this.insertTextInMsgInput(input, '_o/* <b>paf!</b> ');
+          return true;
+        case 'a': // Acappella (music notes)
+          this.insertTextInMsgInput(input, `♪ <i>${sel}</i> ♪`, sel ? 9 + sel.length : 5);
+          return true;
+        case 'f': // Phi symbol (φ)
+          this.insertTextInMsgInput(input, 'φ');
+          return true;
+        case 'z': // Last posted message
+          const lastMsg = this.lastPostedMessage || (localStorage && localStorage.getItem('tribune_last_posted_message')) || '';
+          if (lastMsg) {
+            input.value = lastMsg;
+            input.focus();
+          }
+          return true;
+      }
+
+      return false;
+    }
+
     async postMessage(message, login) {
       try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || '';
@@ -1860,6 +1943,8 @@
         const data = await res.json();
 
         if (data && data.success) {
+          this.lastPostedMessage = message;
+          try { localStorage.setItem('tribune_last_posted_message', message); } catch (e) {}
           if (this.soundEnabled) this.playCoincoinSound();
           return true;
         } else {
