@@ -21,9 +21,7 @@
       "authorize_url": "https://linuxfr.org/api/oauth/authorize",
       "token_url": "https://linuxfr.org/api/oauth/token",
       "scope": "account board",
-      "client_id": "24af3824faafc68f68efaaacb7a18a9b05aa780a2775de1baa42c53b770b2ab9",
-      "client_secret": "4fccecfb22e89219e3b01d97ede63df5243fdaf4d48b2d5fcae7ade5b6b8f20a",
-      "redirect_uri": "https://oktail.org/webos/api.php?action=tribune_oauth_callback&board_id=linuxfr"
+      "client_id": "24af3824faafc68f68efaaacb7a18a9b05aa780a2775de1baa42c53b770b2ab9"
     },
     "icon": "🐧",
     "cookie_help": "Connectez-vous via OAuth2 ou collez un Jeton d'accès API (Bearer token)."

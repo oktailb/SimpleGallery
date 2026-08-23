@@ -221,6 +221,10 @@ if ($action === 'clear_all_caches') {
     exit;
 }
 
+if (!defined('SG_EXEC')) {
+    define('SG_EXEC', true);
+}
+
 function get_tribune_boards_file_path() {
     $p1 = __DIR__ . '/storage/tribune_boards.json';
     if (file_exists($p1)) return $p1;
@@ -237,6 +241,37 @@ function get_tribune_messages_file_path() {
     $p2 = $real_base_dir . '/storage/tribune_messages.json';
     if (file_exists($p2)) return $p2;
     return $p1;
+}
+
+function get_tribune_secrets_config() {
+    $f1 = __DIR__ . '/storage/tribune_secrets.php';
+    if (file_exists($f1)) {
+        return include $f1;
+    }
+    global $real_base_dir;
+    $f2 = $real_base_dir . '/storage/tribune_secrets.php';
+    if (file_exists($f2)) {
+        return include $f2;
+    }
+    return [];
+}
+
+function get_tribune_oauth_secret($board_id, $key = 'client_secret') {
+    $env_key = 'GB2C_' . strtoupper($board_id) . '_' . strtoupper($key);
+    $env_val = getenv($env_key);
+    if (!empty($env_val)) return $env_val;
+
+    $env_key2 = strtoupper($board_id) . '_' . strtoupper($key);
+    $env_val2 = getenv($env_key2);
+    if (!empty($env_val2)) return $env_val2;
+
+    $secrets = get_tribune_secrets_config();
+    if (isset($secrets[$board_id][$key]) && !empty($secrets[$board_id][$key])) {
+        return $secrets[$board_id][$key];
+    }
+
+    $all_boards = get_tribune_boards_config();
+    return $all_boards[$board_id]['oauth'][$key] ?? '';
 }
 
 function get_tribune_boards_config() {
@@ -262,11 +297,17 @@ function get_tribune_boards_config() {
 
 if ($action === 'tribune_boards_get') {
     $boards = get_tribune_boards_config();
+    // Security: sanitize client_secret so it is never leaked to the frontend JS client
+    foreach ($boards as $bid => &$cfg) {
+        if (isset($cfg['oauth']['client_secret'])) {
+            unset($cfg['oauth']['client_secret']);
+        }
+    }
+    unset($cfg);
+
     echo json_encode([
-        'success'    => true,
-        'boards'     => $boards,
-        'debug_dir'  => __DIR__,
-        'debug_file' => get_tribune_boards_file_path()
+        'success' => true,
+        'boards'  => $boards
     ]);
     exit;
 }
@@ -301,7 +342,7 @@ if ($action === 'tribune_oauth_authorize') {
         exit;
     }
 
-    $client_id = !empty($oauth_cfg['client_id']) ? $oauth_cfg['client_id'] : getenv('GB2C_LINUXFR_CLIENT_ID');
+    $client_id = !empty($oauth_cfg['client_id']) ? $oauth_cfg['client_id'] : get_tribune_oauth_secret($board_id, 'client_id');
     if (empty($client_id)) {
         $client_id = 'simplegallery_webos';
     }
@@ -350,8 +391,8 @@ if ($action === 'tribune_oauth_callback') {
         exit;
     }
 
-    $client_id = !empty($oauth_cfg['client_id']) ? $oauth_cfg['client_id'] : getenv('GB2C_LINUXFR_CLIENT_ID');
-    $client_secret = !empty($oauth_cfg['client_secret']) ? $oauth_cfg['client_secret'] : getenv('GB2C_LINUXFR_CLIENT_SECRET');
+    $client_id = !empty($oauth_cfg['client_id']) ? $oauth_cfg['client_id'] : get_tribune_oauth_secret($board_id, 'client_id');
+    $client_secret = get_tribune_oauth_secret($board_id, 'client_secret');
 
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
