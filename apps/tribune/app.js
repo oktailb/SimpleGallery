@@ -195,11 +195,15 @@
       this.window = win;
       this.renderUI();
       this.bindEvents();
-      this.fetchPosts(false, true);
+      this.fetchPosts(this.currentBoard, false, true);
 
-      // Auto-poll every 10 seconds silently without resetting scroll
+      // Auto-poll all active tribunes every 10 seconds in parallel without interfering
       if (this.pollInterval) clearInterval(this.pollInterval);
-      this.pollInterval = setInterval(() => this.fetchPosts(true, false), 10000);
+      this.pollInterval = setInterval(() => {
+        Object.keys(this.boards).forEach(bKey => {
+          this.fetchPosts(bKey, true, false);
+        });
+      }, 10000);
     }
 
     onLocaleChanged() {
@@ -1042,9 +1046,16 @@
       this.renderUI();
       this.bindEvents();
 
+      // Clear unread badge on active tab
+      const activeTab = this.container.querySelector(`.tribune-tab-btn[data-board="${boardKey}"]`);
+      if (activeTab) {
+        const dot = activeTab.querySelector('.tab-unread-dot');
+        if (dot) dot.remove();
+      }
+
       if (this.posts.length > 0) {
         this.renderPosts(true);
-        this.fetchPosts(true, false);
+        this.fetchPosts(boardKey, true, false);
       } else {
         const feed = this.container.querySelector('#tribuneFeed');
         if (feed) {
@@ -1055,7 +1066,7 @@
             </div>
           `;
         }
-        this.fetchPosts(false, true);
+        this.fetchPosts(boardKey, false, true);
       }
     }
 
@@ -1268,13 +1279,19 @@
       if (popover) popover.style.display = 'none';
     }
 
-    async fetchPosts(silent = false, forceScrollBottom = false) {
-      const boardConfig = this.boards[this.currentBoard];
+    async fetchPosts(targetBoardKey = null, silent = false, forceScrollBottom = false) {
+      if (typeof targetBoardKey === 'boolean') {
+        forceScrollBottom = silent;
+        silent = targetBoardKey;
+        targetBoardKey = this.currentBoard;
+      }
+      const boardKey = targetBoardKey || this.currentBoard;
+      const boardConfig = this.boards[boardKey];
       if (!boardConfig) return;
 
       try {
         let fetchedPosts = [];
-        const auth = this.boardAuth[this.currentBoard] || {};
+        const auth = this.boardAuth[boardKey] || {};
 
         if (boardConfig.type === 'local') {
           const res = await fetch(`api.php?action=tribune_get&_t=${Date.now()}`);
@@ -1306,34 +1323,52 @@
           }
         }
 
-        const prevCount = this.posts.length;
-
-        // Measure scroll state before update
-        const feed = this.container ? this.container.querySelector('#tribuneFeed') : null;
-        const wasAtBottom = feed ? ((feed.scrollHeight - feed.scrollTop - feed.clientHeight) < 40) : true;
+        const existingBoardPosts = this.boardPosts[boardKey] || [];
+        const prevCount = existingBoardPosts.length;
 
         // Preserve recent pending posts (< 15s old) if not yet returned by server
-        const pendingPosts = this.posts.filter(p => p.pending && (Date.now() - parseInt(p.id.replace('pending_', ''), 10)) < 15000);
+        const pendingPosts = existingBoardPosts.filter(p => p.pending && (Date.now() - parseInt(p.id.replace('pending_', ''), 10)) < 15000);
         const filteredPending = pendingPosts.filter(p => !fetchedPosts.some(fp => fp.message === p.message && fp.login === p.login));
 
-        this.posts = [...fetchedPosts, ...filteredPending];
-        this.boardPosts[this.currentBoard] = this.posts;
+        const newPostsList = [...fetchedPosts, ...filteredPending];
+        this.boardPosts[boardKey] = newPostsList;
 
-        // Render posts cleanly, preserving scroll if user is reading history
-        this.renderPosts(forceScrollBottom);
-        this.updateTrollometer();
+        // STRICT GUARD: ONLY UPDATE DOM & RENDER IF THIS BOARD IS CURRENTLY ACTIVE
+        if (this.currentBoard === boardKey) {
+          this.posts = newPostsList;
 
-        if (silent && prevCount > 0 && this.posts.length > prevCount) {
-          if (this.soundEnabled) this.playCoincoinSound();
-          if (!wasAtBottom && this.container) {
-            const newPostsBadge = this.container.querySelector('#tribuneNewPostsBadge');
-            if (newPostsBadge) newPostsBadge.style.display = 'flex';
+          const feed = this.container ? this.container.querySelector('#tribuneFeed') : null;
+          const wasAtBottom = feed ? ((feed.scrollHeight - feed.scrollTop - feed.clientHeight) < 40) : true;
+
+          this.renderPosts(forceScrollBottom);
+          this.updateTrollometer();
+
+          if (silent && prevCount > 0 && newPostsList.length > prevCount) {
+            if (this.soundEnabled) this.playCoincoinSound();
+            if (!wasAtBottom && this.container) {
+              const newPostsBadge = this.container.querySelector('#tribuneNewPostsBadge');
+              if (newPostsBadge) newPostsBadge.style.display = 'flex';
+            }
+          }
+        } else {
+          // Board is in background: update unread tab badge if new posts arrived
+          if (prevCount > 0 && newPostsList.length > prevCount && this.container) {
+            const tabBtn = this.container.querySelector(`.tribune-tab-btn[data-board="${boardKey}"]`);
+            if (tabBtn) {
+              let badge = tabBtn.querySelector('.tab-unread-dot');
+              if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'tab-unread-dot';
+                badge.style.cssText = 'width:7px; height:7px; border-radius:50%; background:#ef4444; display:inline-block; margin-left:4px; vertical-align:middle;';
+                tabBtn.appendChild(badge);
+              }
+            }
           }
         }
       } catch (err) {
-        if (!silent && this.container) {
+        if (!silent && this.currentBoard === boardKey && this.container) {
           const feed = this.container.querySelector('#tribuneFeed');
-          if (feed) feed.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Erreur de connexion à la tribune.</div>`;
+          if (feed) feed.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Erreur de connexion à la tribune ${this.escapeHtml(boardConfig.name || boardKey)}.</div>`;
         }
       }
     }
