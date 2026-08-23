@@ -833,16 +833,22 @@
         });
 
         feed.addEventListener('click', (e) => {
-          // 1. Click on .clock-ref (embedded in post message) -> Scroll to referenced post & flash!
+          // 1. Click on .clock-ref (embedded in post message) -> Scroll to referenced post & flash at vertical center!
           const clockRef = e.target.closest('.clock-ref');
           if (clockRef) {
             e.stopPropagation();
             const clockTime = clockRef.dataset.clock || clockRef.textContent.trim().replace(/^#/, '');
+            const baseClock = clockRef.dataset.baseClock || clockTime;
             if (clockTime) {
               const targetRow = feed.querySelector(`.tribune-post-row[data-clock="${clockTime}"]`) ||
-                                Array.from(feed.querySelectorAll('.tribune-post-row')).find(row => (row.dataset.clock || '').includes(clockTime) || (row.dataset.timeId || '').includes(clockTime));
+                                feed.querySelector(`.tribune-post-row[data-clock="${baseClock}"]`) ||
+                                Array.from(feed.querySelectorAll('.tribune-post-row')).find(row => {
+                                  const c = row.dataset.clock || '';
+                                  const tid = row.dataset.timeId || '';
+                                  return c === clockTime || c === baseClock || c.startsWith(baseClock) || tid.includes(clockTime) || c.includes(clockTime);
+                                });
               if (targetRow) {
-                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
                 targetRow.classList.remove('clock-target-flash');
                 void targetRow.offsetWidth;
                 targetRow.classList.add('clock-target-flash');
@@ -856,21 +862,34 @@
           if (clockElem && msgInput) {
             const clockTime = clockElem.dataset.clock || clockElem.textContent.trim();
             if (clockTime) {
-              msgInput.value += (msgInput.value ? ' ' : '') + clockTime + ' ';
+              const textToInsert = clockTime + ' ';
+              const start = msgInput.selectionStart ?? msgInput.value.length;
+              const end = msgInput.selectionEnd ?? msgInput.value.length;
+              const currentVal = msgInput.value;
+
+              msgInput.value = currentVal.substring(0, start) + textToInsert + currentVal.substring(end);
+              const newPos = start + textToInsert.length;
+              msgInput.selectionStart = newPos;
+              msgInput.selectionEnd = newPos;
               msgInput.focus();
             }
           }
 
-          // 3. Click on .tribune-login -> Prompt to block/unblock user in BAK
+          // 3. Click on .tribune-login -> Insert login< into message input at cursor position
           const loginElem = e.target.closest('.tribune-login');
-          if (loginElem && !e.target.closest('.clock-ref')) {
+          if (loginElem && !e.target.closest('.clock-ref') && msgInput) {
             const loginName = loginElem.textContent.replace(/:$/, '').trim();
-            const myName = (this.userLogin || '').trim();
-            if (loginName && loginName.toLowerCase() !== myName.toLowerCase()) {
-              const isBlocked = this.bakLogins.has(loginName.toLowerCase());
-              if (confirm(`Voulez-vous ${isBlocked ? 'débloquer' : 'ajouter à la Boîte à Con (BAK)'} '${loginName}' ?`)) {
-                this.toggleBAKLogin(loginName);
-              }
+            if (loginName) {
+              const textToInsert = loginName + '<';
+              const start = msgInput.selectionStart ?? msgInput.value.length;
+              const end = msgInput.selectionEnd ?? msgInput.value.length;
+              const currentVal = msgInput.value;
+
+              msgInput.value = currentVal.substring(0, start) + textToInsert + currentVal.substring(end);
+              const newPos = start + textToInsert.length;
+              msgInput.selectionStart = newPos;
+              msgInput.selectionEnd = newPos;
+              msgInput.focus();
             }
           }
 
