@@ -646,14 +646,19 @@ class GeneralUnitTestSuite {
         $this->assert("api.php déclare l'action tribune_stream (SSE EventSource)", strpos($api_code, "action === 'tribune_stream'") !== false);
         $this->assert("api.php déclare l'action tribune_schedule_post", strpos($api_code, "action === 'tribune_schedule_post'") !== false);
         $this->assert("api.php déclare l'action tribune_scheduled_list", strpos($api_code, "action === 'tribune_scheduled_list'") !== false);
+        $this->assert("api.php déclare l'action tribune_proxy_post dans les actions mutantes", strpos($api_code, "'tribune_proxy_post'") !== false);
 
-        // 4. App UI Elements
+        // 4. App UI Elements & Features (Balltrap, Trollometer, Miaoli)
         $app_js = @file_get_contents($this->base_dir . '/apps/tribune/app.js');
         $this->assert("Application tribune fournit le bouton d'upload 📎", strpos($app_js, 'tribuneUploadBtn') !== false);
         $this->assert("Application tribune fournit l'input file masqué", strpos($app_js, 'tribuneFileInput') !== false);
         $this->assert("Application tribune intègre EventSource (SSE)", strpos($app_js, 'startSSE') !== false);
         $this->assert("Application tribune fournit le bouton de programmation ⏰", strpos($app_js, 'tribuneScheduleBtn') !== false);
         $this->assert("Application tribune implémente les raccourcis clavier Alt (handleAltShortcut)", strpos($app_js, 'handleAltShortcut') !== false);
+        $this->assert("Application tribune intègre le moteur de Balltrap interactif (duckRegex)", strpos($app_js, 'duckRegex') !== false);
+        $this->assert("Application tribune intègre le déclencheur Balltrap (triggerBalltrap)", strpos($app_js, 'triggerBalltrap') !== false);
+        $this->assert("Application tribune intègre le calculateur de Trollabilité (computePostTrollScore)", strpos($app_js, 'computePostTrollScore') !== false);
+        $this->assert("Application tribune intègre le support du protocole Miaoli", strpos($app_js, 'miaoli') !== false);
 
         // 5. Storage file check
         $storage_file = $this->base_dir . '/storage/tribune_messages.json';

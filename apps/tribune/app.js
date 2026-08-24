@@ -31,6 +31,8 @@
       this.activeTotozQuery = null;
       this.totozImageCache = new Set();
       this.activeTelemetryMetric = 'posts';
+      this.triggeredDucks = new Set();
+      this.duckRegex = /(\\_o<~|~>o_\/|\\_x<~|~>x_\/|\\_o<|>o_\/|\\_o<|>o_|\\_O<|>O_\/|\\_o<=|=>o_\/|\\_ô<|>ô_\/|\\_@<|>@_\/|\\_°<|>°_\/|\\_°<~|~>°_\/|coin\s*coin|couac)/i;
       this.container = null;
 
       // Detect initial pseudo from WebOS environment or localStorage
@@ -437,6 +439,16 @@
           },
           icon: '🐧',
           cookie_help: "Connectez-vous via OAuth2 ou collez un Jeton d'accès API (Bearer token)."
+        },
+        miaoli: {
+          name: 'Réveil du Troll (Miaoli)',
+          type: 'miaoli',
+          auth_type: 'none',
+          url: 'https://miaoli.im/%2B6VtcdSCI0Y/posts.tsv',
+          post_url: 'https://miaoli.im/%2B6VtcdSCI0Y/post',
+          post_param: 'message',
+          icon: '🐱',
+          cookie_help: 'Tribune décentralisée Miaoli.'
         }
       };
 
@@ -491,6 +503,16 @@
           },
           icon: '🐧',
           cookie_help: "Connectez-vous via OAuth2 ou collez un Jeton d'accès API (Bearer token)."
+        },
+        miaoli: {
+          name: 'Réveil du Troll (Miaoli)',
+          type: 'miaoli',
+          auth_type: 'none',
+          url: 'https://miaoli.im/%2B6VtcdSCI0Y/posts.tsv',
+          post_url: 'https://miaoli.im/%2B6VtcdSCI0Y/post',
+          post_param: 'message',
+          icon: '🐱',
+          cookie_help: 'Tribune décentralisée Miaoli.'
         }
       };
 
@@ -1258,9 +1280,10 @@
           }
 
           // 3. Click on .tribune-login -> Insert login< into message input at cursor position
-          const loginElem = e.target.closest('.tribune-login');
+          const loginElem = e.target.closest('.tribune-login-container') || e.target.closest('.tribune-login');
           if (loginElem && !e.target.closest('.clock-ref') && msgInput) {
-            const loginName = loginElem.textContent.replace(/:$/, '').trim();
+            const loginSpan = loginElem.querySelector('.tribune-login') || loginElem;
+            const loginName = loginSpan.textContent.replace(/:$/, '').trim();
             if (loginName) {
               const textToInsert = loginName + '<';
               const start = msgInput.selectionStart ?? msgInput.value.length;
@@ -1680,7 +1703,7 @@
           if (data && data.success && data.messages) {
             fetchedPosts = data.messages;
           }
-        } else if (boardConfig.type === 'remote_tsv' || boardConfig.type === 'remote_xml') {
+        } else if (boardConfig.type === 'remote_tsv' || boardConfig.type === 'remote_xml' || boardConfig.type === 'miaoli') {
           const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || '';
           const res = await fetch('api.php', {
             method: 'POST',
@@ -1699,7 +1722,7 @@
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
           if (data && data.success && data.content) {
-            fetchedPosts = boardConfig.type === 'remote_tsv' ? this.parseRemoteTSV(data.content) : this.parseRemoteXML(data.content);
+            fetchedPosts = (boardConfig.type === 'remote_tsv' || boardConfig.type === 'miaoli') ? this.parseRemoteTSV(data.content) : this.parseRemoteXML(data.content);
           }
         }
 
@@ -1789,10 +1812,17 @@
     }
 
     parseRemoteXML(xmlText) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(xmlText, 'text/xml');
-      const postNodes = doc.querySelectorAll('post');
-      const parsed = [];
+      if (!xmlText || typeof xmlText !== 'string' || !xmlText.trim().startsWith('<')) {
+        return [];
+      }
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlText, 'text/xml');
+        if (doc.querySelector('parsererror')) {
+          return [];
+        }
+        const postNodes = doc.querySelectorAll('post');
+        const parsed = [];
 
       postNodes.forEach((node, idx) => {
         const id = node.getAttribute('id') || idx + 1;
@@ -1824,7 +1854,10 @@
         });
       });
 
-      return parsed.reverse();
+        return parsed.reverse();
+      } catch (e) {
+        return [];
+      }
     }
 
     getSelectedText(input) {
@@ -2097,6 +2130,16 @@
           unreadCallsCount++;
         }
 
+        // Compute per-message Trollability Score & Badge
+        const trollScore = this.computePostTrollScore(p);
+        const trollBadgeHtml = this.renderTrollBadgeHtml(trollScore);
+
+        // Check for Balltrap duck smileys in post message
+        if (this.duckRegex.test(p.message || '') && !this.triggeredDucks.has(String(p.id))) {
+          this.triggeredDucks.add(String(p.id));
+          setTimeout(() => this.triggerBalltrap(p), 400);
+        }
+
         const rowClasses = [
           'tribune-post-row',
           isPending ? 'pending-post' : '',
@@ -2110,10 +2153,14 @@
         return `
           <div class="${rowClasses}" data-id="${p.id}" data-clock="${p.clockDisplay}" data-clean-clock="${p.cleanClock}" data-clock-index="${p.subIndex}" data-time-id="${p.time}">
             <span class="tribune-clock" data-clock="${p.clockDisplay}" data-clean-clock="${p.cleanClock}" data-clock-index="${p.subIndex}">${p.clockDisplay}</span>
-            <span class="tribune-login ${p.is_admin ? 'is-admin' : ''} ${isMe ? 'my-pseudo' : ''}" title="${this.t('tribune.login_tooltip') || 'Cliquer pour interpeller (bigorno)'}">${this.escapeHtml(p.login)} :</span>
+            <span class="tribune-login-container" title="${this.t('tribune.login_tooltip') || 'Cliquer pour interpeller (bigorno)'}">
+              <span class="tribune-login ${p.is_admin ? 'is-admin' : ''} ${isMe ? 'my-pseudo' : ''}">${this.escapeHtml(p.login)}</span>
+              <span class="tribune-login-colon">:</span>
+            </span>
             ${isBakVisible ? '<span class="bak-indicator" title="Utilisateur dans la Boîte à Con (BAK)">🚫 [BAK]</span>' : ''}
             <div class="tribune-message">${formattedMsg}</div>
             ${isPending ? '<span class="tribune-pending-spinner" title="Envoi en cours...">⏳</span>' : ''}
+            ${trollBadgeHtml}
           </div>
         `;
       }).join('');
@@ -2132,6 +2179,134 @@
 
       // 5. Silently prefetch URL link previews in background
       this.prefetchUrlPreviews();
+    }
+
+    computePostTrollScore(post) {
+      const text = post.message || '';
+      if (!text.trim()) return 0;
+
+      let score = 0;
+
+      // 1. ALL CAPS check
+      const alphaChars = text.replace(/[^a-zA-ZÀ-ÿ]/g, '');
+      if (alphaChars.length >= 6) {
+        const capsChars = text.replace(/[^A-ZÀ-ÖØ-ß]/g, '');
+        const capsRatio = capsChars.length / alphaChars.length;
+        if (capsRatio > 0.3) {
+          score += Math.min(35, Math.round(capsRatio * 40));
+        }
+      }
+
+      // 2. Excessive punctuation
+      const puncMatches = text.match(/(!{2,}|\?{2,}|\!{1,}\?{1,}|\.{4,})/g) || [];
+      score += Math.min(25, puncMatches.length * 8);
+
+      // 3. Polemic / Troll keywords
+      const trollKeywords = /\b(linux|windows|m\$|micro\$oft|php|rust|c\+\+|systemd|emacs|vim|troll|hadopi|dadvsi|juridique|gpl|bsd|mac|apple|crypto|nft|ia|ai|politique|macron|poutine|bouchot|fail|caca|pari[ss]|suicide|boomer|rage|seum)\b/gi;
+      const kwMatches = text.match(trollKeywords) || [];
+      score += Math.min(35, kwMatches.length * 10);
+
+      // 4. Repeated character streaks
+      if (/(.)\1{4,}/.test(text)) {
+        score += 10;
+      }
+
+      // 5. Author BAK status
+      const postLogin = (post.login || '').trim().toLowerCase();
+      if (this.bakLogins && this.bakLogins.has(postLogin)) {
+        score += 25;
+      }
+
+      return Math.min(100, Math.max(0, Math.round(score)));
+    }
+
+    renderTrollBadgeHtml(score) {
+      if (!score || score <= 0) return '';
+      let cls = 'troll-badge-zen';
+      let icon = '🟢';
+      let label = 'Zen';
+      if (score > 60) {
+        cls = 'troll-badge-danger';
+        icon = '🔴';
+        label = 'Troll Avéré';
+      } else if (score > 25) {
+        cls = 'troll-badge-warning';
+        icon = '🟡';
+        label = 'Suspect';
+      }
+      return `<span class="troll-badge ${cls}" title="Score de Trollabilité : ${score}% (${label})">${icon} ${score}%</span>`;
+    }
+
+    triggerBalltrap(post) {
+      if (!this.container) return;
+      const feed = this.container.querySelector('#tribuneFeed');
+      if (!feed) return;
+
+      const duckEl = document.createElement('div');
+      duckEl.className = 'balltrap-duck';
+
+      const duckIcons = ['🦆 \\_o<~', '🦆 ~>o_/', '🦆 \\_x<~', '🦆 ~>x_/', '🦆 \\_o<', '🦆 >o_/'];
+      const icon = duckIcons[Math.floor(Math.random() * duckIcons.length)];
+      duckEl.innerHTML = `<span class="duck-sprite">${icon}</span> <span class="duck-label">Coin!</span>`;
+
+      const topPct = Math.floor(Math.random() * 65) + 15;
+      duckEl.style.top = `${topPct}%`;
+
+      const leftToRight = Math.random() > 0.5;
+      duckEl.classList.add(leftToRight ? 'fly-left-to-right' : 'fly-right-to-left');
+
+      duckEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.shootDuck(duckEl, post);
+      });
+
+      feed.appendChild(duckEl);
+
+      setTimeout(() => {
+        if (duckEl && duckEl.parentNode) {
+          duckEl.parentNode.removeChild(duckEl);
+        }
+      }, 5800);
+    }
+
+    shootDuck(duckEl, post) {
+      if (!duckEl || duckEl.classList.contains('shot')) return;
+      duckEl.classList.add('shot');
+      duckEl.innerHTML = `<span class="duck-explosion">🦆💥 PAFF !</span>`;
+
+      if (this.soundEnabled) {
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+        } catch (e) {}
+      }
+
+      setTimeout(() => {
+        if (duckEl && duckEl.parentNode) duckEl.parentNode.removeChild(duckEl);
+      }, 700);
+
+      const replies = ['pan ! pan !', 'couac !', 'paf !', 'pan ! 🦆💥', 'touché !', 'pan pan pan !', 'coin ! 💥'];
+      const replyChoice = replies[Math.floor(Math.random() * replies.length)];
+      const replyMsg = post && post.clockDisplay ? `${post.clockDisplay} ${replyChoice}` : replyChoice;
+
+      const input = this.container ? this.container.querySelector('#tribuneInput') : null;
+      if (input) {
+        input.value = replyMsg;
+        const submitBtn = this.container.querySelector('#tribuneSubmitBtn');
+        if (submitBtn) submitBtn.click();
+      } else {
+        this.postMessage(replyMsg, this.userLogin);
+      }
     }
 
     prefetchUrlPreviews() {

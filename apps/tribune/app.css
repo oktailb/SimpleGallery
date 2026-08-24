@@ -209,10 +209,31 @@
   color: #0f172a;
 }
 
+.tribune-login-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 125px;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
 .tribune-login {
   font-weight: 700;
   color: var(--text-main, #cbd5e1);
   white-space: nowrap;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 115px;
+}
+
+.tribune-login-colon {
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
   font-size: 0.88rem;
 }
 
@@ -1192,3 +1213,116 @@
   background: #ef4444;
   color: #fff;
 }
+
+/* 🦆 Balltrap Flying Ducks Animation */
+.tribune-feed-container {
+  position: relative;
+}
+
+.balltrap-duck {
+  position: absolute;
+  z-index: 100;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  background: rgba(234, 179, 8, 0.9);
+  color: #0f172a;
+  border: 1px solid #fde047;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.4);
+  white-space: nowrap;
+  pointer-events: auto;
+  transition: transform 0.1s linear;
+}
+
+.balltrap-duck.fly-left-to-right {
+  animation: balltrapFlyRight 5.5s linear forwards;
+}
+
+.balltrap-duck.fly-right-to-left {
+  animation: balltrapFlyLeft 5.5s linear forwards;
+}
+
+.balltrap-duck:hover {
+  transform: scale(1.2) rotate(-5deg);
+  background: #facc15;
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.8);
+}
+
+.balltrap-duck.shot {
+  animation: balltrapExplode 0.6s ease-out forwards !important;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.9) !important;
+  pointer-events: none;
+}
+
+@keyframes balltrapFlyRight {
+  0% { left: -120px; transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-18px) rotate(3deg); }
+  50% { transform: translateY(12px) rotate(-3deg); }
+  75% { transform: translateY(-10px) rotate(2deg); }
+  100% { left: calc(100% + 40px); transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes balltrapFlyLeft {
+  0% { right: -120px; transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(18px) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+  75% { transform: translateY(10px) rotate(-2deg); }
+  100% { right: calc(100% + 40px); transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes balltrapExplode {
+  0% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.6) rotate(20deg); opacity: 0.9; }
+  100% { transform: scale(0.2) rotate(90deg); opacity: 0; }
+}
+
+/* 🧮 Per-Message Trollability Badges */
+.troll-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: auto;
+  align-self: center;
+  flex-shrink: 0;
+  min-width: 48px;
+  text-align: center;
+  cursor: help;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.troll-badge-zen {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.troll-badge-warning {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.troll-badge-danger {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  animation: trollPulse 2s infinite ease-in-out;
+}
+
+@keyframes trollPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { opacity: 0.85; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+}
+
