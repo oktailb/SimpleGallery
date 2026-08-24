@@ -164,8 +164,10 @@
       }
     }
 
-    open() {
+    open(fileOrParams, params) {
       if (!window.WindowManager) return;
+
+      params = params || ((typeof fileOrParams === 'object' && fileOrParams && !fileOrParams.name) ? fileOrParams : {});
 
       const title = this.t('apps.system-monitor.title') || "Moniteur Système";
       let win = window.WindowManager.windows.get(this.winId);
@@ -179,7 +181,7 @@
       const defaultW = Math.min(880, Math.max(560, Math.round(window.innerWidth * 0.75)));
       const defaultH = Math.min(620, Math.max(460, Math.round(window.innerHeight * 0.75)));
 
-      const targetState = params.state || 'normal';
+      const targetState = (params && params.state) ? params.state : 'normal';
       win = window.WindowManager.createWindow({
         id: this.winId,
         appId: 'system-monitor',
