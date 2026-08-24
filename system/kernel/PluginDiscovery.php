@@ -63,8 +63,12 @@ class PluginDiscovery {
             $css_entry = null;
             if (!empty($manifest['entry']['css']) && file_exists($app_path . '/' . $manifest['entry']['css'])) {
                 $css_entry = 'apps/' . $rel_key . '/' . $manifest['entry']['css'];
+            } elseif (!empty($manifest['styles'][0]) && file_exists($app_path . '/' . $manifest['styles'][0])) {
+                $css_entry = 'apps/' . $rel_key . '/' . $manifest['styles'][0];
             } elseif (file_exists($app_path . '/app.css')) {
                 $css_entry = 'apps/' . $rel_key . '/app.css';
+            } elseif (file_exists($app_path . '/style.css')) {
+                $css_entry = 'apps/' . $rel_key . '/style.css';
             } elseif (file_exists($app_path . '/' . $folder . '.css')) {
                 $css_entry = 'apps/' . $rel_key . '/' . $folder . '.css';
             }
