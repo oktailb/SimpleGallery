@@ -510,6 +510,9 @@
     "taskbar.focused": "Au premier plan",
     "taskbar.close": "Fermer la fenêtre",
     "taskbar.quick_sysmon": "Moniteur Système (Télémétrie)",
-    "nav.search_apps": "Rechercher une application..."
+    "nav.search_apps": "Rechercher une application...",
+
+    "apps.sim-maintenance.title": "Sim Maintenance",
+    "apps.sim-maintenance.subtitle": "Supervision technique, checklists réglementaires et télémétrie du simulateur EC135"
   }
 }

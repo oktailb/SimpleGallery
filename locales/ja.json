@@ -510,6 +510,9 @@
     "taskbar.focused": "最前面",
     "taskbar.close": "ウィンドウを閉じる",
     "taskbar.quick_sysmon": "システムモニター（テレメトリ）",
-    "nav.search_apps": "アプリケーションを検索..."
+    "nav.search_apps": "アプリケーションを検索...",
+
+    "apps.sim-maintenance.title": "Sim Maintenance",
+    "apps.sim-maintenance.subtitle": "EC135 シミュレーター保守点検・環境監視"
   }
 }

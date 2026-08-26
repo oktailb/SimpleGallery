@@ -1,0 +1,31 @@
+{
+  "id": "sim-maintenance",
+  "name": "Sim Maintenance",
+  "version": "1.0.0",
+  "description": "Supervision technique, checklists réglementaires et télémétrie du simulateur EC135",
+  "icon": "🛠️",
+  "category": "system",
+  "author": "SimpleGallery WebOS",
+  "entry": {
+    "js": "app.js",
+    "css": "style.css"
+  },
+  "window": {
+    "title": "EC135 FFS — Maintenance & Supervision",
+    "width": 1120,
+    "height": 720,
+    "minWidth": 800,
+    "minHeight": 520,
+    "resizable": true
+  },
+  "scripts": [
+    "app.js"
+  ],
+  "styles": [
+    "style.css"
+  ],
+  "permissions": [
+    "network",
+    "storage"
+  ]
+}

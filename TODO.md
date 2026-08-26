@@ -64,7 +64,7 @@ Un environnement de développement complet intégré, capable de transformer Sim
 
 ---
 
-## 3. 📊 Moniteur Système & Gestionnaire de Tâches (*Activity Monitor*)
+## 3. [DONE !] 📊 Moniteur Système & Gestionnaire de Tâches (*Activity Monitor*)
 *ID App* : `system-monitor` | *Catégorie* : `system` | *Icône* : `📈`
 
 ### Objectifs & Architecture
@@ -117,7 +117,7 @@ Plateforme d'émulation et de rétrogaming intégrée, exécutant des cœurs Web
 
 ---
 
-## 6. 🖥️ Barre des Tâches & Dock Évolué ("Next-Gen Taskbar")
+## 6. [DONE !] 🖥️ Barre des Tâches & Dock Évolué ("Next-Gen Taskbar")
 *Composant* : `system/userland/core/TaskbarManager.js` | *Région* : `WebOS Shell`
 
 ### Objectifs & Architecture
@@ -138,7 +138,7 @@ Faire évoluer le dock actuel vers une barre des tâches complète de système d
 
 ---
 
-## 7. 💬 Chat / Tribune Libre (*Client Bouchot & Coincoin LinuxFR*)
+## 7. [DONE !] 💬 Chat / Tribune Libre (*Client Bouchot & Coincoin LinuxFR*)
 *ID App* : `tribune` | *Catégorie* : `communication` | *Icône* : `🦆`
 
 ### Objectifs & Architecture
@@ -218,7 +218,7 @@ Extension des modules de jeux pour supporter le jeu à plusieurs, soit en local 
 
 | Phase | Domaine | Applications & Modules Clés |
 | :--- | :--- | :--- |
-| **Phase 1** | *Système & Diagnostics* | **Moniteur Système** (`system-monitor`), **Terminal WebOS sécurisé** (`terminal`), **Évolution Taskbar / Dock**. |
+| **Phase 1 [DONE !]** | *Système & Diagnostics* | **Moniteur Système** (`system-monitor`), **Terminal WebOS sécurisé** (`terminal`), **Évolution Taskbar / Dock**. |
 | **Phase 2** | *Productivité & Outils* | **Calculatrice Scientifique & Graphique** (`graphing-calc`), **Suite Bureautique & ODF XML** (`doc-viewer` / `calc`), **Client SQL** (`sql-client`). |
 | **Phase 3** | *Développement & Chat* | **IDE Multi-Langages & Toolchain** (`code-studio`), **Client Tribune / Bouchot** (`tribune`). |
 | **Phase 4** | *Rétrogaming & Multijoueur* | **Émulateur Rétro & Doom Wasm** (`retro-station`), **Table Virtuelle JDR & Jeux 2P** (`jdr-vtt`). |

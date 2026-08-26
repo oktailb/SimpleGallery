@@ -510,6 +510,9 @@
     "taskbar.focused": "Focused",
     "taskbar.close": "Close Window",
     "taskbar.quick_sysmon": "System Monitor (Telemetry)",
-    "nav.search_apps": "Search applications..."
+    "nav.search_apps": "Search applications...",
+
+    "apps.sim-maintenance.title": "Sim Maintenance",
+    "apps.sim-maintenance.subtitle": "Technical Checklists, Environmental Telemetry & Compliance for EC135 FFS"
   }
 }

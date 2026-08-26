@@ -1,0 +1,31 @@
+{
+  "id": "sim-logbook",
+  "name": "Sim Logbook",
+  "version": "1.0.0",
+  "description": "Carnet de vol et opérations du simulateur EC135 FFS",
+  "icon": "🚁",
+  "category": "productivity",
+  "author": "SimpleGallery WebOS",
+  "entry": {
+    "js": "app.js",
+    "css": "style.css"
+  },
+  "window": {
+    "title": "EC135 FFS — Operation Logbook",
+    "width": 1050,
+    "height": 680,
+    "minWidth": 720,
+    "minHeight": 480,
+    "resizable": true
+  },
+  "scripts": [
+    "app.js"
+  ],
+  "styles": [
+    "style.css"
+  ],
+  "permissions": [
+    "network",
+    "storage"
+  ]
+}

@@ -1,0 +1,740 @@
+/**
+ * SimpleGallery WebOS - Sim Logbook Application Styles
+ * Authentic Airbus Helicopters Operation Log UX for Instructors & iPad.
+ */
+
+:root {
+  --sim-bg: #f8fafc;
+  --sim-panel-bg: #ffffff;
+  --sim-border: #cbd5e1;
+  --sim-border-light: #e2e8f0;
+  --sim-text: #0f172a;
+  --sim-text-muted: #64748b;
+  --sim-primary: #0284c7;
+  --sim-primary-hover: #0369a1;
+  --sim-accent-green: #10b981;
+  --sim-accent-green-hover: #059669;
+  --sim-danger: #ef4444;
+  --sim-warning: #f59e0b;
+  --sim-airbus-blue: #00205b;
+}
+
+.sim-logbook-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--sim-bg);
+  color: var(--sim-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Top Header & Navigation Bar
+   ========================================================================== */
+
+.sim-logbook-header {
+  background: var(--sim-panel-bg);
+  border-bottom: 2px solid var(--sim-border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sim-logbook-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sim-brand-logo-text {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: var(--sim-airbus-blue);
+  font-family: "Arial Black", Gadget, sans-serif;
+}
+
+.sim-brand-sub {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  margin-left: 4px;
+}
+
+.sim-logbook-title-tag {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: 0.5px;
+  border-left: 2px solid var(--sim-border);
+  padding-left: 12px;
+}
+
+.sim-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sim-tool-icon-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  transition: all 0.15s ease;
+}
+
+.sim-tool-icon-btn:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.sim-lang-switcher {
+  display: flex;
+  background: #f1f5f9;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.sim-lang-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #475569;
+}
+
+.sim-lang-btn.active {
+  background: #ffffff;
+  color: #0284c7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   Date Bar & Fast Navigator
+   ========================================================================== */
+
+.sim-date-bar {
+  background: #f8fafc;
+  border-bottom: 1px solid var(--sim-border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sim-date-display-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.sim-date-picker-input {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border: 1.5px solid var(--sim-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  min-height: 38px;
+}
+
+.sim-weekday-badge {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+.sim-nav-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sim-nav-action-btn {
+  background: #ffffff;
+  border: 1.5px solid var(--sim-border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  min-height: 38px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.sim-nav-action-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.sim-nav-action-btn.today-btn {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  font-weight: 800;
+}
+
+.sim-nav-action-btn.today-btn:hover {
+  background: #0369a1;
+}
+
+/* ==========================================================================
+   Main Content Area & Table
+   ========================================================================== */
+
+.sim-logbook-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sim-table-wrapper {
+  background: #ffffff;
+  border: 1.5px solid var(--sim-border);
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.sim-operation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.sim-operation-table thead th {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--sim-border);
+  border-right: 1px solid #cbd5e1;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.sim-operation-table thead th:last-child {
+  border-right: none;
+}
+
+.sim-operation-table tbody tr {
+  border-bottom: 1px solid var(--sim-border-light);
+  transition: background 0.1s;
+}
+
+.sim-operation-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.sim-operation-table tbody td {
+  padding: 10px 8px;
+  border-right: 1px solid var(--sim-border-light);
+  vertical-align: middle;
+  color: #1e293b;
+}
+
+.sim-operation-table tbody td:last-child {
+  border-right: none;
+}
+
+.sim-operation-table tbody tr.row-cancelled td {
+  background: #fff1f2;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.sim-operation-table tbody tr.row-cancelled td.col-actions {
+  text-decoration: none;
+}
+
+/* Badges */
+.sim-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.badge-wet { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.badge-dry { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge-internal { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+.badge-maint { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.badge-other { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+.badge-good { background: #dcfce7; color: #166534; font-weight: 800; }
+.badge-bad { background: #fee2e2; color: #991b1b; font-weight: 800; }
+
+.sim-motion-icon {
+  font-size: 15px;
+  color: #16a34a;
+  font-weight: 900;
+}
+
+/* Table Row Action Buttons (Touch Friendly) */
+.sim-row-action-btn {
+  background: #ffffff;
+  border: 1px solid var(--sim-border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  min-height: 34px;
+  min-width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
+  transition: all 0.15s;
+}
+
+.sim-row-action-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.sim-row-action-btn.delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+/* ==========================================================================
+   Add / Edit Fast Training Form (Ergonomic for iPad & Non-Techs)
+   ========================================================================== */
+
+.sim-form-card {
+  background: #ffffff;
+  border: 2px solid #94a3b8;
+  border-radius: 8px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.sim-form-header-bar {
+  background: #cbd5e1;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sim-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+  align-items: center;
+}
+
+@media (max-width: 820px) {
+  .sim-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sim-field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-field-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.sim-input-text {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border: 1.5px solid var(--sim-border);
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+  min-height: 40px;
+}
+
+.sim-input-text:focus {
+  border-color: #0284c7;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.sim-time-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sim-select-styled {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border: 1.5px solid var(--sim-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  min-height: 40px;
+  outline: none;
+  cursor: pointer;
+}
+
+.sim-select-styled:focus {
+  border-color: #0284c7;
+}
+
+.sim-duration-pill {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #bae6fd;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sim-form-action-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.sim-submit-btn {
+  background: var(--sim-accent-green);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  transition: all 0.15s ease;
+}
+
+.sim-submit-btn:hover {
+  background: var(--sim-accent-green-hover);
+  transform: translateY(-1px);
+}
+
+.sim-submit-btn:active {
+  transform: translateY(0);
+}
+
+.sim-cancel-edit-btn {
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 46px;
+}
+
+/* ==========================================================================
+   Maintenance Log (News) Alert Bar
+   ========================================================================== */
+
+.sim-news-banner {
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 13px;
+  color: #991b1b;
+  font-weight: 700;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sim-news-banner:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.sim-news-text-zone {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.sim-news-blink {
+  animation: simBlink 1.8s infinite ease-in-out;
+  color: #dc2626;
+  font-weight: 900;
+  white-space: nowrap;
+  padding-top: 3px;
+}
+
+.sim-news-content-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+}
+
+.sim-news-bullet-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.sim-bullet-dot {
+  color: #dc2626;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.sim-news-edit-btn {
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.sim-news-edit-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.sim-news-blink {
+  animation: simBlink 1.8s infinite ease-in-out;
+  color: #dc2626;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@keyframes simBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ==========================================================================
+   Modal: Statistics & Totals (Σ)
+   ========================================================================== */
+
+.sim-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.sim-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 680px;
+  width: 100%;
+  border: 1.5px solid var(--sim-border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-modal-header {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.sim-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.sim-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.sim-stat-box {
+  background: #f8fafc;
+  border: 1.5px solid var(--sim-border-light);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sim-stat-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--sim-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sim-stat-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0284c7;
+  font-family: monospace;
+}
+
+.sim-modal-footer {
+  background: #f8fafc;
+  border-top: 1px solid var(--sim-border-light);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Print / PDF Layout (Clean A4 Document)
+   ========================================================================== */
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+  
+  body, .sim-logbook-container {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  .sim-logbook-header .sim-header-actions,
+  .sim-nav-btn-group,
+  .sim-form-card,
+  .sim-modal-overlay,
+  .sim-news-banner,
+  .sim-row-action-btn {
+    display: none !important;
+  }
+  
+  .sim-table-wrapper {
+    border: 1.5px solid #000 !important;
+    box-shadow: none !important;
+  }
+  
+  .sim-operation-table thead th {
+    background: #f1f5f9 !important;
+    color: #000 !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .sim-operation-table tbody td {
+    border: 1px solid #ccc !important;
+    color: #000 !important;
+  }
+}
