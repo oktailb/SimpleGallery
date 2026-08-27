@@ -213,12 +213,28 @@
                 this.activeTab = launchArgs.tab;
             }
 
+            // Ensure latest stylesheet is loaded with cachebuster on iPad/Safari
+            try {
+                var isStandalone = window.location.pathname.indexOf('/apps/sim-maintenance') !== -1;
+                var styleUrl = (isStandalone ? 'style.css' : 'apps/sim-maintenance/style.css') + '?t=' + Date.now();
+                var styleTag = document.querySelector('link#sim-maint-dyn-style');
+                if (!styleTag) {
+                    styleTag = document.createElement('link');
+                    styleTag.id = 'sim-maint-dyn-style';
+                    styleTag.rel = 'stylesheet';
+                    styleTag.href = styleUrl;
+                    document.head.appendChild(styleTag);
+                } else {
+                    styleTag.href = styleUrl;
+                }
+            } catch (e) {}
+
             await this.loadLocalLocale();
             await this.loadTechnicians();
-            await this.loadTelemetry();
 
             this.renderLayout();
             this.loadActiveChecklist();
+            await this.loadTelemetry();
             this.loadTelemetryHistory();
             this.loadArchives();
 
@@ -269,6 +285,456 @@
                 return window.I18nEngine.currentLocale;
             }
             return localStorage.getItem('sg_locale') || 'fr';
+        }
+
+        renderCBLeftPanel() {
+            var cb = function(id, name, rating) {
+                if (!rating) return '<div class="cb-item-slot"><div class="cb-blank-plug"></div><span class="cb-name-lbl">' + (name || '') + '</span></div>';
+                return '<div class="cb-item-slot">' +
+                    '<div class="cb-btn" id="' + id + '" data-cb-id="' + id + '" title="' + name + ' (' + rating + 'A)">' +
+                        '<span class="cb-rating-lbl">' + rating + '</span>' +
+                    '</div>' +
+                    '<span class="cb-name-lbl">' + name + '</span>' +
+                '</div>';
+            };
+
+            return `
+                <div class="ec135-cb-panel cb-left" id="ec135-cb-left-panel">
+                    <div class="cb-screw" style="top:12px; left:14px;"></div>
+                    <div class="cb-screw" style="bottom:16px; left:14px;"></div>
+                    <div class="cb-screw" style="top:12px; right:14px;"></div>
+                    <div class="cb-screw" style="bottom:16px; right:14px;"></div>
+                    <div class="cb-screw" style="top:48%; left:8px;"></div>
+
+                    <!-- Row 1: AC BUS I -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">AC BUS I</span>
+                            <div class="cb-items-grid" style="padding-right: 70px;">
+                                ${cb('cb-l-ahrs1-ac', 'AHRS 1', '1')}
+                                ${cb('cb-l-rolls-sas', 'ROLL SAS', '1')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-stby-hor', 'STBY HOR', '2')}
+                            </div>
+                            <div class="cb-guarded-switch-slot">
+                                <div class="cb-guard-cover"><div class="cb-guard-lever" id="sw-shed-bus1"></div></div>
+                                <div class="cb-guard-labels">EMERG<br>NORM<br>SHED</div>
+                                <div class="cb-guard-cover"><div class="cb-guard-lever" id="sw-bus-tie1"></div></div>
+                                <div class="cb-guard-labels">RES<br>OFF<br>TIE I</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: AVIONIC SHED BUS I & SHED BUS I -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">AVIONIC SHED BUS I</span>
+                            <div class="cb-items-grid">
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-dimm-test', 'DIMM TEST', '2')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-fuzz-burn', 'FUZZ BURN', '5')}
+                                ${cb('cb-l-hor-bat', 'HOR BAT', '15')}
+                                ${cb('cb-l-airmap', 'AIRMAP', '5')}
+                                ${cb('cb-l-pwr-lhook', 'PWR (HOOK)', '15')}
+                                ${cb('cb-l-cont-lhook', 'CONT (HOOK)', '5')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: SHED BUS I -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">SHED BUS I</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-l-vhf-tx1', 'VHF TX 1', '5')}
+                                ${cb('cb-l-nms1', 'NMS 1', '5')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-conv', 'CONV', '15')}
+                                ${cb('cb-l-shedbus1', 'SHED BUS1', '20')}
+                                ${cb('cb-l-pitot-htr-cp', 'PITOT HTR-CP', '7½')}
+                                ${cb('cb-l-pwr-ldg', 'PWR (LDG)', '20')}
+                                ${cb('cb-l-cont-ldg', 'CONT (LDG)', '2')}
+                                ${cb('cb-l-pos-lt', 'POS LT', '5')}
+                                ${cb('cb-l-trim-act', 'TRIM ACT', '2')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: AVIONIC ESS BUS I -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">AVIONIC ESS BUS I</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-l-apms-dtc', 'APMS/DTC', '5')}
+                                ${cb('cb-l-ap1', 'AP 1', '2')}
+                                ${cb('cb-l-adc1', 'ADC 1', '1')}
+                                ${cb('cb-l-ahrs1-ess', 'AHRS 1', '5')}
+                                ${cb('cb-l-blw-pel', 'BLW PEL', '1')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-wiper', 'WIPER', '15')}
+                                ${cb('cb-l-pr-sas', 'P/R SAS', '2')}
+                                ${cb('cb-l-trim-rel', 'TRIM REL', '1')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: ESS BUS I (Upper) -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">ESS BUS I</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-l-fcds2-backup', 'FCDS 2 BCK', '7½')}
+                                ${cb('cb-l-fcdm1', 'FCDM 1', '3')}
+                                ${cb('cb-l-nd1', 'ND 1', '3')}
+                                ${cb('cb-l-pfd1', 'PFD 1', '3')}
+                                ${cb('cb-l-cont-winch', 'CONT WINCH', '7½')}
+                                ${cb('cb-l-cc-pil', 'CC-PIL WINCH', '7½')}
+                                ${cb('cb-l-vent-syst', 'VENT SYST', '15')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-ckpt-lt', 'CKPT LT', '1')}
+                                ${cb('', '', '')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 6: ESS BUS I (Lower) -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">ESS BUS I (PWR & SEMA)</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-l-master1', 'MASTER 1', '1')}
+                                ${cb('cb-l-ess-bus1', 'ESS BUS 1', '20')}
+                                ${cb('cb-l-dtu', 'DTU', '2')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-ics-emerg', 'ICS EMERG', '3')}
+                                ${cb('cb-l-roll-sema', 'ROLL SEMA', '3')}
+                                ${cb('cb-l-yaw-sema', 'YAW SEMA', '3')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 7: ENG I -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">ENG I</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-l-xfer-f-pump', 'XFER-F PUMP', '5')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-n2', 'N2', '1')}
+                                ${cb('cb-l-prime-p', 'PRIME-P', '5')}
+                                ${cb('cb-l-fire-d', 'FIRE-D', '1')}
+                                ${cb('cb-l-fuel-v', 'FUEL-V', '1')}
+                                ${cb('cb-l-ign', 'IGN', '7½')}
+                                ${cb('cb-l-start', 'START', '5')}
+                                ${cb('cb-l-fadec', 'FADEC', '7½')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 8: SYS I -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title">SYS I</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-l-htg-motor', 'HTG MOTOR', '5')}
+                                ${cb('', '', '')}
+                                ${cb('cb-l-fire-e', 'FIRE-E', '5')}
+                                ${cb('cb-l-fuel-l', 'FUEL-L', '1')}
+                                ${cb('cb-l-hyd-p', 'HYD-P', '2')}
+                                ${cb('cb-l-warn', 'WARN', '2')}
+                                ${cb('cb-l-cad', 'CAD', '5')}
+                                ${cb('cb-l-vemd', 'VEMD', '5')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderOVHDCenterPanel() {
+            var toggle = function(id, name, isRed, defaultUp) {
+                var collarClass = isRed ? 'ohp-toggle-collar-red' : 'ohp-toggle-collar-std';
+                var stateClass = defaultUp ? 'state-up' : 'state-down';
+                return '<div class="ohp-toggle-wrap ' + stateClass + '" id="' + id + '" data-toggle-id="' + id + '" title="' + name + '">' +
+                    '<div class="' + collarClass + '"><div class="ohp-toggle-bat"></div></div>' +
+                    '<span class="ohp-switch-lbl">' + name + '</span>' +
+                '</div>';
+            };
+
+            var pot = function(id, name) {
+                return '<div class="ohp-pot-wrap" id="' + id + '" title="' + name + '">' +
+                    '<div class="ohp-pot-dial"></div>' +
+                    '<span class="ohp-switch-lbl">' + name + '</span>' +
+                '</div>';
+            };
+
+            return `
+                <div class="ec135-ovhd-center-panel" id="ec135-ovhd-center-panel">
+                    <div class="cb-screw" style="top:10px; left:12px;"></div>
+                    <div class="cb-screw" style="top:10px; right:12px;"></div>
+                    <div class="cb-screw" style="bottom:12px; left:12px;"></div>
+                    <div class="cb-screw" style="bottom:12px; right:12px;"></div>
+
+                    <!-- Row 1: Safety, Inverters, Avionics Master -->
+                    <div class="ohp-section-box">
+                        <div class="ohp-row-flex">
+                            ${toggle('sw-emerg-floats', 'EMERG<br>FLOATS', false, false)}
+                            ${toggle('sw-fire-ext1', 'FIRE 1<br>E/W', true, false)}
+                            ${toggle('sw-fire-ext2', 'FIRE 2<br>E/W', true, false)}
+                            ${toggle('sw-warn-unit', 'WARN<br>UNIT', true, true)}
+                            ${toggle('sw-sys2-hyd', 'SYS 2<br>HYD', false, true)}
+                            ${toggle('sw-eng-ovspd', 'ENG 1/2<br>OVSPD', false, false)}
+                            ${toggle('sw-inverter', 'INVERTER', true, true)}
+                            ${toggle('sw-avio-mstr1', 'AVIO 1<br>MSTR', true, true)}
+                            ${toggle('sw-avio-mstr2', 'AVIO 2<br>MSTR', true, true)}
+                            ${toggle('sw-stby-hdr', 'STBY<br>HDR', true, true)}
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Winch, Anti-Ice, Vent, Heating, Wiper -->
+                    <div class="ohp-section-box">
+                        <div class="ohp-row-flex">
+                            ${toggle('sw-winch-cut', 'WINCH<br>CUT', true, false)}
+                            ${toggle('sw-chip-burn', 'ENG CHIP<br>BURN', false, false)}
+                            ${toggle('sw-cpil-htr', 'C-PIL<br>HTR', true, false)}
+                            ${toggle('sw-plt-htr', 'PILOT<br>HTR', true, false)}
+                            ${toggle('sw-air-cond', 'AIR<br>COND', false, false)}
+                            ${pot('pot-vent-ctrl', 'VENT<br>MIN/MAX')}
+                            ${toggle('sw-pax-blw', 'PAX<br>BLW', false, false)}
+                            ${pot('pot-bld-htg', 'BLD HTG<br>CTRL')}
+                            ${toggle('sw-bld-htg-mode', 'BLD HTG<br>EMER/NORM', true, true)}
+                            ${toggle('sw-wiper', 'WIPER<br>FAST/OFF', false, false)}
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Fuel Pumps -->
+                    <div class="ohp-section-box">
+                        <div class="ohp-row-flex">
+                            ${toggle('sw-ems', 'EMS', false, true)}
+                            ${toggle('sw-tas', 'TAS', false, true)}
+                            ${toggle('sw-fuel-prime1', 'PRIME I<br>PUMP', true, true)}
+                            ${toggle('sw-fuel-prime2', 'PRIME II<br>PUMP', true, true)}
+                            ${toggle('sw-fuel-xfer1', 'XFER I<br>PUMP', true, true)}
+                            ${toggle('sw-fuel-xfer2', 'XFER II<br>PUMP', true, true)}
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Lighting & Instruments Dimming -->
+                    <div class="ohp-section-box">
+                        <div class="ohp-row-flex">
+                            ${pot('pot-stby-hor-brt', 'STBY HOR<br>BRT')}
+                            ${pot('pot-instr-dim-brt', 'INSTR<br>BRT')}
+                            ${toggle('sw-day-night-nvg', 'DAY / NIGHT<br>NVG', false, true)}
+                            ${toggle('sw-pax-cargo', 'PAX / CRG<br>LIGHT', false, false)}
+                            ${toggle('sw-strobe', 'STROBE<br>LIGHT', false, true)}
+                            ${toggle('sw-pos-lt', 'POS<br>LIGHT', false, true)}
+                            ${toggle('sw-acoll', 'A-COLL<br>LIGHT', false, true)}
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Engines Controls -->
+                    <div class="ohp-section-box">
+                        <div class="ohp-row-flex">
+                            ${toggle('sw-n2-adjust', 'N2<br>ADJUST', false, false)}
+                            ${toggle('sw-eng1-vent', 'ENG I<br>VENT/NORM', true, true)}
+                            <div style="font-family:'Inter',sans-serif; font-size:9px; font-weight:900; color:#fff; text-align:center; padding:4px 8px; background:#0f172a; border:1px solid #334155; border-radius:4px;">
+                                ENG MODE<br>SEL (FADEC)
+                            </div>
+                            ${toggle('sw-eng2-vent', 'ENG II<br>VENT/NORM', true, true)}
+                        </div>
+                    </div>
+
+                    <!-- Digital Display: ROTOR BRAKE -->
+                    <div class="ohp-chrono-mount" title="ROTOR BRAKE">
+                        <div style="font-family:'Inter',sans-serif; font-size:7.5px; font-weight:900; color:#0f172a; text-align:center; margin-bottom:2px; letter-spacing:0.5px;">ROTOR BRAKE</div>
+                        <div class="ohp-chrono-screen">
+                            <div class="ohp-chrono-digits" id="ohp-chrono-val">0.00</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderCBRightPanel() {
+            var cb = function(id, name, rating) {
+                if (!rating) return '<div class="cb-item-slot"><div class="cb-blank-plug"></div><span class="cb-name-lbl">' + (name || '') + '</span></div>';
+                return '<div class="cb-item-slot">' +
+                    '<div class="cb-btn" id="' + id + '" data-cb-id="' + id + '" title="' + name + ' (' + rating + 'A)">' +
+                        '<span class="cb-rating-lbl">' + rating + '</span>' +
+                    '</div>' +
+                    '<span class="cb-name-lbl">' + name + '</span>' +
+                '</div>';
+            };
+
+            return `
+                <div class="ec135-cb-panel cb-right" id="ec135-cb-right-panel">
+                    <div class="cb-screw" style="top:12px; left:14px;"></div>
+                    <div class="cb-screw" style="bottom:16px; left:14px;"></div>
+                    <div class="cb-screw" style="top:12px; right:14px;"></div>
+                    <div class="cb-screw" style="bottom:16px; right:14px;"></div>
+                    <div class="cb-screw" style="top:48%; right:8px;"></div>
+
+                    <!-- Row 1: AC BUS II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">AC BUS II</span>
+                            <div class="cb-guarded-switch-slot" style="left: 8px; right: auto;">
+                                <div class="cb-guard-cover"><div class="cb-guard-lever" id="sw-bus-tie2"></div></div>
+                                <div class="cb-guard-labels">RES<br>OFF<br>TIE II</div>
+                            </div>
+                            <div class="cb-items-grid" style="padding-left: 70px;">
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-pitch-sas', 'PITCH SAS', '1')}
+                                ${cb('', '', '')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: AVIONIC SHED BUS II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">AVIONIC SHED BUS II</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-r-xfer-a-pump', 'XFER-A PUMP', '5')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-pax-blw', 'PAX BLW', '1')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-mkr', 'MKR', '1')}
+                                ${cb('cb-r-rad-alt', 'RAD ALT', '3')}
+                                ${cb('cb-r-dme', 'DME', '2')}
+                                ${cb('', '', '')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: SHED BUS II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">SHED BUS II</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-r-strobe', 'STROBE', '5')}
+                                ${cb('cb-r-pax-lt', 'PAX LIGHT', '5')}
+                                ${cb('cb-r-shedbus2', 'SHED BUS 2', '20')}
+                                ${cb('cb-r-pc2', 'PC2', '3')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-blw-pel', 'BLW PEL', '1')}
+                                ${cb('cb-r-ahrs2', 'AHRS 2', '5')}
+                                ${cb('cb-r-adc2', 'ADC 2', '1')}
+                                ${cb('cb-r-ap2', 'AP 2', '2')}
+                                ${cb('cb-r-elt', 'ELT', '1')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: AVIONIC ESS BUS II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">AVIONIC ESS BUS II</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-r-yaw', 'YAW', '3')}
+                                ${cb('cb-r-mast-mm', 'MAST MM', '1')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-nms2', 'NMS 2', '5')}
+                                ${cb('cb-r-atc2', 'ATC 2', '5')}
+                                ${cb('cb-r-pfd2', 'PFD 2', '3')}
+                                ${cb('cb-r-nd2', 'ND 2', '3')}
+                                ${cb('cb-r-fcdm2', 'FCDM 2', '3')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: ESS BUS II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">ESS BUS II (LIGHT & WINCH)</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-r-instr-lt', 'INSTR LT', '10')}
+                                ${cb('cb-r-ldg-lt', 'LDG LIGHT', '10')}
+                                ${cb('cb-r-acoll-lt', 'A-COLL LT', '5')}
+                                ${cb('cb-r-cc-ped', 'CC-PED WINCH', '7½')}
+                                ${cb('cb-r-ground-rel', 'GROUND REL', '1')}
+                                ${cb('cb-r-pitch-damp', 'PITCH DAMP', '3')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-vhf-tx2', 'VHF TX 2', '5')}
+                                ${cb('cb-r-ics2', 'ICS 2 NORM', '3')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 6: ESS BUS II (PWR) -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">ESS BUS II (PWR)</span>
+                            <div class="cb-items-grid">
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-rotor-rpm', 'ROTOR RPM', '1')}
+                                ${cb('cb-r-ess-bus2', 'ESS BUS 2', '20')}
+                                ${cb('cb-r-master2', 'MASTER 2', '1')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 7: ENG II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">ENG II</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-r-fadec', 'FADEC', '7½')}
+                                ${cb('cb-r-start', 'START', '5')}
+                                ${cb('cb-r-ign', 'IGN', '7½')}
+                                ${cb('cb-r-fuel-v', 'FUEL-V', '1')}
+                                ${cb('cb-r-fire-d', 'FIRE-D', '1')}
+                                ${cb('cb-r-prime-p', 'PRIME-P', '5')}
+                                ${cb('cb-r-n2', 'N2', '1')}
+                                ${cb('', '', '')}
+                                ${cb('cb-r-pit-htr', 'PIT/ST HTR', '7½')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 8: SYS II -->
+                    <div class="cb-bus-row">
+                        <div class="cb-bus-line-wrap">
+                            <span class="cb-bus-title right">SYS II</span>
+                            <div class="cb-items-grid">
+                                ${cb('cb-r-vemd', 'VEMD', '5')}
+                                ${cb('cb-r-cad', 'CAD', '5')}
+                                ${cb('cb-r-warn', 'WARN', '2')}
+                                ${cb('cb-r-hyd-p', 'HYD-P', '2')}
+                                ${cb('cb-r-fuel-l', 'FUEL-L', '1')}
+                                ${cb('cb-r-fire-e', 'FIRE-E', '5')}
+                                ${cb('cb-r-inv2', 'INV 2', '15')}
+                                ${cb('cb-r-htg-cont', 'HTG CONT', '5')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         renderLayout() {
@@ -1050,41 +1516,144 @@
                                 <div class="tel-section-subtitle">${this.t('sim_maint.apc_sub', 'État des voyants et modes d\'engagement du pilote automatique EC135')}</div>
                             </div>
 
-                            <div class="avionics-subpanel-grid">
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🕹️ ${this.t('sim_maint.card_ap_safety', 'Engagement & Sécurité AP')}</span>
-                                    </div>
-                                    <div class="avionics-btn-matrix">
-                                        <div class="avionics-lamp-btn" id="apc-ap-off"><span class="avionics-lamp-lbl">AP OFF</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-trim-off"><span class="avionics-lamp-lbl">TRIM OFF</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-test-on"><span class="avionics-lamp-lbl">TEST ON</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-vs-on"><span class="avionics-lamp-lbl">V/S ON</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-ias"><span class="avionics-lamp-lbl">IAS</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-alt"><span class="avionics-lamp-lbl">ALT</span></div>
-                                    </div>
-                                </div>
+                            <div class="ec135-apc-cockpit-bay">
+                                <div class="ec135-apc-main-bezel">
+                                    <div class="apc-screw top-left"></div>
+                                    <div class="apc-screw bottom-left"></div>
+                                    <div class="apc-screw top-right"></div>
+                                    <div class="apc-screw bottom-right"></div>
 
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🧭 ${this.t('sim_maint.card_fd_modes', 'Modes Latéraux & Approche FD')}</span>
+                                    <!-- Top Row: AP, A.TRIM and TEST -->
+                                    <div class="apc-header-row">
+                                        <div class="apc-top-left-group">
+                                            <div class="apc-boxed-group">
+                                                <div class="apc-group-title">AP</div>
+                                                <div class="apc-btn apc-single" id="apc-ap-off"><span class="apc-lbl-amber">OFF</span></div>
+                                            </div>
+                                            <div class="apc-boxed-group">
+                                                <div class="apc-group-title">A.TRIM</div>
+                                                <div class="apc-btn apc-single" id="apc-trim-off"><span class="apc-lbl-amber">OFF</span></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="apc-boxed-group">
+                                            <div class="apc-group-title">TEST</div>
+                                            <div class="apc-btn apc-single" id="apc-test-on"><span class="apc-lbl-amber">ON</span></div>
+                                        </div>
                                     </div>
-                                    <div class="avionics-btn-matrix">
-                                        <div class="avionics-lamp-btn" id="apc-hdg"><span class="avionics-lamp-lbl">HDG ▶</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-nav-a"><span class="avionics-lamp-lbl">NAV A</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-nav-c"><span class="avionics-lamp-lbl">NAV C</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-app-a"><span class="avionics-lamp-lbl">APP A</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-app-c"><span class="avionics-lamp-lbl">APP C</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-alt-a"><span class="avionics-lamp-lbl">ALT.A ▶</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-bc-a"><span class="avionics-lamp-lbl">BC A</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-bc-c"><span class="avionics-lamp-lbl">BC C</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-gs-a"><span class="avionics-lamp-lbl">GS A</span></div>
-                                        <div class="avionics-lamp-btn" id="apc-gs-c"><span class="avionics-lamp-lbl">GS C</span></div>
+
+                                    <!-- Main Matrix: 5 Columns (BC, APP/GS, HDG/VS, NAV/IAS, ALT.A/ALT) -->
+                                    <div class="apc-matrix-bay">
+                                        <!-- Col 1: BC -->
+                                        <div class="apc-matrix-col">
+                                            <div class="apc-lower-bracket">
+                                                <div class="apc-btn apc-dual" id="apc-bc-btn">
+                                                    <span class="apc-sub-a" id="apc-bc-a">A</span>
+                                                    <span class="apc-sub-c" id="apc-bc-c">C</span>
+                                                </div>
+                                                <div class="apc-mode-lbl">BC</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Col 2: APP / GS -->
+                                        <div class="apc-matrix-col">
+                                            <div class="apc-upper-mode-box">
+                                                <div class="apc-btn apc-dual" id="apc-app-btn">
+                                                    <span class="apc-sub-a" id="apc-app-a">A</span>
+                                                    <span class="apc-sub-c" id="apc-app-c">C</span>
+                                                </div>
+                                                <div class="apc-mode-lbl">APP</div>
+                                            </div>
+                                            <div class="apc-lower-bracket">
+                                                <div class="apc-btn apc-dual" id="apc-gs-btn">
+                                                    <span class="apc-sub-a" id="apc-gs-a">A</span>
+                                                    <span class="apc-sub-c" id="apc-gs-c">C</span>
+                                                </div>
+                                                <div class="apc-mode-lbl">GS</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Col 3: HDG Knob / VS -->
+                                        <div class="apc-matrix-col">
+                                            <div class="apc-upper-knob-box">
+                                                <span class="apc-led-triangle" id="apc-hdg-led">▶</span>
+                                                <div class="apc-knob"><div class="apc-knob-cap"></div></div>
+                                                <div class="apc-mode-lbl">HDG</div>
+                                                <span class="apc-target-badge" id="apc-hdg-val">--°</span>
+                                            </div>
+                                            <div class="apc-lower-bracket">
+                                                <div class="apc-btn apc-single" id="apc-vs-btn"><span class="apc-lbl-green">ON</span></div>
+                                                <div class="apc-mode-lbl">VS</div>
+                                                <span class="apc-target-badge" id="apc-vs-val">-- FPM</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Col 4: NAV / IAS -->
+                                        <div class="apc-matrix-col">
+                                            <div class="apc-upper-mode-box">
+                                                <div class="apc-btn apc-dual" id="apc-nav-btn">
+                                                    <span class="apc-sub-a" id="apc-nav-a">A</span>
+                                                    <span class="apc-sub-c" id="apc-nav-c">C</span>
+                                                </div>
+                                                <div class="apc-mode-lbl">NAV</div>
+                                            </div>
+                                            <div class="apc-lower-bracket">
+                                                <div class="apc-btn apc-single" id="apc-ias-btn"><span class="apc-lbl-green">ON</span></div>
+                                                <div class="apc-mode-lbl">IAS</div>
+                                                <span class="apc-target-badge" id="apc-ias-val">-- KT</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Col 5: ALT.A Knob / ALT -->
+                                        <div class="apc-matrix-col">
+                                            <div class="apc-upper-knob-box">
+                                                <span class="apc-led-triangle" id="apc-alta-led">▶</span>
+                                                <div class="apc-knob"><div class="apc-knob-cap"></div></div>
+                                                <div class="apc-mode-lbl">ALT.A</div>
+                                                <span class="apc-target-badge" id="apc-alta-val">-- FT</span>
+                                            </div>
+                                            <div class="apc-lower-bracket">
+                                                <div class="apc-btn apc-single" id="apc-alt-btn"><span class="apc-lbl-green">ON</span></div>
+                                                <div class="apc-mode-lbl">ALT</div>
+                                                <span class="apc-target-badge" id="apc-alt-val">-- FT</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 5. Radionavigation & Balises (DME, GPS, MBR) -->
+                            <!-- 5. Plafonnier & Disjoncteurs (Overhead Panel - OHP) -->
+                            <div class="tel-section-header" style="margin-top: 24px;">
+                                <div class="tel-section-title">
+                                    <span>🛸 ${this.t('sim_maint.ohp_title', 'Plafonnier & Disjoncteurs (Overhead Panel & Circuit Breakers)')}</span>
+                                    <span class="tel-section-badge" style="background:#0f172a; border:1px solid #334155; color:#10b981;">ALL BUS OK</span>
+                                </div>
+                                <div class="tel-section-subtitle">${this.t('sim_maint.ohp_sub', 'Restitution photoréaliste des panneaux disjoncteurs gauche/droit et de la console centrale EC135')}</div>
+                            </div>
+
+                            <div class="ec135-ohp-cockpit-bay">
+                                <div class="ohp-view-selector">
+                                    <button class="ohp-tab-btn active" data-ohp-view="all">🛸 ${this.t('sim_maint.ohp_view_all', 'Vue 3 Panneaux')}</button>
+                                    <button class="ohp-tab-btn" data-ohp-view="left">🎛️ ${this.t('sim_maint.ohp_view_cb_left', 'Disjoncteurs Gauche (CB Left)')}</button>
+                                    <button class="ohp-tab-btn" data-ohp-view="center">🔻 ${this.t('sim_maint.ohp_view_center', 'Console Centrale Plafonnier (OVHD)')}</button>
+                                    <button class="ohp-tab-btn" data-ohp-view="right">🎛️ ${this.t('sim_maint.ohp_view_cb_right', 'Disjoncteurs Droit (CB Right)')}</button>
+                                </div>
+
+                                <div class="ohp-panels-column" id="ec135-ohp-panels-container">
+                                    <!-- Line 1: Circuit Breakers Left & Right -->
+                                    <div class="ohp-cb-dual-row" id="ohp-cb-dual-row">
+                                        ${this.renderCBLeftPanel()}
+                                        ${this.renderCBRightPanel()}
+                                    </div>
+
+                                    <!-- Line 2: Center Overhead Switch Console -->
+                                    <div class="ohp-center-console-row" id="ohp-center-console-row">
+                                        ${this.renderOVHDCenterPanel()}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Radionavigation & Balises (DME, GPS, MBR) -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
                                     <span>🛰️ ${this.t('sim_maint.radionav_title', 'Radionavigation & Balises (DME, GPS, MBR)')}</span>
@@ -1413,6 +1982,78 @@
                         this.loadTelemetry();
                     }
                 }.bind(this));
+            }
+
+            // Overhead Panels (OHP) View Switcher & Interactions
+            var ohpViewBtns = this.container.querySelectorAll('.ohp-tab-btn[data-ohp-view]');
+            var cbDualRow = this.container.querySelector('#ohp-cb-dual-row');
+            var centerConsoleRow = this.container.querySelector('#ohp-center-console-row');
+            var cbLeftPanel = this.container.querySelector('#ec135-cb-left-panel');
+            var ovhdCenterPanel = this.container.querySelector('#ec135-ovhd-center-panel');
+            var cbRightPanel = this.container.querySelector('#ec135-cb-right-panel');
+
+            for (var v = 0; v < ohpViewBtns.length; v++) {
+                (function(btn, self) {
+                    btn.addEventListener('click', function() {
+                        var allV = self.container.querySelectorAll('.ohp-tab-btn[data-ohp-view]');
+                        for (var j = 0; j < allV.length; j++) allV[j].classList.remove('active');
+                        btn.classList.add('active');
+
+                        var mode = btn.getAttribute('data-ohp-view');
+                        if (cbDualRow) cbDualRow.style.display = (mode === 'all' || mode === 'left' || mode === 'right') ? 'flex' : 'none';
+                        if (centerConsoleRow) centerConsoleRow.style.display = (mode === 'all' || mode === 'center') ? 'flex' : 'none';
+
+                        if (cbLeftPanel) cbLeftPanel.style.display = (mode === 'all' || mode === 'left') ? 'block' : 'none';
+                        if (cbRightPanel) cbRightPanel.style.display = (mode === 'all' || mode === 'right') ? 'block' : 'none';
+                        if (ovhdCenterPanel) ovhdCenterPanel.style.display = (mode === 'all' || mode === 'center') ? 'block' : 'none';
+                    });
+                })(ohpViewBtns[v], this);
+            }
+
+            // Interactive Circuit Breakers (Click to pop / reset)
+            var cbBtns = this.container.querySelectorAll('.cb-btn');
+            for (var b = 0; b < cbBtns.length; b++) {
+                cbBtns[b].addEventListener('click', function() {
+                    this.classList.toggle('popped');
+                });
+            }
+
+            // Interactive Overhead Toggle Switches
+            var ohpToggles = this.container.querySelectorAll('.ohp-toggle-wrap');
+            for (var tg = 0; tg < ohpToggles.length; tg++) {
+                ohpToggles[tg].addEventListener('click', function() {
+                    this.classList.toggle('state-up');
+                    this.classList.toggle('state-down');
+                });
+            }
+
+            // Interactive Chronometer
+            var chronoBtn = this.container.querySelector('#ohp-chrono-btn');
+            var chronoDisplay = this.container.querySelector('#ohp-chrono-val');
+            if (chronoBtn && chronoDisplay) {
+                var chronoRunning = false;
+                var chronoSeconds = 0;
+                var chronoTimer = null;
+
+                chronoBtn.addEventListener('click', function() {
+                    if (!chronoRunning) {
+                        chronoRunning = true;
+                        chronoTimer = setInterval(function() {
+                            chronoSeconds += 0.1;
+                            chronoDisplay.textContent = chronoSeconds.toFixed(2);
+                        }, 100);
+                    } else {
+                        chronoRunning = false;
+                        clearInterval(chronoTimer);
+                    }
+                });
+
+                chronoBtn.addEventListener('dblclick', function() {
+                    chronoRunning = false;
+                    clearInterval(chronoTimer);
+                    chronoSeconds = 0;
+                    chronoDisplay.textContent = '0.00';
+                });
             }
 
             var typeSelect = this.container.querySelector('#paper-select-type');
@@ -2914,6 +3555,7 @@
                 var data = await res.json();
                 var tEnd = performance.now();
                 console.log('[Telemetry fetch]', data);
+                if (!this.container) return;
                 if (data && (data.success || data.is_live || data.flight)) {
                     this.subsystemsPacketCount++;
                     this.telemetryData.temperature = (data.temperature !== undefined) ? data.temperature : 21.4;
@@ -3201,22 +3843,46 @@
                                 el.classList.toggle(isAmber ? 'active-amber' : 'active-green', !!isActive);
                             }
                         };
+                        var setSubLed = function(id, isActive) {
+                            var el = root.querySelector('#' + id);
+                            if (el) {
+                                el.classList.toggle('active', !!isActive);
+                            }
+                        };
+
                         setApcBtn('apc-ap-off', apc.ap_off, true);
                         setApcBtn('apc-trim-off', apc.trim_off, true);
-                        setApcBtn('apc-test-on', apc.test_on, false);
-                        setApcBtn('apc-vs-on', apc.vs_on, false);
-                        setApcBtn('apc-ias', apc.ias, false);
-                        setApcBtn('apc-alt', apc.alt, false);
-                        setApcBtn('apc-hdg', apc.hdg, false);
-                        setApcBtn('apc-nav-a', apc.nav_a, false);
-                        setApcBtn('apc-nav-c', apc.nav_c, true);
-                        setApcBtn('apc-app-a', apc.app_a, false);
-                        setApcBtn('apc-app-c', apc.app_c, true);
-                        setApcBtn('apc-alt-a', apc.alt_a, false);
-                        setApcBtn('apc-bc-a', apc.bc_a, false);
-                        setApcBtn('apc-bc-c', apc.bc_c, true);
-                        setApcBtn('apc-gs-a', apc.gs_a, false);
-                        setApcBtn('apc-gs-c', apc.gs_c, true);
+                        setApcBtn('apc-test-on', apc.test_on, true);
+                        setApcBtn('apc-vs-btn', apc.vs_on, false);
+                        setApcBtn('apc-ias-btn', apc.ias, false);
+                        setApcBtn('apc-alt-btn', apc.alt, false);
+
+                        setSubLed('apc-hdg-led', apc.hdg);
+                        setSubLed('apc-alta-led', apc.alt_a);
+
+                        setSubLed('apc-bc-a', apc.bc_a);
+                        setSubLed('apc-bc-c', apc.bc_c);
+                        setSubLed('apc-app-a', apc.app_a);
+                        setSubLed('apc-app-c', apc.app_c);
+                        setSubLed('apc-gs-a', apc.gs_a);
+                        setSubLed('apc-gs-c', apc.gs_c);
+                        setSubLed('apc-nav-a', apc.nav_a);
+                        setSubLed('apc-nav-c', apc.nav_c);
+
+                        var setTxt = function(id, val) {
+                            var el = root.querySelector('#' + id);
+                            if (el) el.textContent = val;
+                        };
+                        var hdgVal = apc.target_hdg ?? (data.flight ? data.flight.heading_mag : null);
+                        var altVal = apc.target_alt ?? (data.flight ? data.flight.altitude : null);
+                        var iasVal = apc.target_ias ?? (data.flight ? data.flight.airspeed_ias : null);
+                        var vsVal  = apc.target_vs ?? 0;
+
+                        setTxt('apc-hdg-val', (hdgVal !== null && hdgVal !== undefined) ? Math.round(hdgVal) + '°' : '--°');
+                        setTxt('apc-alta-val', (altVal !== null && altVal !== undefined) ? Math.round(altVal) + ' FT' : '-- FT');
+                        setTxt('apc-alt-val', (altVal !== null && altVal !== undefined) ? Math.round(altVal) + ' FT' : '-- FT');
+                        setTxt('apc-ias-val', (iasVal !== null && iasVal !== undefined) ? Math.round(iasVal) + ' KT' : '-- KT');
+                        setTxt('apc-vs-val', (vsVal !== null && vsVal !== undefined) ? (vsVal > 0 ? '+' : '') + Math.round(vsVal) + ' FPM' : '-- FPM');
 
                         var apcBadge = root.querySelector('#tel-apc-badge');
                         if (apcBadge) {
@@ -3377,6 +4043,28 @@
                         setLightBtn('light-cockpit', l.cockpit_light);
                         setLightBtn('light-map', l.map_holder);
                         setLightBtn('light-bg', l.bg_light);
+
+                        // Overhead Potentiometers Rotation (-135° at 0% to +135° at 100%)
+                        var potStbyDial = root.querySelector('#pot-stby-hor-brt .ohp-pot-dial');
+                        if (potStbyDial) {
+                            var stbyPct = (l.stby_hor_pct !== null && l.stby_hor_pct !== undefined) ? l.stby_hor_pct : 0;
+                            var stbyDeg = -135 + (Math.max(0, Math.min(100, stbyPct)) / 100.0) * 270.0;
+                            potStbyDial.style.transform = 'rotate(' + stbyDeg.toFixed(1) + 'deg)';
+                        }
+
+                        var potInstDial = root.querySelector('#pot-instr-dim-brt .ohp-pot-dial');
+                        if (potInstDial) {
+                            var instPct = (l.instruments_pct !== null && l.instruments_pct !== undefined) ? l.instruments_pct : 0;
+                            var instDeg = -135 + (Math.max(0, Math.min(100, instPct)) / 100.0) * 270.0;
+                            potInstDial.style.transform = 'rotate(' + instDeg.toFixed(1) + 'deg)';
+                        }
+                    }
+
+                    // Hydrate Overhead Center Panel (Rotor Brake display)
+                    var chronoDisplay = root.querySelector('#ohp-chrono-val');
+                    if (chronoDisplay && data.powerplant) {
+                        var rbVal = (data.powerplant.rotor_brake !== null && data.powerplant.rotor_brake !== undefined) ? data.powerplant.rotor_brake : 0.00;
+                        chronoDisplay.textContent = Number(rbVal).toFixed(2);
                     }
 
                     // 9. Hydrate Power Supply & Sim Platform Status

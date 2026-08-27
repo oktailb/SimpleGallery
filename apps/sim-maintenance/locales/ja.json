@@ -225,7 +225,12 @@
   "sim_maint.card_fd_modes": "FD ラテラル & アプローチモード",
   "sim_maint.card_dme_annunciators": "DME アナンシエーター",
   "sim_maint.card_gps_mbr": "GPS 430 & マーカービーコン (MBR)",
-  "sim_maint.flight_status_monitor": "飛行状態監視",
   "sim_maint.roll_label": "ロール",
-  "sim_maint.speed_unit": "速度"
+  "sim_maint.speed_unit": "KTS",
+  "sim_maint.ohp_title": "オーバーヘッドパネル & サーキットブレーカー",
+  "sim_maint.ohp_sub": "EC135 左右CBパネルおよび中央スイッチコンソールのリアルタイム再現",
+  "sim_maint.ohp_view_all": "3パネル全体表示",
+  "sim_maint.ohp_view_cb_left": "左側ブレーカー (CB Left)",
+  "sim_maint.ohp_view_center": "中央オーバーヘッド (OVHD)",
+  "sim_maint.ohp_view_cb_right": "右側ブレーカー (CB Right)"
 }

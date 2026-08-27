@@ -2947,9 +2947,295 @@ input[type="date"].paper-input {
     100% { filter: brightness(1.2); box-shadow: 0 0 16px rgba(255, 170, 0, 0.9); }
 }
 /* ==========================================================================
-   EC135 COCKPIT 4-PACK FLIGHT INSTRUMENTS
-   Photorealistic faithful rendering of ASI, ADI, ALT, ROTOR/N2 instruments
+   EC135 AUTOPILOT CONTROL CONSOLE (APC) - Photorealistic Authentic Cockpit Panel
    ========================================================================== */
+
+.ec135-apc-cockpit-bay {
+    background: linear-gradient(180deg, #606b77 0%, #4e5863 100%);
+    border: 3px solid #3c444c;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.15), inset 0 -3px 6px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+    overflow-x: auto;
+}
+
+.ec135-apc-main-bezel {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    background: radial-gradient(circle at 50% 30%, #2b3036 0%, #1c2024 100%);
+    border: 2.5px solid #14171a;
+    border-radius: 8px;
+    padding: 16px 28px 18px 28px;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.2), inset 0 -2px 5px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.7);
+    box-sizing: border-box;
+}
+
+/* Dzus Cockpit Fasteners with Vertical Slot */
+.apc-screw {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background: radial-gradient(circle, #5a646e 0%, #262c32 100%);
+    border: 1px solid #14171a;
+    border-radius: 50%;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+.apc-screw::after {
+    content: '';
+    width: 2px;
+    height: 10px;
+    background: #0f1214;
+    border-radius: 1px;
+    box-shadow: 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.apc-screw.top-left     { top: 12px; left: 8px; }
+.apc-screw.bottom-left  { bottom: 12px; left: 8px; }
+.apc-screw.top-right    { top: 12px; right: 8px; }
+.apc-screw.bottom-right { bottom: 12px; right: 8px; }
+
+/* Panel Header Row (AP, A.TRIM & TEST) */
+.apc-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+.apc-top-left-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* Silkscreen Boxed Group (AP, A.TRIM, TEST) */
+.apc-boxed-group {
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-radius: 5px;
+    padding: 3px 6px 5px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.15);
+}
+.apc-group-title {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.8px;
+    margin-bottom: 3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Cockpit Tactile Push-Button */
+.apc-btn {
+    position: relative;
+    background: radial-gradient(circle, #1a1e22 0%, #0d0f12 100%);
+    border: 2px solid #333a42;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.12), inset 0 -2px 4px rgba(0, 0, 0, 0.8), 0 3px 6px rgba(0, 0, 0, 0.5);
+    cursor: default;
+    user-select: none;
+    box-sizing: border-box;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.apc-btn.apc-single {
+    width: 44px;
+    height: 28px;
+}
+.apc-btn.apc-dual {
+    width: 46px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px;
+}
+
+/* Annunciator Text Labels */
+.apc-lbl-amber {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #452402;
+    transition: color 0.15s, text-shadow 0.15s;
+}
+.apc-lbl-green {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #032b0c;
+    transition: color 0.15s, text-shadow 0.15s;
+}
+.apc-sub-a {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 11.5px;
+    font-weight: 900;
+    color: #452402;
+    transition: color 0.15s, text-shadow 0.15s;
+}
+.apc-sub-c {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 11.5px;
+    font-weight: 900;
+    color: #032b0c;
+    transition: color 0.15s, text-shadow 0.15s;
+}
+
+/* Active / Illuminated States */
+.apc-btn.active-amber .apc-lbl-amber,
+.apc-sub-a.active {
+    color: #ffaa00 !important;
+    text-shadow: 0 0 6px #ffaa00, 0 0 14px #ffaa00 !important;
+}
+.apc-btn.active-amber {
+    background: radial-gradient(circle, #382404 0%, #1c1202 100%) !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.6), inset 0 0 6px rgba(245, 158, 11, 0.7) !important;
+}
+
+.apc-btn.active-green .apc-lbl-green,
+.apc-sub-c.active {
+    color: #00ff44 !important;
+    text-shadow: 0 0 6px #00ff44, 0 0 14px #00ff44 !important;
+}
+.apc-btn.active-green {
+    background: radial-gradient(circle, #033010 0%, #011708 100%) !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.7) !important;
+}
+
+/* Matrix Layout of Modes, Brackets and Knobs */
+.apc-matrix-bay {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    align-items: end;
+    margin-top: 4px;
+}
+.apc-matrix-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+/* Upper Enclosures on Modes (APP, NAV) */
+.apc-upper-mode-box {
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    padding: 5px 5px 0 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Upper Enclosures on Rotary Knobs (HDG, ALT.A) */
+.apc-upper-knob-box {
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    padding: 3px 5px 0 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Lower Bracket Enclosures */
+.apc-lower-bracket {
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    padding: 0 5px 3px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Mode Silkscreen Label */
+.apc-mode-lbl {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.6px;
+    margin-top: 3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+}
+
+/* Realistic Brushed Aluminum Knurled Rotary Knob */
+.apc-knob {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: conic-gradient(from 45deg, #e2e8f0 0%, #64748b 25%, #f8fafc 50%, #64748b 75%, #e2e8f0 100%);
+    border: 2px solid #334155;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 3px 8px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.apc-knob-cap {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #cbd5e1 0%, #475569 100%);
+    border: 1px solid #1e293b;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Green Triangular Indicator LED (HDG ▶ and ALT.A ▶) */
+.apc-led-triangle {
+    font-size: 10px;
+    color: #032b0c;
+    position: absolute;
+    left: -8px;
+    top: 14px;
+    line-height: 1;
+    transition: color 0.15s, text-shadow 0.15s;
+    user-select: none;
+}
+.apc-led-triangle.active {
+    color: #00ff44 !important;
+    text-shadow: 0 0 6px #00ff44, 0 0 12px #00ff44 !important;
+}
+
+/* Digital Configured Target Readouts */
+.apc-target-badge {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: #38bdf8;
+    background: #090d12;
+    border: 1px solid #1e293b;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9);
+    text-shadow: 0 0 4px rgba(56, 189, 248, 0.5);
+    white-space: nowrap;
+}
+
+
 
 .ec135-flight-cockpit-bay {
     background: linear-gradient(180deg, #606b77 0%, #4e5863 100%);
@@ -3309,5 +3595,457 @@ input[type="date"].paper-input {
     color: #ffffff;
     letter-spacing: 1px;
 }
+
+/* ==========================================================================
+   EC135 OVERHEAD PANEL & CIRCUIT BREAKERS (OHP)
+   Photorealistic faithful rendering of CB Left, Center Console, CB Right
+   ========================================================================== */
+
+.ec135-ohp-cockpit-bay {
+    width: 100%;
+    box-sizing: border-box;
+    clear: both;
+    background: linear-gradient(180deg, #505963 0%, #3e454d 100%);
+    border: 3px solid #2d3339;
+    border-radius: 12px;
+    padding: 20px 22px;
+    box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.15), inset 0 -3px 6px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.6);
+    margin: 16px 0 28px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* View Mode Selector Toolbar */
+.ohp-view-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+}
+.ohp-tab-btn {
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: #cbd5e1;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ohp-tab-btn:hover {
+    background: #334155;
+    color: #ffffff;
+    border-color: #38bdf8;
+}
+.ohp-tab-btn.active {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    border-color: #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+/* Layout container for the 3 panels (2 rows: CBs Top, Console Bottom) */
+.ohp-panels-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+.ohp-cb-dual-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+.ohp-center-console-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* Circuit Breaker Panels (Left & Right) */
+.ec135-cb-panel {
+    position: relative;
+    width: 440px;
+    min-width: 420px;
+    background: radial-gradient(circle at 50% 30%, #292d32 0%, #1a1d20 100%);
+    border: 2.5px solid #14171a;
+    border-radius: 10px;
+    padding: 16px 18px 20px 18px;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.2), inset 0 -2px 6px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.7);
+    box-sizing: border-box;
+}
+.ec135-cb-panel.cb-left {
+    border-top-left-radius: 80px 40px;
+    border-bottom-left-radius: 30px 60px;
+}
+.ec135-cb-panel.cb-right {
+    border-top-right-radius: 80px 40px;
+    border-bottom-right-radius: 30px 60px;
+}
+
+/* Dzus Screws on Circuit Breaker Panels */
+.cb-screw {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(circle, #5a646e 0%, #262c32 100%);
+    border: 1px solid #14171a;
+    border-radius: 50%;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+.cb-screw::after {
+    content: '';
+    width: 2px;
+    height: 9px;
+    background: #0f1214;
+    border-radius: 1px;
+}
+
+/* Bus Rows and Silkscreen Lines */
+.cb-bus-row {
+    position: relative;
+    margin-bottom: 12px;
+    padding-top: 10px;
+}
+.cb-bus-line-wrap {
+    position: relative;
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    border-radius: 6px;
+    padding: 8px 6px 6px 6px;
+    background: rgba(0, 0, 0, 0.12);
+}
+.cb-bus-title {
+    position: absolute;
+    top: -7px;
+    left: 20px;
+    background: #23272b;
+    padding: 0 6px;
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 9.5px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+.cb-bus-title.right {
+    left: auto;
+    right: 20px;
+}
+
+/* Grid of Breakers inside a row */
+.cb-items-grid {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px;
+}
+.cb-item-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 32px;
+    max-width: 44px;
+    flex: 1;
+}
+
+/* Realistic Circuit Breaker Push-Pull Button */
+.cb-btn {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #10b981 0%, #047857 60%, #064e3b 100%);
+    border: 1.5px solid #022c22;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.6), inset 0 -2px 3px rgba(0, 0, 0, 0.8), 0 3px 6px rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
+}
+/* Hexagonal collar nut around breaker base */
+.cb-btn::before {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    border: 1.5px solid #111417;
+    background: radial-gradient(circle, #2a3036 0%, #15181b 100%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: -1;
+}
+.cb-btn:hover {
+    filter: brightness(1.15);
+}
+.cb-btn:active {
+    transform: scale(0.95);
+}
+.cb-rating-lbl {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    line-height: 1;
+}
+
+/* Popped / Tripped State (White neck collar exposed, dark head) */
+.cb-btn.popped {
+    background: radial-gradient(circle at 35% 35%, #475569 0%, #1e293b 70%, #0f172a 100%) !important;
+    border-color: #0f172a !important;
+    box-shadow: 0 0 0 3px #ffffff, 0 6px 12px rgba(0, 0, 0, 0.9) !important;
+    transform: translateY(-2px);
+}
+.cb-btn.popped .cb-rating-lbl {
+    color: #cbd5e1;
+}
+
+/* Blank / Unused Breaker Slot Plug */
+.cb-blank-plug {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #2d3339 0%, #15181b 100%);
+    border: 1px solid #0d0f11;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Silkscreen text below breaker */
+.cb-name-lbl {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.05;
+    margin-top: 4px;
+    letter-spacing: 0.2px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    word-break: break-word;
+}
+
+/* Guarded Bus Tie / Shed Bus Rocker Switch */
+.cb-guarded-switch-slot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1.5px solid #475569;
+    border-radius: 5px;
+    padding: 4px 8px;
+    position: absolute;
+    right: 8px;
+    top: 4px;
+}
+.cb-guard-cover {
+    width: 18px;
+    height: 38px;
+    background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+    border: 1.5px solid #334155;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+.cb-guard-lever {
+    width: 10px;
+    height: 22px;
+    background: linear-gradient(180deg, #e2e8f0 0%, #64748b 100%);
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+}
+.cb-guard-labels {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.1;
+}
+
+/* ==========================================================================
+   CENTER OVERHEAD CONTROL CONSOLE (OVHD DELTA PANEL)
+   ========================================================================== */
+
+.ec135-ovhd-center-panel {
+    position: relative;
+    width: 620px;
+    max-width: 100%;
+    background: radial-gradient(circle at 50% 25%, #2a2f35 0%, #1a1d20 100%);
+    border: 2.5px solid #14171a;
+    border-radius: 10px;
+    padding: 18px 22px 22px 22px;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.2), inset 0 -2px 6px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.7);
+    box-sizing: border-box;
+}
+
+.ohp-section-box {
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 10px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.ohp-row-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 8px;
+}
+
+/* Chrome Toggle Switches with Red Conical Safety Collar */
+.ohp-toggle-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    user-select: none;
+}
+.ohp-toggle-collar-red {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ef4444 0%, #991b1b 70%, #7f1d1d 100%);
+    border: 1.5px solid #450a0a;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ohp-toggle-collar-std {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #475569 0%, #1e293b 80%, #0f172a 100%);
+    border: 1.5px solid #0f172a;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ohp-toggle-bat {
+    width: 6px;
+    height: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 50%, #64748b 100%);
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    transform-origin: bottom center;
+    transition: transform 0.15s ease-out;
+}
+.ohp-toggle-wrap.state-up .ohp-toggle-bat {
+    transform: translateY(-3px) scaleY(1.1);
+}
+.ohp-toggle-wrap.state-down .ohp-toggle-bat {
+    transform: translateY(3px) scaleY(0.9);
+}
+
+.ohp-switch-lbl {
+    font-family: 'Inter', 'Arial Black', sans-serif;
+    font-size: 8.5px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* Rotary Potentiometer Knob */
+.ohp-pot-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+.ohp-pot-dial {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #334155 0%, #1e293b 70%, #0f172a 100%);
+    border: 1.5px solid #0f172a;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 3px 6px rgba(0, 0, 0, 0.8);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease-out;
+}
+.ohp-pot-dial::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    width: 2px;
+    height: 10px;
+    background: #ffffff;
+    border-radius: 1px;
+    box-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Digital Chronometer Bay */
+.ohp-chrono-mount {
+    margin: 12px auto 0 auto;
+    width: 140px;
+    background: #94a3b8;
+    border: 2px solid #475569;
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+.ohp-chrono-screen {
+    width: 100%;
+    background: #111827;
+    border: 1.5px solid #030712;
+    border-radius: 3px;
+    padding: 4px 6px;
+    text-align: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+.ohp-chrono-digits {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 16px;
+    font-weight: 900;
+    color: #eab308;
+    text-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+    letter-spacing: 2px;
+}
+.ohp-chrono-btn {
+    width: 32px;
+    height: 24px;
+    background: #1e293b;
+    border: 1px solid #0f172a;
+    border-radius: 4px;
+    margin-top: 6px;
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
 
 

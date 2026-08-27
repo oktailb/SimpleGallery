@@ -226,6 +226,12 @@
   "sim_maint.card_dme_annunciators": "Annonciateurs DME",
   "sim_maint.card_gps_mbr": "GPS 430 & Balises (MBR)",
   "sim_maint.flight_status_monitor": "Surveillance statut vol",
-  "sim_maint.roll_label": "Roulis",
-  "sim_maint.speed_unit": "Vitesse"
+  "sim_maint.roll_label": "ROULIS",
+  "sim_maint.speed_unit": "KTS",
+  "sim_maint.ohp_title": "Plafonnier & Disjoncteurs (Overhead Panel & Circuit Breakers)",
+  "sim_maint.ohp_sub": "Restitution photoréaliste des panneaux disjoncteurs gauche/droit et de la console centrale EC135",
+  "sim_maint.ohp_view_all": "Vue 3 Panneaux",
+  "sim_maint.ohp_view_cb_left": "Disjoncteurs Gauche (CB Left)",
+  "sim_maint.ohp_view_center": "Console Centrale Plafonnier (OVHD)",
+  "sim_maint.ohp_view_cb_right": "Disjoncteurs Droit (CB Right)"
 }

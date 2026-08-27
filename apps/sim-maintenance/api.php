@@ -311,11 +311,47 @@ if (!function_exists('ensureUdpBridgeRunning')) {
             @unlink($throttleFile);
         }
 
-        // Limit spawn attempts to once every 3 seconds unless forced
-        if (!$forceRestart && file_exists($throttleFile) && (time() - filemtime($throttleFile)) < 3) {
+        // Limit spawn attempts to once every 2 seconds unless forced
+        if (!$forceRestart && file_exists($throttleFile) && (time() - filemtime($throttleFile)) < 2) {
             return;
         }
         @touch($throttleFile);
+
+        $isWin = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $phpBin = 'php';
+        if ($isWin) {
+            if (defined('PHP_BINARY') && PHP_BINARY && is_file(PHP_BINARY) && stripos(PHP_BINARY, 'fpm') === false) {
+                $phpBin = PHP_BINARY;
+            } elseif (file_exists('C:\\php\\php.exe')) {
+                $phpBin = 'C:\\php\\php.exe';
+            } elseif (file_exists('C:\\xampp\\php\\php.exe')) {
+                $phpBin = 'C:\\xampp\\php\\php.exe';
+            }
+        } else {
+            // Linux / Unix server: prioritize CLI binary over php-fpm
+            $linuxCandidates = [
+                '/usr/bin/php',
+                '/usr/local/bin/php',
+                '/usr/bin/php8.3',
+                '/usr/bin/php8.2',
+                '/usr/bin/php8.1',
+                '/usr/bin/php8.0',
+                '/usr/bin/php7.4',
+                '/usr/bin/php7.3',
+                '/usr/bin/php7.2',
+                '/usr/bin/php7.0',
+                '/bin/php'
+            ];
+            foreach ($linuxCandidates as $cand) {
+                if (file_exists($cand) && is_executable($cand)) {
+                    $phpBin = $cand;
+                    break;
+                }
+            }
+            if ($phpBin === 'php' && defined('PHP_BINARY') && PHP_BINARY && stripos(PHP_BINARY, 'fpm') === false && is_file(PHP_BINARY)) {
+                $phpBin = PHP_BINARY;
+            }
+        }
 
         // Check if process is already running via lock
         $fp = @fopen($lockFile, 'c+');
@@ -324,11 +360,10 @@ if (!function_exists('ensureUdpBridgeRunning')) {
             @flock($fp, LOCK_UN);
             @fclose($fp);
 
-            $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-            if ($isWindows) {
-                pclose(popen("start /B php " . escapeshellarg($bridgeScript), "r"));
+            if ($isWin) {
+                pclose(popen("start /B \"\" " . escapeshellarg($phpBin) . " " . escapeshellarg($bridgeScript), "r"));
             } else {
-                exec("nohup php " . escapeshellarg($bridgeScript) . " > /dev/null 2>&1 &");
+                exec("nohup " . escapeshellarg($phpBin) . " " . escapeshellarg($bridgeScript) . " > /dev/null 2>&1 &");
             }
         } else if ($fp) {
             @fclose($fp);
@@ -354,8 +389,8 @@ if (!function_exists('getSubsystemsAndFlightTelemetry')) {
         $localPort   = (int)($appConfig['sim_local_port'] ?? 3032);
         $timeoutMs   = (int)($appConfig['sim_timeout_ms'] ?? 100);
 
-        // Fast-path: Check if continuous UDP daemon bridge is running, fresh (< 2.0s), and contains the full st_OUT schema (e.g. autopilot)
         $latestFile = __DIR__ . '/latest_telemetry.json';
+        $cached = null;
         if (file_exists($latestFile)) {
             $cached = @json_decode(file_get_contents($latestFile), true);
             if (is_array($cached) && !empty($cached['timestamp']) && (microtime(true) - (float)$cached['timestamp']) < 2.0 && isset($cached['autopilot'])) {
@@ -374,10 +409,10 @@ if (!function_exists('getSubsystemsAndFlightTelemetry')) {
             }
         }
 
-        // If cache is stale or missing the updated st_OUT schema, force-restart daemon
-        $needsForce = (file_exists($latestFile) && !isset($cached['autopilot']));
+        // Daemon was stale, not running, or missing updated schema -> force restart daemon
+        $needsForce = (!file_exists($latestFile) || !is_array($cached) || empty($cached['timestamp']) || (microtime(true) - (float)$cached['timestamp']) >= 2.0 || !isset($cached['autopilot']));
         ensureUdpBridgeRunning($needsForce);
-        usleep(40000); // 40ms wait for first frame
+        usleep(50000); // 50ms wait for first frame
         if (file_exists($latestFile)) {
             $cached = @json_decode(file_get_contents($latestFile), true);
             if (is_array($cached) && !empty($cached['timestamp']) && (microtime(true) - (float)$cached['timestamp']) < 2.0 && isset($cached['autopilot'])) {

@@ -40,6 +40,7 @@ stream_set_blocking($socket, false);
 
 $scriptMtime = filemtime(__FILE__);
 $schemaMtime = file_exists(__DIR__ . '/fgfs_invis.xml') ? filemtime(__DIR__ . '/fgfs_invis.xml') : 0;
+$telemetryClassMtime = file_exists(__DIR__ . '/TelemetrySchema.php') ? filemtime(__DIR__ . '/TelemetrySchema.php') : 0;
 $lastStim = 0;
 $pktCount = 0;
 $lastWrite = 0;
@@ -48,7 +49,7 @@ $lastMtimeCheck = 0;
 while (true) {
     $now = microtime(true);
 
-    // Auto-reload if script or XML schema was updated
+    // Auto-reload if script, schema, or TelemetrySchema.php was updated
     if (($now - $lastMtimeCheck) >= 2.0) {
         $lastMtimeCheck = $now;
         @clearstatcache(true, __FILE__);
@@ -56,6 +57,9 @@ while (true) {
             exit(0);
         }
         if (file_exists(__DIR__ . '/fgfs_invis.xml') && filemtime(__DIR__ . '/fgfs_invis.xml') > $schemaMtime) {
+            exit(0);
+        }
+        if (file_exists(__DIR__ . '/TelemetrySchema.php') && filemtime(__DIR__ . '/TelemetrySchema.php') > $telemetryClassMtime) {
             exit(0);
         }
     }
@@ -85,7 +89,9 @@ while (true) {
             $lastWrite = $now;
             $tmp = $dataFile . '.tmp.' . getmypid();
             @file_put_contents($tmp, json_encode($payload));
+            @chmod($tmp, 0666);
             @rename($tmp, $dataFile);
+            @chmod($dataFile, 0666);
         }
     } else {
         // Sleep 1ms to prevent busy CPU loop

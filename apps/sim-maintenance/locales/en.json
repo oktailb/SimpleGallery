@@ -222,9 +222,12 @@
   "sim_maint.card_sim_status": "Simulator Platform & Host Status",
   "sim_maint.card_ap_safety": "AP Engagement & Safety",
   "sim_maint.card_fd_modes": "FD Lateral & Approach Modes",
-  "sim_maint.card_dme_annunciators": "DME Annunciators",
-  "sim_maint.card_gps_mbr": "GPS 430 & Marker Beacons (MBR)",
-  "sim_maint.flight_status_monitor": "Flight Status Monitoring",
-  "sim_maint.roll_label": "Roll",
-  "sim_maint.speed_unit": "Speed"
+  "sim_maint.roll_label": "ROLL",
+  "sim_maint.speed_unit": "KTS",
+  "sim_maint.ohp_title": "Overhead Panel & Circuit Breakers",
+  "sim_maint.ohp_sub": "Photorealistic rendering of Left/Right CB Panels and EC135 Center Switch Console",
+  "sim_maint.ohp_view_all": "3-Panel View",
+  "sim_maint.ohp_view_cb_left": "Left Circuit Breakers (CB Left)",
+  "sim_maint.ohp_view_center": "Center Overhead Console (OVHD)",
+  "sim_maint.ohp_view_cb_right": "Right Circuit Breakers (CB Right)"
 }

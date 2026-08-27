@@ -206,9 +206,11 @@ class TelemetrySchema {
         $n2e1 = $getVal('n2engine1', 0.0);
         $n2e2 = $getVal('n2engine2', 0.0);
         $nr   = $getVal('rotorRpm', 0.0);
+        $rb   = $getVal('rotorBrakeHandle', $getVal('st_rotorBrake_I2H_rotorBrakeHandle', $getVal('rotor_brake', $getVal('rotorBrake', 0.0))));
         $powerplant = [
             'rotor_nr'     => round($nr, 1),
             'rotor_rpm'    => round(395.0 * ($nr / 100.0), 0),
+            'rotor_brake'  => round($rb, 2),
             'n2_eng1'      => round($n2e1, 1),
             'n2_eng2'      => round($n2e2, 1)
         ];
@@ -231,6 +233,10 @@ class TelemetrySchema {
             'vs_on'    => $getBool('ltVsOn'),
             'ias'      => $getBool('ltIas'),
             'alt'      => $getBool('ltAlt'),
+            'target_hdg' => round(fmod($hdg + 360.0, 360.0), 0),
+            'target_alt' => round($alt, 0),
+            'target_ias' => round($spd, 0),
+            'target_vs'  => 0
         ];
 
         // 5. Garmin Air Data & Fuel Computer Messages (Shadin / Garmin RS-232 format)
