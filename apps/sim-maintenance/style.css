@@ -1442,21 +1442,35 @@ input[type="date"].paper-input {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--sg-radius-md, 12px);
-    padding: 12px 18px;
+    padding: 10px 16px;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
+    flex-direction: column;
+    gap: 8px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
     margin-bottom: 20px;
     color: #f8fafc;
+    min-height: 76px;
+    box-sizing: border-box;
 }
 
-.stream-toolbar-left {
+.stream-toolbar-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
     gap: 12px;
+}
+
+.stream-toolbar-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stream-toolbar-ctrls-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .stream-pulse-dot {
@@ -1466,6 +1480,7 @@ input[type="date"].paper-input {
     background: #10b981;
     box-shadow: 0 0 10px #10b981, 0 0 20px #10b981;
     animation: telStreamDotPulse 1.2s infinite ease-in-out;
+    flex-shrink: 0;
 }
 
 @keyframes telStreamDotPulse {
@@ -1479,31 +1494,32 @@ input[type="date"].paper-input {
     letter-spacing: 0.6px;
     color: #38bdf8;
     text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    white-space: nowrap;
 }
 
 .stream-sub {
     font-size: 10.5px;
     color: #94a3b8;
     font-family: monospace;
-}
-
-.stream-toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .stream-metrics-pill {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 5px 10px;
+    padding: 4px 10px;
     border-radius: 6px;
     font-size: 11px;
     font-family: monospace;
     color: #cbd5e1;
     display: flex;
-    gap: 6px;
+    align-items: center;
+    gap: 8px;
+    min-width: 190px;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .stream-metrics-pill strong {
@@ -4046,6 +4062,284 @@ input[type="date"].paper-input {
     cursor: pointer;
     box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
 }
+
+/* ==========================================================================
+   EC135 DME ANNUNCIATOR PANEL (Authentic Avionics Bezel)
+   ========================================================================== */
+.ec135-dme-panel {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    height: 110px;
+    margin: 8px auto;
+    background: linear-gradient(180deg, #373e44 0%, #272c31 50%, #1e2226 100%);
+    border: 2px solid #14171a;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 6px 16px rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+.ec135-dme-panel .ec135-dzus-screw {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+}
+.ec135-dme-panel .pos-tl { top: 6px; left: 8px; }
+.ec135-dme-panel .pos-tr { top: 6px; right: 8px; }
+.ec135-dme-panel .pos-bl { bottom: 6px; left: 8px; }
+.ec135-dme-panel .pos-br { bottom: 6px; right: 8px; }
+
+.dme-well {
+    width: 100%;
+    height: 100%;
+    background: #14171a;
+    border-radius: 6px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), inset 0 0 0 1px #0d0f11, 0 1px 1px rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    box-sizing: border-box;
+}
+
+.dme-module {
+    flex: 1;
+    max-width: 72px;
+    height: 100%;
+    background: linear-gradient(145deg, #2c3238 0%, #171a1d 100%);
+    border-radius: 5px;
+    border: 1.5px solid #0f1214;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+.dme-cap {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 40%, #1e2226 0%, #121518 90%);
+    border-radius: 3.5px;
+    border: 1px solid #0b0d0e;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1), inset 0 -1px 2px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 2px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.dme-cap-single {
+    justify-content: center;
+}
+
+.dme-cap-blank {
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.dme-screw-dimple {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #1c2024 0%, #0c0e10 80%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 1px rgba(255, 255, 255, 0.08);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dme-screw-dimple::before {
+    content: '+';
+    font-size: 8px;
+    line-height: 1;
+    color: #1a2024;
+    font-family: sans-serif;
+    font-weight: bold;
+    text-shadow: 0 0.5px 0.5px rgba(255, 255, 255, 0.1);
+}
+
+.dme-legend {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-align: center;
+    color: #0c2b14;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.8);
+    transition: color 0.12s ease-out, text-shadow 0.12s ease-out;
+    line-height: 1.1;
+    pointer-events: none;
+}
+
+.dme-legend.active-green,
+.dme-legend.active {
+    color: #00ff44 !important;
+    text-shadow: 0 0 3px #00ff44, 0 0 8px rgba(0, 255, 68, 0.8), 0 0 14px rgba(0, 255, 68, 0.45) !important;
+}
+
+.dme-legend.active-amber {
+    color: #fbbf24 !important;
+    text-shadow: 0 0 3px #fbbf24, 0 0 8px rgba(251, 191, 36, 0.8), 0 0 14px rgba(251, 191, 36, 0.45) !important;
+}
+
+/* ==========================================================================
+   EC135 SIDE SLIP INDICATORS (INCLINOMETER / BILLE DE DERAPAGE)
+   ========================================================================== */
+.ec135-slip-gauges-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 16px 0 8px 0;
+    flex-wrap: wrap;
+}
+
+.slip-gauge-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 10px 16px 10px 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.slip-gauge-hdr {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.ec135-slip-gauge {
+    position: relative;
+    width: 280px;
+    height: 72px;
+    background: linear-gradient(180deg, #383e44 0%, #202428 50%, #14171a 100%);
+    border: 2px solid #0f1214;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 5px 12px rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    box-sizing: border-box;
+    user-select: none;
+    overflow: hidden;
+}
+
+/* Screws */
+.slip-screw {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #474f56 0%, #15181a 80%);
+    border: 1px solid #0a0c0d;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.slip-screw::after {
+    content: '';
+    width: 10px;
+    height: 2px;
+    background: #090a0c;
+    border-radius: 0.5px;
+}
+.slip-screw.pos-left { left: 8px; }
+.slip-screw.pos-right { right: 8px; }
+
+/* Arched decorative cutout contour on top */
+.slip-gauge-arch {
+    position: absolute;
+    top: 4px;
+    width: 200px;
+    height: 14px;
+    border-radius: 50% / 100% 100% 0 0;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+}
+
+/* Yellow digital value */
+.slip-digits {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 15px;
+    font-weight: 800;
+    color: #facc15;
+    text-shadow: 0 0 5px rgba(250, 204, 21, 0.6);
+    letter-spacing: 0.5px;
+    line-height: 1;
+    margin-bottom: 3px;
+    z-index: 2;
+}
+
+/* Tube casing */
+.slip-tube-housing {
+    width: 136px;
+    height: 28px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 2px solid #0f1214;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Center black reference lines */
+.slip-center-mark-left {
+    position: absolute;
+    left: calc(50% - 13px);
+    width: 2px;
+    height: 100%;
+    background: #000000;
+    z-index: 1;
+}
+
+.slip-center-mark-right {
+    position: absolute;
+    left: calc(50% + 11px);
+    width: 2px;
+    height: 100%;
+    background: #000000;
+    z-index: 1;
+}
+
+/* 3D Black Steel Ball */
+.slip-ball {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #64748b 0%, #1e293b 35%, #05070a 90%);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.7);
+    transform: translateX(0px);
+    transition: transform 0.12s ease-out;
+    z-index: 2;
+}
+
+
 
 
 

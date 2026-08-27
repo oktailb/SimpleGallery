@@ -185,6 +185,7 @@ class TelemetrySchema {
         $lat = ($latG1 != 0.0) ? $latG1 : $latG2;
         $lon = ($lonG1 != 0.0) ? $lonG1 : $lonG2;
 
+        $slip = $getVal('sideslip', 50.0);
         $flight = [
             'is_live'          => true,
             'latitude'         => $lat,
@@ -193,6 +194,9 @@ class TelemetrySchema {
             'airspeed_ias'     => round($spd, 1),
             'pitch'            => round($pit, 2),
             'roll'             => round($rol, 2),
+            'sideslip'         => round($slip, 2),
+            'slip_plt'         => round($slip, 2),
+            'slip_cplt'        => round($slip, 2),
             'heading_mag'      => round(fmod($hdg + 360.0, 360.0), 1),
             'xpdr_altitude'    => round($xpdrAlt, 0),
             'on_ground'        => $onGround,

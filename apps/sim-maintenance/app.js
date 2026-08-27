@@ -238,14 +238,20 @@
             this.loadTelemetryHistory();
             this.loadArchives();
 
-            // Periodic telemetry polling
+            // Launch high-speed telemetry streaming if on subsystems tab
+            if (this.activeTab === 'subsystems') {
+                this.startFastTelemetryPolling();
+            }
+
+            // Periodic fallback telemetry polling for climate / background
             if (this.telemetryInterval) clearInterval(this.telemetryInterval);
             var pollCounter = 0;
             this.telemetryInterval = setInterval(() => {
-                this.loadTelemetry();
+                if (this.activeTab !== 'subsystems') {
+                    this.loadTelemetry();
+                }
                 pollCounter++;
-                // Refresh live charts every 30 seconds if on telemetry tab and in live mode (offset == 0)
-                if (pollCounter % 3 === 0 && this.activeTab === 'telemetry' && this.telOffset === 0) {
+                if (pollCounter % 3 === 0 && this.activeTab === 'climate' && this.telOffset === 0) {
                     this.loadTelemetryHistory();
                 }
             }, 10000);
@@ -257,6 +263,7 @@
                 this.telemetryInterval = null;
             }
             if (this.fastTelemetryInterval) {
+                clearTimeout(this.fastTelemetryInterval);
                 clearInterval(this.fastTelemetryInterval);
                 this.fastTelemetryInterval = null;
             }
@@ -737,6 +744,85 @@
             `;
         }
 
+        renderDMEAnnunciatorsPanel() {
+            return `
+                <div class="ec135-dme-panel" id="ec135-dme-panel">
+                    <div class="ec135-dzus-screw pos-tl"></div>
+                    <div class="ec135-dzus-screw pos-tr"></div>
+                    <div class="ec135-dzus-screw pos-bl"></div>
+                    <div class="ec135-dzus-screw pos-br"></div>
+                    
+                    <div class="dme-well">
+                        <!-- Module 1: Blank Left Cap -->
+                        <div class="dme-module dme-module-blank">
+                            <div class="dme-cap dme-cap-blank">
+                                <div class="dme-screw-dimple"></div>
+                                <div class="dme-screw-dimple"></div>
+                            </div>
+                        </div>
+
+                        <!-- Module 2: DME 1 / HOLD -->
+                        <div class="dme-module">
+                            <div class="dme-cap dme-cap-split">
+                                <div class="dme-legend dme-legend-top" id="dme-dme1">DME 1</div>
+                                <div class="dme-legend dme-legend-bot" id="dme-hold1">HOLD</div>
+                            </div>
+                        </div>
+
+                        <!-- Module 3: DME 2 / HOLD -->
+                        <div class="dme-module">
+                            <div class="dme-cap dme-cap-split">
+                                <div class="dme-legend dme-legend-top" id="dme-dme2">DME 2</div>
+                                <div class="dme-legend dme-legend-bot" id="dme-hold2">HOLD</div>
+                            </div>
+                        </div>
+
+                        <!-- Module 4: CALL -->
+                        <div class="dme-module">
+                            <div class="dme-cap dme-cap-single">
+                                <div class="dme-legend dme-legend-center" id="dme-call">CALL</div>
+                            </div>
+                        </div>
+
+                        <!-- Module 5: HI NR / ON -->
+                        <div class="dme-module">
+                            <div class="dme-cap dme-cap-split">
+                                <div class="dme-legend dme-legend-top" id="dme-hinr-txt">HI NR</div>
+                                <div class="dme-legend dme-legend-bot" id="dme-high-nr">ON</div>
+                            </div>
+                        </div>
+
+                        <!-- Module 6: Blank Right Cap -->
+                        <div class="dme-module dme-module-blank">
+                            <div class="dme-cap dme-cap-blank">
+                                <div class="dme-screw-dimple"></div>
+                                <div class="dme-screw-dimple"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderSideSlipGauge(prefix) {
+            var idPrefix = prefix || 'plt';
+            return `
+                <div class="ec135-slip-gauge" id="slip-gauge-${idPrefix}">
+                    <div class="slip-screw pos-left"></div>
+                    <div class="slip-screw pos-right"></div>
+                    <div class="slip-gauge-arch"></div>
+                    
+                    <div class="slip-digits" id="slip-val-${idPrefix}">50.00</div>
+                    
+                    <div class="slip-tube-housing">
+                        <div class="slip-center-mark-left"></div>
+                        <div class="slip-center-mark-right"></div>
+                        <div class="slip-ball" id="slip-ball-${idPrefix}"></div>
+                    </div>
+                </div>
+            `;
+        }
+
         renderLayout() {
             var title = this.t('apps.sim-maintenance.title', 'Sim Maintenance');
             var subtitle = this.t('apps.sim-maintenance.subtitle', 'Technical Checklists, Environmental Telemetry & Compliance');
@@ -1010,38 +1096,42 @@
                     <!-- Tab 3: Indra EC135 Real-Time Telemetry (Pure st_OUT ICD) -->
                     <div class="sim-tab-view ${this.activeTab === 'subsystems' ? 'active' : ''}" id="sim-view-subsystems">
                         <div class="telemetry-dashboard">
-                            <!-- Real-Time Mission-Control Streaming Toolbar -->
+                            <!-- Real-Time Mission-Control Streaming Toolbar (Fixed 2-Row Layout) -->
                             <div class="subsys-stream-toolbar">
-                                <div class="stream-toolbar-left">
-                                    <div class="stream-pulse-dot" id="subsys-stream-dot"></div>
-                                    <div>
+                                <!-- Row 1: Stream Title & Streaming Controls -->
+                                <div class="stream-toolbar-row">
+                                    <div class="stream-toolbar-title-group">
+                                        <div class="stream-pulse-dot" id="subsys-stream-dot"></div>
                                         <div class="stream-title">${this.t('sim_maint.stream_title', 'INDRA FFS REAL-TIME TELEMETRY BUS (UDP 50 Hz)')}</div>
-                                        <div class="stream-sub">Host: <span id="tel-host-ip">172.120.1.3:3032</span> • Port: 3035 • ICD: <strong>st_OUT (HH_ICDSes.h)</strong></div>
+                                    </div>
+
+                                    <div class="stream-toolbar-ctrls-group">
+                                        <div class="stream-rate-selector">
+                                            <label for="subsys-rate-select">⚡ ${this.t('sim_maint.stream_rate', 'Rate:')}</label>
+                                            <select id="subsys-rate-select" class="tel-select-styled">
+                                                <option value="50" ${this.telemetryPollingIntervalMs === 50 ? 'selected' : ''}>${this.t('sim_maint.rate_50ms', '50 ms (20 Hz - Ultra)')}</option>
+                                                <option value="100" ${this.telemetryPollingIntervalMs === 100 ? 'selected' : ''}>${this.t('sim_maint.rate_100ms', '100 ms (10 Hz - Fast)')}</option>
+                                                <option value="250" ${this.telemetryPollingIntervalMs === 250 ? 'selected' : ''}>${this.t('sim_maint.rate_250ms', '250 ms (4 Hz - Smooth)')}</option>
+                                                <option value="500" ${this.telemetryPollingIntervalMs === 500 ? 'selected' : ''}>${this.t('sim_maint.rate_500ms', '500 ms (2 Hz - Default)')}</option>
+                                                <option value="1000" ${this.telemetryPollingIntervalMs === 1000 ? 'selected' : ''}>${this.t('sim_maint.rate_1s', '1000 ms (1 Hz)')}</option>
+                                                <option value="2000" ${this.telemetryPollingIntervalMs === 2000 ? 'selected' : ''}>${this.t('sim_maint.rate_2s', '2000 ms (0.5 Hz)')}</option>
+                                            </select>
+                                        </div>
+
+                                        <button type="button" class="stream-btn-pause ${this.isTelemetryPaused ? 'paused' : ''}" id="subsys-btn-pause">
+                                            <span id="subsys-pause-icon">${this.isTelemetryPaused ? '▶ ' + this.t('sim_maint.live_btn', 'LIVE') : '⏸ ' + this.t('sim_maint.pause_btn', 'PAUSE')}</span>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="stream-toolbar-right">
+                                <!-- Row 2: Host Details & Metrics Pill -->
+                                <div class="stream-toolbar-row">
+                                    <div class="stream-sub">Host: <span id="tel-host-ip">172.120.1.3:3032</span> • Port: 3035 • ICD: <strong>st_OUT (HH_ICDSes.h)</strong></div>
                                     <div class="stream-metrics-pill">
                                         <span>Frames: <strong id="subsys-pkt-count">#0</strong></span>
                                         <span>•</span>
                                         <span>Latency: <strong id="subsys-latency-val">-- ms</strong></span>
                                     </div>
-
-                                    <div class="stream-rate-selector">
-                                        <label for="subsys-rate-select">⚡ ${this.t('sim_maint.stream_rate', 'Rate:')}</label>
-                                        <select id="subsys-rate-select" class="tel-select-styled">
-                                            <option value="50" ${this.telemetryPollingIntervalMs === 50 ? 'selected' : ''}>${this.t('sim_maint.rate_50ms', '50 ms (20 Hz - Ultra)')}</option>
-                                            <option value="100" ${this.telemetryPollingIntervalMs === 100 ? 'selected' : ''}>${this.t('sim_maint.rate_100ms', '100 ms (10 Hz - Fast)')}</option>
-                                            <option value="250" ${this.telemetryPollingIntervalMs === 250 ? 'selected' : ''}>${this.t('sim_maint.rate_250ms', '250 ms (4 Hz - Smooth)')}</option>
-                                            <option value="500" ${this.telemetryPollingIntervalMs === 500 ? 'selected' : ''}>${this.t('sim_maint.rate_500ms', '500 ms (2 Hz - Default)')}</option>
-                                            <option value="1000" ${this.telemetryPollingIntervalMs === 1000 ? 'selected' : ''}>${this.t('sim_maint.rate_1s', '1000 ms (1 Hz)')}</option>
-                                            <option value="2000" ${this.telemetryPollingIntervalMs === 2000 ? 'selected' : ''}>${this.t('sim_maint.rate_2s', '2000 ms (0.5 Hz)')}</option>
-                                        </select>
-                                    </div>
-
-                                    <button type="button" class="stream-btn-pause ${this.isTelemetryPaused ? 'paused' : ''}" id="subsys-btn-pause">
-                                        <span id="subsys-pause-icon">${this.isTelemetryPaused ? '▶ ' + this.t('sim_maint.live_btn', 'LIVE') : '⏸ ' + this.t('sim_maint.pause_btn', 'PAUSE')}</span>
-                                    </button>
                                 </div>
                             </div>
 
@@ -1298,6 +1388,18 @@
                                         </svg>
                                     </div>
                                     <div class="analog-gauge-caption" style="color:#e2e8f0; font-size:12px; margin-top:8px; font-weight:700;">ROTOR: <strong id="tel-gauge-rotor-val" style="color:#00e640;">--</strong>% NR (<strong id="tel-gauge-rotor-rpm" style="color:#00e640;">-- RPM</strong>)</div>
+                                </div>
+                            </div>
+
+                            <!-- Indicateurs Dérapage / Bille Pilote & Copilote (Side Slip Indicators) -->
+                            <div class="ec135-slip-gauges-row">
+                                <div class="slip-gauge-card">
+                                    <span class="slip-gauge-hdr">👨‍✈️ ${this.t('sim_maint.slip_plt_title', 'Indicateur Dérapage Pilote (PLT)')}</span>
+                                    ${this.renderSideSlipGauge('plt')}
+                                </div>
+                                <div class="slip-gauge-card">
+                                    <span class="slip-gauge-hdr">👨‍✈️ ${this.t('sim_maint.slip_cplt_title', 'Indicateur Dérapage Copilote (CPLT)')}</span>
+                                    ${this.renderSideSlipGauge('cplt')}
                                 </div>
                             </div>
 
@@ -1662,20 +1764,11 @@
                             </div>
 
                             <div class="avionics-subpanel-grid">
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">📡 ${this.t('sim_maint.card_dme_annunciators', 'Annonciateurs DME')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
-                                        <div class="avionics-lamp-btn" id="dme-dme1"><span class="avionics-lamp-lbl">DME 1</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-dme2"><span class="avionics-lamp-lbl">DME 2</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-hold1"><span class="avionics-lamp-lbl">HOLD 1</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-hold2"><span class="avionics-lamp-lbl">HOLD 2</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-gnd1"><span class="avionics-lamp-lbl">GND 1</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-gnd2"><span class="avionics-lamp-lbl">GND 2</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-call"><span class="avionics-lamp-lbl">CALL</span></div>
-                                        <div class="avionics-lamp-btn" id="dme-high-nr"><span class="avionics-lamp-lbl">HIGH NR</span></div>
-                                    </div>
+                                    ${this.renderDMEAnnunciatorsPanel()}
                                 </div>
 
                                 <div class="avionics-card">
@@ -2399,16 +2492,27 @@
 
         startFastTelemetryPolling() {
             if (this.fastTelemetryInterval) {
+                clearTimeout(this.fastTelemetryInterval);
                 clearInterval(this.fastTelemetryInterval);
                 this.fastTelemetryInterval = null;
             }
-            if (this.isTelemetryPaused || !this.telemetryPollingIntervalMs || this.telemetryPollingIntervalMs <= 0) return;
+            if (this.isTelemetryPaused) return;
 
-            this.fastTelemetryInterval = setInterval(() => {
-                if (this.activeTab === 'subsystems' && !this.isTelemetryPaused) {
-                    this.loadTelemetry();
+            var poll = async () => {
+                if (this.activeTab === 'subsystems' && !this.isTelemetryPaused && this.container) {
+                    try {
+                        await this.loadTelemetry();
+                    } catch (e) {
+                        console.error("[Telemetry Stream Error]", e);
+                    }
                 }
-            }, this.telemetryPollingIntervalMs);
+                if (this.activeTab === 'subsystems' && !this.isTelemetryPaused && this.container) {
+                    var interval = (this.telemetryPollingIntervalMs && this.telemetryPollingIntervalMs > 0) ? this.telemetryPollingIntervalMs : 500;
+                    this.fastTelemetryInterval = setTimeout(poll, interval);
+                }
+            };
+
+            this.fastTelemetryInterval = setTimeout(poll, 10);
         }
 
         switchTab(tabName) {
@@ -2423,6 +2527,7 @@
             }
 
             if (tabName !== 'subsystems' && this.fastTelemetryInterval) {
+                clearTimeout(this.fastTelemetryInterval);
                 clearInterval(this.fastTelemetryInterval);
                 this.fastTelemetryInterval = null;
             }
@@ -2431,7 +2536,6 @@
                 this.loadTelemetry();
                 this.loadTelemetryHistory();
             } else if (tabName === 'subsystems') {
-                this.loadTelemetry();
                 this.startFastTelemetryPolling();
             } else if (tabName === 'archives') {
                 this.loadArchives();
@@ -3554,6 +3658,7 @@
                 var res = await fetch(this.getApiUrl('get_telemetry'));
                 var data = await res.json();
                 var tEnd = performance.now();
+                this.lastFrameLatencyMs = Math.round(tEnd - tStart);
                 console.log('[Telemetry fetch]', data);
                 if (!this.container) return;
                 if (data && (data.success || data.is_live || data.flight)) {
@@ -3589,13 +3694,13 @@
 
                     var tempStatusText = this.container.querySelector('#maint-temp-status-text');
                     var humStatusText  = this.container.querySelector('#maint-hum-status-text');
-                    if (tempStatusText) tempStatusText.textContent = data.temp_status.toUpperCase();
-                    if (humStatusText) humStatusText.textContent = data.hum_status.toUpperCase();
+                    if (tempStatusText) tempStatusText.textContent = (data.temp_status || 'normal').toUpperCase();
+                    if (humStatusText) humStatusText.textContent = (data.hum_status || 'normal').toUpperCase();
 
                     var tempPill = this.container.querySelector('#maint-temp-pill');
                     var humPill  = this.container.querySelector('#maint-hum-pill');
-                    if (tempPill) tempPill.className = 'tel-live-pill status-' + data.temp_status;
-                    if (humPill) humPill.className = 'tel-live-pill status-' + data.hum_status;
+                    if (tempPill) tempPill.className = 'tel-live-pill status-' + (data.temp_status || 'normal');
+                    if (humPill) humPill.className = 'tel-live-pill status-' + (data.hum_status || 'normal');
 
                     var self = this;
                     var root = (self && self.container) ? self.container : (this && this.container ? this.container : document);
@@ -3608,10 +3713,11 @@
                     var hostIpEl = root.querySelector('#tel-host-ip');
                     if (hostIpEl) {
                         if (data.debug) {
+                            var hostIpStr = (data.host && data.host.ip) ? data.host.ip : '172.120.1.7:3033';
                             if (isLive) {
-                                hostIpEl.textContent = (data.host?.ip || '172.120.1.7:3033') + ' [LIVE ' + (data.debug.bytes_received || 88) + 'B from ' + (data.debug.peer_sender || 'HOST') + ']';
+                                hostIpEl.textContent = hostIpStr + ' [LIVE ' + (data.debug.bytes_received || 88) + 'B from ' + (data.debug.peer_sender || 'HOST') + ']';
                             } else {
-                                hostIpEl.textContent = (data.host?.ip || '172.120.1.7:3033') + ' [' + (data.debug.bind_status || 'WAITING') + ' • 0 bytes]';
+                                hostIpEl.textContent = hostIpStr + ' [' + (data.debug.bind_status || 'WAITING') + ' • 0 bytes]';
                             }
                         } else if (data.host && data.host.ip) {
                             hostIpEl.textContent = data.host.ip;
@@ -3720,6 +3826,27 @@
                             } else {
                                 altNeedle.style.transform = 'rotate(0deg)';
                             }
+                        }
+
+                        // 4. Animate Side Slip Indicators (PLT & CPLT Balls + Digits)
+                        // Convention: 0 = Full Left, 50 = Center, 100 = Full Right
+                        var slipPlt = (f.slip_plt !== null && f.slip_plt !== undefined) ? f.slip_plt : (f.sideslip !== undefined ? f.sideslip : 50.0);
+                        var slipCplt = (f.slip_cplt !== null && f.slip_cplt !== undefined) ? f.slip_cplt : (f.sideslip !== undefined ? f.sideslip : 50.0);
+
+                        var slipValPlt = root.querySelector('#slip-val-plt');
+                        var slipBallPlt = root.querySelector('#slip-ball-plt');
+                        if (slipValPlt) slipValPlt.textContent = Number(slipPlt).toFixed(2);
+                        if (slipBallPlt) {
+                            var pxPlt = Math.max(-44, Math.min(44, (Number(slipPlt) - 50.0) * 0.88));
+                            slipBallPlt.style.transform = 'translateX(' + pxPlt.toFixed(1) + 'px)';
+                        }
+
+                        var slipValCplt = root.querySelector('#slip-val-cplt');
+                        var slipBallCplt = root.querySelector('#slip-ball-cplt');
+                        if (slipValCplt) slipValCplt.textContent = Number(slipCplt).toFixed(2);
+                        if (slipBallCplt) {
+                            var pxCplt = Math.max(-44, Math.min(44, (Number(slipCplt) - 50.0) * 0.88));
+                            slipBallCplt.style.transform = 'translateX(' + pxCplt.toFixed(1) + 'px)';
                         }
                     }
 
@@ -3873,10 +4000,10 @@
                             var el = root.querySelector('#' + id);
                             if (el) el.textContent = val;
                         };
-                        var hdgVal = apc.target_hdg ?? (data.flight ? data.flight.heading_mag : null);
-                        var altVal = apc.target_alt ?? (data.flight ? data.flight.altitude : null);
-                        var iasVal = apc.target_ias ?? (data.flight ? data.flight.airspeed_ias : null);
-                        var vsVal  = apc.target_vs ?? 0;
+                        var hdgVal = (apc.target_hdg !== null && apc.target_hdg !== undefined) ? apc.target_hdg : (data.flight ? data.flight.heading_mag : null);
+                        var altVal = (apc.target_alt !== null && apc.target_alt !== undefined) ? apc.target_alt : (data.flight ? data.flight.altitude : null);
+                        var iasVal = (apc.target_ias !== null && apc.target_ias !== undefined) ? apc.target_ias : (data.flight ? data.flight.airspeed_ias : null);
+                        var vsVal  = (apc.target_vs !== null && apc.target_vs !== undefined) ? apc.target_vs : 0;
 
                         setTxt('apc-hdg-val', (hdgVal !== null && hdgVal !== undefined) ? Math.round(hdgVal) + '°' : '--°');
                         setTxt('apc-alta-val', (altVal !== null && altVal !== undefined) ? Math.round(altVal) + ' FT' : '-- FT');
@@ -3912,14 +4039,13 @@
                             }
                         };
                         if (rn.dme) {
-                            setLampBtn('dme-dme1', rn.dme.dme1);
-                            setLampBtn('dme-dme2', rn.dme.dme2);
-                            setLampBtn('dme-hold1', rn.dme.dme1_hold, 'active-amber');
-                            setLampBtn('dme-hold2', rn.dme.dme2_hold, 'active-amber');
-                            setLampBtn('dme-gnd1', rn.dme.gnd1);
-                            setLampBtn('dme-gnd2', rn.dme.gnd2);
-                            setLampBtn('dme-call', rn.dme.call, 'active-amber');
-                            setLampBtn('dme-high-nr', rn.dme.high_nr);
+                            setLampBtn('dme-dme1', rn.dme.dme1, 'active-green');
+                            setLampBtn('dme-dme2', rn.dme.dme2, 'active-green');
+                            setLampBtn('dme-hold1', rn.dme.dme1_hold, 'active-green');
+                            setLampBtn('dme-hold2', rn.dme.dme2_hold, 'active-green');
+                            setLampBtn('dme-call', rn.dme.call, 'active-green');
+                            setLampBtn('dme-high-nr', rn.dme.high_nr || rn.dme.high_nr_on, 'active-green');
+                            setLampBtn('dme-hinr-txt', rn.dme.high_nr || rn.dme.high_nr_on, 'active-green');
                         }
                         if (rn.gps) {
                             setLampBtn('gps-msg', rn.gps.msg, 'active-amber');
