@@ -392,31 +392,43 @@ if (!function_exists('getSubsystemsAndFlightTelemetry')) {
         $latestFile = __DIR__ . '/latest_telemetry.json';
         $cached = null;
         if (file_exists($latestFile)) {
-            $cached = @json_decode(file_get_contents($latestFile), true);
-            if (is_array($cached) && !empty($cached['timestamp']) && (microtime(true) - (float)$cached['timestamp']) < 2.0 && isset($cached['autopilot'])) {
-                $cached['success'] = true;
-                $cached['temperature'] = $cached['temperature'] ?? 21.4;
-                $cached['humidity'] = $cached['humidity'] ?? 48.5;
-                $cached['temp_status'] = $cached['temp_status'] ?? 'normal';
-                $cached['hum_status'] = $cached['hum_status'] ?? 'normal';
-                $cached['debug'] = [
-                    'bind_status'    => 'UDP_DAEMON_BRIDGE_ACTIVE (50 Hz)',
-                    'bytes_received' => $cached['packet_len'] ?? 6565,
-                    'peer_sender'    => $cached['peer'] ?? 'HOST',
-                    'stim_sent_to'   => ["{$hostIp}:{$hostPort}"]
-                ];
-                return $cached;
+            $rawJson = @file_get_contents($latestFile);
+            if ($rawJson) {
+                $cached = @json_decode($rawJson, true);
+            }
+            if (is_array($cached) && !empty($cached['timestamp'])) {
+                $age = microtime(true) - (float)$cached['timestamp'];
+                if ($age < 4.0) {
+                    $cached['success'] = true;
+                    $cached['is_live'] = ($age < 3.0);
+                    $cached['temperature'] = $cached['temperature'] ?? 21.4;
+                    $cached['humidity'] = $cached['humidity'] ?? 48.5;
+                    $cached['temp_status'] = $cached['temp_status'] ?? 'normal';
+                    $cached['hum_status'] = $cached['hum_status'] ?? 'normal';
+                    $cached['debug'] = [
+                        'bind_status'    => 'UDP_DAEMON_BRIDGE_ACTIVE (50 Hz)',
+                        'bytes_received' => $cached['packet_len'] ?? 6565,
+                        'peer_sender'    => $cached['peer'] ?? 'HOST',
+                        'stim_sent_to'   => ["{$hostIp}:{$hostPort}"]
+                    ];
+                    return $cached;
+                }
             }
         }
 
-        // Daemon was stale, not running, or missing updated schema -> force restart daemon
-        $needsForce = (!file_exists($latestFile) || !is_array($cached) || empty($cached['timestamp']) || (microtime(true) - (float)$cached['timestamp']) >= 2.0 || !isset($cached['autopilot']));
-        ensureUdpBridgeRunning($needsForce);
-        usleep(50000); // 50ms wait for first frame
+        // Bridge is down or inactive (> 4s without packets) -> softly ensure running without force killing
+        ensureUdpBridgeRunning(false);
+        usleep(30000); // 30ms wait
+
         if (file_exists($latestFile)) {
-            $cached = @json_decode(file_get_contents($latestFile), true);
-            if (is_array($cached) && !empty($cached['timestamp']) && (microtime(true) - (float)$cached['timestamp']) < 2.0 && isset($cached['autopilot'])) {
+            $rawJson = @file_get_contents($latestFile);
+            if ($rawJson) {
+                $cached = @json_decode($rawJson, true);
+            }
+            if (is_array($cached) && !empty($cached['timestamp'])) {
+                $age = microtime(true) - (float)$cached['timestamp'];
                 $cached['success'] = true;
+                $cached['is_live'] = ($age < 3.0);
                 $cached['temperature'] = $cached['temperature'] ?? 21.4;
                 $cached['humidity'] = $cached['humidity'] ?? 48.5;
                 $cached['temp_status'] = $cached['temp_status'] ?? 'normal';

@@ -4447,6 +4447,1042 @@ input[type="date"].paper-input {
     text-shadow: 0 0 3px #00ff44, 0 0 8px rgba(0, 255, 68, 0.85), 0 0 15px rgba(0, 255, 68, 0.5) !important;
 }
 
+/* ==========================================================================
+   EC135 GABLES AUDIO CONTROL & INTERCOM PANEL (ICS / ACP)
+   ========================================================================== */
+.ec135-ics-panel {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    background: linear-gradient(180deg, #30353b 0%, #1e2226 50%, #14171a 100%);
+    border: 2px solid #0f1214;
+    border-radius: 6px;
+    padding: 10px 14px 8px 14px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 6px 18px rgba(0, 0, 0, 0.85);
+    user-select: none;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px auto;
+}
+
+/* Dzus Screws */
+.ics-dzus-screw {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #474f56 0%, #15181a 80%);
+    border: 1px solid #0a0c0d;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+.ics-dzus-screw::after {
+    content: '';
+    width: 10px;
+    height: 2px;
+    background: #090a0c;
+    border-radius: 0.5px;
+}
+.ics-dzus-screw.pos-tl { top: 6px; left: 6px; }
+.ics-dzus-screw.pos-tr { top: 6px; right: 6px; }
+.ics-dzus-screw.pos-bl { bottom: 6px; left: 6px; }
+.ics-dzus-screw.pos-br { bottom: 6px; right: 6px; }
+
+/* Channels Row (8 columns) */
+.ics-channels-row {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    width: 100%;
+    align-items: center;
+    justify-items: center;
+}
+
+.ics-channel-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+}
+
+/* Green LEDs above top row */
+.ics-led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #0c2b14;
+    border: 1px solid #06170a;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8);
+    transition: all 0.15s ease-out;
+}
+.ics-led.active-green,
+.ics-led.active {
+    background: #00ff44 !important;
+    border-color: #55ff88 !important;
+    box-shadow: 0 0 4px #00ff44, 0 0 8px rgba(0, 255, 68, 0.9), 0 0 12px rgba(0, 255, 68, 0.5) !important;
+}
+
+/* White dot above bottom row */
+.ics-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+}
+.ics-dot.active-green,
+.ics-dot.active {
+    background: #00ff44 !important;
+    box-shadow: 0 0 4px #00ff44, 0 0 8px rgba(0, 255, 68, 0.9) !important;
+}
+
+/* Rotary Push-to-listen Knob */
+.ics-knob-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 45% 45%, #2a2f34 0%, #15181b 80%, #0c0e10 100%);
+    border: 1.5px solid #090a0c;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 2px 5px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.ics-knob-btn:active {
+    transform: scale(0.94);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.ics-pointer-tri {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 9px solid #ffffff;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.9));
+}
+
+/* Channel Label Tag */
+.ics-channel-tag {
+    background: #080a0c;
+    border: 1px solid #1a1e22;
+    border-radius: 2px;
+    padding: 1px 4px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #e2e8f0;
+    letter-spacing: 0.3px;
+    text-align: center;
+    width: 36px;
+    box-sizing: border-box;
+    line-height: 1.2;
+}
+.ics-tag-blank {
+    height: 13px;
+    background: transparent;
+    border-color: transparent;
+}
+
+/* Center Section */
+.ics-center-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    height: 80px;
+    position: relative;
+}
+
+.ics-center-left,
+.ics-center-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ics-lbl-small {
+    font-family: 'Inter', sans-serif;
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+    text-align: center;
+    line-height: 1;
+}
+
+.ics-lbl-dim {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.ics-badge-lamp {
+    font-family: 'Inter', sans-serif;
+    font-size: 8.5px;
+    font-weight: 900;
+    color: #064e3b;
+    border: 1px solid #064e3b;
+    border-radius: 8px;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: all 0.15s ease-out;
+}
+.ics-badge-lamp.active-green,
+.ics-badge-lamp.active {
+    color: #00ff44 !important;
+    border-color: #00ff44 !important;
+    box-shadow: 0 0 6px rgba(0, 255, 68, 0.85), inset 0 0 4px rgba(0, 255, 68, 0.4) !important;
+    text-shadow: 0 0 4px #00ff44 !important;
+}
+.ics-badge-lamp.active-amber {
+    color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.85), inset 0 0 4px rgba(245, 158, 11, 0.4) !important;
+    text-shadow: 0 0 4px #f59e0b !important;
+}
+@keyframes ics-blink-call {
+    0%, 100% { opacity: 1; color: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.9); }
+    50% { opacity: 0.2; color: #451a03; border-color: #451a03; box-shadow: none; }
+}
+.ics-badge-lamp.blink-slow {
+    animation: ics-blink-call 1s infinite ease-in-out !important;
+}
+.ics-badge-lamp.blink-fast {
+    animation: ics-blink-call 0.4s infinite ease-in-out !important;
+}
+
+/* EMER Lever Switch with Red Tip */
+.ics-emer-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+.ics-emer-switch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #374151 0%, #111827 100%);
+    border: 1.5px solid #000000;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.ics-lever-tip-red {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ef4444 0%, #991b1b 100%);
+    box-shadow: 0 0 3px rgba(239, 68, 68, 0.8);
+}
+
+/* VOX Potentiometer */
+.ics-vox-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.ics-vox-pot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #334155 0%, #0f172a 100%);
+    border: 1.5px solid #000000;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ics-pot-tick {
+    width: 2px;
+    height: 8px;
+    background: #ffffff;
+    border-radius: 1px;
+    transform: rotate(-30deg);
+}
+.ics-vox-legend {
+    display: flex;
+    gap: 3px;
+    font-size: 6.5px;
+    font-weight: 800;
+    color: #94a3b8;
+}
+
+/* Central Transmit Selector Bay */
+.ics-central-selector-bay {
+    position: relative;
+    width: 140px;
+    height: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ics-radial-lines {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+.ics-central-tx-knob {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #334155 0%, #0f172a 80%, #020617 100%);
+    border: 2px solid #000000;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-35deg);
+    transition: transform 0.2s ease-out;
+    z-index: 2;
+}
+
+.ics-knob-index-double {
+    width: 18px;
+    height: 4px;
+    background: #ffffff;
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+    position: absolute;
+    left: 4px;
+}
+
+/* Rocker Switch */
+.ics-rocker-switch {
+    width: 18px;
+    height: 26px;
+    background: #090a0c;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+.ics-rocker-cap {
+    width: 12px;
+    height: 14px;
+    background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
+    border-radius: 6px;
+    border: 1px solid #000;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ISO CALL button */
+.ics-isocall-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.ics-btn-rect {
+    width: 16px;
+    height: 10px;
+    background: #090a0c;
+    border: 1.5px solid #475569;
+    border-radius: 2px;
+}
+
+/* Dual Concentric Potentiometer */
+.ics-vol-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.ics-dual-pot {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #334155 0%, #0f172a 100%);
+    border: 1.5px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ics-pot-inner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #475569 0%, #1e293b 100%);
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ics-pot-tick-double {
+    width: 2px;
+    height: 6px;
+    background: #ffffff;
+    transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   EC135 INSTRUCTOR CONTROL PANEL (ICP - INSTRUCTOR OPERATING STATION & E-STOPS)
+   ========================================================================== */
+.ec135-icp-panel {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    background: linear-gradient(180deg, #323940 0%, #20252b 50%, #15181b 100%);
+    border: 2.5px solid #0d0f12;
+    border-radius: 8px;
+    padding: 20px 24px 18px 24px;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.9);
+    user-select: none;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin: 6px auto;
+}
+
+/* ICP Title */
+.icp-title {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.8px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    text-align: center;
+}
+
+/* Screws */
+.icp-screw {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #4a545e 0%, #15181a 80%);
+    border: 1px solid #0a0c0d;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+.icp-screw::after {
+    content: '';
+    width: 10px;
+    height: 2px;
+    background: #090a0c;
+}
+.icp-screw.pos-tl { top: 6px; left: 8px; }
+.icp-screw.pos-tr { top: 6px; right: 8px; }
+.icp-screw.pos-tc { top: 6px; left: 50%; transform: translateX(-50%); }
+.icp-screw.pos-bl { bottom: 6px; left: 8px; }
+.icp-screw.pos-br { bottom: 6px; right: 8px; }
+.icp-screw.pos-bc { bottom: 6px; left: 50%; transform: translateX(-50%); }
+
+/* Grid Sections */
+.icp-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+.icp-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.icp-unit-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    color: #e2e8f0;
+    letter-spacing: 0.4px;
+    text-align: center;
+    line-height: 1.15;
+}
+
+/* Guarded Pushbutton Casing */
+.icp-guarded-switch {
+    position: relative;
+    width: 50px;
+    height: 54px;
+    background: #0d0f12;
+    border: 2px solid #23282e;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.icp-guard-flap {
+    position: absolute;
+    top: -2px;
+    width: 42px;
+    height: 6px;
+    background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
+    border-radius: 2px;
+    border: 1px solid #0f172a;
+}
+
+.icp-btn-cap {
+    width: 38px;
+    height: 40px;
+    background: #15181c;
+    border: 1px solid #090a0c;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+.icp-btn-cap:active {
+    transform: scale(0.96);
+}
+
+.icp-half-txt {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    line-height: 1.25;
+    text-align: center;
+    transition: all 0.12s ease;
+}
+
+/* Colors Inactive */
+.icp-half-txt.green-dim { color: #0a2e12; }
+.icp-half-txt.amber-dim { color: #451a03; }
+.icp-half-txt.yellow-dim { color: #422006; }
+.icp-half-txt.red-dim { color: #450a0a; }
+
+/* Colors Active */
+.icp-half-txt.green-dim.active-green,
+.icp-half-txt.green-dim.active {
+    color: #00ff44 !important;
+    text-shadow: 0 0 4px #00ff44, 0 0 8px rgba(0, 255, 68, 0.8) !important;
+}
+
+.icp-half-txt.amber-dim.active-amber,
+.icp-half-txt.amber-dim.active {
+    color: #f59e0b !important;
+    text-shadow: 0 0 4px #f59e0b, 0 0 8px rgba(245, 158, 11, 0.8) !important;
+}
+
+.icp-half-txt.yellow-dim.active-yellow,
+.icp-half-txt.yellow-dim.active {
+    color: #eab308 !important;
+    text-shadow: 0 0 4px #eab308, 0 0 8px rgba(234, 179, 8, 0.8) !important;
+}
+
+.icp-half-txt.red-dim.active-red,
+.icp-half-txt.red-dim.active {
+    color: #ef4444 !important;
+    text-shadow: 0 0 4px #ef4444, 0 0 8px rgba(239, 68, 68, 0.85) !important;
+}
+
+/* Big Red Mushroom Total Emergency Stop */
+.icp-estop-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    height: 72px;
+}
+
+.icp-estop-guard-rail {
+    position: absolute;
+    width: 6px;
+    height: 60px;
+    background: linear-gradient(90deg, #1e293b 0%, #475569 50%, #0f172a 100%);
+    border-radius: 3px;
+    border: 1px solid #000;
+}
+.icp-estop-guard-rail.rail-left { left: 4px; }
+.icp-estop-guard-rail.rail-right { right: 4px; }
+
+.icp-estop-mushroom {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 45% 45%, #ef4444 0%, #dc2626 50%, #991b1b 85%, #450a0a 100%);
+    border: 3px solid #7f1d1d;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -3px 6px rgba(0, 0, 0, 0.7), 0 4px 14px rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s ease;
+}
+.icp-estop-mushroom:active {
+    transform: scale(0.94);
+    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.9);
+}
+
+.icp-estop-mushroom.active-red,
+.icp-estop-mushroom.active {
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.9), inset 0 0 10px rgba(255, 255, 255, 0.6) !important;
+    animation: cwpFlash 0.8s infinite alternate ease-in-out;
+}
+
+.icp-estop-core {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #b91c1c 0%, #7f1d1d 100%);
+    border: 1.5px solid #450a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icp-estop-txt {
+    font-family: 'Inter', sans-serif;
+    font-size: 7px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    line-height: 1;
+}
+
+/* Bottom Row (5 units) */
+.icp-bottom-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+/* Square Direct Comms Button */
+.icp-square-btn-box {
+    width: 46px;
+    height: 46px;
+    background: #0d0f12;
+    border: 2px solid #23282e;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.icp-square-btn {
+    width: 36px;
+    height: 36px;
+    background: #15181c;
+    border: 1px solid #090a0c;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+.icp-square-btn:active {
+    transform: scale(0.96);
+}
+
+/* Small Test Pushbutton with Hex Nut */
+.icp-test-btn-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle, #475569 0%, #1e293b 100%);
+    border: 1px solid #0f172a;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+.icp-test-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #1e293b 0%, #000000 100%);
+    border: 1px solid #000;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+.icp-test-btn:active {
+    transform: scale(0.92);
+}
+
+/* Audio Mic Socket */
+.icp-audio-jack {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 45% 45%, #2a2f35 0%, #111417 70%, #050607 100%);
+    border: 3px solid #000;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2), 0 3px 6px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icp-jack-hole {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #000000;
+    border: 2px solid #1a1e22;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 1);
+}
+
+/* ==========================================================================
+   EC135 SIMULATOR CONTROL PANEL (SCP - COCKPIT PECULIAR & DAYLIGHT)
+   ========================================================================== */
+.ec135-scp-panel {
+    max-width: 480px;
+}
+
+/* SCP Daylight Potentiometer */
+.scp-daylight-container {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scp-daylight-arc {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.scp-daylight-knob {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #71717a 0%, #3f3f46 50%, #18181b 100%);
+    border: 2px solid #09090b;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 3px 8px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transform: rotate(0deg);
+    transition: transform 0.15s ease-out;
+}
+
+.scp-knob-pointer {
+    position: absolute;
+    bottom: 2px;
+    left: 4px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 7px solid #ffffff;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8));
+    transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   EC135JAP POWER CONTROLLER & BRIGHTNESS SCREENS PANEL
+   ========================================================================== */
+.ec135-pwr-controller-panel {
+    position: relative;
+    background: linear-gradient(180deg, #24292e 0%, #1a1e22 100%);
+    border: 3px solid #0d1117;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.85);
+    padding: 16px 20px 20px 20px;
+    width: 280px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+}
+
+.pwr-panel-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.8px;
+    text-align: center;
+    text-shadow: 0 1px 2px #000;
+    margin-bottom: 4px;
+}
+
+/* Hexagonal Indicator Lamp */
+.pwr-hex-lamp-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.pwr-lamp-lbl {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #e2e8f0;
+    letter-spacing: 0.5px;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.pwr-hex-bezel {
+    width: 32px;
+    height: 32px;
+    background: radial-gradient(circle at 40% 40%, #475569 0%, #1e293b 70%, #0f172a 100%);
+    border: 1px solid #000;
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pwr-led-lens {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #000;
+    background: radial-gradient(circle at 35% 35%, #1e3a1e 0%, #0f240f 60%, #051205 100%);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+    transition: all 0.2s ease;
+}
+
+.pwr-led-lens.active-green {
+    background: radial-gradient(circle at 35% 35%, #86efac 0%, #22c55e 50%, #15803d 100%);
+    box-shadow: 0 0 10px #22c55e, 0 0 20px rgba(34, 197, 94, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.pwr-led-lens.active-red {
+    background: radial-gradient(circle at 35% 35%, #fca5a5 0%, #ef4444 50%, #991b1b 100%);
+    box-shadow: 0 0 10px #ef4444, 0 0 20px rgba(239, 68, 68, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+/* ==========================================================================
+   BRIGHTNESS & SCREENS CONTROLLER (DIMMER PANEL)
+   ========================================================================== */
+.ec135-dimmer-panel {
+    position: relative;
+    background: linear-gradient(180deg, #24292e 0%, #1a1e22 100%);
+    border: 3px solid #0d1117;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.85);
+    padding: 24px 28px;
+    width: 100%;
+    max-width: 860px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    overflow-x: auto;
+}
+
+.dimmer-knob-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 72px;
+    flex: 1 1 auto;
+}
+
+.dimmer-knob-lbl {
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.5px;
+    text-align: center;
+    text-shadow: 0 1px 2px #000;
+    white-space: nowrap;
+}
+
+.dimmer-knob-box {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dimmer-arc-svg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.dimmer-knob-dial {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #71717a 0%, #3f3f46 50%, #18181b 100%);
+    border: 2px solid #09090b;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 3px 6px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transform: rotate(0deg);
+    transition: transform 0.15s ease-out;
+}
+
+.dimmer-knob-dial .scp-knob-pointer {
+    position: absolute;
+    bottom: 2px;
+    left: 3px;
+    width: 0;
+    height: 0;
+    border-top: 3.5px solid transparent;
+    border-bottom: 3.5px solid transparent;
+    border-right: 6px solid #ffffff;
+    transform: rotate(45deg);
+}
+
+/* 3-Position Mode Switch */
+.dimmer-3pos-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin: 0 12px;
+    min-width: 60px;
+}
+
+.dimmer-3pos-bezel {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #7f1d1d 0%, #450a0a 60%, #1c0505 100%);
+    border: 2px solid #000;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 3px 6px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.dimmer-toggle-lever {
+    width: 8px;
+    height: 18px;
+    background: linear-gradient(90deg, #e2e8f0 0%, #94a3b8 50%, #475569 100%);
+    border-radius: 4px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.8);
+    transform-origin: center center;
+    transition: transform 0.15s ease;
+}
+
+/* 8 Screen Switches in Bottom Row */
+.dimmer-sw-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 74px;
+    flex: 1 1 auto;
+}
+
+.dimmer-sw-tag {
+    font-size: 7.5px;
+    font-weight: 800;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+    text-align: center;
+    text-shadow: 0 1px 2px #000;
+    white-space: nowrap;
+}
+
+.dimmer-sw-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.dimmer-sublabel {
+    font-size: 7px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.dimmer-sw-bezel {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #991b1b 0%, #450a0a 70%, #1f0808 100%);
+    border: 2px solid #000;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dimmer-lever {
+    width: 6px;
+    height: 14px;
+    background: linear-gradient(90deg, #f8fafc 0%, #cbd5e1 50%, #64748b 100%);
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    transform: translateY(2px);
+    transition: transform 0.15s ease;
+}
+
+.dimmer-lever.sw-on {
+    transform: translateY(2px);
+}
+
+.dimmer-lever.sw-off {
+    transform: translateY(-2px);
+}
+
+
+
 
 
 

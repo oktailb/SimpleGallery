@@ -321,40 +321,65 @@ class TelemetrySchema {
             'middle_m' => $getBool('ltMiddleM') || $getBool('middle_m'),
         ];
 
-        // 6. Audio selectors
+        // 6. Audio selectors (Mastered from st_icsOut: JAP_ICS_OUT[0] Pilot, JAP_ICS_OUT[1] Copilot)
         $audioPlt = [
-            'atc'  => $getBool('ltAtc'),
-            'dme1' => $getBool('ltDme1'),
-            'dme2' => $getBool('ltDme2'),
-            'emer' => $getBool('ltEmer'),
-            'mkr'  => $getBool('ltMkr'),
-            'nav1' => $getBool('ltNav1'),
-            'nav2' => $getBool('ltNav2'),
-            'vhf1' => $getBool('ltVhf1'),
-            'vhf2' => $getBool('ltVhf2'),
+            'vhf1'        => $getBool('ltVhf[0]') || $getBool('ltVhf1') || $getBool('ltVhf'),
+            'vhf2'        => $getBool('ltVhf2[0]') || $getBool('ltVhf2'),
+            'fm1'         => $getBool('ltFm[0]'),
+            'fm2'         => $getBool('ltFm2[0]'),
+            'fm3'         => $getBool('ltFm3[0]'),
+            'fm4'         => $getBool('ltFm4[0]'),
+            'fm5'         => $getBool('ltFm5[0]'),
+            'fm6'         => $getBool('ltFm6[0]'),
+            'tx'          => $getBool('ltTx[0]'),
+            'iso'         => $getBool('ltIso[0]'),
+            'call'        => (int)$getVal('ltCall[0]', 0),
+            'atc'         => $getBool('ltAtc') || $getBool('ltFm5[0]'),
+            'dme1'        => $getBool('ltDme1'),
+            'dme2'        => $getBool('ltDme2'),
+            'emer'        => $getBool('ltEmer'),
+            'mkr'         => $getBool('ltMkr'),
+            'nav1'        => $getBool('ltNav1'),
+            'nav2'        => $getBool('ltNav2'),
+            'tx_selector' => (int)$getVal('swCentralSelector', $getBool('ltVhf2[0]') ? 2 : ($getBool('ltVhf[0]') ? 1 : 0)),
         ];
         $audioCplt = [
-            'atc'  => $getBool('ltAtcCplt'),
-            'dme1' => $getBool('ltDme1Cplt'),
-            'dme2' => $getBool('ltDme2Cplt'),
-            'emer' => $getBool('ltEmerCplt'),
-            'mkr'  => $getBool('ltMkrCplt'),
-            'nav1' => $getBool('ltNav1Cplt'),
-            'nav2' => $getBool('ltNav2Cplt'),
-            'vhf1' => $getBool('ltVhf1Cplt'),
-            'vhf2' => $getBool('ltVhf2Cplt'),
+            'vhf1'        => $getBool('ltVhf[1]') || $getBool('ltVhf1Cplt'),
+            'vhf2'        => $getBool('ltVhf2[1]') || $getBool('ltVhf2Cplt'),
+            'fm1'         => $getBool('ltFm[1]'),
+            'fm2'         => $getBool('ltFm2[1]'),
+            'fm3'         => $getBool('ltFm3[1]'),
+            'fm4'         => $getBool('ltFm4[1]'),
+            'fm5'         => $getBool('ltFm5[1]'),
+            'fm6'         => $getBool('ltFm6[1]'),
+            'tx'          => $getBool('ltTx[1]'),
+            'iso'         => $getBool('ltIso[1]'),
+            'call'        => (int)$getVal('ltCall[1]', 0),
+            'atc'         => $getBool('ltAtcCplt') || $getBool('ltFm5[1]'),
+            'dme1'        => $getBool('ltDme1Cplt'),
+            'dme2'        => $getBool('ltDme2Cplt'),
+            'emer'        => $getBool('ltEmerCplt'),
+            'mkr'         => $getBool('ltMkrCplt'),
+            'nav1'        => $getBool('ltNav1Cplt'),
+            'nav2'        => $getBool('ltNav2Cplt'),
+            'tx_selector' => (int)$getVal('swCentralSelectorCplt', $getBool('ltVhf2[1]') ? 2 : ($getBool('ltVhf[1]') ? 1 : 0)),
         ];
 
         // 7. Displays (CAD, VEMD, Euronav, PFD/ND)
         $displays = [
-            'cad_brt'          => $normPct($getVal('BrtCad', 100.0)),
-            'cad_on'           => $getBool('CadScreenOn'),
-            'vemd_brt'         => $normPct($getVal('BrtVemd', 100.0)),
-            'vemd1_on'         => $getBool('Vemd1ScreenOn'),
-            'vemd2_on'         => $getBool('Vemd2ScreenOn'),
+            'cad_brt'          => $normPct($getVal('BrtCad', $getVal('cad_brt', 100.0))),
+            'cad_on'           => $getBool('CadScreenOn') || $getBool('Power_CAD'),
+            'vemd_brt'         => $normPct($getVal('BrtVemd', $getVal('vemd_brt', 100.0))),
+            'vemd1_on'         => $getBool('Vemd1ScreenOn') || $getBool('Power_VEMD'),
+            'vemd2_on'         => $getBool('Vemd2ScreenOn') || $getBool('Power_VEMD'),
             'euronav_contrast' => $normPct($getVal('contrastSmd68', 100.0)),
+            'euronav_on'       => $getBool('Power_Euronav') || $getBool('Power_EURONAV'),
             'pfd_crt'          => $normPct($getVal('CrtPfd', 100.0)),
             'nd_crt'           => $normPct($getVal('CrtNd', 100.0)),
+            'pfd_plt_on'       => $getBool('Power_PLT_FCDS') || $getBool('PfdPltOn'),
+            'nd_plt_on'        => $getBool('Power_PLT_FCDS') || $getBool('NdPltOn'),
+            'pfd_cplt_on'      => $getBool('Power_PLT_FCDS') || $getBool('PfdCpltOn'),
+            'nd_cplt_on'       => $getBool('Power_PLT_FCDS') || $getBool('NdCpltOn'),
         ];
 
         // 8. Lighting (Mastered at exact offsets 6481..6490 from fgfs_invis.xml)
@@ -371,14 +396,16 @@ class TelemetrySchema {
 
         // 9. Power supply
         $powerSupply = [
-            'euronav'     => $getBool('Power_Euronav') || $getBool('PwrRn6'),
+            'euronav'     => $getBool('Power_Euronav') || $getBool('Power_EURONAV') || $getBool('PwrRn6'),
             'cad'         => $getBool('Power_CAD') || $getBool('bkrIess1_cad'),
             'vemd'        => $getBool('Power_VEMD') || $getBool('bkrIess1_vemd'),
             'plt_fcds'    => $getBool('Power_PLT_FCDS'),
-            'transponder' => $getBool('Power_Transponder'),
+            'transponder' => $getBool('Power_Transponder') || $getBool('Power_TRANSPONDER'),
             'wp'          => $getBool('Power_WP'),
             'ics_plt'     => $getBool('Power_ICS_PLT'),
             'ics_cplt'    => $getBool('Power_ICS_CPLT'),
+            'garmin1'     => $getBool('flPowerGarmin430[0]') || $getBool('JAP_GARMIN_OUT[0]/POWER_GARMIN_OUT/flPowerGarmin430'),
+            'garmin2'     => $getBool('flPowerGarmin430[1]') || $getBool('JAP_GARMIN_OUT[1]/POWER_GARMIN_OUT/flPowerGarmin430'),
         ];
 
         // 10. Simulator status & cycles (offset 6561)
@@ -392,38 +419,47 @@ class TelemetrySchema {
             'cycles'       => (int)$getVal('cycles', 0)
         ];
 
+        // 11. Instructor Control Panel (st_instPeculiarOut & st_ckptPeculiarOut)
+        $instructorPanel = [
+            'total_emg_stop' => $getBool('ltEmgStop'),
+            'dyn_emg_stop'   => $getBool('ltDynEmgStop'),
+            'motion_ready'   => $getBool('ltMotionReady'),
+            'motion_on'      => $getBool('ltMotionOn'),
+            'sound'          => $getBool('ltSound') || $getBool('ltSoundOn'),
+            'sound_on'       => $getBool('ltSoundOn') || $getBool('ltSound'),
+            'direct_comms'   => $getBool('ltDirectComms'),
+            'lights'         => $getBool('ltLightsOnOff'),
+        ];
+
         return [
-            'success'      => true,
-            'is_live'      => true,
-            'temperature'  => 21.4,
-            'humidity'     => 48.5,
-            'temp_status'  => 'normal',
-            'hum_status'   => 'normal',
-            'timestamp'    => microtime(true),
-            'packet_len'   => $len,
-            'peer'         => $peer,
-            'host'         => [
+            'success'          => true,
+            'is_live'          => true,
+            'temperature'      => 21.4,
+            'humidity'         => 48.5,
+            'temp_status'      => 'normal',
+            'hum_status'       => 'normal',
+            'timestamp'        => microtime(true),
+            'packet_len'       => $len,
+            'peer'             => $peer,
+            'host'             => [
                 'ip'     => "{$hostIp}:{$localPort}",
                 'status' => 'CONNECTED (50 Hz)'
             ],
-            'flight'       => $flight,
-            'powerplant'   => $powerplant,
-            'cwp'          => $cwp,
-            'autopilot'    => $apc,
-            'radionav'     => [
-                'dme' => $dme,
-                'gps' => $gps,
-                'mbr' => $mbr
-            ],
-            'audio_comms'  => [
+            'flight'           => $flight,
+            'powerplant'       => $powerplant,
+            'cwp'              => $cwp,
+            'autopilot'        => $autopilot,
+            'radionav'         => $radioNav,
+            'audio_comms'      => [
                 'pilot'   => $audioPlt,
-                'copilot' => $audioCplt
+                'copilot' => $audioCplt,
             ],
-            'displays'     => $displays,
-            'lighting'     => $lighting,
-            'power_supply' => $powerSupply,
-            'sim_status'   => $simStatus,
-            'xml_schema'   => [
+            'displays'         => $displays,
+            'lighting'         => $lighting,
+            'power_supply'     => $powerSupply,
+            'sim_status'       => $simStatus,
+            'instructor_panel' => $instructorPanel,
+            'xml_schema'       => [
                 'fields_loaded' => count($schema),
                 'total_bytes'   => self::$totalSize
             ]

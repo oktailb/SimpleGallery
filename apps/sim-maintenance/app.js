@@ -860,6 +860,648 @@
             `;
         }
 
+        renderAudioControlPanel(prefix) {
+            var idPrefix = prefix || 'plt';
+            return `
+                <div class="ec135-ics-panel" id="ics-panel-${idPrefix}">
+                    <!-- Dzus Screws -->
+                    <div class="ics-dzus-screw pos-tl"></div>
+                    <div class="ics-dzus-screw pos-tr"></div>
+                    <div class="ics-dzus-screw pos-bl"></div>
+                    <div class="ics-dzus-screw pos-br"></div>
+
+                    <!-- Top Row: LEDs & Channels -->
+                    <div class="ics-channels-row ics-row-top">
+                        <!-- 1. VHF1 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-vhf1"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-vhf1"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">VHF1</div>
+                        </div>
+                        <!-- 2. VHF2 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-vhf2"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-vhf2"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">VHF2</div>
+                        </div>
+                        <!-- 3. FM1 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-fm1"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag ics-tag-blank"></div>
+                        </div>
+                        <!-- 4. FM2 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-fm2"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag ics-tag-blank"></div>
+                        </div>
+                        <!-- 5. FM3 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-fm3"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag ics-tag-blank"></div>
+                        </div>
+                        <!-- 6. FM4 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-fm4"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag ics-tag-blank"></div>
+                        </div>
+                        <!-- 7. TAC1 (FM5 / ATC) -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-atc"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-atc"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">TAC1</div>
+                        </div>
+                        <!-- 8. PA (FM6) -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-led" id="audio-${idPrefix}-led-pa"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-pa"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">PA</div>
+                        </div>
+                    </div>
+
+                    <!-- Center Section (Switches & Central Selector) -->
+                    <div class="ics-center-section">
+                        <!-- Left Annunciators & Toggle -->
+                        <div class="ics-center-left">
+                            <div class="ics-badge-lamp" id="audio-${idPrefix}-iso-lbl">ISO</div>
+                            <div class="ics-emer-group">
+                                <span class="ics-lbl-small">EMER</span>
+                                <div class="ics-emer-switch" id="audio-${idPrefix}-sw-emer">
+                                    <div class="ics-lever-tip-red"></div>
+                                </div>
+                                <div class="ics-emer-legend" style="display:flex; flex-direction:column; align-items:center;">
+                                    <span class="ics-lbl-dim">BK-UP</span>
+                                    <span class="ics-lbl-small">NORM</span>
+                                </div>
+                            </div>
+                            <div class="ics-badge-lamp" id="audio-${idPrefix}-tx-lbl">TX</div>
+                        </div>
+
+                        <!-- VOX Knob Group -->
+                        <div class="ics-vox-group">
+                            <span class="ics-lbl-small">VOX</span>
+                            <div class="ics-vox-pot" id="audio-${idPrefix}-pot-vox"><div class="ics-pot-tick"></div></div>
+                            <div class="ics-vox-legend">
+                                <span>MIN</span>
+                                <span>PRESET</span>
+                                <span>PTT</span>
+                                <span>ICS</span>
+                            </div>
+                        </div>
+
+                        <!-- Center Selector & Radial Circuit Lines -->
+                        <div class="ics-central-selector-bay">
+                            <svg class="ics-radial-lines" viewBox="0 0 260 120">
+                                <line x1="130" y1="60" x2="30" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="60" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="90" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="120" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="150" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="180" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="210" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="130" y1="60" x2="240" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <div class="ics-central-tx-knob" id="audio-${idPrefix}-tx-knob">
+                                <div class="ics-knob-index-double"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right ICS TX Rocker & RX Potentiometers -->
+                        <div class="ics-center-right">
+                            <div class="ics-rocker-group" style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                                <span class="ics-lbl-small">ICS</span>
+                                <div class="ics-rocker-switch" id="audio-${idPrefix}-rocker-ics">
+                                    <div class="ics-rocker-cap"></div>
+                                </div>
+                                <span class="ics-lbl-small">TX</span>
+                            </div>
+
+                            <div class="ics-isocall-box">
+                                <div class="ics-btn-rect"></div>
+                                <span class="ics-lbl-small">ISO<br>CALL</span>
+                            </div>
+
+                            <div class="ics-vol-group">
+                                <span class="ics-lbl-small">RX <span style="font-size:9px;">◷</span> ICS</span>
+                                <div class="ics-dual-pot">
+                                    <div class="ics-pot-outer"></div>
+                                    <div class="ics-pot-inner"><div class="ics-pot-tick-double"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="ics-badge-lamp" id="audio-${idPrefix}-call-lbl">CALL</div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: 8 Channels -->
+                    <div class="ics-channels-row ics-row-bot">
+                        <!-- 1. NAV1 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot" id="audio-${idPrefix}-led-nav1"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-nav1"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">NAV1</div>
+                        </div>
+                        <!-- 2. NAV2 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot" id="audio-${idPrefix}-led-nav2"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-nav2"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">NAV2</div>
+                        </div>
+                        <!-- 3. DME -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot" id="audio-${idPrefix}-led-dme1"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-dme1"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">DME</div>
+                        </div>
+                        <!-- 4. ADF -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot" id="audio-${idPrefix}-led-adf"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-adf"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">ADF</div>
+                        </div>
+                        <!-- 5. MKR -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot" id="audio-${idPrefix}-led-mkr"></div>
+                            <div class="ics-knob-btn" id="audio-${idPrefix}-mkr"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">MKR</div>
+                        </div>
+                        <!-- 6. AUX1 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">AUX1</div>
+                        </div>
+                        <!-- 7. AUX2 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">AUX2</div>
+                        </div>
+                        <!-- 8. AUX3 -->
+                        <div class="ics-channel-unit">
+                            <div class="ics-dot"></div>
+                            <div class="ics-knob-btn"><div class="ics-pointer-tri"></div></div>
+                            <div class="ics-channel-tag">AUX3</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderSimulatorControlPanel() {
+            return `
+                <div class="ec135-icp-panel ec135-scp-panel" id="simulator-control-panel">
+                    <!-- Screws -->
+                    <div class="icp-screw pos-tl"></div>
+                    <div class="icp-screw pos-tc"></div>
+                    <div class="icp-screw pos-tr"></div>
+                    <div class="icp-screw pos-bl"></div>
+                    <div class="icp-screw pos-bc"></div>
+                    <div class="icp-screw pos-br"></div>
+
+                    <!-- Panel Title -->
+                    <div class="icp-title">SIMULATOR CONTROL PANEL</div>
+
+                    <!-- Top Row: MOTION, TOTAL EMERGENCY STOP, DYNAMIC ELEMENTS STOP -->
+                    <div class="icp-top-row">
+                        <!-- Motion Guarded Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">MOTION</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="scp-btn-motion">
+                                    <span class="icp-half-txt green-dim" id="scp-motion-operate">OPERATE</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Big Red Mushroom Total Emergency Stop -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">TOTAL EMERGENCY<br>STOP</span>
+                            <div class="icp-estop-container">
+                                <div class="icp-estop-guard-rail rail-left"></div>
+                                <div class="icp-estop-mushroom" id="scp-btn-total-estop">
+                                    <div class="icp-estop-core">
+                                        <span class="icp-estop-txt">STOP</span>
+                                    </div>
+                                </div>
+                                <div class="icp-estop-guard-rail rail-right"></div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Elements Stop Guarded Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">DYNAMIC<br>ELEMENTS<br>STOP</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="scp-btn-dyn-estop">
+                                    <span class="icp-half-txt red-dim" id="scp-dyn-stop-txt" style="font-size: 7px; line-height: 1.1;">EMERGENCY<br>STOP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: DAYLIGHT, TEST, LIGHTS -->
+                    <div class="icp-bottom-row" style="justify-content: space-around;">
+                        <!-- Daylight Potentiometer with Arc Gauge -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">DAYLIGHT</span>
+                            <div class="scp-daylight-container">
+                                <svg class="scp-daylight-arc" viewBox="0 0 60 60">
+                                    <path d="M 12 48 A 22 22 0 1 1 48 48" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4" stroke-linecap="round"/>
+                                    <path d="M 12 48 A 22 22 0 1 1 48 48" id="scp-daylight-arc-fill" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-dasharray="105" stroke-dashoffset="30"/>
+                                </svg>
+                                <div class="scp-daylight-knob" id="scp-daylight-knob">
+                                    <div class="scp-knob-pointer"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Test Pushbutton -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">TEST</span>
+                            <div class="icp-test-btn-box">
+                                <div class="icp-test-btn" id="scp-btn-test"></div>
+                            </div>
+                        </div>
+
+                        <!-- Lights Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">LIGHTS</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="scp-btn-lights">
+                                    <span class="icp-half-txt amber-dim" id="scp-lights-onoff">ON/OFF</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderInstructorControlPanel() {
+            return `
+                <div class="ec135-icp-panel" id="instructor-control-panel">
+                    <!-- Screws -->
+                    <div class="icp-screw pos-tl"></div>
+                    <div class="icp-screw pos-tc"></div>
+                    <div class="icp-screw pos-tr"></div>
+                    <div class="icp-screw pos-bl"></div>
+                    <div class="icp-screw pos-bc"></div>
+                    <div class="icp-screw pos-br"></div>
+
+                    <!-- Panel Title -->
+                    <div class="icp-title">INSTRUCTOR CONTROL PANEL</div>
+
+                    <!-- Top Row: MOTION, TOTAL EMERGENCY STOP, DYNAMIC ELEMENTS STOP -->
+                    <div class="icp-top-row">
+                        <!-- Motion Guarded Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">MOTION</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="icp-btn-motion">
+                                    <span class="icp-half-txt green-dim" id="icp-motion-operate">OPERATE</span>
+                                    <span class="icp-half-txt amber-dim" id="icp-motion-stop">STOP</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Big Red Mushroom Total Emergency Stop -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">TOTAL EMERGENCY<br>STOP</span>
+                            <div class="icp-estop-container">
+                                <div class="icp-estop-guard-rail rail-left"></div>
+                                <div class="icp-estop-mushroom" id="icp-btn-total-estop">
+                                    <div class="icp-estop-core">
+                                        <span class="icp-estop-txt">STOP</span>
+                                    </div>
+                                </div>
+                                <div class="icp-estop-guard-rail rail-right"></div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Elements Stop Guarded Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">DYNAMIC<br>ELEMENTS<br>STOP</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="icp-btn-dyn-estop">
+                                    <span class="icp-half-txt red-dim" id="icp-dyn-stop-txt" style="font-size: 7px; line-height: 1.1;">EMERGENCY<br>STOP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: SOUNDS, DIRECT COMMS, TEST, LIGHTS, AUDIO/MIC -->
+                    <div class="icp-bottom-row">
+                        <!-- Sounds Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">SOUNDS</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="icp-btn-sounds">
+                                    <span class="icp-half-txt yellow-dim" id="icp-sounds-lbl">SOUNDS</span>
+                                    <span class="icp-half-txt green-dim" id="icp-sounds-on">ON</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Direct Comms Square Button -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">DIRECT<br>COMMS</span>
+                            <div class="icp-square-btn-box">
+                                <div class="icp-square-btn" id="icp-btn-direct-comms">
+                                    <span class="icp-half-txt amber-dim" id="icp-comms-onoff">ON/OFF</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Test Pushbutton -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">TEST</span>
+                            <div class="icp-test-btn-box">
+                                <div class="icp-test-btn" id="icp-btn-test"></div>
+                            </div>
+                        </div>
+
+                        <!-- Lights Switch -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">LIGHTS</span>
+                            <div class="icp-guarded-switch">
+                                <div class="icp-guard-flap"></div>
+                                <div class="icp-btn-cap" id="icp-btn-lights">
+                                    <span class="icp-half-txt amber-dim" id="icp-lights-onoff">ON/OFF</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Audio/Mic Jack -->
+                        <div class="icp-unit">
+                            <span class="icp-unit-title">AUDIO/MIC</span>
+                            <div class="icp-audio-jack">
+                                <div class="icp-jack-hole"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderPowerControllerPanel() {
+            return `
+                <div class="ec135-pwr-controller-panel" id="jap-power-controller-panel">
+                    <div class="icp-screw pos-tl"></div>
+                    <div class="icp-screw pos-tr"></div>
+                    <div class="icp-screw pos-bl"></div>
+                    <div class="icp-screw pos-br"></div>
+
+                    <div class="pwr-panel-title">EC135JAP POWER CONTROLLER</div>
+
+                    <!-- Row 1: TRANSPONDER & WARNING PNL -->
+                    <div style="display: flex; justify-content: space-around; width: 100%;">
+                        <div class="pwr-hex-lamp-unit">
+                            <span class="pwr-lamp-lbl">TRANSPONDER</span>
+                            <div class="pwr-hex-bezel">
+                                <div class="pwr-led-lens" id="pwr-led-transponder"></div>
+                            </div>
+                        </div>
+                        <div class="pwr-hex-lamp-unit">
+                            <span class="pwr-lamp-lbl">WARNING PNL</span>
+                            <div class="pwr-hex-bezel">
+                                <div class="pwr-led-lens" id="pwr-led-wp"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: ICS PLT & ICS CPLT -->
+                    <div style="display: flex; justify-content: space-around; width: 100%;">
+                        <div class="pwr-hex-lamp-unit">
+                            <span class="pwr-lamp-lbl">ICS PLT</span>
+                            <div class="pwr-hex-bezel">
+                                <div class="pwr-led-lens" id="pwr-led-ics-plt"></div>
+                            </div>
+                        </div>
+                        <div class="pwr-hex-lamp-unit">
+                            <span class="pwr-lamp-lbl">ICS CPLT</span>
+                            <div class="pwr-hex-bezel">
+                                <div class="pwr-led-lens" id="pwr-led-ics-cplt"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: GARMIN 430 (Dual) -->
+                    <div class="pwr-hex-lamp-unit">
+                        <span class="pwr-lamp-lbl">GARMIN 430</span>
+                        <div style="display: flex; gap: 14px;">
+                            <div class="pwr-hex-bezel">
+                                <div class="pwr-led-lens" id="pwr-led-garmin-1"></div>
+                            </div>
+                            <div class="pwr-hex-bezel">
+                                <div class="pwr-led-lens" id="pwr-led-garmin-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderBrightnessScreensPanel() {
+            var arcSvg = (id) => `
+                <svg class="dimmer-arc-svg" viewBox="0 0 54 54">
+                    <path d="M 10 44 A 20 20 0 1 1 44 44" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M 10 44 A 20 20 0 1 1 44 44" id="${id}-arc" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-dasharray="95" stroke-dashoffset="0"/>
+                </svg>
+            `;
+
+            return `
+                <div class="ec135-dimmer-panel" id="lighting-screens-panel">
+                    <div class="icp-screw pos-tl"></div>
+                    <div class="icp-screw pos-tr"></div>
+                    <div class="icp-screw pos-bl"></div>
+                    <div class="icp-screw pos-br"></div>
+
+                    <!-- Top Row: INSTRUMENTS, STBY HORIZON, INST LTS switch, DAYLIGHT -->
+                    <div style="display: flex; justify-content: space-around; align-items: flex-end; width: 100%;">
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">INSTRUMENTS</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-instr')}
+                                <div class="dimmer-knob-dial" id="dim-dial-instr"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">STBY HORIZON</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-stby')}
+                                <div class="dimmer-knob-dial" id="dim-dial-stby"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- 3-Pos INST LTS Switch -->
+                        <div class="dimmer-3pos-unit">
+                            <span class="dimmer-knob-lbl" style="margin-bottom: 2px;">INST LTS</span>
+                            <span style="font-size: 7px; font-weight: 800; color: #94a3b8;">DAY</span>
+                            <div class="dimmer-3pos-bezel">
+                                <div class="dimmer-toggle-lever" id="dim-sw-inst-lts"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; width: 100%; font-size: 7px; font-weight: 800; color: #94a3b8; margin-top: 2px;">
+                                <span>NVG</span>
+                                <span>NIGHT</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">DAYLIGHT</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-daylight')}
+                                <div class="dimmer-knob-dial" id="dim-dial-daylight"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: 7 Displays Brightness Knobs -->
+                    <div style="display: flex; justify-content: space-around; align-items: flex-end; width: 100%;">
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT CAD</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-cad')}
+                                <div class="dimmer-knob-dial" id="dim-dial-cad"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT VEMD</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-vemd')}
+                                <div class="dimmer-knob-dial" id="dim-dial-vemd"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT PFD PLT</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-pfd-plt')}
+                                <div class="dimmer-knob-dial" id="dim-dial-pfd-plt"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT ND PLT</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-nd-plt')}
+                                <div class="dimmer-knob-dial" id="dim-dial-nd-plt"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT PFD CPLT</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-pfd-cplt')}
+                                <div class="dimmer-knob-dial" id="dim-dial-pfd-cplt"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT ND CPLT</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-nd-cplt')}
+                                <div class="dimmer-knob-dial" id="dim-dial-nd-cplt"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-knob-unit">
+                            <span class="dimmer-knob-lbl">BRT SMD68</span>
+                            <div class="dimmer-knob-box">
+                                ${arcSvg('dim-smd68')}
+                                <div class="dimmer-knob-dial" id="dim-dial-smd68"><div class="scp-knob-pointer"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: 8 Screen Switches -->
+                    <div style="display: flex; justify-content: space-around; align-items: center; width: 100%;">
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">CAD SCREEN</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-cad"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">VEMD1 SCREEN</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-vemd1"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">VEMD2 SCREEN</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-vemd2"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">PFD SCREEN PLT</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-pfd-plt"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">ND SCREEN PLT</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-nd-plt"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">PFD SCREEN CPLT</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-pfd-cplt"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">ND SCREEN CPLT</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-nd-cplt"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+
+                        <div class="dimmer-sw-unit">
+                            <span class="dimmer-sw-tag">SMD68 SCREEN</span>
+                            <div class="dimmer-sw-box">
+                                <span class="dimmer-sublabel">OFF</span>
+                                <div class="dimmer-sw-bezel"><div class="dimmer-lever sw-on" id="dim-sw-smd68"></div></div>
+                                <span class="dimmer-sublabel">ON</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         renderLayout() {
             var title = this.t('apps.sim-maintenance.title', 'Sim Maintenance');
             var subtitle = this.t('apps.sim-maintenance.subtitle', 'Technical Checklists, Environmental Telemetry & Compliance');
@@ -1843,97 +2485,36 @@
                             </div>
 
                             <div class="avionics-subpanel-grid">
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">👨‍✈️ ${this.t('sim_maint.card_plt_audio', 'Sélecteur Audio Pilote (PLT)')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix avionics-grid-9">
-                                        <div class="avionics-lamp-btn" id="audio-plt-vhf1"><span class="avionics-lamp-lbl">VHF 1</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-vhf2"><span class="avionics-lamp-lbl">VHF 2</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-nav1"><span class="avionics-lamp-lbl">NAV 1</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-nav2"><span class="avionics-lamp-lbl">NAV 2</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-dme1"><span class="avionics-lamp-lbl">DME 1</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-dme2"><span class="avionics-lamp-lbl">DME 2</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-mkr"><span class="avionics-lamp-lbl">MKR</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-atc"><span class="avionics-lamp-lbl">ATC</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-plt-emer"><span class="avionics-lamp-lbl">EMER</span></div>
+                                    <div style="margin: 4px 0; display: flex; justify-content: center; width: 100%;">
+                                        ${this.renderAudioControlPanel('plt')}
                                     </div>
                                 </div>
 
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">🧑‍✈️ ${this.t('sim_maint.card_cplt_audio', 'Sélecteur Audio Copilote (CPLT)')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix avionics-grid-9">
-                                        <div class="avionics-lamp-btn" id="audio-cplt-vhf1"><span class="avionics-lamp-lbl">VHF 1</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-vhf2"><span class="avionics-lamp-lbl">VHF 2</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-nav1"><span class="avionics-lamp-lbl">NAV 1</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-nav2"><span class="avionics-lamp-lbl">NAV 2</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-dme1"><span class="avionics-lamp-lbl">DME 1</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-dme2"><span class="avionics-lamp-lbl">DME 2</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-mkr"><span class="avionics-lamp-lbl">MKR</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-atc"><span class="avionics-lamp-lbl">ATC</span></div>
-                                        <div class="avionics-lamp-btn" id="audio-cplt-emer"><span class="avionics-lamp-lbl">EMER</span></div>
+                                    <div style="margin: 4px 0; display: flex; justify-content: center; width: 100%;">
+                                        ${this.renderAudioControlPanel('cplt')}
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 7. Écrans Numériques, Électro-optique & Éclairage -->
+                            <!-- 7. Contrôle de Luminosité Cockpit & Interrupteurs Écrans -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>🖥️ ${this.t('sim_maint.displays_lighting_title', 'Écrans Numériques, Électro-optique & Éclairage')}</span>
+                                    <span>💡 ${this.t('sim_maint.lighting_screens_title', 'Contrôleur de Luminosité Cockpit & Écrans (Lighting & Screens)')}</span>
                                 </div>
-                                <div class="tel-section-subtitle">${this.t('sim_maint.displays_lighting_sub', 'Contrôle luminosité CAD, VEMD, PFD/ND et sélecteur Jour/Nuit/NVG')}</div>
+                                <div class="tel-section-subtitle">${this.t('sim_maint.lighting_screens_sub', 'Potentiomètres de rétro-éclairage CAD, VEMD, PFD, ND, Daylight et commutateurs des écrans')}</div>
                             </div>
 
-                            <div class="avionics-subpanel-grid">
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
-                                        <span class="avionics-card-title">📟 ${this.t('sim_maint.card_cad_vemd', 'Écrans CAD & VEMD')}</span>
-                                        <span class="tel-section-badge" id="disp-lighting-mode-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">MODE: DAY</span>
-                                    </div>
-                                    <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">${this.t('sim_maint.cad_screen', 'CAD Screen')}</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="cad-brt-bar" style="width: 0%;"></div></div>
-                                        <span class="avionics-metric-val" id="cad-brt-txt">--%</span>
-                                    </div>
-                                    <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">${this.t('sim_maint.vemd_screens', 'VEMD Dual Screens')}</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="vemd-brt-bar" style="width: 0%;"></div></div>
-                                        <span class="avionics-metric-val" id="vemd-brt-txt">--%</span>
-                                    </div>
-                                    <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">${this.t('sim_maint.euronav_contrast', 'Euronav SMD68 Contrast')}</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="euronav-crt-bar" style="width: 0%;"></div></div>
-                                        <span class="avionics-metric-val" id="euronav-crt-txt">--%</span>
-                                    </div>
-                                    <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">${this.t('sim_maint.pfd_nd_backlight', 'PFD / ND Backlight')}</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="pfd-crt-bar" style="width: 0%;"></div></div>
-                                        <span class="avionics-metric-val" id="pfd-crt-txt">--%</span>
-                                    </div>
-                                </div>
-
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
-                                        <span class="avionics-card-title">💡 ${this.t('sim_maint.card_lighting', 'Éclairage Cockpit & Veilleuse')}</span>
-                                    </div>
-                                    <div class="avionics-btn-matrix avionics-grid-4">
-                                        <div class="avionics-lamp-btn" id="light-cockpit"><span class="avionics-lamp-lbl">COCKPIT LT</span></div>
-                                        <div class="avionics-lamp-btn" id="light-map"><span class="avionics-lamp-lbl">MAP HOLDER</span></div>
-                                        <div class="avionics-lamp-btn" id="light-bg"><span class="avionics-lamp-lbl">BACKGROUND</span></div>
-                                        <div class="avionics-lamp-btn" id="elt-test-btn"><span class="avionics-lamp-lbl">ELT TEST</span></div>
-                                    </div>
-                                    <div class="avionics-metric-row" style="margin-top: 6px;">
-                                        <span class="avionics-metric-title">${this.t('sim_maint.inst_dimmable', 'Instruments Dimmable')}</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="light-inst-bar" style="width: 0%;"></div></div>
-                                        <span class="avionics-metric-val" id="light-inst-txt">--%</span>
-                                    </div>
-                                    <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">${this.t('sim_maint.stby_hor_light', 'Standby Horizon Light')}</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="light-stby-bar" style="width: 0%;"></div></div>
-                                        <span class="avionics-metric-val" id="light-stby-txt">--%</span>
-                                    </div>
+                            <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto; margin-bottom: 24px;">
+                                <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
+                                    ${this.renderBrightnessScreensPanel()}
                                 </div>
                             </div>
 
@@ -1945,20 +2526,13 @@
                                 <div class="tel-section-subtitle">${this.t('sim_maint.power_sim_sub', 'Bus avioniques, balise ELT, vérins de mouvement et cycles hôte')}</div>
                             </div>
 
-                            <div class="avionics-subpanel-grid">
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🔋 ${this.t('sim_maint.card_power_buses', 'Bus & Alimentations Avioniques')}</span>
+                            <div class="avionics-subpanel-grid" style="margin-bottom: 24px;">
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
+                                        <span class="avionics-card-title">🔌 ${this.t('sim_maint.card_pwr_controller', 'EC135JAP Power Controller')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix avionics-grid-8">
-                                        <div class="avionics-lamp-btn" id="pwr-euronav"><span class="avionics-lamp-lbl">EURONAV</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-cad"><span class="avionics-lamp-lbl">CAD</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-vemd"><span class="avionics-lamp-lbl">VEMD</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-fcds"><span class="avionics-lamp-lbl">PLT FCDS</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-xpdr"><span class="avionics-lamp-lbl">XPDR</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-wp"><span class="avionics-lamp-lbl">WP</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-ics-plt"><span class="avionics-lamp-lbl">ICS PLT</span></div>
-                                        <div class="avionics-lamp-btn" id="pwr-ics-cplt"><span class="avionics-lamp-lbl">ICS CPLT</span></div>
+                                    <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
+                                        ${this.renderPowerControllerPanel()}
                                     </div>
                                 </div>
 
@@ -1973,6 +2547,34 @@
                                         <div class="avionics-lamp-btn" id="sim-stop"><span class="avionics-lamp-lbl">SIM STOP</span></div>
                                         <div class="avionics-lamp-btn" id="sim-motion-ready"><span class="avionics-lamp-lbl">MOT READY</span></div>
                                         <div class="avionics-lamp-btn" id="sim-motion-on"><span class="avionics-lamp-lbl">MOTION ON</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 9. Panneaux de Contrôle Simulateur & Instructeur (SCP & ICP) -->
+                            <div class="tel-section-header" style="margin-top: 28px;">
+                                <div class="tel-section-title">
+                                    <span>🎛️ ${this.t('sim_maint.sim_control_panels_section', 'Panneaux de Contrôle Simulateur & Instructeur (SCP & ICP)')}</span>
+                                </div>
+                                <div class="tel-section-subtitle">${this.t('sim_maint.sim_control_panels_sub', 'Arrêts d\'urgence, système de mouvement (Motion), ambiance lumineuse (Daylight), sons et sécurité')}</div>
+                            </div>
+
+                            <div class="avionics-subpanel-grid" style="margin-bottom: 24px;">
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
+                                        <span class="avionics-card-title">🚁 ${this.t('sim_maint.scp_title', 'Poste Cockpit : Simulator Control Panel (SCP)')}</span>
+                                    </div>
+                                    <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
+                                        ${this.renderSimulatorControlPanel()}
+                                    </div>
+                                </div>
+
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
+                                        <span class="avionics-card-title">🖥️ ${this.t('sim_maint.icp_card_title', 'Poste Instructeur : Instructor Control Panel (ICP)')}</span>
+                                    </div>
+                                    <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
+                                        ${this.renderInstructorControlPanel()}
                                     </div>
                                 </div>
                             </div>
@@ -4124,87 +4726,126 @@
                         }
                     }
 
-                    // 7. Hydrate Audio Selector Panels (ICS)
+                    // 7. Hydrate Audio Selector Panels (ICS / ACP)
                     if (data.audio_comms) {
-                        var setAudioBtn = function(id, isActive) {
-                            var el = root.querySelector('#' + id);
-                            if (el) el.classList.toggle('active-green', !!isActive);
+                        var setAudioChannel = function(prefix, channel, isActive) {
+                            var ledEl = root.querySelector('#audio-' + prefix + '-led-' + channel);
+                            var btnEl = root.querySelector('#audio-' + prefix + '-' + channel);
+                            if (ledEl) ledEl.classList.toggle('active-green', !!isActive);
+                            if (btnEl) btnEl.classList.toggle('active-green', !!isActive);
                         };
-                        if (data.audio_comms.pilot) {
-                            var p = data.audio_comms.pilot;
-                            setAudioBtn('audio-plt-vhf1', p.vhf1);
-                            setAudioBtn('audio-plt-vhf2', p.vhf2);
-                            setAudioBtn('audio-plt-nav1', p.nav1);
-                            setAudioBtn('audio-plt-nav2', p.nav2);
-                            setAudioBtn('audio-plt-dme1', p.dme1);
-                            setAudioBtn('audio-plt-dme2', p.dme2);
-                            setAudioBtn('audio-plt-mkr', p.mkr);
-                            setAudioBtn('audio-plt-atc', p.atc);
-                            setAudioBtn('audio-plt-emer', p.emer);
-                        }
-                        if (data.audio_comms.copilot) {
-                            var cp = data.audio_comms.copilot;
-                            setAudioBtn('audio-cplt-vhf1', cp.vhf1);
-                            setAudioBtn('audio-cplt-vhf2', cp.vhf2);
-                            setAudioBtn('audio-cplt-nav1', cp.nav1);
-                            setAudioBtn('audio-cplt-nav2', cp.nav2);
-                            setAudioBtn('audio-cplt-dme1', cp.dme1);
-                            setAudioBtn('audio-cplt-dme2', cp.dme2);
-                            setAudioBtn('audio-cplt-mkr', cp.mkr);
-                            setAudioBtn('audio-cplt-atc', cp.atc);
-                            setAudioBtn('audio-cplt-emer', cp.emer);
-                        }
+
+                        var hydrateIcsPanel = function(prefix, state) {
+                            if (!state) return;
+                            setAudioChannel(prefix, 'vhf1', state.vhf1);
+                            setAudioChannel(prefix, 'vhf2', state.vhf2);
+                            setAudioChannel(prefix, 'fm1', state.fm1);
+                            setAudioChannel(prefix, 'fm2', state.fm2);
+                            setAudioChannel(prefix, 'fm3', state.fm3);
+                            setAudioChannel(prefix, 'fm4', state.fm4);
+                            setAudioChannel(prefix, 'nav1', state.nav1);
+                            setAudioChannel(prefix, 'nav2', state.nav2);
+                            setAudioChannel(prefix, 'dme1', state.dme1 || state.dme2);
+                            setAudioChannel(prefix, 'mkr', state.mkr);
+                            setAudioChannel(prefix, 'atc', state.atc || state.fm5);
+                            setAudioChannel(prefix, 'pa', state.fm6);
+
+                            // ISO Annunciator Badge (st_icsOut.ltIso)
+                            var isoEl = root.querySelector('#audio-' + prefix + '-iso-lbl');
+                            if (isoEl) isoEl.classList.toggle('active-green', !!state.iso);
+
+                            // TX Annunciator Badge (st_icsOut.ltTx)
+                            var txEl = root.querySelector('#audio-' + prefix + '-tx-lbl');
+                            if (txEl) txEl.classList.toggle('active-green', !!state.tx);
+
+                            // CALL Annunciator Badge (st_icsOut.ltCall: 0=OFF, 1=Blink slow, 2=Blink fast)
+                            var callEl = root.querySelector('#audio-' + prefix + '-call-lbl');
+                            if (callEl) {
+                                callEl.classList.remove('blink-slow', 'blink-fast', 'active-amber');
+                                if (state.call === 1) {
+                                    callEl.classList.add('blink-slow', 'active-amber');
+                                } else if (state.call === 2) {
+                                    callEl.classList.add('blink-fast', 'active-amber');
+                                } else if (state.call) {
+                                    callEl.classList.add('active-amber');
+                                }
+                            }
+
+                            // Rotate central selector knob based on active radio / tx_selector
+                            var txKnob = root.querySelector('#audio-' + prefix + '-tx-knob');
+                            if (txKnob) {
+                                var angles = { 0: 15, 1: -65, 2: -35, 3: 0, 4: 25, 5: 45, 8: 65 };
+                                var selVal = (state.tx_selector !== undefined) ? state.tx_selector : (state.vhf2 ? 2 : (state.vhf1 ? 1 : 0));
+                                var deg = angles[selVal] !== undefined ? angles[selVal] : 15;
+                                txKnob.style.transform = 'rotate(' + deg + 'deg)';
+                            }
+
+                            // Emergency Switch
+                            var swEmer = root.querySelector('#audio-' + prefix + '-sw-emer');
+                            if (swEmer) {
+                                swEmer.style.transform = state.emer ? 'translateY(-3px)' : 'translateY(0)';
+                            }
+                        };
+
+                        hydrateIcsPanel('plt', data.audio_comms.pilot);
+                        hydrateIcsPanel('cplt', data.audio_comms.copilot);
                     }
 
-                    // 8. Hydrate Displays & Lighting Metrics
-                    if (data.displays) {
-                        var d = data.displays;
-                        var cadBar = root.querySelector('#cad-brt-bar');
-                        var cadTxt = root.querySelector('#cad-brt-txt');
-                        if (cadBar) cadBar.style.width = Math.max(0, Math.min(100, d.cad_brt)) + '%';
-                        if (cadTxt) cadTxt.textContent = d.cad_brt.toFixed(0) + '% ' + (d.cad_on ? '[ON]' : '[OFF]');
+                    // 8. Hydrate Displays & Dimmer Panel
+                    if (data.displays || data.lighting) {
+                        var d = data.displays || {};
+                        var l = data.lighting || {};
 
-                        var vemdBar = root.querySelector('#vemd-brt-bar');
-                        var vemdTxt = root.querySelector('#vemd-brt-txt');
-                        if (vemdBar) vemdBar.style.width = Math.max(0, Math.min(100, d.vemd_brt)) + '%';
-                        if (vemdTxt) vemdTxt.textContent = d.vemd_brt.toFixed(0) + '% ' + ((d.vemd1_on && d.vemd2_on) ? '[DUAL ON]' : (d.vemd1_on ? '[VEMD 1]' : '[OFF]'));
-
-                        var euroBar = root.querySelector('#euronav-crt-bar');
-                        var euroTxt = root.querySelector('#euronav-crt-txt');
-                        if (euroBar) euroBar.style.width = Math.max(0, Math.min(100, d.euronav_contrast)) + '%';
-                        if (euroTxt) euroTxt.textContent = d.euronav_contrast.toFixed(0) + '%';
-
-                        var pfdBar = root.querySelector('#pfd-crt-bar');
-                        var pfdTxt = root.querySelector('#pfd-crt-txt');
-                        if (pfdBar) pfdBar.style.width = Math.max(0, Math.min(100, d.pfd_crt)) + '%';
-                        if (pfdTxt) pfdTxt.textContent = 'PFD: ' + d.pfd_crt.toFixed(0) + '% • ND: ' + d.nd_crt.toFixed(0) + '%';
-                    }
-
-                    if (data.lighting) {
-                        var l = data.lighting;
-                        var modeBadge = root.querySelector('#disp-lighting-mode-badge');
-                        if (modeBadge) {
-                            modeBadge.textContent = 'MODE: ' + (l.mode || 'DAY');
-                            modeBadge.style.background = (l.mode === 'NVG') ? '#065f46' : (l.mode === 'NIGHT' ? '#1e1b4b' : '#0f172a');
-                            modeBadge.style.color = '#fff';
-                        }
-                        var instBar = root.querySelector('#light-inst-bar');
-                        var instTxt = root.querySelector('#light-inst-txt');
-                        if (instBar) instBar.style.width = Math.max(0, Math.min(100, l.instruments_pct)) + '%';
-                        if (instTxt) instTxt.textContent = l.instruments_pct.toFixed(0) + '%';
-
-                        var stbyBar = root.querySelector('#light-stby-bar');
-                        var stbyTxt = root.querySelector('#light-stby-txt');
-                        if (stbyBar) stbyBar.style.width = Math.max(0, Math.min(100, l.stby_hor_pct)) + '%';
-                        if (stbyTxt) stbyTxt.textContent = l.stby_hor_pct.toFixed(0) + '%';
-
-                        var setLightBtn = function(id, isOn) {
-                            var el = root.querySelector('#' + id);
-                            if (el) el.classList.toggle('active-green', !!isOn);
+                        var setDimmerKnob = function(dialId, arcId, pct) {
+                            var p = Math.max(0, Math.min(100, pct !== undefined && pct !== null ? pct : 0));
+                            var dial = root.querySelector('#' + dialId);
+                            if (dial) {
+                                var deg = -135 + (p / 100.0) * 270.0;
+                                dial.style.transform = 'rotate(' + deg.toFixed(1) + 'deg)';
+                            }
+                            var arc = root.querySelector('#' + arcId);
+                            if (arc) {
+                                var off = 95 - (p / 100.0) * 95;
+                                arc.setAttribute('stroke-dashoffset', off.toFixed(1));
+                            }
                         };
-                        setLightBtn('light-cockpit', l.cockpit_light);
-                        setLightBtn('light-map', l.map_holder);
-                        setLightBtn('light-bg', l.bg_light);
+
+                        // 10 Dimmer Knobs
+                        setDimmerKnob('dim-dial-instr', 'dim-instr-arc', l.instruments_pct);
+                        setDimmerKnob('dim-dial-stby', 'dim-stby-arc', l.stby_hor_pct);
+                        setDimmerKnob('dim-dial-daylight', 'dim-daylight-arc', l.daylight_pct);
+                        setDimmerKnob('dim-dial-cad', 'dim-cad-arc', d.cad_brt);
+                        setDimmerKnob('dim-dial-vemd', 'dim-vemd-arc', d.vemd_brt);
+                        setDimmerKnob('dim-dial-pfd-plt', 'dim-pfd-plt-arc', d.pfd_crt);
+                        setDimmerKnob('dim-dial-nd-plt', 'dim-nd-plt-arc', d.nd_crt);
+                        setDimmerKnob('dim-dial-pfd-cplt', 'dim-pfd-cplt-arc', d.pfd_crt);
+                        setDimmerKnob('dim-dial-nd-cplt', 'dim-nd-cplt-arc', d.nd_crt);
+                        setDimmerKnob('dim-dial-smd68', 'dim-smd68-arc', d.euronav_contrast);
+
+                        // 3-Pos INST LTS Switch (DAY / NIGHT / NVG)
+                        var swInstLts = root.querySelector('#dim-sw-inst-lts');
+                        if (swInstLts) {
+                            var mode = l.mode || 'DAY';
+                            var rot = (mode === 'NVG') ? -30 : (mode === 'NIGHT' ? 30 : 0);
+                            swInstLts.style.transform = 'rotate(' + rot + 'deg)';
+                        }
+
+                        // 8 Screen Switches
+                        var setScreenSw = function(id, isOn) {
+                            var sw = root.querySelector('#' + id);
+                            if (sw) {
+                                sw.classList.toggle('sw-on', !!isOn);
+                                sw.classList.toggle('sw-off', !isOn);
+                            }
+                        };
+                        setScreenSw('dim-sw-cad', d.cad_on);
+                        setScreenSw('dim-sw-vemd1', d.vemd1_on);
+                        setScreenSw('dim-sw-vemd2', d.vemd2_on);
+                        setScreenSw('dim-sw-pfd-plt', d.pfd_plt_on);
+                        setScreenSw('dim-sw-nd-plt', d.nd_plt_on);
+                        setScreenSw('dim-sw-pfd-cplt', d.pfd_cplt_on);
+                        setScreenSw('dim-sw-nd-cplt', d.nd_cplt_on);
+                        setScreenSw('dim-sw-smd68', d.euronav_on);
 
                         // Overhead Potentiometers Rotation (-135° at 0% to +135° at 100%)
                         var potStbyDial = root.querySelector('#pot-stby-hor-brt .ohp-pot-dial');
@@ -4229,21 +4870,21 @@
                         chronoDisplay.textContent = Number(rbVal).toFixed(2);
                     }
 
-                    // 9. Hydrate Power Supply & Sim Platform Status
+                    // 9. Hydrate EC135JAP Power Controller & Power Supply
                     if (data.power_supply) {
                         var ps = data.power_supply;
-                        var setPwrBtn = function(id, isOn) {
+                        var setHexLed = function(id, isOn, isRed) {
                             var el = root.querySelector('#' + id);
-                            if (el) el.classList.toggle('active-green', !!isOn);
+                            if (el) {
+                                el.classList.toggle(isRed ? 'active-red' : 'active-green', !!isOn);
+                            }
                         };
-                        setPwrBtn('pwr-euronav', ps.euronav);
-                        setPwrBtn('pwr-cad', ps.cad);
-                        setPwrBtn('pwr-vemd', ps.vemd);
-                        setPwrBtn('pwr-fcds', ps.plt_fcds);
-                        setPwrBtn('pwr-xpdr', ps.transponder);
-                        setPwrBtn('pwr-wp', ps.wp);
-                        setPwrBtn('pwr-ics-plt', ps.ics_plt);
-                        setPwrBtn('pwr-ics-cplt', ps.ics_cplt);
+                        setHexLed('pwr-led-transponder', ps.transponder);
+                        setHexLed('pwr-led-wp', ps.wp, true);
+                        setHexLed('pwr-led-ics-plt', ps.ics_plt);
+                        setHexLed('pwr-led-ics-cplt', ps.ics_cplt);
+                        setHexLed('pwr-led-garmin-1', ps.garmin1);
+                        setHexLed('pwr-led-garmin-2', ps.garmin2);
                     }
 
                     if (data.sim_status) {
@@ -4262,6 +4903,70 @@
                         var cyclesBadge = root.querySelector('#host-cycles-badge');
                         if (cyclesBadge && ss.cycles !== undefined) {
                             cyclesBadge.textContent = 'CYCLES: ' + ss.cycles.toLocaleString('en-US');
+                        }
+                    }
+
+                    // 10. Hydrate Simulator & Instructor Control Panels (SCP & ICP)
+                    if (data.instructor_panel || data.sim_status || data.lighting) {
+                        var icp = data.instructor_panel || {};
+                        var motOn = icp.motion_on !== undefined ? icp.motion_on : (data.sim_status ? data.sim_status.motion_on : false);
+                        var motRdy = icp.motion_ready !== undefined ? icp.motion_ready : (data.sim_status ? data.sim_status.motion_ready : false);
+                        var totEstop = icp.total_emg_stop !== undefined ? icp.total_emg_stop : false;
+                        var dynEstop = icp.dyn_emg_stop !== undefined ? icp.dyn_emg_stop : false;
+                        var soundLbl = icp.sound !== undefined ? icp.sound : false;
+                        var soundOn = icp.sound_on !== undefined ? icp.sound_on : false;
+                        var commsOn = icp.direct_comms !== undefined ? icp.direct_comms : false;
+                        var lightsOn = icp.lights !== undefined ? icp.lights : (data.lighting ? data.lighting.cockpit_light : false);
+                        var daylightPct = (data.lighting && data.lighting.daylight_pct !== undefined) ? data.lighting.daylight_pct : 80;
+
+                        // ICP Hydration
+                        var elIcpMotOperate = root.querySelector('#icp-motion-operate');
+                        if (elIcpMotOperate) elIcpMotOperate.classList.toggle('active-green', !!motOn);
+
+                        var elIcpMotStop = root.querySelector('#icp-motion-stop');
+                        if (elIcpMotStop) elIcpMotStop.classList.toggle('active-amber', !!motRdy);
+
+                        var elIcpTotEstop = root.querySelector('#icp-btn-total-estop');
+                        if (elIcpTotEstop) elIcpTotEstop.classList.toggle('active-red', !!totEstop);
+
+                        var elIcpDynStop = root.querySelector('#icp-dyn-stop-txt');
+                        if (elIcpDynStop) elIcpDynStop.classList.toggle('active-red', !!dynEstop);
+
+                        var elIcpSoundLbl = root.querySelector('#icp-sounds-lbl');
+                        if (elIcpSoundLbl) elIcpSoundLbl.classList.toggle('active-yellow', !!soundLbl);
+
+                        var elIcpSoundOn = root.querySelector('#icp-sounds-on');
+                        if (elIcpSoundOn) elIcpSoundOn.classList.toggle('active-green', !!soundOn);
+
+                        var elIcpComms = root.querySelector('#icp-comms-onoff');
+                        if (elIcpComms) elIcpComms.classList.toggle('active-amber', !!commsOn);
+
+                        var elIcpLights = root.querySelector('#icp-lights-onoff');
+                        if (elIcpLights) elIcpLights.classList.toggle('active-green', !!lightsOn);
+
+                        // SCP Hydration (Cockpit Deck Panel)
+                        var elScpMotOperate = root.querySelector('#scp-motion-operate');
+                        if (elScpMotOperate) elScpMotOperate.classList.toggle('active-green', !!motOn);
+
+                        var elScpTotEstop = root.querySelector('#scp-btn-total-estop');
+                        if (elScpTotEstop) elScpTotEstop.classList.toggle('active-red', !!totEstop);
+
+                        var elScpDynStop = root.querySelector('#scp-dyn-stop-txt');
+                        if (elScpDynStop) elScpDynStop.classList.toggle('active-red', !!dynEstop);
+
+                        var elScpLights = root.querySelector('#scp-lights-onoff');
+                        if (elScpLights) elScpLights.classList.toggle('active-green', !!lightsOn);
+
+                        // SCP Daylight Knob Rotation & Arc Gauge
+                        var scpDaylightKnob = root.querySelector('#scp-daylight-knob');
+                        if (scpDaylightKnob) {
+                            var dayDeg = -135 + (Math.max(0, Math.min(100, daylightPct)) / 100.0) * 270.0;
+                            scpDaylightKnob.style.transform = 'rotate(' + dayDeg.toFixed(1) + 'deg)';
+                        }
+                        var scpArcFill = root.querySelector('#scp-daylight-arc-fill');
+                        if (scpArcFill) {
+                            var offset = 105 - (Math.max(0, Math.min(100, daylightPct)) / 100.0) * 105;
+                            scpArcFill.setAttribute('stroke-dashoffset', offset.toFixed(1));
                         }
                     }
                 }
