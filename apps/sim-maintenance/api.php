@@ -5,6 +5,8 @@
  * High-Performance Telemetry Engine (MySQL / Log downsampling / CSV Export / Moving Average).
  */
 
+require_once __DIR__ . '/TelemetrySchema.php';
+
 $action = $_POST['action'] ?? $_GET['action'] ?? $_REQUEST['action'] ?? 'get_telemetry';
 
 if (!headers_sent()) {
@@ -357,6 +359,11 @@ if (!function_exists('getSubsystemsAndFlightTelemetry')) {
         if (file_exists($latestFile)) {
             $cached = @json_decode(file_get_contents($latestFile), true);
             if (is_array($cached) && !empty($cached['timestamp']) && (microtime(true) - (float)$cached['timestamp']) < 2.0 && isset($cached['autopilot'])) {
+                $cached['success'] = true;
+                $cached['temperature'] = $cached['temperature'] ?? 21.4;
+                $cached['humidity'] = $cached['humidity'] ?? 48.5;
+                $cached['temp_status'] = $cached['temp_status'] ?? 'normal';
+                $cached['hum_status'] = $cached['hum_status'] ?? 'normal';
                 $cached['debug'] = [
                     'bind_status'    => 'UDP_DAEMON_BRIDGE_ACTIVE (50 Hz)',
                     'bytes_received' => $cached['packet_len'] ?? 6565,
@@ -374,6 +381,11 @@ if (!function_exists('getSubsystemsAndFlightTelemetry')) {
         if (file_exists($latestFile)) {
             $cached = @json_decode(file_get_contents($latestFile), true);
             if (is_array($cached) && !empty($cached['timestamp']) && (microtime(true) - (float)$cached['timestamp']) < 2.0 && isset($cached['autopilot'])) {
+                $cached['success'] = true;
+                $cached['temperature'] = $cached['temperature'] ?? 21.4;
+                $cached['humidity'] = $cached['humidity'] ?? 48.5;
+                $cached['temp_status'] = $cached['temp_status'] ?? 'normal';
+                $cached['hum_status'] = $cached['hum_status'] ?? 'normal';
                 $cached['debug'] = [
                     'bind_status'    => 'UDP_DAEMON_BRIDGE_ACTIVE (50 Hz)',
                     'bytes_received' => $cached['packet_len'] ?? 6565,
@@ -483,316 +495,92 @@ if (!function_exists('getSubsystemsAndFlightTelemetry')) {
         }
 
         if ($raw && strlen($raw) >= 85) {
-            $unpackDouble = function($bin) {
-                if (strlen($bin) < 8) return 0.0;
-                $v = unpack('dval', $bin)['val'];
-                if (is_nan($v) || is_infinite($v) || abs($v) > 100000) {
-                    $v = unpack('dval', strrev($bin))['val'];
-                }
-                return (is_nan($v) || is_infinite($v)) ? 0.0 : $v;
-            };
-            $unpackFloat = function($bin) {
-                if (strlen($bin) < 4) return 0.0;
-                $v = unpack('fval', $bin)['val'];
-                if (is_nan($v) || is_infinite($v) || abs($v) > 100000) {
-                    $v = unpack('fval', strrev($bin))['val'];
-                }
-                return (is_nan($v) || is_infinite($v)) ? 0.0 : $v;
-            };
-            $unpackInt = function($bin) {
-                if (strlen($bin) < 4) return 0;
-                return unpack('lval', $bin)['val'] ?? 0;
-            };
-
-            $len = strlen($raw);
-
-            // Helper to check boolean / char active flag (> 0)
-            $isSet = function($idx) use ($raw, $len) {
-                return ($len > $idx) ? (ord($raw[$idx]) > 0) : false;
-            };
-
-            // Helper to normalize percentage (handles both 0..1.0 and 0..100.0)
-            $normPct = function($val) {
-                if ($val > 0.0 && $val <= 1.0) {
-                    return round($val * 100.0, 1);
-                }
-                return round(max(0.0, min(100.0, $val)), 1);
-            };
-
-            // 1. CWP (Central Warning Panel) st_cwp_H2I (18 bytes at offset 0..17)
-            $cwpData = [
-                'master_caution'  => $isSet(0),
-                'emerg_off1'      => $isSet(1),
-                'emerg_off2'      => $isSet(2),
-                'fire1'           => $isSet(3),
-                'fire2'           => $isSet(4),
-                'active_warn1'    => $isSet(5),
-                'active_warn2'    => $isSet(6),
-                'low_fuel1'       => $isSet(7),
-                'low_fuel2'       => $isSet(8),
-                'rotor_rpm_warn'  => $isSet(9),
-                'spare_warn1'     => $isSet(10),
-                'spare_warn2'     => $isSet(11),
-                'bat_temp_warn'   => $isSet(12),
-                'bat_disch_warn'  => $isSet(13),
-                'xmsn_oil_p_warn' => $isSet(14),
-                'ap_trim_warn'    => $isSet(15),
-                'cargo_smoke1'    => $isSet(16),
-                'high_nr_cata'    => $isSet(17),
-                'master_warning'  => false
-            ];
-            $cwpData['master_warning'] = ($cwpData['fire1'] || $cwpData['fire2'] || $cwpData['xmsn_oil_p_warn'] || $cwpData['emerg_off1'] || $cwpData['emerg_off2'] || $cwpData['high_nr_cata']);
-
-            // 2. Flight dynamics from st_OUT
-            $hdg  = ($len >= 26) ? $unpackDouble(substr($raw, 18, 8)) : 0.0;
-            $spd  = ($len >= 34) ? $unpackDouble(substr($raw, 26, 8)) : 0.0;
-            $pit  = ($len >= 42) ? $unpackDouble(substr($raw, 34, 8)) : 0.0;
-            $rol  = ($len >= 50) ? $unpackDouble(substr($raw, 42, 8)) : 0.0;
-            $flagAdi = ($len >= 51) ? ord($raw[50]) : 0;
-            $pwrStbyHor = ($len >= 52) ? ord($raw[51]) : 0;
-            $alt  = ($len >= 60) ? $unpackDouble(substr($raw, 52, 8)) : 0.0;
-            $flagAlt = ($len >= 61) ? ord($raw[60]) : 0;
-
-            // 3. Powerplant
-            $n2e1 = ($len >= 69) ? $unpackDouble(substr($raw, 61, 8)) : 0.0;
-            $n2e2 = ($len >= 77) ? $unpackDouble(substr($raw, 69, 8)) : 0.0;
-            $nr   = ($len >= 85) ? $unpackDouble(substr($raw, 77, 8)) : 0.0;
-
-            // 4. DME & GPS Annunciators & Marker Beacons
-            $dme = [
-                'gnd1'       => $isSet(85),
-                'gnd2'       => $isSet(86),
-                'dme1'       => $isSet(87),
-                'dme2'       => $isSet(88),
-                'dme1_hold'  => $isSet(89),
-                'dme2_hold'  => $isSet(90),
-                'call'       => $isSet(91),
-                'high_nr'    => $isSet(92),
-                'high_nr_on' => $isSet(93),
-            ];
-
-            $gps = [
-                'msg'  => $isSet(95),
-                'wpt'  => $isSet(96),
-                'term' => $isSet(97),
-                'apr'  => $isSet(98),
-                'intg' => $isSet(99),
-                'obs'  => $isSet(100),
-            ];
-
-            $mbr = [
-                'airway_a' => $isSet(101),
-                'outer_o'  => $isSet(102),
-                'middle_m' => $isSet(103),
-            ];
-
-            // 5. Autopilot Console (APC)
-            $apc = [
-                'ap_off'     => $isSet(104),
-                'trim_off'   => $isSet(105),
-                'test_on'    => $isSet(106),
-                'app_a'      => $isSet(107),
-                'app_c'      => $isSet(108),
-                'hdg'        => $isSet(109),
-                'nav_a'      => $isSet(110),
-                'nav_c'      => $isSet(111),
-                'alt_a'      => $isSet(112),
-                'bc_a'       => $isSet(113),
-                'bc_c'       => $isSet(114),
-                'gs_a'       => $isSet(115),
-                'gs_c'       => $isSet(116),
-                'vs_on'      => $isSet(117),
-                'ias'        => $isSet(118),
-                'alt'        => $isSet(119),
-            ];
-
-            // 6. Audio Comms & Intercom
-            $audioPlt = [
-                'atc'  => $isSet(120),
-                'dme1' => $isSet(121),
-                'dme2' => $isSet(122),
-                'emer' => $isSet(123),
-                'mkr'  => $isSet(124),
-                'nav1' => $isSet(125),
-                'nav2' => $isSet(126),
-                'vhf1' => $isSet(127),
-                'vhf2' => $isSet(128),
-            ];
-
-            $audioCplt = [
-                'atc'  => $isSet(129),
-                'dme1' => $isSet(130),
-                'dme2' => $isSet(131),
-                'emer' => $isSet(132),
-                'mkr'  => $isSet(133),
-                'nav1' => $isSet(134),
-                'nav2' => $isSet(135),
-                'vhf1' => $isSet(136),
-                'vhf2' => $isSet(137),
-            ];
-
-            // 7. CAD & VEMD & ELT & Cockpit Lights
-            $cadBrt     = ($len >= 337) ? $normPct($unpackDouble(substr($raw, 329, 8))) : 100.0;
-            $cadOn      = $isSet(337);
-            $vemdBrt    = ($len >= 346) ? $normPct($unpackDouble(substr($raw, 338, 8))) : 100.0;
-            $vemd1On    = $isSet(346);
-            $vemd2On    = $isSet(347);
-            $eltTest    = $isSet(348);
-            $pwrLight   = [
-                'cockpit' => $isSet(349),
-                'map'     => $isSet(350),
-                'bg'      => $isSet(351),
-            ];
-
-            // 8. Simulator Platform & Motion System
-            $simStatus = [
-                'session_init' => $isSet(352),
-                'sim_oper'     => $isSet(353),
-                'sim_stop'     => $isSet(354),
-                'motion_ready' => $isSet(355),
-                'motion_on'    => $isSet(356),
-            ];
-
-            // 9. Transponder & Power Supply
-            $xpdrAlt = ($len >= 510) ? round($unpackFloat(substr($raw, 506, 4)), 0) : 0;
-            $onGround = $isSet(510);
-
-            $pwrSupply = [
-                'euronav'     => $isSet(511),
-                'cad'         => $isSet(512),
-                'vemd'        => $isSet(513),
-                'plt_fcds'    => $isSet(514),
-                'transponder' => $isSet(515),
-                'wp'          => $isSet(516),
-                'ics_plt'     => $isSet(517),
-                'ics_cplt'    => $isSet(518),
-            ];
-
-            // 10. Japan Lighting & Display Dimming
-            $swLightingMode = ($len >= 6210) ? ord($raw[6209]) : 0; // 0=DAY, 1=NIGHT, 2=NVG
-            $ltInstPct      = ($len >= 6214) ? $normPct($unpackFloat(substr($raw, 6210, 4))) : 100.0;
-            $ltStbyHorPct   = ($len >= 6218) ? $normPct($unpackFloat(substr($raw, 6214, 4))) : 100.0;
-            $ltDaylightPct  = ($len >= 6222) ? $normPct($unpackFloat(substr($raw, 6218, 4))) : 100.0;
-            $euronavContrast = ($len >= 6226) ? $normPct($unpackFloat(substr($raw, 6222, 4))) : 100.0;
-            $pfdCrt          = ($len >= 6230) ? $normPct($unpackFloat(substr($raw, 6226, 4))) : 100.0;
-            $ndCrt           = ($len >= 6234) ? $normPct($unpackFloat(substr($raw, 6230, 4))) : 100.0;
-
-            // 11. Cycles
-            $cycles = ($len >= 6293) ? $unpackInt(substr($raw, 6289, 4)) : 0;
-
-            $isLive = true;
-            $flight = [
-                'is_live'          => true,
-                'altitude'         => round($alt, 1),
-                'airspeed_ias'     => round($spd, 1),
-                'pitch'            => round($pit, 2),
-                'roll'             => round($rol, 2),
-                'heading_mag'      => round(fmod($hdg + 360.0, 360.0), 1),
-                'xpdr_altitude'    => $xpdrAlt,
-                'on_ground'        => $onGround,
-                'flag_adi'         => $flagAdi,
-                'flag_alt'         => $flagAlt,
-                'pwr_stby_horizon' => $pwrStbyHor,
-                'flight_phase'     => $onGround ? 'ON GROUND' : 'AIRBORNE'
-            ];
-            $powerplant = [
-                'rotor_nr'     => round($nr, 1),
-                'rotor_rpm'    => round(395.0 * ($nr / 100.0), 0),
-                'n2_eng1'      => round($n2e1, 1),
-                'n2_eng2'      => round($n2e2, 1)
-            ];
+            $decoded = TelemetrySchema::decode($raw, $debugInfo['peer_sender'] ?? '', $hostIp, $localPort);
+            $decoded['debug'] = $debugInfo;
+            return $decoded;
         } else {
-            $isLive = false;
-            $flight = [
-                'is_live'          => false,
-                'altitude'         => null,
-                'airspeed_ias'     => null,
-                'pitch'            => null,
-                'roll'             => null,
-                'heading_mag'      => null,
-                'xpdr_altitude'    => null,
-                'on_ground'        => true,
-                'flag_adi'         => 0,
-                'flag_alt'         => 0,
-                'pwr_stby_horizon' => 0,
-                'flight_phase'     => 'DISCONNECTED'
+            return [
+                'is_live'    => false,
+                'host'       => [
+                    'ip'     => "{$hostIp}:{$localPort}",
+                    'status' => 'WAITING FOR PACKETS'
+                ],
+                'flight'     => [
+                    'is_live'          => false,
+                    'altitude'         => null,
+                    'airspeed_ias'     => null,
+                    'pitch'            => null,
+                    'roll'             => null,
+                    'heading_mag'      => null,
+                    'xpdr_altitude'    => null,
+                    'on_ground'        => true,
+                    'flag_adi'         => 0,
+                    'flag_alt'         => 0,
+                    'pwr_stby_horizon' => 0,
+                    'flight_phase'     => 'DISCONNECTED'
+                ],
+                'powerplant' => [
+                    'rotor_nr'     => null,
+                    'rotor_rpm'    => null,
+                    'n2_eng1'      => null,
+                    'n2_eng2'      => null
+                ],
+                'cwp'        => [
+                    'master_caution'  => false,
+                    'emerg_off1'      => false,
+                    'emerg_off2'      => false,
+                    'fire1'           => false,
+                    'fire2'           => false,
+                    'active_warn1'    => false,
+                    'active_warn2'    => false,
+                    'low_fuel1'       => false,
+                    'low_fuel2'       => false,
+                    'rotor_rpm_warn'  => false,
+                    'spare_warn1'     => false,
+                    'spare_warn2'     => false,
+                    'bat_temp_warn'   => false,
+                    'bat_disch_warn'  => false,
+                    'xmsn_oil_p_warn' => false,
+                    'ap_trim_warn'    => false,
+                    'cargo_smoke1'    => false,
+                    'high_nr_cata'    => false,
+                    'master_warning'  => false
+                ],
+                'autopilot'  => [],
+                'radionav'   => ['dme' => [], 'gps' => [], 'mbr' => []],
+                'audio_comms'=> ['pilot' => [], 'copilot' => []],
+                'displays'   => [
+                    'cad_brt'          => 0,
+                    'cad_on'           => false,
+                    'vemd_brt'         => 0,
+                    'vemd1_on'         => false,
+                    'vemd2_on'         => false,
+                    'euronav_contrast' => 0,
+                    'pfd_crt'          => 0,
+                    'nd_crt'           => 0
+                ],
+                'lighting'   => [
+                    'mode'             => 'DAY',
+                    'instruments_pct'  => 0,
+                    'stby_hor_pct'     => 0,
+                    'daylight_pct'     => 0,
+                    'cockpit_light'    => false,
+                    'map_holder'       => false,
+                    'bg_light'         => false
+                ],
+                'power_supply' => [],
+                'sim_status' => [
+                    'session_init' => false,
+                    'sim_oper'     => false,
+                    'sim_stop'     => false,
+                    'motion_ready' => false,
+                    'motion_on'    => false,
+                    'elt_test'     => false,
+                    'cycles'       => 0
+                ],
+                'debug'      => $debugInfo
             ];
-            $powerplant = [
-                'rotor_nr'     => null,
-                'rotor_rpm'    => null,
-                'n2_eng1'      => null,
-                'n2_eng2'      => null
-            ];
-            $apc = [];
-            $dme = [];
-            $gps = [];
-            $mbr = [];
-            $audioPlt = [];
-            $audioCplt = [];
-            $cadBrt = 0;
-            $cadOn = false;
-            $vemdBrt = 0;
-            $vemd1On = false;
-            $vemd2On = false;
-            $eltTest = false;
-            $pwrLight = ['cockpit' => false, 'map' => false, 'bg' => false];
-            $simStatus = ['session_init' => false, 'sim_oper' => false, 'sim_stop' => false, 'motion_ready' => false, 'motion_on' => false];
-            $pwrSupply = [];
-            $swLightingMode = 0;
-            $ltInstPct = 0;
-            $ltStbyHorPct = 0;
-            $ltDaylightPct = 0;
-            $euronavContrast = 0;
-            $pfdCrt = 0;
-            $ndCrt = 0;
-            $cycles = 0;
         }
-
-        return [
-            'is_live'    => $isLive,
-            'host'       => [
-                'ip'     => "{$hostIp}:{$localPort}",
-                'status' => $isLive ? 'CONNECTED (50 Hz)' : 'WAITING FOR PACKETS'
-            ],
-            'flight'     => $flight,
-            'powerplant' => $powerplant,
-            'cwp'        => $cwpData,
-            'autopilot'  => $apc,
-            'radionav'   => [
-                'dme' => $dme,
-                'gps' => $gps,
-                'mbr' => $mbr
-            ],
-            'audio_comms' => [
-                'pilot'   => $audioPlt,
-                'copilot' => $audioCplt
-            ],
-            'displays'   => [
-                'cad_brt'          => $cadBrt,
-                'cad_on'           => $cadOn,
-                'vemd_brt'         => $vemdBrt,
-                'vemd1_on'         => $vemd1On,
-                'vemd2_on'         => $vemd2On,
-                'euronav_contrast' => $euronavContrast,
-                'pfd_crt'          => $pfdCrt,
-                'nd_crt'           => $ndCrt
-            ],
-            'lighting'   => [
-                'mode'             => ($swLightingMode === 1 ? 'NIGHT' : ($swLightingMode === 2 ? 'NVG' : 'DAY')),
-                'instruments_pct'  => $ltInstPct,
-                'stby_hor_pct'     => $ltStbyHorPct,
-                'daylight_pct'     => $ltDaylightPct,
-                'cockpit_light'    => $pwrLight['cockpit'] ?? false,
-                'map_holder'       => $pwrLight['map'] ?? false,
-                'bg_light'         => $pwrLight['bg'] ?? false
-            ],
-            'power_supply' => $pwrSupply,
-            'sim_status' => array_merge($simStatus, [
-                'cycles'   => $cycles,
-                'elt_test' => $eltTest
-            ]),
-            'debug'      => $debugInfo
-        ];
     }
 }
 
@@ -824,7 +612,7 @@ switch ($action) {
 
         $extra = getSubsystemsAndFlightTelemetry($temp, $hum);
 
-        echo json_encode([
+        echo json_encode(array_merge($extra, [
             'success'     => true,
             'timestamp'   => $latest['timestamp'],
             'temperature' => round($temp, 2),
@@ -832,13 +620,8 @@ switch ($action) {
             'temp_status' => $tempStatus,
             'hum_status'  => $humStatus,
             'mcc'         => '1588',
-            'main'        => '51018',
-            'is_live'     => $extra['is_live'],
-            'host'        => $extra['host'],
-            'flight'      => $extra['flight'],
-            'powerplant'  => $extra['powerplant'],
-            'cwp'         => $extra['cwp']
-        ]);
+            'main'        => '51018'
+        ]));
         break;
 
     case 'get_telemetry_history':

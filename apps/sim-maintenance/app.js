@@ -884,7 +884,7 @@
                                         <span class="flight-hero-unit">% NR</span>
                                     </div>
                                     <div class="flight-sub-row">
-                                        <span>Vitesse: <strong id="tel-flight-rotor-rpm">-- RPM</strong></span>
+                                        <span>${this.t('sim_maint.speed_unit', 'Vitesse')}: <strong id="tel-flight-rotor-rpm">-- RPM</strong></span>
                                     </div>
                                 </div>
 
@@ -917,7 +917,7 @@
                                         <span class="flight-hero-unit">° Pitch</span>
                                     </div>
                                     <div class="flight-sub-row">
-                                        <span>Roll: <strong id="tel-flight-roll">--°</strong></span>
+                                        <span>${this.t('sim_maint.roll_label', 'Roulis')}: <strong id="tel-flight-roll">--°</strong></span>
                                     </div>
                                 </div>
 
@@ -927,7 +927,7 @@
                                         <span class="flight-hero-num" id="tel-flight-phase-txt" style="font-size: 20px;">DISCONNECTED</span>
                                     </div>
                                     <div class="flight-sub-row">
-                                        <span>Surveillance statut vol</span>
+                                        <span>${this.t('sim_maint.flight_status_monitor', 'Surveillance statut vol')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1053,7 +1053,7 @@
                             <div class="avionics-subpanel-grid">
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🕹️ Engagement & Sécurité AP</span>
+                                        <span class="avionics-card-title">🕹️ ${this.t('sim_maint.card_ap_safety', 'Engagement & Sécurité AP')}</span>
                                     </div>
                                     <div class="avionics-btn-matrix">
                                         <div class="avionics-lamp-btn" id="apc-ap-off"><span class="avionics-lamp-lbl">AP OFF</span></div>
@@ -1067,7 +1067,7 @@
 
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🧭 Modes Latéraux & Approche FD</span>
+                                        <span class="avionics-card-title">🧭 ${this.t('sim_maint.card_fd_modes', 'Modes Latéraux & Approche FD')}</span>
                                     </div>
                                     <div class="avionics-btn-matrix">
                                         <div class="avionics-lamp-btn" id="apc-hdg"><span class="avionics-lamp-lbl">HDG ▶</span></div>
@@ -1095,7 +1095,7 @@
                             <div class="avionics-subpanel-grid">
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">📡 DME Annunciators</span>
+                                        <span class="avionics-card-title">📡 ${this.t('sim_maint.card_dme_annunciators', 'Annonciateurs DME')}</span>
                                     </div>
                                     <div class="avionics-btn-matrix">
                                         <div class="avionics-lamp-btn" id="dme-dme1"><span class="avionics-lamp-lbl">DME 1</span></div>
@@ -1111,7 +1111,8 @@
 
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🗺️ GPS 430 & Balises (MBR)</span>
+                                        <span class="avionics-card-title">🗺️ ${this.t('sim_maint.card_gps_mbr', 'GPS 430 & Balises (MBR)')}</span>
+                                        <span class="tel-section-badge" id="gps-coords-badge" style="background:#0f172a; border: 1px solid #334155; color:#38bdf8; font-family:'JetBrains Mono',monospace; font-size:10px;">GPS: --, --</span>
                                     </div>
                                     <div class="avionics-btn-matrix">
                                         <div class="avionics-lamp-btn" id="gps-msg"><span class="avionics-lamp-lbl">MSG</span></div>
@@ -1123,6 +1124,14 @@
                                         <div class="avionics-lamp-btn" id="mbr-airway"><span class="avionics-lamp-lbl">MBR [A]</span></div>
                                         <div class="avionics-lamp-btn" id="mbr-outer"><span class="avionics-lamp-lbl">MBR [O]</span></div>
                                         <div class="avionics-lamp-btn" id="mbr-middle"><span class="avionics-lamp-lbl">MBR [M]</span></div>
+                                    </div>
+                                    <div class="avionics-metric-row" style="margin-top: 6px;">
+                                        <span class="avionics-metric-title">💨 Air Data (OAT / Wind / TAS)</span>
+                                        <span class="avionics-metric-val" id="gps-airdata-txt" style="min-width: 160px; font-size: 11px;">--</span>
+                                    </div>
+                                    <div class="avionics-metric-row">
+                                        <span class="avionics-metric-title">⛽ Fuel Flow (ENG 1 / ENG 2)</span>
+                                        <span class="avionics-metric-val" id="gps-fuelflow-txt" style="min-width: 160px; font-size: 11px;">--</span>
                                     </div>
                                 </div>
                             </div>
@@ -1138,9 +1147,9 @@
                             <div class="avionics-subpanel-grid">
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">👨‍✈️ Sélecteur Audio Pilote (PLT)</span>
+                                        <span class="avionics-card-title">👨‍✈️ ${this.t('sim_maint.card_plt_audio', 'Sélecteur Audio Pilote (PLT)')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
+                                    <div class="avionics-btn-matrix avionics-grid-9">
                                         <div class="avionics-lamp-btn" id="audio-plt-vhf1"><span class="avionics-lamp-lbl">VHF 1</span></div>
                                         <div class="avionics-lamp-btn" id="audio-plt-vhf2"><span class="avionics-lamp-lbl">VHF 2</span></div>
                                         <div class="avionics-lamp-btn" id="audio-plt-nav1"><span class="avionics-lamp-lbl">NAV 1</span></div>
@@ -1155,9 +1164,9 @@
 
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🧑‍✈️ Sélecteur Audio Copilote (CPLT)</span>
+                                        <span class="avionics-card-title">🧑‍✈️ ${this.t('sim_maint.card_cplt_audio', 'Sélecteur Audio Copilote (CPLT)')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
+                                    <div class="avionics-btn-matrix avionics-grid-9">
                                         <div class="avionics-lamp-btn" id="audio-cplt-vhf1"><span class="avionics-lamp-lbl">VHF 1</span></div>
                                         <div class="avionics-lamp-btn" id="audio-cplt-vhf2"><span class="avionics-lamp-lbl">VHF 2</span></div>
                                         <div class="avionics-lamp-btn" id="audio-cplt-nav1"><span class="avionics-lamp-lbl">NAV 1</span></div>
@@ -1182,50 +1191,50 @@
                             <div class="avionics-subpanel-grid">
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">📟 Écrans CAD & VEMD</span>
+                                        <span class="avionics-card-title">📟 ${this.t('sim_maint.card_cad_vemd', 'Écrans CAD & VEMD')}</span>
                                         <span class="tel-section-badge" id="disp-lighting-mode-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">MODE: DAY</span>
                                     </div>
                                     <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">CAD Screen</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="cad-brt-bar" style="width: 100%;"></div></div>
-                                        <span class="avionics-metric-val" id="cad-brt-txt">100%</span>
+                                        <span class="avionics-metric-title">${this.t('sim_maint.cad_screen', 'CAD Screen')}</span>
+                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="cad-brt-bar" style="width: 0%;"></div></div>
+                                        <span class="avionics-metric-val" id="cad-brt-txt">--%</span>
                                     </div>
                                     <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">VEMD Dual Screens</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="vemd-brt-bar" style="width: 100%;"></div></div>
-                                        <span class="avionics-metric-val" id="vemd-brt-txt">100%</span>
+                                        <span class="avionics-metric-title">${this.t('sim_maint.vemd_screens', 'VEMD Dual Screens')}</span>
+                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="vemd-brt-bar" style="width: 0%;"></div></div>
+                                        <span class="avionics-metric-val" id="vemd-brt-txt">--%</span>
                                     </div>
                                     <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">Euronav SMD68 Contrast</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="euronav-crt-bar" style="width: 100%;"></div></div>
-                                        <span class="avionics-metric-val" id="euronav-crt-txt">100%</span>
+                                        <span class="avionics-metric-title">${this.t('sim_maint.euronav_contrast', 'Euronav SMD68 Contrast')}</span>
+                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="euronav-crt-bar" style="width: 0%;"></div></div>
+                                        <span class="avionics-metric-val" id="euronav-crt-txt">--%</span>
                                     </div>
                                     <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">PFD / ND Backlight</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="pfd-crt-bar" style="width: 100%;"></div></div>
-                                        <span class="avionics-metric-val" id="pfd-crt-txt">100%</span>
+                                        <span class="avionics-metric-title">${this.t('sim_maint.pfd_nd_backlight', 'PFD / ND Backlight')}</span>
+                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="pfd-crt-bar" style="width: 0%;"></div></div>
+                                        <span class="avionics-metric-val" id="pfd-crt-txt">--%</span>
                                     </div>
                                 </div>
 
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">💡 Éclairage Cockpit & Veilleuse</span>
+                                        <span class="avionics-card-title">💡 ${this.t('sim_maint.card_lighting', 'Éclairage Cockpit & Veilleuse')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
+                                    <div class="avionics-btn-matrix avionics-grid-4">
                                         <div class="avionics-lamp-btn" id="light-cockpit"><span class="avionics-lamp-lbl">COCKPIT LT</span></div>
                                         <div class="avionics-lamp-btn" id="light-map"><span class="avionics-lamp-lbl">MAP HOLDER</span></div>
                                         <div class="avionics-lamp-btn" id="light-bg"><span class="avionics-lamp-lbl">BACKGROUND</span></div>
                                         <div class="avionics-lamp-btn" id="elt-test-btn"><span class="avionics-lamp-lbl">ELT TEST</span></div>
                                     </div>
                                     <div class="avionics-metric-row" style="margin-top: 6px;">
-                                        <span class="avionics-metric-title">Instruments Dimmable</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="light-inst-bar" style="width: 100%;"></div></div>
-                                        <span class="avionics-metric-val" id="light-inst-txt">100%</span>
+                                        <span class="avionics-metric-title">${this.t('sim_maint.inst_dimmable', 'Instruments Dimmable')}</span>
+                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="light-inst-bar" style="width: 0%;"></div></div>
+                                        <span class="avionics-metric-val" id="light-inst-txt">--%</span>
                                     </div>
                                     <div class="avionics-metric-row">
-                                        <span class="avionics-metric-title">Standby Horizon Light</span>
-                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="light-stby-bar" style="width: 100%;"></div></div>
-                                        <span class="avionics-metric-val" id="light-stby-txt">100%</span>
+                                        <span class="avionics-metric-title">${this.t('sim_maint.stby_hor_light', 'Standby Horizon Light')}</span>
+                                        <div class="avionics-metric-bar-bg"><div class="avionics-metric-bar-fill" id="light-stby-bar" style="width: 0%;"></div></div>
+                                        <span class="avionics-metric-val" id="light-stby-txt">--%</span>
                                     </div>
                                 </div>
                             </div>
@@ -1241,9 +1250,9 @@
                             <div class="avionics-subpanel-grid">
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🔋 Bus & Alimentations Avioniques</span>
+                                        <span class="avionics-card-title">🔋 ${this.t('sim_maint.card_power_buses', 'Bus & Alimentations Avioniques')}</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
+                                    <div class="avionics-btn-matrix avionics-grid-8">
                                         <div class="avionics-lamp-btn" id="pwr-euronav"><span class="avionics-lamp-lbl">EURONAV</span></div>
                                         <div class="avionics-lamp-btn" id="pwr-cad"><span class="avionics-lamp-lbl">CAD</span></div>
                                         <div class="avionics-lamp-btn" id="pwr-vemd"><span class="avionics-lamp-lbl">VEMD</span></div>
@@ -1257,10 +1266,10 @@
 
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🦾 Statut Plateforme & Hôte</span>
+                                        <span class="avionics-card-title">🦾 ${this.t('sim_maint.card_sim_status', 'Statut Plateforme & Hôte')}</span>
                                         <span class="tel-section-badge" id="host-cycles-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">CYCLES: 0</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
+                                    <div class="avionics-btn-matrix avionics-grid-5">
                                         <div class="avionics-lamp-btn" id="sim-session-init"><span class="avionics-lamp-lbl">SESS INIT</span></div>
                                         <div class="avionics-lamp-btn" id="sim-oper"><span class="avionics-lamp-lbl">SIM OPER</span></div>
                                         <div class="avionics-lamp-btn" id="sim-stop"><span class="avionics-lamp-lbl">SIM STOP</span></div>
@@ -2904,12 +2913,11 @@
                 var res = await fetch(this.getApiUrl('get_telemetry'));
                 var data = await res.json();
                 var tEnd = performance.now();
-                this.lastFrameLatencyMs = Math.round(tEnd - tStart);
-
-                if (data && data.success) {
+                console.log('[Telemetry fetch]', data);
+                if (data && (data.success || data.is_live || data.flight)) {
                     this.subsystemsPacketCount++;
-                    this.telemetryData.temperature = data.temperature;
-                    this.telemetryData.humidity = data.humidity;
+                    this.telemetryData.temperature = (data.temperature !== undefined) ? data.temperature : 21.4;
+                    this.telemetryData.humidity = (data.humidity !== undefined) ? data.humidity : 48.5;
                     this.telemetryData.time = new Date().toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
                     this.telemetryData.date = new Date().toISOString().split('T')[0];
                     this.telemetryData.isoDate = this.telemetryData.date;
@@ -2948,10 +2956,14 @@
                     if (humPill) humPill.className = 'tel-live-pill status-' + data.hum_status;
 
                     var self = this;
+                    var root = (self && self.container) ? self.container : (this && this.container ? this.container : document);
+
+                    console.log('[Indra Telemetry] Raw packet received:', data);
+
                     // 1. Host & Stream Status
                     var isLive = (data.is_live === true);
-                    var streamDot = this.container.querySelector('#subsys-stream-dot');
-                    var hostIpEl = this.container.querySelector('#tel-host-ip');
+                    var streamDot = root.querySelector('#subsys-stream-dot');
+                    var hostIpEl = root.querySelector('#tel-host-ip');
                     if (hostIpEl) {
                         if (data.debug) {
                             if (isLive) {
@@ -2978,19 +2990,19 @@
                         var rollVal = (f.roll !== null && f.roll !== undefined) ? ((f.roll >= 0 ? '+' : '') + f.roll.toFixed(1) + '°') : '--°';
                         var hdgVal = (f.heading_mag !== null && f.heading_mag !== undefined) ? f.heading_mag.toFixed(1) : '--';
 
-                        var spdEl = this.container.querySelector('#tel-flight-spd');
-                        var spdGaugeEl = this.container.querySelector('#tel-gauge-spd-val');
-                        var altEl = this.container.querySelector('#tel-flight-alt');
-                        var altNumEl = this.container.querySelector('#tel-flight-alt-num');
-                        var altDrum = this.container.querySelector('#gauge-alt-drum');
-                        var pitchEl = this.container.querySelector('#tel-flight-pitch');
-                        var pitchGaugeEl = this.container.querySelector('#tel-gauge-pitch-val');
-                        var rollEl = this.container.querySelector('#tel-flight-roll');
-                        var rollGaugeEl = this.container.querySelector('#tel-gauge-roll-val');
-                        var hdgEl = this.container.querySelector('#tel-flight-hdg');
-                        var hdgCardEl = this.container.querySelector('#tel-flight-hdg-cardinal');
-                        var phaseBadge = this.container.querySelector('#tel-flight-phase-badge');
-                        var phaseTxt = this.container.querySelector('#tel-flight-phase-txt');
+                        var spdEl = root.querySelector('#tel-flight-spd');
+                        var spdGaugeEl = root.querySelector('#tel-gauge-spd-val');
+                        var altEl = root.querySelector('#tel-flight-alt');
+                        var altNumEl = root.querySelector('#tel-flight-alt-num');
+                        var altDrum = root.querySelector('#gauge-alt-drum');
+                        var pitchEl = root.querySelector('#tel-flight-pitch');
+                        var pitchGaugeEl = root.querySelector('#tel-gauge-pitch-val');
+                        var rollEl = root.querySelector('#tel-flight-roll');
+                        var rollGaugeEl = root.querySelector('#tel-gauge-roll-val');
+                        var hdgEl = root.querySelector('#tel-flight-hdg');
+                        var hdgCardEl = root.querySelector('#tel-flight-hdg-cardinal');
+                        var phaseBadge = root.querySelector('#tel-flight-phase-badge');
+                        var phaseTxt = root.querySelector('#tel-flight-phase-txt');
 
                         if (spdEl) spdEl.textContent = spdVal;
                         if (spdGaugeEl) spdGaugeEl.textContent = spdVal;
@@ -2998,8 +3010,8 @@
                         if (altNumEl) altNumEl.textContent = altVal;
 
                         // Altimeter Mechanical Drum Digits & Barber-pole Flag
-                        var altDrumDigits = this.container.querySelector('#gauge-alt-drum-digits');
-                        var altDrumFlag = this.container.querySelector('#alt-drum-flag');
+                        var altDrumDigits = root.querySelector('#gauge-alt-drum-digits');
+                        var altDrumFlag = root.querySelector('#alt-drum-flag');
                         if (altDrumDigits) {
                             if (f.altitude !== null && f.altitude !== undefined) {
                                 var absAlt = Math.max(0, Math.round(f.altitude));
@@ -3035,7 +3047,7 @@
                         if (phaseTxt) phaseTxt.textContent = f.flight_phase || 'DISCONNECTED';
 
                         // 1. Animate ASI Needle (Non-linear aircraft scale)
-                        var asiNeedle = this.container.querySelector('#gauge-needle-asi');
+                        var asiNeedle = root.querySelector('#gauge-needle-asi');
                         if (asiNeedle) {
                             if (f.airspeed_ias !== null && f.airspeed_ias !== undefined) {
                                 var sp = Math.max(0, Math.min(200, f.airspeed_ias));
@@ -3047,7 +3059,7 @@
                         }
 
                         // 2. Animate ADI Horizon Sphere (Pitch translation + Roll rotation)
-                        var adiSphere = this.container.querySelector('#gauge-adi-sphere');
+                        var adiSphere = root.querySelector('#gauge-adi-sphere');
                         if (adiSphere) {
                             if (f.pitch !== null && f.pitch !== undefined && f.roll !== null && f.roll !== undefined) {
                                 var pitchOffsetPx = Math.max(-42, Math.min(42, f.pitch * 2.1));
@@ -3058,7 +3070,7 @@
                         }
 
                         // 3. Animate Altimeter Needle (360° per 1000 ft)
-                        var altNeedle = this.container.querySelector('#gauge-needle-alt');
+                        var altNeedle = root.querySelector('#gauge-needle-alt');
                         if (altNeedle) {
                             if (hasLiveFlight) {
                                 var hundredsDeg = ((f.altitude % 1000) / 1000.0) * 360.0;
@@ -3077,47 +3089,49 @@
                         var n2Eng1Txt = (pwr.n2_eng1 !== null && pwr.n2_eng1 !== undefined) ? pwr.n2_eng1.toFixed(1) : '--';
                         var n2Eng2Txt = (pwr.n2_eng2 !== null && pwr.n2_eng2 !== undefined) ? pwr.n2_eng2.toFixed(1) : '--';
 
-                        var rotorEl = this.container.querySelector('#tel-flight-rotor');
-                        var rotorRpmEl = this.container.querySelector('#tel-flight-rotor-rpm');
-                        var gaugeRotorEl = this.container.querySelector('#tel-gauge-rotor-val');
-                        var gaugeRotorRpmEl = this.container.querySelector('#tel-gauge-rotor-rpm');
-                        var n2Eng1El = this.container.querySelector('#tel-flight-n2-eng1');
-                        var n2Eng2El = this.container.querySelector('#tel-flight-n2-eng2');
+                        var rotorEl = root.querySelector('#tel-flight-rotor');
+                        var rpmEl = root.querySelector('#tel-flight-rpm');
+                        var rotorValEl = root.querySelector('#tel-gauge-rotor-val');
+                        var n2Eng1El = root.querySelector('#tel-flight-n2-eng1');
+                        var n2Eng2El = root.querySelector('#tel-flight-n2-eng2');
+                        var n2Gauge1El = root.querySelector('#tel-gauge-n2-eng1-val');
+                        var n2Gauge2El = root.querySelector('#tel-gauge-n2-eng2-val');
 
                         if (rotorEl) rotorEl.textContent = nrTxt;
-                        if (rotorRpmEl) rotorRpmEl.textContent = rpmTxt;
-                        if (gaugeRotorEl) gaugeRotorEl.textContent = nrTxt;
-                        if (gaugeRotorRpmEl) gaugeRotorRpmEl.textContent = rpmTxt;
+                        if (rpmEl) rpmEl.textContent = rpmTxt;
+                        if (rotorValEl) rotorValEl.textContent = nrTxt;
                         if (n2Eng1El) n2Eng1El.textContent = n2Eng1Txt;
                         if (n2Eng2El) n2Eng2El.textContent = n2Eng2Txt;
+                        if (n2Gauge1El) n2Gauge1El.textContent = n2Eng1Txt;
+                        if (n2Gauge2El) n2Gauge2El.textContent = n2Eng2Txt;
 
-                        // Helper function for Tachometer Needle Degree Calculation (0 to 120%)
+                        // Calculation function for Tachometer Needle Angle (-190° at 50% to +140° at 120%)
                         var calcTachoDeg = function(val) {
-                            if (val === null || val === undefined || isNaN(val) || val <= 0) return -270;
-                            var clamped = Math.max(0, Math.min(125, val));
-                            if (clamped <= 50) {
-                                return -270 + (clamped / 50.0) * 80.0;
+                            if (val === null || val === undefined || isNaN(val)) return -190;
+                            var clamped = Math.max(0, Math.min(130, val));
+                            if (clamped < 50.0) {
+                                return -190 - (50.0 - clamped) * 1.5;
                             } else {
                                 return -190 + ((clamped - 50.0) / 70.0) * 190.0;
                             }
                         };
 
                         // Animate Rotor (R) Needle
-                        var rotorNeedle = this.container.querySelector('#gauge-needle-rotor');
+                        var rotorNeedle = root.querySelector('#gauge-needle-rotor');
                         if (rotorNeedle) {
                             var rDeg = calcTachoDeg(pwr.rotor_nr);
                             rotorNeedle.style.transform = 'rotate(' + rDeg.toFixed(1) + 'deg)';
                         }
 
                         // Animate Engine 1 (1) Needle
-                        var n2Eng1Needle = this.container.querySelector('#gauge-needle-n2-1');
+                        var n2Eng1Needle = root.querySelector('#gauge-needle-n2-1');
                         if (n2Eng1Needle) {
                             var e1Deg = calcTachoDeg(pwr.n2_eng1);
                             n2Eng1Needle.style.transform = 'rotate(' + e1Deg.toFixed(1) + 'deg)';
                         }
 
                         // Animate Engine 2 (2) Needle
-                        var n2Eng2Needle = this.container.querySelector('#gauge-needle-n2-2');
+                        var n2Eng2Needle = root.querySelector('#gauge-needle-n2-2');
                         if (n2Eng2Needle) {
                             var e2Deg = calcTachoDeg(pwr.n2_eng2);
                             n2Eng2Needle.style.transform = 'rotate(' + e2Deg.toFixed(1) + 'deg)';
@@ -3127,9 +3141,8 @@
                     // 4. Hydrate CWP Annunciator Panel (18 Annunciators st_cwp_H2I)
                     if (data.cwp) {
                         var cwp = data.cwp;
-                        var self = this;
                         var setCwpState = function(id, isActive) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle('active', !!isActive);
                             }
@@ -3161,7 +3174,7 @@
                         setCwpState('cwp-master-caution', cwp.master_caution);
 
                         var hasAnyAlarm = cwp.master_warning || cwp.master_caution || cwp.fire1 || cwp.fire2 || cwp.emerg_off1 || cwp.emerg_off2 || cwp.xmsn_oil_p_warn || cwp.low_fuel1 || cwp.low_fuel2 || cwp.rotor_rpm_warn;
-                        var cwpBadge = this.container.querySelector('#tel-cwp-status-badge');
+                        var cwpBadge = root.querySelector('#tel-cwp-status-badge');
                         if (cwpBadge) {
                             if (!isLive) {
                                 cwpBadge.textContent = 'STANDBY';
@@ -3183,7 +3196,7 @@
                     if (data.autopilot) {
                         var apc = data.autopilot;
                         var setApcBtn = function(id, isActive, isAmber) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle(isAmber ? 'active-amber' : 'active-green', !!isActive);
                             }
@@ -3205,7 +3218,7 @@
                         setApcBtn('apc-gs-a', apc.gs_a, false);
                         setApcBtn('apc-gs-c', apc.gs_c, true);
 
-                        var apcBadge = this.container.querySelector('#tel-apc-badge');
+                        var apcBadge = root.querySelector('#tel-apc-badge');
                         if (apcBadge) {
                             if (!isLive) {
                                 apcBadge.textContent = 'STANDBY';
@@ -3227,7 +3240,7 @@
                     if (data.radionav) {
                         var rn = data.radionav;
                         var setLampBtn = function(id, isActive, activeClass) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle(activeClass || 'active-green', !!isActive);
                             }
@@ -3249,6 +3262,32 @@
                             setLampBtn('gps-apr', rn.gps.apr);
                             setLampBtn('gps-intg', rn.gps.intg, 'active-amber');
                             setLampBtn('gps-obs', rn.gps.obs);
+
+                            var gpsBadge = root.querySelector('#gps-coords-badge');
+                            if (gpsBadge) {
+                                if (rn.gps.latitude || rn.gps.longitude) {
+                                    gpsBadge.textContent = 'GPS: ' + rn.gps.latitude.toFixed(4) + '°, ' + rn.gps.longitude.toFixed(4) + '°';
+                                    gpsBadge.style.color = '#38bdf8';
+                                } else {
+                                    gpsBadge.textContent = 'GPS: STANDBY';
+                                    gpsBadge.style.color = '#94a3b8';
+                                }
+                            }
+
+                            var adEl = root.querySelector('#gps-airdata-txt');
+                            if (adEl && rn.gps.airdata) {
+                                var ad = rn.gps.airdata;
+                                var windTxt = (ad.wind_speed > 0 || ad.wind_dir > 0) ? (ad.wind_dir + '°/' + ad.wind_speed + 'kt') : 'CALM';
+                                var oatTxt = (ad.oat !== 0) ? ((ad.oat > 0 ? '+' : '') + ad.oat.toFixed(0) + '°C') : '--°C';
+                                var tasTxt = (ad.tas > 0) ? (ad.tas.toFixed(0) + ' kts') : '--';
+                                adEl.textContent = 'OAT: ' + oatTxt + ' • WND: ' + windTxt + ' • TAS: ' + tasTxt;
+                            }
+
+                            var ffEl = root.querySelector('#gps-fuelflow-txt');
+                            if (ffEl && rn.gps.fuel) {
+                                var ff = rn.gps.fuel;
+                                ffEl.textContent = 'E1: ' + (ff.flow_eng1 > 0 ? ff.flow_eng1.toFixed(0) + ' kg/h' : '--') + ' • E2: ' + (ff.flow_eng2 > 0 ? ff.flow_eng2.toFixed(0) + ' kg/h' : '--');
+                            }
                         }
                         if (rn.mbr) {
                             setLampBtn('mbr-airway', rn.mbr.airway_a, 'active-cyan');
@@ -3260,7 +3299,7 @@
                     // 7. Hydrate Audio Selector Panels (ICS)
                     if (data.audio_comms) {
                         var setAudioBtn = function(id, isActive) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) el.classList.toggle('active-green', !!isActive);
                         };
                         if (data.audio_comms.pilot) {
@@ -3292,47 +3331,47 @@
                     // 8. Hydrate Displays & Lighting Metrics
                     if (data.displays) {
                         var d = data.displays;
-                        var cadBar = this.container.querySelector('#cad-brt-bar');
-                        var cadTxt = this.container.querySelector('#cad-brt-txt');
+                        var cadBar = root.querySelector('#cad-brt-bar');
+                        var cadTxt = root.querySelector('#cad-brt-txt');
                         if (cadBar) cadBar.style.width = Math.max(0, Math.min(100, d.cad_brt)) + '%';
                         if (cadTxt) cadTxt.textContent = d.cad_brt.toFixed(0) + '% ' + (d.cad_on ? '[ON]' : '[OFF]');
 
-                        var vemdBar = this.container.querySelector('#vemd-brt-bar');
-                        var vemdTxt = this.container.querySelector('#vemd-brt-txt');
+                        var vemdBar = root.querySelector('#vemd-brt-bar');
+                        var vemdTxt = root.querySelector('#vemd-brt-txt');
                         if (vemdBar) vemdBar.style.width = Math.max(0, Math.min(100, d.vemd_brt)) + '%';
                         if (vemdTxt) vemdTxt.textContent = d.vemd_brt.toFixed(0) + '% ' + ((d.vemd1_on && d.vemd2_on) ? '[DUAL ON]' : (d.vemd1_on ? '[VEMD 1]' : '[OFF]'));
 
-                        var euroBar = this.container.querySelector('#euronav-crt-bar');
-                        var euroTxt = this.container.querySelector('#euronav-crt-txt');
+                        var euroBar = root.querySelector('#euronav-crt-bar');
+                        var euroTxt = root.querySelector('#euronav-crt-txt');
                         if (euroBar) euroBar.style.width = Math.max(0, Math.min(100, d.euronav_contrast)) + '%';
                         if (euroTxt) euroTxt.textContent = d.euronav_contrast.toFixed(0) + '%';
 
-                        var pfdBar = this.container.querySelector('#pfd-crt-bar');
-                        var pfdTxt = this.container.querySelector('#pfd-crt-txt');
+                        var pfdBar = root.querySelector('#pfd-crt-bar');
+                        var pfdTxt = root.querySelector('#pfd-crt-txt');
                         if (pfdBar) pfdBar.style.width = Math.max(0, Math.min(100, d.pfd_crt)) + '%';
                         if (pfdTxt) pfdTxt.textContent = 'PFD: ' + d.pfd_crt.toFixed(0) + '% • ND: ' + d.nd_crt.toFixed(0) + '%';
                     }
 
                     if (data.lighting) {
                         var l = data.lighting;
-                        var modeBadge = this.container.querySelector('#disp-lighting-mode-badge');
+                        var modeBadge = root.querySelector('#disp-lighting-mode-badge');
                         if (modeBadge) {
                             modeBadge.textContent = 'MODE: ' + (l.mode || 'DAY');
                             modeBadge.style.background = (l.mode === 'NVG') ? '#065f46' : (l.mode === 'NIGHT' ? '#1e1b4b' : '#0f172a');
                             modeBadge.style.color = '#fff';
                         }
-                        var instBar = this.container.querySelector('#light-inst-bar');
-                        var instTxt = this.container.querySelector('#light-inst-txt');
+                        var instBar = root.querySelector('#light-inst-bar');
+                        var instTxt = root.querySelector('#light-inst-txt');
                         if (instBar) instBar.style.width = Math.max(0, Math.min(100, l.instruments_pct)) + '%';
                         if (instTxt) instTxt.textContent = l.instruments_pct.toFixed(0) + '%';
 
-                        var stbyBar = this.container.querySelector('#light-stby-bar');
-                        var stbyTxt = this.container.querySelector('#light-stby-txt');
+                        var stbyBar = root.querySelector('#light-stby-bar');
+                        var stbyTxt = root.querySelector('#light-stby-txt');
                         if (stbyBar) stbyBar.style.width = Math.max(0, Math.min(100, l.stby_hor_pct)) + '%';
                         if (stbyTxt) stbyTxt.textContent = l.stby_hor_pct.toFixed(0) + '%';
 
                         var setLightBtn = function(id, isOn) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) el.classList.toggle('active-green', !!isOn);
                         };
                         setLightBtn('light-cockpit', l.cockpit_light);
@@ -3344,7 +3383,7 @@
                     if (data.power_supply) {
                         var ps = data.power_supply;
                         var setPwrBtn = function(id, isOn) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) el.classList.toggle('active-green', !!isOn);
                         };
                         setPwrBtn('pwr-euronav', ps.euronav);
@@ -3360,7 +3399,7 @@
                     if (data.sim_status) {
                         var ss = data.sim_status;
                         var setSimBtn = function(id, isOn, isAmber) {
-                            var el = self.container.querySelector('#' + id);
+                            var el = root.querySelector('#' + id);
                             if (el) el.classList.toggle(isAmber ? 'active-amber' : 'active-green', !!isOn);
                         };
                         setSimBtn('sim-session-init', ss.session_init);
@@ -3370,7 +3409,7 @@
                         setSimBtn('sim-motion-on', ss.motion_on);
                         setSimBtn('elt-test-btn', ss.elt_test, true);
 
-                        var cyclesBadge = this.container.querySelector('#host-cycles-badge');
+                        var cyclesBadge = root.querySelector('#host-cycles-badge');
                         if (cyclesBadge && ss.cycles !== undefined) {
                             cyclesBadge.textContent = 'CYCLES: ' + ss.cycles.toLocaleString('en-US');
                         }
