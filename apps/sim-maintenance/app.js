@@ -823,6 +823,43 @@
             `;
         }
 
+        renderGPSAnnunciatorsPanel() {
+            return `
+                <div class="ec135-gps-panel">
+                    <div class="gps-panel-screw pos-tl"></div>
+                    <div class="gps-panel-screw pos-tr"></div>
+                    <div class="gps-panel-screw pos-bl"></div>
+                    <div class="gps-panel-screw pos-br"></div>
+
+                    <div class="gps-panel-body">
+                        <!-- Module 1: MSG (top) / WPT (bottom) -->
+                        <div class="gps-module-well">
+                            <div class="gps-module-cap">
+                                <div class="gps-legend-half amber-type" id="gps-msg">MSG</div>
+                                <div class="gps-legend-half amber-type" id="gps-wpt">WPT</div>
+                            </div>
+                        </div>
+
+                        <!-- Module 2: TERM (top) / APR (bottom) -->
+                        <div class="gps-module-well">
+                            <div class="gps-module-cap">
+                                <div class="gps-legend-half green-type" id="gps-term">TERM</div>
+                                <div class="gps-legend-half green-type" id="gps-apr">APR</div>
+                            </div>
+                        </div>
+
+                        <!-- Module 3: INTG (top) / OBS (bottom) -->
+                        <div class="gps-module-well">
+                            <div class="gps-module-cap">
+                                <div class="gps-legend-half amber-type" id="gps-intg">INTG</div>
+                                <div class="gps-legend-half green-type" id="gps-obs">OBS</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         renderLayout() {
             var title = this.t('apps.sim-maintenance.title', 'Sim Maintenance');
             var subtitle = this.t('apps.sim-maintenance.subtitle', 'Technical Checklists, Environmental Telemetry & Compliance');
@@ -1771,27 +1808,26 @@
                                     ${this.renderDMEAnnunciatorsPanel()}
                                 </div>
 
-                                <div class="avionics-card">
-                                    <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🗺️ ${this.t('sim_maint.card_gps_mbr', 'GPS 430 & Balises (MBR)')}</span>
+                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
+                                    <div class="avionics-card-header" style="width: 100%;">
+                                        <span class="avionics-card-title">🗺️ ${this.t('sim_maint.card_gps_annunciators', 'Annonciateurs GPS (Garmin / EC135)')}</span>
                                         <span class="tel-section-badge" id="gps-coords-badge" style="background:#0f172a; border: 1px solid #334155; color:#38bdf8; font-family:'JetBrains Mono',monospace; font-size:10px;">GPS: --, --</span>
                                     </div>
-                                    <div class="avionics-btn-matrix">
-                                        <div class="avionics-lamp-btn" id="gps-msg"><span class="avionics-lamp-lbl">MSG</span></div>
-                                        <div class="avionics-lamp-btn" id="gps-wpt"><span class="avionics-lamp-lbl">WPT</span></div>
-                                        <div class="avionics-lamp-btn" id="gps-term"><span class="avionics-lamp-lbl">TERM</span></div>
-                                        <div class="avionics-lamp-btn" id="gps-apr"><span class="avionics-lamp-lbl">APR</span></div>
-                                        <div class="avionics-lamp-btn" id="gps-intg"><span class="avionics-lamp-lbl">INTG</span></div>
-                                        <div class="avionics-lamp-btn" id="gps-obs"><span class="avionics-lamp-lbl">OBS</span></div>
+                                    
+                                    <div style="margin: 8px 0; display: flex; justify-content: center;">
+                                        ${this.renderGPSAnnunciatorsPanel()}
+                                    </div>
+
+                                    <div class="avionics-btn-matrix" style="margin-top: 6px; width: 100%; justify-content: center;">
                                         <div class="avionics-lamp-btn" id="mbr-airway"><span class="avionics-lamp-lbl">MBR [A]</span></div>
                                         <div class="avionics-lamp-btn" id="mbr-outer"><span class="avionics-lamp-lbl">MBR [O]</span></div>
                                         <div class="avionics-lamp-btn" id="mbr-middle"><span class="avionics-lamp-lbl">MBR [M]</span></div>
                                     </div>
-                                    <div class="avionics-metric-row" style="margin-top: 6px;">
+                                    <div class="avionics-metric-row" style="margin-top: 6px; width: 100%;">
                                         <span class="avionics-metric-title">💨 Air Data (OAT / Wind / TAS)</span>
                                         <span class="avionics-metric-val" id="gps-airdata-txt" style="min-width: 160px; font-size: 11px;">--</span>
                                     </div>
-                                    <div class="avionics-metric-row">
+                                    <div class="avionics-metric-row" style="width: 100%;">
                                         <span class="avionics-metric-title">⛽ Fuel Flow (ENG 1 / ENG 2)</span>
                                         <span class="avionics-metric-val" id="gps-fuelflow-txt" style="min-width: 160px; font-size: 11px;">--</span>
                                     </div>
@@ -4049,11 +4085,11 @@
                         }
                         if (rn.gps) {
                             setLampBtn('gps-msg', rn.gps.msg, 'active-amber');
-                            setLampBtn('gps-wpt', rn.gps.wpt);
-                            setLampBtn('gps-term', rn.gps.term);
-                            setLampBtn('gps-apr', rn.gps.apr);
+                            setLampBtn('gps-wpt', rn.gps.wpt, 'active-amber');
+                            setLampBtn('gps-term', rn.gps.term, 'active-green');
+                            setLampBtn('gps-apr', rn.gps.apr, 'active-green');
                             setLampBtn('gps-intg', rn.gps.intg, 'active-amber');
-                            setLampBtn('gps-obs', rn.gps.obs);
+                            setLampBtn('gps-obs', rn.gps.obs, 'active-green');
 
                             var gpsBadge = root.querySelector('#gps-coords-badge');
                             if (gpsBadge) {

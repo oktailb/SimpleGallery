@@ -92,6 +92,7 @@
   "sim_maint.slip_plt_title": "機長席 横滑り計 (PLT)",
   "sim_maint.slip_cplt_title": "副操縦士席 横滑り計 (CPLT)",
   "sim_maint.dme_panel_title": "DME アナンシエーター",
+  "sim_maint.card_gps_annunciators": "GPS アナンシエーター (Garmin / EC135)",
   "sim_maint.stby_hor_brt": "予備姿勢指示器 照度 (STBY HOR)",
   "sim_maint.instr_brt": "計器盤 照度 (INSTR)",
   "sim_maint.rotor_brake_title": "ローターブレーキ",

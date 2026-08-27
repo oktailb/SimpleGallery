@@ -92,6 +92,7 @@
   "sim_maint.slip_plt_title": "Pilot Sideslip Indicator (PLT)",
   "sim_maint.slip_cplt_title": "Copilot Sideslip Indicator (CPLT)",
   "sim_maint.dme_panel_title": "DME Annunciators",
+  "sim_maint.card_gps_annunciators": "GPS Annunciators (Garmin / EC135)",
   "sim_maint.stby_hor_brt": "Standby Horizon Brightness (STBY HOR)",
   "sim_maint.instr_brt": "Instruments Brightness (INSTR)",
   "sim_maint.rotor_brake_title": "Rotor Brake",

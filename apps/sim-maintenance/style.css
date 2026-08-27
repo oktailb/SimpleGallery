@@ -3443,11 +3443,11 @@ input[type="date"].paper-input {
 }
 
 .avionics-card {
-    background: #181b1f;
-    border: 2px solid #2e343c;
-    border-radius: 10px;
+    background: linear-gradient(180deg, #6c7885 0%, #58636f 100%);
+    border: 3px solid #3c444c;
+    border-radius: 12px;
     padding: 16px 18px;
-    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25), inset 0 -3px 8px rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -3457,7 +3457,7 @@ input[type="date"].paper-input {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #2a3038;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
     padding-bottom: 8px;
 }
 
@@ -3465,7 +3465,8 @@ input[type="date"].paper-input {
     font-family: 'Inter', 'Segoe UI', sans-serif;
     font-size: 13px;
     font-weight: 800;
-    color: #e2e8f0;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     letter-spacing: 0.5px;
     display: flex;
     align-items: center;
@@ -4209,20 +4210,21 @@ input[type="date"].paper-input {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: #090d16;
-    border: 1px solid #1e293b;
-    border-radius: 8px;
-    padding: 10px 16px 10px 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(180deg, #6c7885 0%, #58636f 100%);
+    border: 3px solid #3c444c;
+    border-radius: 12px;
+    padding: 12px 18px;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25), inset 0 -3px 8px rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 .slip-gauge-hdr {
     font-family: 'Inter', -apple-system, sans-serif;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 800;
-    color: #94a3b8;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
     letter-spacing: 0.8px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     text-transform: uppercase;
 }
 
@@ -4338,6 +4340,113 @@ input[type="date"].paper-input {
     transition: transform 0.12s ease-out;
     z-index: 2;
 }
+
+/* ==========================================================================
+   EC135 GPS ANNUNCIATOR PANEL (MSG, WPT, TERM, APR, INTG, OBS)
+   ========================================================================== */
+.ec135-gps-panel {
+    position: relative;
+    display: inline-flex;
+    background: linear-gradient(180deg, #32383e 0%, #202428 50%, #15181a 100%);
+    border: 2px solid #0f1214;
+    border-radius: 6px;
+    padding: 12px 14px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 6px 18px rgba(0, 0, 0, 0.85);
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.gps-panel-screw {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #474f56 0%, #15181a 80%);
+    border: 1px solid #0a0c0d;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gps-panel-screw::after {
+    content: '+';
+    font-size: 11px;
+    line-height: 1;
+    color: #0a0c0d;
+    font-family: sans-serif;
+    font-weight: 900;
+    text-shadow: 0 0.5px 0.5px rgba(255, 255, 255, 0.15);
+}
+
+.gps-panel-screw.pos-tl { top: 6px; left: 6px; }
+.gps-panel-screw.pos-tr { top: 6px; right: 6px; }
+.gps-panel-screw.pos-bl { bottom: 6px; left: 6px; }
+.gps-panel-screw.pos-br { bottom: 6px; right: 6px; }
+
+.gps-panel-body {
+    display: flex;
+    gap: 10px;
+    margin: 2px 14px;
+}
+
+.gps-module-well {
+    background: #080a0c;
+    border: 1.5px solid #000000;
+    border-radius: 6px;
+    padding: 3px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.95), 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+.gps-module-cap {
+    width: 62px;
+    height: 62px;
+    background: linear-gradient(180deg, #2b3035 0%, #1a1e21 100%);
+    border-radius: 4px;
+    border: 1px solid #0f1214;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 2px;
+    box-sizing: border-box;
+}
+
+.gps-legend-half {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    text-align: center;
+    line-height: 1.1;
+    pointer-events: none;
+    transition: color 0.12s ease-out, text-shadow 0.12s ease-out;
+}
+
+/* Inactive Colors */
+.gps-legend-half.amber-type {
+    color: #633008;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.9);
+}
+
+.gps-legend-half.green-type {
+    color: #0c3316;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.9);
+}
+
+/* Active Illuminated Colors */
+.gps-legend-half.amber-type.active-amber,
+.gps-legend-half.amber-type.active {
+    color: #f59e0b !important;
+    text-shadow: 0 0 3px #f59e0b, 0 0 8px rgba(245, 158, 11, 0.85), 0 0 15px rgba(245, 158, 11, 0.5) !important;
+}
+
+.gps-legend-half.green-type.active-green,
+.gps-legend-half.green-type.active {
+    color: #00ff44 !important;
+    text-shadow: 0 0 3px #00ff44, 0 0 8px rgba(0, 255, 68, 0.85), 0 0 15px rgba(0, 255, 68, 0.5) !important;
+}
+
 
 
 
