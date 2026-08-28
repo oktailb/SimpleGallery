@@ -50,6 +50,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <link rel="stylesheet" id="activeThemeStylesheet" href="themes/<?php echo htmlspecialchars($theme_preset, ENT_QUOTES, 'UTF-8'); ?>/theme.css?v=<?php echo file_exists(__DIR__ . '/themes/' . $theme_preset . '/theme.css') ? filemtime(__DIR__ . '/themes/' . $theme_preset . '/theme.css') : '1'; ?>">
   <link rel="stylesheet" href="css/gallery.css?v=<?php echo filemtime(__DIR__ . '/css/gallery.css'); ?>">
   <link rel="stylesheet" href="css/window-manager.css?v=<?php echo file_exists(__DIR__ . '/css/window-manager.css') ? filemtime(__DIR__ . '/css/window-manager.css') : '1'; ?>">
+  <link rel="stylesheet" href="system/userland/ui/styles/toolkit.css?v=<?php echo file_exists(__DIR__ . '/system/userland/ui/styles/toolkit.css') ? filemtime(__DIR__ . '/system/userland/ui/styles/toolkit.css') : '1'; ?>">
 
   <!-- Leaflet & MarkerCluster for Interactive Maps (100% Free, Zero API Key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -58,7 +59,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-  <!-- Userland System Runtime (Core OS Bus, WindowManager, MenuBar, Registries, Syscalls, AppManager, I18n) -->
+  <!-- Userland System Runtime (Core OS Bus, WindowManager, MenuBar, Registries, Syscalls, AppManager, I18n, WebOSToolkit) -->
   <script src="system/userland/core/IconHelper.js" defer></script>
   <script src="system/userland/core/EventBus.js" defer></script>
   <script src="system/userland/core/SyscallClient.js" defer></script>
@@ -68,6 +69,8 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="system/userland/core/MediaViewerRegistry.js" defer></script>
   <script src="system/userland/core/AppManager.js" defer></script>
   <script src="system/userland/i18n/I18nEngine.js" defer></script>
+  <script src="system/userland/ui/WebOSToolkit.js" defer></script>
+  <script src="system/userland/core/WebOSApp.js" defer></script>
   <script src="system/userland/ui/MetadataInspector.js" defer></script>
 
   <!-- Synchronous theme restore to avoid flash of unstyled theme -->

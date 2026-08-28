@@ -407,3 +407,154 @@ Implémentez la structure documentée à la [Section 5](#5-cycle-de-vie--interfa
 
 ### Étape 5 : Tester
 Rechargez le navigateur : votre application est automatiquement découverte par le Kernel, listée dans le menu des applications et prête à être exécutée !
+
+---
+
+## 9. Framework `WebOSApp` & Toolkit UI Standardisé (`WebOSToolkit`)
+
+Pour accélérer le développement d'applications modulaires modernes et réduire le code répétitif (*boilerplate*) de **>65%**, le WebOS met à disposition la classe de base `WebOSApp` (`window.sys.App`) et le couteau suisse d'UI `WebOSToolkit` (`window.sys.ui` et `window.sys.api`).
+
+### 📦 9.1 La Classe de Base `WebOSApp` (`window.sys.App`)
+
+Toutes les applications WebOS modernes héritent de `window.sys.App` :
+
+```javascript
+class MyCustomApp extends window.sys.App {
+  constructor() {
+    super({
+      id: 'my-custom-app',
+      title: 'apps.my_app.title',
+      icon: '🚀',
+      width: 820,
+      height: 560,
+      resizable: true,
+      tabs: [
+        { id: 'general', label: 'my_app.tab_general', icon: '⚙️' },
+        { id: 'details', label: 'my_app.tab_details', icon: '📊' }
+      ]
+    });
+  }
+
+  // Hook appelé automatiquement après l'injection HTML dans le DOM
+  bindEvents(container) {
+    window.sys.ui.bindActions(container, {
+      'click #myBtn': () => this.handleButtonClick()
+    });
+  }
+
+  // Rendu de l'onglet actif
+  renderTab(tabId) {
+    if (tabId === 'general') {
+      return window.sys.ui.card({
+        title: this.t('my_app.general_card'),
+        icon: 'ℹ️',
+        content: window.sys.ui.infoGrid([
+          { label: 'my_app.status', value: 'OK' }
+        ])
+      });
+    }
+    return '';
+  }
+}
+
+window.MyCustomApp = new MyCustomApp();
+```
+
+#### Cycle de vie & Hooks de `WebOSApp` :
+- `super(config)` : Initialise les métadonnées (`id`, `title`, `icon`, `width`, `height`, `tabs`).
+- `onInit()` : Appelé une seule fois au chargement du script.
+- `onOpen()` : Appelé à chaque ouverture de la fenêtre de l'application.
+- `onClose()` : Appelé à la fermeture de la fenêtre.
+- `renderHeaderExtra()` : (Optionnel) Retourne du HTML pour ajouter des boutons/contrôles dans la barre d'onglets (ex: bouton actualiser, checkbox auto-refresh).
+- `renderTab(tabId)` / `renderContent()` : Retourne le HTML de l'onglet actif ou du corps principal.
+- `bindEvents(container)` : Hook automatique déclenché après chaque rendu du DOM pour attacher des écouteurs d'événements sans aucun `document.getElementById` manuel.
+- `this.t(key, replacements)` : Raccourci d'internationalisation réactif de l'instance.
+- `this.escapeHtml(str)` : Échappement anti-XSS.
+
+---
+
+### 🎨 9.2 Composants UI Déclaratifs (`window.sys.ui`)
+
+Toutes les méthodes de `window.sys.ui` résolvent automatiquement les clés i18n et échappent les valeurs.
+
+#### 🃏 `sys.ui.card(options)`
+Crée une carte stylisée avec effet glassmorphism :
+```javascript
+window.sys.ui.card({
+  title: 'sysmon.server_title', // Résolu en i18n
+  icon: '🖥️',
+  headerAction: '<button class="webos-btn">Action</button>',
+  content: '...' // HTML ou autre composant sys.ui
+});
+```
+
+#### 📊 `sys.ui.infoGrid(items)`
+Génère une grille réactive de métriques clé/valeur :
+```javascript
+window.sys.ui.infoGrid([
+  { label: 'sysmon.server_os', value: 'Linux' },
+  { label: 'sysmon.php_version', value: '8.4.20' }
+]);
+```
+
+#### 🏷️ `sys.ui.chipList(chips)`
+Génère une liste de puces/badges d'état :
+```javascript
+window.sys.ui.chipList([
+  { label: 'ZipArchive', enabled: true, icon: '✓' },
+  { label: 'FFMPEG CLI', disabled: true, icon: '✗' }
+]);
+```
+
+#### 🎛️ `sys.ui.gauge(options)`
+Génère une jauge de télémétrie avec barre de progression :
+```javascript
+window.sys.ui.gauge({
+  icon: '💾',
+  label: 'sysmon.disk_used_label',
+  value: '45.2%',
+  percent: 45.2,
+  detail: '120 GB / 256 GB'
+});
+```
+
+#### 📈 `sys.ui.chart.card(options)` & `sys.ui.chart.grid(cards)`
+Génère une grille réactive et des cartes de graphiques télémétriques temps réel avec Canvas HiDPI :
+```javascript
+window.sys.ui.chart.grid([
+  {
+    title: 'sysmon.chart_fps',
+    icon: '⚡',
+    canvasId: 'myFpsCanvas',
+    valueId: 'myFpsVal',
+    value: '60 FPS',
+    valueColor: '#22c55e',
+    footerLeft: 'Min: 0',
+    footerRight: 'Target: 60 FPS'
+  }
+]);
+```
+
+#### 🔗 `sys.ui.bindActions(container, actionMap)`
+Délégation d'événements DOM déclarative :
+```javascript
+window.sys.ui.bindActions(container, {
+  'click #myButton': (btn) => { ... },
+  'change #myCheckbox': (checkbox) => { ... },
+  'click .kill-btn': (btn, e) => { const pid = btn.dataset.winId; ... }
+});
+```
+
+---
+
+### 🌐 9.3 Client API Unifié (`window.sys.api`)
+
+Centralise les requêtes HTTP vers `api.php` avec injection automatique du jeton CSRF et gestion d'erreurs :
+
+```javascript
+// Requête GET (Ex: api.php?action=get_system_info&_t=123)
+const sysInfo = await window.sys.api.get('get_system_info');
+
+// Requête POST (Injecte automatiquement le jeton CSRF_TOKEN)
+const result = await window.sys.api.post('clear_all_caches', { target: 'thumbnails' });
+```
