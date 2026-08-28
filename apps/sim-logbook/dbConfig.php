@@ -4,7 +4,7 @@
  * Resilient Database Connector (PDO + MySQLi + Safe Fallback).
  */
 
-$servername = "localhost";
+$servername = "172.120.1.253";
 $username   = "root";
 $password   = "ebbdec135";
 $dbname     = "ffs_operation_log";

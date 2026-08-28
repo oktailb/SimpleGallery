@@ -245,7 +245,7 @@
                 } else {
                     styleTag.href = styleUrl;
                 }
-            } catch (e) {}
+            } catch (e) { }
 
             await this.loadLocalLocale();
             await this.loadTechnicians();
@@ -313,14 +313,14 @@
         }
 
         renderCBLeftPanel() {
-            var cb = function(id, name, rating) {
+            var cb = function (id, name, rating) {
                 if (!rating) return '<div class="cb-item-slot"><div class="cb-blank-plug"></div><span class="cb-name-lbl">' + (name || '') + '</span></div>';
                 return '<div class="cb-item-slot">' +
                     '<div class="cb-btn" id="' + id + '" data-cb-id="' + id + '" title="' + name + ' (' + rating + 'A)">' +
-                        '<span class="cb-rating-lbl">' + rating + '</span>' +
+                    '<span class="cb-rating-lbl">' + rating + '</span>' +
                     '</div>' +
                     '<span class="cb-name-lbl">' + name + '</span>' +
-                '</div>';
+                    '</div>';
             };
 
             return `
@@ -487,20 +487,20 @@
         }
 
         renderOVHDCenterPanel() {
-            var toggle = function(id, name, isRed, defaultUp) {
+            var toggle = function (id, name, isRed, defaultUp) {
                 var collarClass = isRed ? 'ohp-toggle-collar-red' : 'ohp-toggle-collar-std';
                 var stateClass = defaultUp ? 'state-up' : 'state-down';
                 return '<div class="ohp-toggle-wrap ' + stateClass + '" id="' + id + '" data-toggle-id="' + id + '" title="' + name + '">' +
                     '<div class="' + collarClass + '"><div class="ohp-toggle-bat"></div></div>' +
                     '<span class="ohp-switch-lbl">' + name + '</span>' +
-                '</div>';
+                    '</div>';
             };
 
-            var pot = function(id, name) {
+            var pot = function (id, name) {
                 return '<div class="ohp-pot-wrap" id="' + id + '" title="' + name + '">' +
                     '<div class="ohp-pot-dial"></div>' +
                     '<span class="ohp-switch-lbl">' + name + '</span>' +
-                '</div>';
+                    '</div>';
             };
 
             return `
@@ -591,14 +591,14 @@
         }
 
         renderCBRightPanel() {
-            var cb = function(id, name, rating) {
+            var cb = function (id, name, rating) {
                 if (!rating) return '<div class="cb-item-slot"><div class="cb-blank-plug"></div><span class="cb-name-lbl">' + (name || '') + '</span></div>';
                 return '<div class="cb-item-slot">' +
                     '<div class="cb-btn" id="' + id + '" data-cb-id="' + id + '" title="' + name + ' (' + rating + 'A)">' +
-                        '<span class="cb-rating-lbl">' + rating + '</span>' +
+                    '<span class="cb-rating-lbl">' + rating + '</span>' +
                     '</div>' +
                     '<span class="cb-name-lbl">' + name + '</span>' +
-                '</div>';
+                    '</div>';
             };
 
             return `
@@ -839,6 +839,587 @@
                     </div>
                 </div>
             `;
+        }
+
+        initTacticalMap() {
+            var container = this.container ? this.container.querySelector('#tel-gps-leaflet-map') : null;
+            if (!container) return;
+
+            var defaultLat = (this.lastHeloLat && this.lastHeloLat !== 0) ? this.lastHeloLat : 34.6337;
+            var defaultLon = (this.lastHeloLon && this.lastHeloLon !== 0) ? this.lastHeloLon : 135.2370;
+
+            // If Leaflet is available, use Leaflet
+            if (window.L) {
+                if (this.leafletMap) {
+                    try { this.leafletMap.remove(); } catch (e) { }
+                    this.leafletMap = null;
+                }
+
+                this.leafletMap = window.L.map(container, {
+                    center: [defaultLat, defaultLon],
+                    zoom: 8,
+                    minZoom: 5,
+                    maxZoom: 18,
+                    zoomControl: false,
+                    attributionControl: false
+                });
+
+                window.L.control.zoom({ position: 'bottomright' }).addTo(this.leafletMap);
+
+                var isStandalone = window.location.pathname.indexOf('/apps/sim-maintenance') !== -1;
+                var localTileUrl = isStandalone ? 'tiles/{z}/{x}/{y}.png' : 'apps/sim-maintenance/tiles/{z}/{x}/{y}.png';
+
+                var baseTiles = window.L.tileLayer(localTileUrl, {
+                    minZoom: 5,
+                    maxZoom: 18,
+                    minNativeZoom: 5,
+                    maxNativeZoom: 13,
+                    tileSize: 256
+                });
+                baseTiles.addTo(this.leafletMap);
+
+                this.heloTrailCoords = this.heloTrailCoords || [];
+                this.heloTrailLayer = window.L.polyline(this.heloTrailCoords, {
+                    color: '#38bdf8',
+                    weight: 3,
+                    opacity: 0.85,
+                    dashArray: '5, 5'
+                }).addTo(this.leafletMap);
+
+                var heloIcon = window.L.divIcon({
+                    className: 'helo-marker-leaflet-div',
+                    html: '<div class="helo-marker-wrap" id="helo-svg-marker" style="transform: rotate(0deg);"><svg class="helo-svg-icon" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2"><path d="M12 2v20M3 12h18M7 8l5-5 5 5M7 16l5 5 5-5" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="#0284c7" stroke="#ffffff" stroke-width="1.8"/></svg></div>',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+
+                this.heloMarker = window.L.marker([defaultLat, defaultLon], { icon: heloIcon }).addTo(this.leafletMap);
+            } else {
+                // Built-in Offline Tactical Map Engine (Zero CDN, 100% offline pure DOM/Canvas)
+                this.initOfflineCanvasMap(container, defaultLat, defaultLon);
+            }
+
+            var self = this;
+            var recenterBtn = this.container.querySelector('#btn-map-recenter');
+            if (recenterBtn) {
+                recenterBtn.addEventListener('click', function () {
+                    if (self.leafletMap && self.lastHeloLat && self.lastHeloLon) {
+                        self.leafletMap.setView([self.lastHeloLat, self.lastHeloLon], self.leafletMap.getZoom(), { animate: true });
+                    } else if (self.offlineMap) {
+                        self.offlineMap.centerLat = self.lastHeloLat || 34.6337;
+                        self.offlineMap.centerLon = self.lastHeloLon || 135.2370;
+                        self.renderOfflineMap();
+                    }
+                });
+            }
+
+            var clearTrailBtn = this.container.querySelector('#btn-map-clear-trail');
+            if (clearTrailBtn) {
+                clearTrailBtn.addEventListener('click', function () {
+                    self.heloTrailCoords = [];
+                    if (self.heloTrailLayer) self.heloTrailLayer.setLatLngs([]);
+                    if (self.offlineMap) self.renderOfflineMap();
+                });
+            }
+
+            var zoomInBtn = this.container.querySelector('#btn-map-zoom-in');
+            if (zoomInBtn) {
+                zoomInBtn.addEventListener('click', function () {
+                    if (self.leafletMap) self.leafletMap.zoomIn();
+                    else if (self.offlineMap && self.offlineMap.zoom < 18) {
+                        self.offlineMap.zoom++;
+                        self.renderOfflineMap();
+                    }
+                });
+            }
+
+            var zoomOutBtn = this.container.querySelector('#btn-map-zoom-out');
+            if (zoomOutBtn) {
+                zoomOutBtn.addEventListener('click', function () {
+                    if (self.leafletMap) self.leafletMap.zoomOut();
+                    else if (self.offlineMap && self.offlineMap.zoom > 5) {
+                        self.offlineMap.zoom--;
+                        self.renderOfflineMap();
+                    }
+                });
+            }
+        }
+
+        initOfflineCanvasMap(container, startLat, startLon) {
+            container.innerHTML = '';
+            var isStandalone = window.location.pathname.indexOf('/apps/sim-maintenance') !== -1;
+            var tileBase = isStandalone ? 'tiles/' : 'apps/sim-maintenance/tiles/';
+
+            this.offlineMap = {
+                container: container,
+                centerLat: startLat,
+                centerLon: startLon,
+                zoom: 13,
+                tileBase: tileBase,
+                isDragging: false,
+                dragStartX: 0,
+                dragStartY: 0,
+                dragStartLat: 0,
+                dragStartLon: 0
+            };
+
+            var mapWrap = document.createElement('div');
+            mapWrap.id = 'offline-map-wrapper';
+            mapWrap.style.cssText = 'width:100%; height:100%; position:relative; overflow:hidden; background:#0b0f19; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none;';
+
+            var tilesLayer = document.createElement('div');
+            tilesLayer.id = 'offline-tiles-layer';
+            tilesLayer.style.cssText = 'position:absolute; width:100%; height:100%; top:0; left:0; pointer-events:none;';
+
+            var canvas = document.createElement('canvas');
+            canvas.id = 'offline-trail-canvas';
+            canvas.style.cssText = 'position:absolute; width:100%; height:100%; top:0; left:0; pointer-events:none;';
+
+            var heloEl = document.createElement('div');
+            heloEl.id = 'offline-helo-marker';
+            heloEl.style.cssText = 'position:absolute; width:34px; height:34px; transform:translate(-50%,-50%); z-index:100; pointer-events:none; transition:transform 0.15s ease-out;';
+            heloEl.innerHTML = '<div class="helo-marker-wrap" id="helo-svg-marker"><svg class="helo-svg-icon" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2"><path d="M12 2v20M3 12h18M7 8l5-5 5 5M7 16l5 5 5-5" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="#0284c7" stroke="#ffffff" stroke-width="1.8"/></svg></div>';
+
+            mapWrap.appendChild(tilesLayer);
+            mapWrap.appendChild(canvas);
+            mapWrap.appendChild(heloEl);
+            container.appendChild(mapWrap);
+
+            var self = this;
+
+            // Mouse Drag Pan Events
+            mapWrap.addEventListener('mousedown', function (e) {
+                self.offlineMap.isDragging = true;
+                self.offlineMap.dragStartX = e.clientX;
+                self.offlineMap.dragStartY = e.clientY;
+                self.offlineMap.dragStartLat = self.offlineMap.centerLat;
+                self.offlineMap.dragStartLon = self.offlineMap.centerLon;
+                mapWrap.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', function (e) {
+                if (!self.offlineMap || !self.offlineMap.isDragging) return;
+                var dx = e.clientX - self.offlineMap.dragStartX;
+                var dy = e.clientY - self.offlineMap.dragStartY;
+                var n = Math.pow(2, self.offlineMap.zoom);
+                var dLon = -(dx / 256.0) * (360.0 / n);
+                var dLat = (dy / 256.0) * (180.0 / n);
+                self.offlineMap.centerLon = self.offlineMap.dragStartLon + dLon;
+                self.offlineMap.centerLat = Math.max(-85, Math.min(85, self.offlineMap.dragStartLat + dLat));
+                self.renderOfflineMap();
+            });
+
+            window.addEventListener('mouseup', function () {
+                if (self.offlineMap && self.offlineMap.isDragging) {
+                    self.offlineMap.isDragging = false;
+                    mapWrap.style.cursor = 'grab';
+                }
+            });
+
+            // Touch Gestures for iPad / Tablets (Pan, Pinch-to-zoom, Double-tap)
+            var touchState = {
+                isTouch: false,
+                startX: 0,
+                startY: 0,
+                startLat: 0,
+                startLon: 0,
+                initialPinchDist: 0,
+                initialZoom: 13,
+                lastTapTime: 0
+            };
+
+            mapWrap.addEventListener('touchstart', function (e) {
+                if (e.touches.length === 1) {
+                    var now = Date.now();
+                    if (now - touchState.lastTapTime < 300) {
+                        // Double tap to zoom in
+                        if (self.offlineMap.zoom < 18) {
+                            self.offlineMap.zoom++;
+                            self.renderOfflineMap();
+                        }
+                    }
+                    touchState.lastTapTime = now;
+
+                    touchState.isTouch = true;
+                    touchState.startX = e.touches[0].clientX;
+                    touchState.startY = e.touches[0].clientY;
+                    touchState.startLat = self.offlineMap.centerLat;
+                    touchState.startLon = self.offlineMap.centerLon;
+                } else if (e.touches.length === 2) {
+                    touchState.isTouch = false;
+                    var dx = e.touches[0].clientX - e.touches[1].clientX;
+                    var dy = e.touches[0].clientY - e.touches[1].clientY;
+                    touchState.initialPinchDist = Math.hypot(dx, dy);
+                    touchState.initialZoom = self.offlineMap.zoom;
+                }
+            }, { passive: false });
+
+            mapWrap.addEventListener('touchmove', function (e) {
+                e.preventDefault();
+                if (e.touches.length === 1 && touchState.isTouch) {
+                    var dx = e.touches[0].clientX - touchState.startX;
+                    var dy = e.touches[0].clientY - touchState.startY;
+                    var n = Math.pow(2, self.offlineMap.zoom);
+                    var dLon = -(dx / 256.0) * (360.0 / n);
+                    var dLat = (dy / 256.0) * (180.0 / n);
+                    self.offlineMap.centerLon = touchState.startLon + dLon;
+                    self.offlineMap.centerLat = Math.max(-85, Math.min(85, touchState.startLat + dLat));
+                    self.renderOfflineMap();
+                } else if (e.touches.length === 2 && touchState.initialPinchDist > 0) {
+                    var dx = e.touches[0].clientX - e.touches[1].clientX;
+                    var dy = e.touches[0].clientY - e.touches[1].clientY;
+                    var currentDist = Math.hypot(dx, dy);
+                    var ratio = currentDist / touchState.initialPinchDist;
+
+                    if (ratio > 1.35 && self.offlineMap.zoom < 18) {
+                        self.offlineMap.zoom++;
+                        touchState.initialPinchDist = currentDist;
+                        self.renderOfflineMap();
+                    } else if (ratio < 0.72 && self.offlineMap.zoom > 5) {
+                        self.offlineMap.zoom--;
+                        touchState.initialPinchDist = currentDist;
+                        self.renderOfflineMap();
+                    }
+                }
+            }, { passive: false });
+
+            mapWrap.addEventListener('touchend', function () {
+                touchState.isTouch = false;
+                touchState.initialPinchDist = 0;
+            });
+
+            // Wheel zoom
+            mapWrap.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                if (e.deltaY < 0 && self.offlineMap.zoom < 18) {
+                    self.offlineMap.zoom++;
+                    self.renderOfflineMap();
+                } else if (e.deltaY > 0 && self.offlineMap.zoom > 5) {
+                    self.offlineMap.zoom--;
+                    self.renderOfflineMap();
+                }
+            }, { passive: false });
+
+            this.renderOfflineMap();
+        }
+
+        renderOfflineMap() {
+            var m = this.offlineMap;
+            if (!m || !m.container) return;
+
+            var mapWrap = m.container.querySelector('#offline-map-wrapper');
+            var tilesLayer = m.container.querySelector('#offline-tiles-layer');
+            var canvas = m.container.querySelector('#offline-trail-canvas');
+            var heloEl = m.container.querySelector('#offline-helo-marker');
+            if (!mapWrap || !tilesLayer || !canvas || !heloEl) return;
+
+            var w = mapWrap.clientWidth || 400;
+            var h = mapWrap.clientHeight || 380;
+            canvas.width = w;
+            canvas.height = h;
+
+            var zoom = m.zoom;
+            var n = Math.pow(2, zoom);
+
+            var latRad = m.centerLat * Math.PI / 180.0;
+            var centerTileX = (m.centerLon + 180.0) / 360.0 * n;
+            var centerTileY = (1.0 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2.0 * n;
+
+            var cx = w / 2;
+            var cy = h / 2;
+
+            // Compute visible tile ranges
+            var minTileX = Math.floor(centerTileX - (cx / 256) - 1);
+            var maxTileX = Math.floor(centerTileX + (cx / 256) + 1);
+            var minTileY = Math.floor(centerTileY - (cy / 256) - 1);
+            var maxTileY = Math.floor(centerTileY + (cy / 256) + 1);
+
+            tilesLayer.innerHTML = '';
+
+            for (var tx = minTileX; tx <= maxTileX; tx++) {
+                if (tx < 0 || tx >= n) continue;
+                for (var ty = minTileY; ty <= maxTileY; ty++) {
+                    if (ty < 0 || ty >= n) continue;
+
+                    var posX = Math.round((tx - centerTileX) * 256 + cx);
+                    var posY = Math.round((ty - centerTileY) * 256 + cy);
+
+                    var img = document.createElement('img');
+                    img.style.cssText = 'position:absolute; width:256px; height:256px; left:' + posX + 'px; top:' + posY + 'px; image-rendering:crisp-edges;';
+                    img.src = m.tileBase + zoom + '/' + tx + '/' + ty + '.png';
+                    img.onerror = function () { this.style.display = 'none'; };
+                    tilesLayer.appendChild(img);
+                }
+            }
+
+            // Draw Full Flight Trajectory on Canvas (Since UI Launch / Refresh)
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, w, h);
+
+            var trail = this.heloTrailCoords || [];
+            if (trail.length > 1) {
+                // Neon glow background
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+                ctx.lineWidth = 6;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                for (var i = 0; i < trail.length; i++) {
+                    var pt = trail[i];
+                    var pLatRad = pt[0] * Math.PI / 180.0;
+                    var ptX = (pt[1] + 180.0) / 360.0 * n;
+                    var ptY = (1.0 - Math.asinh(Math.tan(pLatRad)) / Math.PI) / 2.0 * n;
+
+                    var px = (ptX - centerTileX) * 256 + cx;
+                    var py = (ptY - centerTileY) * 256 + cy;
+
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+
+                // Crisp Cyan Track Line
+                ctx.beginPath();
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([6, 4]);
+
+                for (var j = 0; j < trail.length; j++) {
+                    var pt2 = trail[j];
+                    var pLatRad2 = pt2[0] * Math.PI / 180.0;
+                    var ptX2 = (pt2[1] + 180.0) / 360.0 * n;
+                    var ptY2 = (1.0 - Math.asinh(Math.tan(pLatRad2)) / Math.PI) / 2.0 * n;
+
+                    var px2 = (ptX2 - centerTileX) * 256 + cx;
+                    var py2 = (ptY2 - centerTileY) * 256 + cy;
+
+                    if (j === 0) ctx.moveTo(px2, py2);
+                    else ctx.lineTo(px2, py2);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Position Aircraft Marker
+            var aLat = this.lastHeloLat || m.centerLat;
+            var aLon = this.lastHeloLon || m.centerLon;
+            var aLatRad = aLat * Math.PI / 180.0;
+            var aTileX = (aLon + 180.0) / 360.0 * n;
+            var aTileY = (1.0 - Math.asinh(Math.tan(aLatRad)) / Math.PI) / 2.0 * n;
+
+            var aPosX = (aTileX - centerTileX) * 256 + cx;
+            var aPosY = (aTileY - centerTileY) * 256 + cy;
+
+            heloEl.style.left = aPosX + 'px';
+            heloEl.style.top = aPosY + 'px';
+
+            var svgMarker = heloEl.querySelector('#helo-svg-marker');
+            if (svgMarker) {
+                svgMarker.style.transform = 'rotate(' + (this.lastHeloHdg || 0).toFixed(1) + 'deg)';
+            }
+        }
+
+        updateTacticalMap(lat, lon, hdg, alt, speed) {
+            if (!lat && !lon) return;
+            this.lastHeloLat = lat;
+            this.lastHeloLon = lon;
+            this.lastHeloHdg = hdg || 0;
+
+            if (this.leafletMap) {
+                if (this.heloMarker) {
+                    this.heloMarker.setLatLng([lat, lon]);
+                    var markerWrap = this.container ? this.container.querySelector('#helo-svg-marker') : null;
+                    if (markerWrap) {
+                        markerWrap.style.transform = 'rotate(' + (hdg || 0).toFixed(1) + 'deg)';
+                    }
+                }
+
+                if (this.heloTrailCoords && this.heloTrailLayer) {
+                    var lastPt = this.heloTrailCoords[this.heloTrailCoords.length - 1];
+                    if (!lastPt || (Math.abs(lastPt[0] - lat) > 0.00005 || Math.abs(lastPt[1] - lon) > 0.00005)) {
+                        this.heloTrailCoords.push([lat, lon]);
+                        if (this.heloTrailCoords.length > 10000) this.heloTrailCoords.shift();
+                        this.heloTrailLayer.setLatLngs(this.heloTrailCoords);
+                    }
+                }
+            } else if (this.offlineMap) {
+                this.heloTrailCoords = this.heloTrailCoords || [];
+                var lastPt2 = this.heloTrailCoords[this.heloTrailCoords.length - 1];
+                if (!lastPt2 || (Math.abs(lastPt2[0] - lat) > 0.00005 || Math.abs(lastPt2[1] - lon) > 0.00005)) {
+                    this.heloTrailCoords.push([lat, lon]);
+                    if (this.heloTrailCoords.length > 10000) this.heloTrailCoords.shift();
+                }
+                this.renderOfflineMap();
+            } else {
+                this.initTacticalMap();
+            }
+
+            // Update Map HUDs
+            var hudLat = this.container ? this.container.querySelector('#hud-lat-val') : null;
+            var hudLon = this.container ? this.container.querySelector('#hud-lon-val') : null;
+            if (hudLat) hudLat.textContent = lat.toFixed(5) + '° ' + (lat >= 0 ? 'N' : 'S');
+            if (hudLon) hudLon.textContent = lon.toFixed(5) + '° ' + (lon >= 0 ? 'E' : 'W');
+
+            var telHud = this.container ? this.container.querySelector('#map-helo-telemetry-hud') : null;
+            if (telHud) {
+                telHud.textContent = 'ALT: ' + Math.round(alt || 0) + ' FT • GS: ' + Math.round(speed || 0) + ' KT • HDG: ' + Math.round(hdg || 0) + '°';
+            }
+        }
+
+        autoFitFullscreenPanel(el) {
+            if (!el) return;
+
+            // Reset inline styles
+            el.style.transform = '';
+            el.style.transformOrigin = 'center center';
+            el.style.transition = 'transform 0.12s ease-out';
+
+            // Fluid responsive cards
+            if (el.classList.contains('tel-map-card')) {
+                el.style.width = '100%';
+                el.style.maxWidth = '1600px';
+                el.style.height = '100%';
+                var mapEl = el.querySelector('#tel-gps-leaflet-map');
+                if (mapEl) mapEl.style.height = 'calc(100vh - 160px)';
+                return;
+            }
+
+            if (el.classList.contains('tel-powerplant-grid')) {
+                el.style.width = '100%';
+                el.style.maxWidth = '1400px';
+                return;
+            }
+
+            // Fixed geometry panels
+            var prevTransform = el.style.transform;
+            el.style.transform = 'none';
+            var panelW = el.offsetWidth || el.scrollWidth || 800;
+            var panelH = el.offsetHeight || el.scrollHeight || 300;
+            el.style.transform = prevTransform;
+
+            var availW = window.innerWidth - 48;
+            var availH = window.innerHeight - 95; // Account for exit bar & paddings
+
+            if (panelW > 0 && panelH > 0 && availW > 0 && availH > 0) {
+                var scaleX = availW / panelW;
+                var scaleY = availH / panelH;
+                var fitScale = Math.min(scaleX, scaleY);
+
+                // Stretch as large as possible without overflowing
+                fitScale = Math.max(0.5, Math.min(fitScale, 3.2));
+
+                el.style.transform = 'scale(' + fitScale.toFixed(4) + ')';
+                el.style.transformOrigin = 'center center';
+            }
+        }
+
+        togglePanelFullscreen(el, title) {
+            var existingOverlay = document.getElementById('maint-fullscreen-overlay');
+            if (existingOverlay) {
+                if (this._fullscreenResizeHandler) {
+                    window.removeEventListener('resize', this._fullscreenResizeHandler);
+                    this._fullscreenResizeHandler = null;
+                }
+
+                // Restore element to its placeholder
+                var body = existingOverlay.querySelector('.panel-fullscreen-body');
+                var currentChild = body ? body.firstElementChild : null;
+                var placeholder = this._fullscreenPlaceholder;
+
+                if (currentChild) {
+                    currentChild.style.transform = '';
+                    currentChild.style.transformOrigin = '';
+                    currentChild.style.transition = '';
+                    currentChild.style.width = '';
+                    currentChild.style.height = '';
+                    currentChild.style.maxWidth = '';
+                }
+
+                if (currentChild && placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.insertBefore(currentChild, placeholder);
+                    placeholder.remove();
+                }
+                existingOverlay.remove();
+                this._fullscreenPlaceholder = null;
+
+                if (currentChild && currentChild.querySelector('#tel-gps-leaflet-map')) {
+                    var self = this;
+                    setTimeout(function () {
+                        if (self.leafletMap) self.leafletMap.invalidateSize();
+                        if (self.offlineMap) self.renderOfflineMap();
+                    }, 120);
+                }
+
+                // If user just closed fullscreen, return
+                if (!el || currentChild === el) {
+                    return;
+                }
+            }
+
+            if (!el) return;
+
+            // Create placeholder
+            var placeholder = document.createElement('div');
+            placeholder.className = 'panel-fullscreen-placeholder';
+            placeholder.style.display = 'none';
+            el.parentNode.insertBefore(placeholder, el);
+            this._fullscreenPlaceholder = placeholder;
+
+            // Create Fullscreen Overlay
+            var overlay = document.createElement('div');
+            overlay.id = 'maint-fullscreen-overlay';
+            overlay.className = 'maint-fullscreen-overlay';
+
+            var displayTitle = title || el.getAttribute('data-panel-title') || 'Cockpit Panel';
+
+            var exitBar = document.createElement('div');
+            exitBar.className = 'panel-fullscreen-exit-bar';
+            exitBar.innerHTML = `
+                <div class="panel-fullscreen-title">
+                    <span>${displayTitle}</span>
+                    <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); border-radius: 4px; padding: 2px 8px;">🟢 REALTIME COCKPIT</span>
+                </div>
+                <button type="button" class="panel-fullscreen-exit-btn">
+                    <span>✕</span> ${this.t('sim_maint.exit_fullscreen', 'Quitter le plein écran (Échap / Esc)')}
+                </button>
+            `;
+
+            var self = this;
+            exitBar.querySelector('.panel-fullscreen-exit-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                self.togglePanelFullscreen(null);
+            });
+
+            var body = document.createElement('div');
+            body.className = 'panel-fullscreen-body';
+            body.appendChild(el);
+
+            overlay.appendChild(exitBar);
+            overlay.appendChild(body);
+            document.body.appendChild(overlay);
+
+            // Auto-fit stretch to screen size without clipping
+            setTimeout(function () {
+                self.autoFitFullscreenPanel(el);
+            }, 30);
+
+            this._fullscreenResizeHandler = function () {
+                self.autoFitFullscreenPanel(el);
+                if (el.querySelector('#tel-gps-leaflet-map')) {
+                    if (self.leafletMap) self.leafletMap.invalidateSize();
+                    if (self.offlineMap) self.renderOfflineMap();
+                }
+            };
+            window.addEventListener('resize', this._fullscreenResizeHandler);
+
+            // If map is inside, refresh canvas size
+            if (el.querySelector('#tel-gps-leaflet-map')) {
+                setTimeout(function () {
+                    if (self.leafletMap) self.leafletMap.invalidateSize();
+                    if (self.offlineMap) self.renderOfflineMap();
+                }, 120);
+            }
         }
 
         renderGPSAnnunciatorsPanel() {
@@ -1838,8 +2419,11 @@
                             <!-- 1. Analog Cockpit 4-Pack (Airspeed, Horizon, Altimeter, Rotor/N2 Tachometer) -->
                             <div class="tel-section-header" style="margin-top: 16px;">
                                 <div class="tel-section-title">
-                                    <span>🚁 ${this.t('sim_maint.flight_title', 'Instruments de Vol Analogiques (Cockpit 4-Pack)')}</span>
-                                    <span class="tel-section-badge" style="background:#475569; color:#fff;" id="tel-flight-phase-badge">DISCONNECTED</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>🚁 ${this.t('sim_maint.flight_title', 'Instruments de Vol Analogiques (Cockpit 4-Pack)')}</span>
+                                        <span class="tel-section-badge" style="background:#475569; color:#fff;" id="tel-flight-phase-badge">DISCONNECTED</span>
+                                    </div>
+                                    <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="section" data-panel-title="🚁 ${this.t('sim_maint.flight_title', 'Instruments de Vol Analogiques (Cockpit 4-Pack)')}">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                 </div>
                                 <div class="tel-section-subtitle">${this.t('sim_maint.flight_sub', 'Badin ASI, Horizon Artificiel ADI, Altimètre ALT et Tachymètre Rotor/N2 issus du flux UDP st_OUT')}</div>
                             </div>
@@ -2094,11 +2678,17 @@
                             <!-- Indicateurs Dérapage / Bille Pilote & Copilote (Side Slip Indicators) -->
                             <div class="ec135-slip-gauges-row">
                                 <div class="slip-gauge-card">
-                                    <span class="slip-gauge-hdr">👨‍✈️ ${this.t('sim_maint.slip_plt_title', 'Indicateur Dérapage Pilote (PLT)')}</span>
+                                    <div class="slip-gauge-hdr">
+                                        <span>👨‍✈️ ${this.t('sim_maint.slip_plt_title', 'Indicateur Dérapage Pilote (PLT)')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="👨‍✈️ ${this.t('sim_maint.slip_plt_title', 'Indicateur Dérapage Pilote (PLT)')}">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
+                                    </div>
                                     ${this.renderSideSlipGauge('plt')}
                                 </div>
                                 <div class="slip-gauge-card">
-                                    <span class="slip-gauge-hdr">👨‍✈️ ${this.t('sim_maint.slip_cplt_title', 'Indicateur Dérapage Copilote (CPLT)')}</span>
+                                    <div class="slip-gauge-hdr">
+                                        <span>🧑‍✈️ ${this.t('sim_maint.slip_cplt_title', 'Indicateur Dérapage Copilote (CPLT)')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🧑‍✈️ ${this.t('sim_maint.slip_cplt_title', 'Indicateur Dérapage Copilote (CPLT)')}">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
+                                    </div>
                                     ${this.renderSideSlipGauge('cplt')}
                                 </div>
                             </div>
@@ -2106,7 +2696,10 @@
                             <!-- 2. Digital Telemetry Cards (Only st_OUT decoded fields) -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>📊 ${this.t('sim_maint.digital_telemetry_title', 'Télémétrie Numérique Directe (st_OUT)')}</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>📊 ${this.t('sim_maint.digital_telemetry_title', 'Télémétrie Numérique Directe (st_OUT)')}</span>
+                                    </div>
+                                    <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="section" data-panel-title="📊 Télémétrie Numérique Directe (st_OUT)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                 </div>
                                 <div class="tel-section-subtitle">${this.t('sim_maint.digital_telemetry_sub', 'Paramètres de vol et régime turbines extraits en temps réel à 50 Hz')}</div>
                             </div>
@@ -2203,8 +2796,11 @@
                             <!-- 3. Central Warning Panel (CWP) Authentic Airbus EC135 Annunciator Unit -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>🚨 ${this.t('sim_maint.cwp_annunciator', 'Panneau d\'Alarmes Cockpit CWP (Airbus EC135 Glareshield Unit)')}</span>
-                                    <span class="tel-section-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;" id="tel-cwp-status-badge">STANDBY</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>🚨 ${this.t('sim_maint.cwp_annunciator', 'Panneau d\'Alarmes Cockpit CWP (Airbus EC135 Glareshield Unit)')}</span>
+                                        <span class="tel-section-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;" id="tel-cwp-status-badge">STANDBY</span>
+                                    </div>
+                                    <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="section" data-panel-title="🚨 Panneau d'Alarmes CWP (Airbus EC135)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                 </div>
                                 <div class="tel-section-subtitle">${this.t('sim_maint.cwp_sub', 'Restitution photoréaliste des 18 voyants d\'alarmes CWP pilotés directement par la structure st_cwp_H2I')}</div>
                             </div>
@@ -2312,8 +2908,11 @@
                             <!-- 4. Autopilot Control Console (APC) & Modes -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>🎛️ ${this.t('sim_maint.apc_title', 'Console Pilote Automatique (APC) & Modes')}</span>
-                                    <span class="tel-section-badge" id="tel-apc-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">AP OFF</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>🎛️ ${this.t('sim_maint.apc_title', 'Console Pilote Automatique (APC) & Modes')}</span>
+                                        <span class="tel-section-badge" id="tel-apc-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">AP OFF</span>
+                                    </div>
+                                    <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="section" data-panel-title="🎛️ Console Pilote Automatique (APC)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                 </div>
                                 <div class="tel-section-subtitle">${this.t('sim_maint.apc_sub', 'État des voyants et modes d\'engagement du pilote automatique EC135')}</div>
                             </div>
@@ -2381,12 +2980,10 @@
                                                 <span class="apc-led-triangle" id="apc-hdg-led">▶</span>
                                                 <div class="apc-knob"><div class="apc-knob-cap"></div></div>
                                                 <div class="apc-mode-lbl">HDG</div>
-                                                <span class="apc-target-badge" id="apc-hdg-val">--°</span>
                                             </div>
                                             <div class="apc-lower-bracket">
                                                 <div class="apc-btn apc-single" id="apc-vs-btn"><span class="apc-lbl-green">ON</span></div>
                                                 <div class="apc-mode-lbl">VS</div>
-                                                <span class="apc-target-badge" id="apc-vs-val">-- FPM</span>
                                             </div>
                                         </div>
 
@@ -2402,7 +2999,6 @@
                                             <div class="apc-lower-bracket">
                                                 <div class="apc-btn apc-single" id="apc-ias-btn"><span class="apc-lbl-green">ON</span></div>
                                                 <div class="apc-mode-lbl">IAS</div>
-                                                <span class="apc-target-badge" id="apc-ias-val">-- KT</span>
                                             </div>
                                         </div>
 
@@ -2412,12 +3008,10 @@
                                                 <span class="apc-led-triangle" id="apc-alta-led">▶</span>
                                                 <div class="apc-knob"><div class="apc-knob-cap"></div></div>
                                                 <div class="apc-mode-lbl">ALT.A</div>
-                                                <span class="apc-target-badge" id="apc-alta-val">-- FT</span>
                                             </div>
                                             <div class="apc-lower-bracket">
                                                 <div class="apc-btn apc-single" id="apc-alt-btn"><span class="apc-lbl-green">ON</span></div>
                                                 <div class="apc-mode-lbl">ALT</div>
-                                                <span class="apc-target-badge" id="apc-alt-val">-- FT</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2427,8 +3021,11 @@
                             <!-- 5. Plafonnier & Disjoncteurs (Overhead Panel - OHP) -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>🛸 ${this.t('sim_maint.ohp_title', 'Plafonnier & Disjoncteurs (Overhead Panel & Circuit Breakers)')}</span>
-                                    <span class="tel-section-badge" style="background:#0f172a; border:1px solid #334155; color:#10b981;">ALL BUS OK</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>🛸 ${this.t('sim_maint.ohp_title', 'Plafonnier & Disjoncteurs (Overhead Panel & Circuit Breakers)')}</span>
+                                        <span class="tel-section-badge" style="background:#0f172a; border:1px solid #334155; color:#10b981;">ALL BUS OK</span>
+                                    </div>
+                                    <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="section" data-panel-title="🛸 Plafonnier & Disjoncteurs (Overhead Panel)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                 </div>
                                 <div class="tel-section-subtitle">${this.t('sim_maint.ohp_sub', 'Restitution photoréaliste des panneaux disjoncteurs gauche/droit et de la console centrale EC135')}</div>
                             </div>
@@ -2455,44 +3052,113 @@
                                 </div>
                             </div>
 
-                            <!-- 6. Radionavigation & Balises (DME, GPS, MBR) -->
+                            <!-- 6. Radionavigation, GPS & Tactical Moving Map -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>🛰️ ${this.t('sim_maint.radionav_title', 'Radionavigation & Balises (DME, GPS, MBR)')}</span>
+                                    <span>🛰️ ${this.t('sim_maint.radionav_title', 'Radionavigation, GPS & Carte Tactique (Moving Map)')}</span>
+                                    <span class="tel-section-badge" id="gps-coords-badge" style="background:#0f172a; border: 1px solid #334155; color:#38bdf8; font-family:'JetBrains Mono',monospace; font-size:10px;">GPS: STANDBY</span>
                                 </div>
-                                <div class="tel-section-subtitle">${this.t('sim_maint.radionav_sub', 'Annonciateurs GPS, récepteur DME et balises d\'approche')}</div>
+                                <div class="tel-section-subtitle">${this.t('sim_maint.radionav_sub', 'Suivi cartographique Leaflet en direct, annonciateurs Garmin, balises MBR et calculateur Air Data')}</div>
                             </div>
 
-                            <div class="avionics-subpanel-grid">
-                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
-                                    <div class="avionics-card-header" style="width: 100%;">
-                                        <span class="avionics-card-title">📡 ${this.t('sim_maint.card_dme_annunciators', 'Annonciateurs DME')}</span>
+                            <div class="tel-nav-split-grid">
+                                <!-- Left Column: Tactical Moving Map -->
+                                <div class="tel-map-card">
+                                    <div class="tel-map-header">
+                                        <span class="avionics-card-title">🗺️ ${this.t('sim_maint.map_title', 'Carte Tactique & Trajectoire (Japan FFS Area)')}</span>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <div style="font-size:10px; color:#94a3b8; font-family:monospace;" id="map-helo-telemetry-hud">
+                                                ALT: -- FT • GS: -- KT • HDG: --°
+                                            </div>
+                                            <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🗺️ Carte Tactique & Trajectoire">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
+                                        </div>
                                     </div>
-                                    ${this.renderDMEAnnunciatorsPanel()}
+                                    <div class="tel-map-container" id="tel-gps-leaflet-map">
+                                        <!-- Top-left HUD Coordinates -->
+                                        <div class="tel-map-hud-top" id="map-coords-hud">
+                                            <div>LAT: <span class="tel-map-hud-val" id="hud-lat-val">--</span></div>
+                                            <div>LON: <span class="tel-map-hud-val" id="hud-lon-val">--</span></div>
+                                        </div>
+                                        <!-- Top-right Map Action Buttons -->
+                                        <div class="tel-map-hud-actions">
+                                            <button type="button" class="tel-map-action-btn" id="btn-map-zoom-in" title="Zoom In">➕</button>
+                                            <button type="button" class="tel-map-action-btn" id="btn-map-zoom-out" title="Zoom Out">➖</button>
+                                            <button type="button" class="tel-map-action-btn" id="btn-map-recenter" title="Recadrer sur l'aéronef">🎯 ${this.t('sim_maint.map_recenter', 'Centrer')}</button>
+                                            <button type="button" class="tel-map-action-btn" id="btn-map-clear-trail" title="Effacer la trace">🗑️ ${this.t('sim_maint.map_clear_trail', 'Trace')}</button>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
-                                    <div class="avionics-card-header" style="width: 100%;">
-                                        <span class="avionics-card-title">🗺️ ${this.t('sim_maint.card_gps_annunciators', 'Annonciateurs GPS (Garmin / EC135)')}</span>
-                                        <span class="tel-section-badge" id="gps-coords-badge" style="background:#0f172a; border: 1px solid #334155; color:#38bdf8; font-family:'JetBrains Mono',monospace; font-size:10px;">GPS: --, --</span>
-                                    </div>
-                                    
-                                    <div style="margin: 8px 0; display: flex; justify-content: center;">
-                                        ${this.renderGPSAnnunciatorsPanel()}
+                                <!-- Right Column: Garmin Annunciators + MBR + Shadin FADC + DME -->
+                                <div class="avionics-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div>
+                                        <div class="avionics-card-header" style="width: 100%;">
+                                            <span class="avionics-card-title">🧭 ${this.t('sim_maint.card_gps_annunciators', 'Garmin GPS 430 & Balises MBR')}</span>
+                                            <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🧭 Garmin GPS 430 & Balises MBR">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
+                                        </div>
+                                        
+                                        <!-- Garmin Annunciators Bezel -->
+                                        <div style="margin: 6px 0; display: flex; justify-content: center;">
+                                            ${this.renderGPSAnnunciatorsPanel()}
+                                        </div>
+
+                                        <!-- MBR Marker Beacon Cluster -->
+                                        <div class="mbr-cluster-bezel">
+                                            <div class="mbr-lamp-slot">
+                                                <div class="mbr-lamp-circle lamp-a" id="mbr-airway">A</div>
+                                                <span class="mbr-lamp-sub">AIRWAYS</span>
+                                            </div>
+                                            <div class="mbr-lamp-slot">
+                                                <div class="mbr-lamp-circle lamp-o" id="mbr-outer">O</div>
+                                                <span class="mbr-lamp-sub">OUTER</span>
+                                            </div>
+                                            <div class="mbr-lamp-slot">
+                                                <div class="mbr-lamp-circle lamp-m" id="mbr-middle">M</div>
+                                                <span class="mbr-lamp-sub">MIDDLE</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Shadin FADC Digital Computer (Air Data & Fuel) -->
+                                        <div class="fadc-instrument-box">
+                                            <div class="fadc-title-bar">
+                                                <span>📊 SHADIN FADC — AIR DATA & FUEL</span>
+                                                <span style="color:#38bdf8;">DIGITAL BUS</span>
+                                            </div>
+                                            <div class="fadc-grid-2x3">
+                                                <div class="fadc-cell">
+                                                    <span class="fadc-lbl">OAT</span>
+                                                    <span class="fadc-val" id="fadc-oat-val">--°C</span>
+                                                </div>
+                                                <div class="fadc-cell">
+                                                    <span class="fadc-lbl">TAS</span>
+                                                    <span class="fadc-val" id="fadc-tas-val">-- KT</span>
+                                                </div>
+                                                <div class="fadc-cell">
+                                                    <span class="fadc-lbl">WIND</span>
+                                                    <span class="fadc-val" id="fadc-wind-val">--°/--KT</span>
+                                                </div>
+                                                <div class="fadc-cell">
+                                                    <span class="fadc-lbl">ENG 1 FF</span>
+                                                    <span class="fadc-val" id="fadc-ff1-val">-- kg/h</span>
+                                                </div>
+                                                <div class="fadc-cell">
+                                                    <span class="fadc-lbl">ENG 2 FF</span>
+                                                    <span class="fadc-val" id="fadc-ff2-val">-- kg/h</span>
+                                                </div>
+                                                <div class="fadc-cell">
+                                                    <span class="fadc-lbl">FUEL USED</span>
+                                                    <span class="fadc-val" id="fadc-used-val">-- kg</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div class="avionics-btn-matrix" style="margin-top: 6px; width: 100%; justify-content: center;">
-                                        <div class="avionics-lamp-btn" id="mbr-airway"><span class="avionics-lamp-lbl">MBR [A]</span></div>
-                                        <div class="avionics-lamp-btn" id="mbr-outer"><span class="avionics-lamp-lbl">MBR [O]</span></div>
-                                        <div class="avionics-lamp-btn" id="mbr-middle"><span class="avionics-lamp-lbl">MBR [M]</span></div>
-                                    </div>
-                                    <div class="avionics-metric-row" style="margin-top: 6px; width: 100%;">
-                                        <span class="avionics-metric-title">💨 Air Data (OAT / Wind / TAS)</span>
-                                        <span class="avionics-metric-val" id="gps-airdata-txt" style="min-width: 160px; font-size: 11px;">--</span>
-                                    </div>
-                                    <div class="avionics-metric-row" style="width: 100%;">
-                                        <span class="avionics-metric-title">⛽ Fuel Flow (ENG 1 / ENG 2)</span>
-                                        <span class="avionics-metric-val" id="gps-fuelflow-txt" style="min-width: 160px; font-size: 11px;">--</span>
+                                    <!-- DME Annunciators Mini Row -->
+                                    <div style="margin-top: 10px; border-top: 1px solid #1e293b; padding-top: 8px;">
+                                        <div style="font-size: 10.5px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase;">
+                                            📡 Annonciateurs DME (King KN-62)
+                                        </div>
+                                        ${this.renderDMEAnnunciatorsPanel()}
                                     </div>
                                 </div>
                             </div>
@@ -2509,6 +3175,7 @@
                                 <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
                                     <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">👨‍✈️ ${this.t('sim_maint.card_plt_audio', 'Sélecteur Audio Pilote (PLT)')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="👨‍✈️ Sélecteur Audio Pilote (PLT)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                     </div>
                                     <div style="margin: 4px 0; display: flex; justify-content: center; width: 100%;">
                                         ${this.renderAudioControlPanel('plt')}
@@ -2518,6 +3185,7 @@
                                 <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
                                     <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">🧑‍✈️ ${this.t('sim_maint.card_cplt_audio', 'Sélecteur Audio Copilote (CPLT)')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🧑‍✈️ Sélecteur Audio Copilote (CPLT)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                     </div>
                                     <div style="margin: 4px 0; display: flex; justify-content: center; width: 100%;">
                                         ${this.renderAudioControlPanel('cplt')}
@@ -2528,7 +3196,10 @@
                             <!-- 7. Contrôle de Luminosité Cockpit & Interrupteurs Écrans -->
                             <div class="tel-section-header" style="margin-top: 24px;">
                                 <div class="tel-section-title">
-                                    <span>💡 ${this.t('sim_maint.lighting_screens_title', 'Contrôleur de Luminosité Cockpit & Écrans (Lighting & Screens)')}</span>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>💡 ${this.t('sim_maint.lighting_screens_title', 'Contrôleur de Luminosité Cockpit & Écrans (Lighting & Screens)')}</span>
+                                    </div>
+                                    <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="section" data-panel-title="💡 Contrôleur de Luminosité Cockpit & Écrans">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                 </div>
                                 <div class="tel-section-subtitle">${this.t('sim_maint.lighting_screens_sub', 'Potentiomètres de rétro-éclairage CAD, VEMD, PFD, ND, Daylight et commutateurs des écrans')}</div>
                             </div>
@@ -2551,6 +3222,7 @@
                                 <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
                                     <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">🔌 ${this.t('sim_maint.card_pwr_controller', 'EC135JAP Power Controller')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🔌 EC135JAP Power Controller">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                     </div>
                                     <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
                                         ${this.renderPowerControllerPanel()}
@@ -2559,8 +3231,11 @@
 
                                 <div class="avionics-card">
                                     <div class="avionics-card-header">
-                                        <span class="avionics-card-title">🦾 ${this.t('sim_maint.card_sim_status', 'Statut Plateforme & Hôte')}</span>
-                                        <span class="tel-section-badge" id="host-cycles-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">CYCLES: 0</span>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <span class="avionics-card-title">🦾 ${this.t('sim_maint.card_sim_status', 'Statut Plateforme & Hôte')}</span>
+                                            <span class="tel-section-badge" id="host-cycles-badge" style="background:#0f172a; border: 1px solid #334155; color:#94a3b8;">CYCLES: 0</span>
+                                        </div>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🦾 Statut Plateforme & Hôte">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                     </div>
                                     <div class="avionics-btn-matrix avionics-grid-5">
                                         <div class="avionics-lamp-btn" id="sim-session-init"><span class="avionics-lamp-lbl">SESS INIT</span></div>
@@ -2584,6 +3259,7 @@
                                 <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
                                     <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">🚁 ${this.t('sim_maint.scp_title', 'Poste Cockpit : Simulator Control Panel (SCP)')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🚁 Simulator Control Panel (SCP)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                     </div>
                                     <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
                                         ${this.renderSimulatorControlPanel()}
@@ -2593,6 +3269,7 @@
                                 <div class="avionics-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: auto;">
                                     <div class="avionics-card-header" style="width: 100%;">
                                         <span class="avionics-card-title">🖥️ ${this.t('sim_maint.icp_card_title', 'Poste Instructeur : Instructor Control Panel (ICP)')}</span>
+                                        <button type="button" class="btn-panel-fullscreen" data-fullscreen-target="card" data-panel-title="🖥️ Instructor Control Panel (ICP)">⛶ ${this.t('sim_maint.fullscreen_btn', 'Plein écran')}</button>
                                     </div>
                                     <div style="margin: 6px 0; display: flex; justify-content: center; width: 100%;">
                                         ${this.renderInstructorControlPanel()}
@@ -2634,17 +3311,59 @@
             `;
 
             this.bindEvents();
+
+            if (this.activeTab === 'subsystems') {
+                var self = this;
+                setTimeout(function () { self.initTacticalMap(); }, 150);
+            }
         }
 
         bindEvents() {
             this.bindNetworkEvents();
+
+            var self = this;
+
+            // Fullscreen panel toggles
+            this.container.addEventListener('click', function (e) {
+                var btn = e.target.closest('.btn-panel-fullscreen');
+                if (btn) {
+                    var targetSel = btn.getAttribute('data-fullscreen-target');
+                    var targetEl = null;
+                    if (targetSel === 'section') {
+                        var sectionHeader = btn.closest('.tel-section-header');
+                        if (sectionHeader) {
+                            targetEl = sectionHeader.nextElementSibling;
+                        }
+                    } else if (targetSel === 'card') {
+                        targetEl = btn.closest('.avionics-card') || btn.closest('.tel-map-card');
+                    } else {
+                        targetEl = btn.closest('.avionics-card') || btn.closest('.tel-map-card') || (btn.closest('.tel-section-header') ? btn.closest('.tel-section-header').nextElementSibling : null);
+                    }
+                    if (targetEl) {
+                        var title = btn.getAttribute('data-panel-title') || (targetEl.querySelector('.avionics-card-title, .tel-section-title') ? targetEl.querySelector('.avionics-card-title, .tel-section-title').textContent.trim() : 'Cockpit Panel');
+                        self.togglePanelFullscreen(targetEl, title);
+                    }
+                }
+            });
+
+            // Global ESC key listener to exit fullscreen
+            if (!this._escListenerAttached) {
+                this._escListenerAttached = true;
+                window.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' || e.keyCode === 27) {
+                        if (document.getElementById('maint-fullscreen-overlay')) {
+                            self.togglePanelFullscreen(null);
+                        }
+                    }
+                });
+            }
 
             var langBtns = this.container.querySelectorAll('.sim-lang-pill[data-lang]');
             for (var l = 0; l < langBtns.length; l++) {
                 (function (btn, self) {
                     btn.addEventListener('click', function () {
                         var code = btn.getAttribute('data-lang');
-                        try { localStorage.setItem('sg_locale', code); } catch (e) {}
+                        try { localStorage.setItem('sg_locale', code); } catch (e) { }
                         if (window.sys && window.sys.i18n && typeof window.sys.i18n.setLocale === 'function') {
                             window.sys.i18n.setLocale(code);
                         } else if (window.desktop && typeof window.desktop.setLocale === 'function') {
@@ -2754,8 +3473,8 @@
             var cbRightPanel = this.container.querySelector('#ec135-cb-right-panel');
 
             for (var v = 0; v < ohpViewBtns.length; v++) {
-                (function(btn, self) {
-                    btn.addEventListener('click', function() {
+                (function (btn, self) {
+                    btn.addEventListener('click', function () {
                         var allV = self.container.querySelectorAll('.ohp-tab-btn[data-ohp-view]');
                         for (var j = 0; j < allV.length; j++) allV[j].classList.remove('active');
                         btn.classList.add('active');
@@ -2774,7 +3493,7 @@
             // Interactive Circuit Breakers (Click to pop / reset)
             var cbBtns = this.container.querySelectorAll('.cb-btn');
             for (var b = 0; b < cbBtns.length; b++) {
-                cbBtns[b].addEventListener('click', function() {
+                cbBtns[b].addEventListener('click', function () {
                     this.classList.toggle('popped');
                 });
             }
@@ -2782,7 +3501,7 @@
             // Interactive Overhead Toggle Switches
             var ohpToggles = this.container.querySelectorAll('.ohp-toggle-wrap');
             for (var tg = 0; tg < ohpToggles.length; tg++) {
-                ohpToggles[tg].addEventListener('click', function() {
+                ohpToggles[tg].addEventListener('click', function () {
                     this.classList.toggle('state-up');
                     this.classList.toggle('state-down');
                 });
@@ -2796,10 +3515,10 @@
                 var chronoSeconds = 0;
                 var chronoTimer = null;
 
-                chronoBtn.addEventListener('click', function() {
+                chronoBtn.addEventListener('click', function () {
                     if (!chronoRunning) {
                         chronoRunning = true;
-                        chronoTimer = setInterval(function() {
+                        chronoTimer = setInterval(function () {
                             chronoSeconds += 0.1;
                             chronoDisplay.textContent = chronoSeconds.toFixed(2);
                         }, 100);
@@ -2809,7 +3528,7 @@
                     }
                 });
 
-                chronoBtn.addEventListener('dblclick', function() {
+                chronoBtn.addEventListener('dblclick', function () {
                     chronoRunning = false;
                     clearInterval(chronoTimer);
                     chronoSeconds = 0;
@@ -3205,6 +3924,14 @@
                 this.loadTelemetryHistory();
             } else if (tabName === 'subsystems') {
                 this.startFastTelemetryPolling();
+                var self = this;
+                setTimeout(function () {
+                    if (self.leafletMap) {
+                        self.leafletMap.invalidateSize();
+                    } else {
+                        self.initTacticalMap();
+                    }
+                }, 150);
             } else if (tabName === 'network') {
                 this.loadNetworkStatus();
             } else if (tabName === 'archives') {
@@ -3276,8 +4003,8 @@
 
                 card.innerHTML =
                     '<div class="paper-sheet-topbar notprint">' +
-                        '<span class="paper-sheet-badge">📄 ' + sheetNumberText + '</span>' +
-                        removeBtnHtml +
+                    '<span class="paper-sheet-badge">📄 ' + sheetNumberText + '</span>' +
+                    removeBtnHtml +
                     '</div>' +
                     '<div class="paper-sheet" id="sheet-body-' + sheetItem.id + '"></div>';
 
@@ -4056,12 +4783,12 @@
                             </thead>
                             <tbody>
                                 ${commonItems.map(function (it) {
-                                    return '<tr>' +
-                                        '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
-                                        '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
-                                        '<td></td>' +
-                                    '</tr>';
-                                }).join('')}
+                return '<tr>' +
+                    '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
+                    '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
+                    '<td></td>' +
+                    '</tr>';
+            }).join('')}
 
                                 <!-- Separator row from original PHP -->
                                 <tr>
@@ -4069,12 +4796,12 @@
                                 </tr>
 
                                 ${specificItems.map(function (it) {
-                                    return '<tr>' +
-                                        '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
-                                        '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
-                                        '<td></td>' +
-                                    '</tr>';
-                                }).join('')}
+                return '<tr>' +
+                    '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
+                    '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
+                    '<td></td>' +
+                    '</tr>';
+            }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -4149,12 +4876,12 @@
                             </thead>
                             <tbody>
                                 ${items.map(function (it) {
-                                    return '<tr>' +
-                                        '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
-                                        '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
-                                        '<td></td>' +
-                                    '</tr>';
-                                }).join('')}
+                return '<tr>' +
+                    '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
+                    '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
+                    '<td></td>' +
+                    '</tr>';
+            }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -4241,15 +4968,15 @@
                             </thead>
                             <tbody>
                                 ${items.map(function (it) {
-                                    if (it.isSep) {
-                                        return '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>';
-                                    }
-                                    return '<tr>' +
-                                        '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
-                                        '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
-                                        '<td></td>' +
-                                    '</tr>';
-                                }).join('')}
+                if (it.isSep) {
+                    return '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>';
+                }
+                return '<tr>' +
+                    '<td style="text-align: center;">' + it.no + '</td><td style="text-align: center;">' + it.loc + '</td><td>' + it.title + '</td><td style="text-align: center;">' + it.act + '</td>' +
+                    '<td class="paper-check-cell" onclick="window.simMaintenanceApp.togglePaperCheck(this)" style="text-align: center; cursor: pointer;"><span class="paper-check-green" style="display: none;">✓</span></td>' +
+                    '<td></td>' +
+                    '</tr>';
+            }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -4329,7 +5056,7 @@
                 var data = await res.json();
                 var tEnd = performance.now();
                 this.lastFrameLatencyMs = Math.round(tEnd - tStart);
-                console.log('[Telemetry fetch]', data);
+                //console.log('[Telemetry fetch]', data);
                 if (!this.container) return;
                 if (data && (data.success || data.is_live || data.flight)) {
                     this.subsystemsPacketCount++;
@@ -4347,12 +5074,12 @@
 
                     // Climate View Hero
                     var tempBig = this.container.querySelector('#maint-temp-val-big');
-                    var humBig  = this.container.querySelector('#maint-hum-val-big');
+                    var humBig = this.container.querySelector('#maint-hum-val-big');
                     if (tempBig) tempBig.textContent = data.temperature.toFixed(1);
-                    if (humBig)  humBig.textContent  = data.humidity.toFixed(1);
+                    if (humBig) humBig.textContent = data.humidity.toFixed(1);
 
                     var tempFill = this.container.querySelector('#tel-temp-bar-fill');
-                    var humFill  = this.container.querySelector('#tel-hum-bar-fill');
+                    var humFill = this.container.querySelector('#tel-hum-bar-fill');
                     if (tempFill) {
                         var tPct = Math.max(5, Math.min(100, ((data.temperature - 14) / (28 - 14)) * 100));
                         tempFill.style.width = tPct + '%';
@@ -4363,19 +5090,19 @@
                     }
 
                     var tempStatusText = this.container.querySelector('#maint-temp-status-text');
-                    var humStatusText  = this.container.querySelector('#maint-hum-status-text');
+                    var humStatusText = this.container.querySelector('#maint-hum-status-text');
                     if (tempStatusText) tempStatusText.textContent = (data.temp_status || 'normal').toUpperCase();
                     if (humStatusText) humStatusText.textContent = (data.hum_status || 'normal').toUpperCase();
 
                     var tempPill = this.container.querySelector('#maint-temp-pill');
-                    var humPill  = this.container.querySelector('#maint-hum-pill');
+                    var humPill = this.container.querySelector('#maint-hum-pill');
                     if (tempPill) tempPill.className = 'tel-live-pill status-' + (data.temp_status || 'normal');
                     if (humPill) humPill.className = 'tel-live-pill status-' + (data.hum_status || 'normal');
 
                     var self = this;
                     var root = (self && self.container) ? self.container : (this && this.container ? this.container : document);
 
-                    console.log('[Indra Telemetry] Raw packet received:', data);
+                    //console.log('[Indra Telemetry] Raw packet received:', data);
 
                     // 1. Host & Stream Status
                     var isLive = (data.is_live === true);
@@ -4545,7 +5272,7 @@
                         if (n2Gauge2El) n2Gauge2El.textContent = n2Eng2Txt;
 
                         // Calculation function for Tachometer Needle Angle (-190° at 50% to +140° at 120%)
-                        var calcTachoDeg = function(val) {
+                        var calcTachoDeg = function (val) {
                             if (val === null || val === undefined || isNaN(val)) return -190;
                             var clamped = Math.max(0, Math.min(130, val));
                             if (clamped < 50.0) {
@@ -4580,7 +5307,7 @@
                     // 4. Hydrate CWP Annunciator Panel (18 Annunciators st_cwp_H2I)
                     if (data.cwp) {
                         var cwp = data.cwp;
-                        var setCwpState = function(id, isActive) {
+                        var setCwpState = function (id, isActive) {
                             var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle('active', !!isActive);
@@ -4634,13 +5361,13 @@
                     // 5. Hydrate Autopilot Console (APC)
                     if (data.autopilot) {
                         var apc = data.autopilot;
-                        var setApcBtn = function(id, isActive, isAmber) {
+                        var setApcBtn = function (id, isActive, isAmber) {
                             var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle(isAmber ? 'active-amber' : 'active-green', !!isActive);
                             }
                         };
-                        var setSubLed = function(id, isActive) {
+                        var setSubLed = function (id, isActive) {
                             var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle('active', !!isActive);
@@ -4666,21 +5393,6 @@
                         setSubLed('apc-nav-a', apc.nav_a);
                         setSubLed('apc-nav-c', apc.nav_c);
 
-                        var setTxt = function(id, val) {
-                            var el = root.querySelector('#' + id);
-                            if (el) el.textContent = val;
-                        };
-                        var hdgVal = (apc.target_hdg !== null && apc.target_hdg !== undefined) ? apc.target_hdg : (data.flight ? data.flight.heading_mag : null);
-                        var altVal = (apc.target_alt !== null && apc.target_alt !== undefined) ? apc.target_alt : (data.flight ? data.flight.altitude : null);
-                        var iasVal = (apc.target_ias !== null && apc.target_ias !== undefined) ? apc.target_ias : (data.flight ? data.flight.airspeed_ias : null);
-                        var vsVal  = (apc.target_vs !== null && apc.target_vs !== undefined) ? apc.target_vs : 0;
-
-                        setTxt('apc-hdg-val', (hdgVal !== null && hdgVal !== undefined) ? Math.round(hdgVal) + '°' : '--°');
-                        setTxt('apc-alta-val', (altVal !== null && altVal !== undefined) ? Math.round(altVal) + ' FT' : '-- FT');
-                        setTxt('apc-alt-val', (altVal !== null && altVal !== undefined) ? Math.round(altVal) + ' FT' : '-- FT');
-                        setTxt('apc-ias-val', (iasVal !== null && iasVal !== undefined) ? Math.round(iasVal) + ' KT' : '-- KT');
-                        setTxt('apc-vs-val', (vsVal !== null && vsVal !== undefined) ? (vsVal > 0 ? '+' : '') + Math.round(vsVal) + ' FPM' : '-- FPM');
-
                         var apcBadge = root.querySelector('#tel-apc-badge');
                         if (apcBadge) {
                             if (!isLive) {
@@ -4702,7 +5414,7 @@
                     // 6. Hydrate Radionavigation & Marker Beacons
                     if (data.radionav) {
                         var rn = data.radionav;
-                        var setLampBtn = function(id, isActive, activeClass) {
+                        var setLampBtn = function (id, isActive, activeClass) {
                             var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle(activeClass || 'active-green', !!isActive);
@@ -4736,38 +5448,51 @@
                                 }
                             }
 
-                            var adEl = root.querySelector('#gps-airdata-txt');
-                            if (adEl && rn.gps.airdata) {
-                                var ad = rn.gps.airdata;
-                                var windTxt = (ad.wind_speed > 0 || ad.wind_dir > 0) ? (ad.wind_dir + '°/' + ad.wind_speed + 'kt') : 'CALM';
-                                var oatTxt = (ad.oat !== 0) ? ((ad.oat > 0 ? '+' : '') + ad.oat.toFixed(0) + '°C') : '--°C';
-                                var tasTxt = (ad.tas > 0) ? (ad.tas.toFixed(0) + ' kts') : '--';
-                                adEl.textContent = 'OAT: ' + oatTxt + ' • WND: ' + windTxt + ' • TAS: ' + tasTxt;
+                            // Hydrate Tactical Moving Map
+                            var lat = (rn.gps && rn.gps.latitude) ? rn.gps.latitude : (data.flight ? data.flight.latitude : 0);
+                            var lon = (rn.gps && rn.gps.longitude) ? rn.gps.longitude : (data.flight ? data.flight.longitude : 0);
+                            var hdg = data.flight ? data.flight.heading_mag : 0;
+                            var alt = data.flight ? data.flight.altitude : 0;
+                            var spd = data.flight ? data.flight.airspeed_ias : 0;
+
+                            if (lat !== 0 || lon !== 0) {
+                                self.updateTacticalMap(lat, lon, hdg, alt, spd);
                             }
 
-                            var ffEl = root.querySelector('#gps-fuelflow-txt');
-                            if (ffEl && rn.gps.fuel) {
-                                var ff = rn.gps.fuel;
-                                ffEl.textContent = 'E1: ' + (ff.flow_eng1 > 0 ? ff.flow_eng1.toFixed(0) + ' kg/h' : '--') + ' • E2: ' + (ff.flow_eng2 > 0 ? ff.flow_eng2.toFixed(0) + ' kg/h' : '--');
-                            }
+                            // Hydrate Shadin FADC Air Data & Fuel Box
+                            var ad = rn.gps.airdata || {};
+                            var ff = rn.gps.fuel || {};
+
+                            var setFadcTxt = function (id, val) {
+                                var el = root.querySelector('#' + id);
+                                if (el) el.textContent = val;
+                            };
+
+                            setFadcTxt('fadc-oat-val', (ad.oat !== undefined && ad.oat !== 0) ? ((ad.oat > 0 ? '+' : '') + ad.oat.toFixed(1) + ' °C') : '-- °C');
+                            setFadcTxt('fadc-tas-val', (ad.tas > 0) ? Math.round(ad.tas) + ' KT' : (spd > 0 ? Math.round(spd) + ' KT' : '-- KT'));
+                            setFadcTxt('fadc-wind-val', (ad.wind_speed > 0 || ad.wind_dir > 0) ? (Math.round(ad.wind_dir) + '° / ' + Math.round(ad.wind_speed) + ' KT') : 'CALM');
+                            setFadcTxt('fadc-ff1-val', (ff.flow_eng1 > 0) ? Math.round(ff.flow_eng1) + ' kg/h' : '-- kg/h');
+                            setFadcTxt('fadc-ff2-val', (ff.flow_eng2 > 0) ? Math.round(ff.flow_eng2) + ' kg/h' : '-- kg/h');
+                            var totalUsed = (ff.used_eng1 || 0) + (ff.used_eng2 || 0);
+                            setFadcTxt('fadc-used-val', (totalUsed > 0) ? Math.round(totalUsed) + ' kg' : '-- kg');
                         }
                         if (rn.mbr) {
-                            setLampBtn('mbr-airway', rn.mbr.airway_a, 'active-cyan');
-                            setLampBtn('mbr-outer', rn.mbr.outer_o, 'active-cyan');
-                            setLampBtn('mbr-middle', rn.mbr.middle_m, 'active-amber');
+                            setLampBtn('mbr-airway', rn.mbr.airway_a, 'active');
+                            setLampBtn('mbr-outer', rn.mbr.outer_o, 'active');
+                            setLampBtn('mbr-middle', rn.mbr.middle_m, 'active');
                         }
                     }
 
                     // 7. Hydrate Audio Selector Panels (ICS / ACP)
                     if (data.audio_comms) {
-                        var setAudioChannel = function(prefix, channel, isActive) {
+                        var setAudioChannel = function (prefix, channel, isActive) {
                             var ledEl = root.querySelector('#audio-' + prefix + '-led-' + channel);
                             var btnEl = root.querySelector('#audio-' + prefix + '-' + channel);
                             if (ledEl) ledEl.classList.toggle('active-green', !!isActive);
                             if (btnEl) btnEl.classList.toggle('active-green', !!isActive);
                         };
 
-                        var hydrateIcsPanel = function(prefix, state) {
+                        var hydrateIcsPanel = function (prefix, state) {
                             if (!state) return;
                             setAudioChannel(prefix, 'vhf1', state.vhf1);
                             setAudioChannel(prefix, 'vhf2', state.vhf2);
@@ -4828,7 +5553,7 @@
                         var d = data.displays || {};
                         var l = data.lighting || {};
 
-                        var setDimmerKnob = function(dialId, arcId, pct) {
+                        var setDimmerKnob = function (dialId, arcId, pct) {
                             var p = Math.max(0, Math.min(100, pct !== undefined && pct !== null ? pct : 0));
                             var dial = root.querySelector('#' + dialId);
                             if (dial) {
@@ -4863,7 +5588,7 @@
                         }
 
                         // 8 Screen Switches
-                        var setScreenSw = function(id, isOn) {
+                        var setScreenSw = function (id, isOn) {
                             var sw = root.querySelector('#' + id);
                             if (sw) {
                                 sw.classList.toggle('sw-on', !!isOn);
@@ -4895,6 +5620,139 @@
                         }
                     }
 
+                    // Hydrate Circuit Breakers (Left & Right Overhead Panels - 117 breakers)
+                    if (data.circuit_breakers) {
+                        var cbMap = data.circuit_breakers;
+                        var idToBkr = {
+                            'cb-l-ahrs1-ac': 'bkrIac1_ahrs1',
+                            'cb-l-rolls-sas': 'bkrIac1_roll_sas',
+                            'cb-l-stby-hor': 'bkrIac1_stby_hor',
+                            'cb-l-dimm-test': 'bkrIshed1_dimm_test',
+                            'cb-l-fuzz-burn': 'bkrIshed1_fuzz_burn',
+                            'cb-l-hor-bat': 'bkrIshed1_hor_bat',
+                            'cb-l-airmap': 'bkrIshed1_airmap',
+                            'cb-l-pwr-lhook': 'bkrIshed1_pwr_lhook',
+                            'cb-l-cont-lhook': 'bkrIshed1_cont_lhook',
+                            'cb-l-vhf-tx1': 'bkrIshed1_vhf_tx1',
+                            'cb-l-nms1': 'bkrIshed1_nms1',
+                            'cb-l-conv': 'bkrIshed1_conv',
+                            'cb-l-shedbus1': 'bkrIshed1_shedbus1',
+                            'cb-l-pitot-htr-cp': 'bkrIshed1_pitot_htr_cp',
+                            'cb-l-pwr-ldg': 'bkrIshed1_pwr',
+                            'cb-l-cont-ldg': 'bkrIshed1_cont',
+                            'cb-l-pos-lt': 'bkrIshed1_pos_lt',
+                            'cb-l-trim-act': 'bkrIshed1_trim_act',
+                            'cb-l-apms-dtc': 'bkrIess1_apms_dts',
+                            'cb-l-ap1': 'bkrIess1_ap1',
+                            'cb-l-adc1': 'bkrIess1_adc1',
+                            'cb-l-ahrs1-ess': 'bkrIess1_ahrs1',
+                            'cb-l-blw-pel': 'bkrIess1_blw_pel',
+                            'cb-l-wiper': 'bkrIess1_wiper',
+                            'cb-l-pr-sas': 'bkrIess1_pr_sas',
+                            'cb-l-trim-rel': 'bkrIess1_trim_rel',
+                            'cb-l-fcds2-backup': 'bkrIess1_fcds_backup',
+                            'cb-l-fcdm1': 'bkrIess1_fcmd1',
+                            'cb-l-nd1': 'bkrIess1_nd1',
+                            'cb-l-pfd1': 'bkrIess1_pfd1',
+                            'cb-l-cont-winch': 'bkrIess1_cont_winch',
+                            'cb-l-cc-pil': 'bkrIess1_ccpil_winch',
+                            'cb-l-vent-syst': 'bkrIess1_vent_sys',
+                            'cb-l-ckpt-lt': 'bkrIess1_ckpt_lt',
+                            'cb-l-master1': 'bkrIess1_master1',
+                            'cb-l-ess-bus1': 'bkrIess1_bus1',
+                            'cb-l-dtu': 'bkrIess1_dtu',
+                            'cb-l-ics-emerg': 'bkrIess1_ics_emerg',
+                            'cb-l-roll-sema': 'bkrIess1_roll_sema',
+                            'cb-l-yaw-sema': 'bkrIess1_yaw_sema',
+                            'cb-l-xfer-f-pump': 'bkrIess1_xfer_f_pump',
+                            'cb-l-n2': 'bkrIess1_n2',
+                            'cb-l-prime-p': 'bkrIess1_prime_p',
+                            'cb-l-fire-d': 'bkrIess1_fire_d',
+                            'cb-l-fuel-v': 'bkrIess1_fuel_v',
+                            'cb-l-ign': 'bkrIess1_ign',
+                            'cb-l-start': 'bkrIess1_start',
+                            'cb-l-fadec': 'bkrIess1_fadec',
+                            'cb-l-htg-motor': 'bkrIess1_htg_motor',
+                            'cb-l-fire-e': 'bkrIess1_fire_e',
+                            'cb-l-fuel-l': 'bkrIess1_fuel_l',
+                            'cb-l-hyd-p': 'bkrIess1_hydp',
+                            'cb-l-warn': 'bkrIess1_warn',
+                            'cb-l-cad': 'bkrIess1_cad',
+                            'cb-l-vemd': 'bkrIess1_vemd',
+                            // Right Panel
+                            'cb-r-pitch-sas': 'bkrIac2_pitch_sas',
+                            'cb-r-xfer-a-pump': 'bkrIshed2_xfer_a_pump',
+                            'cb-r-pax-blw': 'bkrIshed2_pax_blw',
+                            'cb-r-mov-map': 'bkrIshed2_mov_map',
+                            'cb-r-vru2': 'bkrIshed2_vru2',
+                            'cb-r-mkr': 'bkrIshed2_mkr',
+                            'cb-r-rad-alt': 'bkrIshed2_rad_alt',
+                            'cb-r-dme': 'bkrIshed2_dme',
+                            'cb-r-pax': 'bkrIshed2_pax',
+                            'cb-r-shedbus2': 'bkrIshed2_shedbus2',
+                            'cb-r-strobe': 'bkrIshed2_strobe',
+                            'cb-r-blw-pel': 'bkrIshed2_blw_pel',
+                            'cb-r-ahrs2': 'bkrIshed2_ahrs2',
+                            'cb-r-adc2': 'bkrIshed2_adc2',
+                            'cb-r-ap2': 'bkrIshed2_ap2',
+                            'cb-r-pc2': 'bkrIshed2_pc2',
+                            'cb-r-elt': 'bkrIshed2_elt',
+                            'cb-r-yaw': 'bkrIess2_yaw',
+                            'cb-r-mast-mm': 'bkrIess2_mast_mm',
+                            'cb-r-nms2': 'bkrIess2_nms2',
+                            'cb-r-nms-blw': 'bkrIess2_nms_blw',
+                            'cb-r-atc2': 'bkrIess2_atc2',
+                            'cb-r-pfd2': 'bkrIess2_pfd2',
+                            'cb-r-nd2': 'bkrIess2_nd2',
+                            'cb-r-fcdm2': 'bkrIess2_fcdm2',
+                            'cb-r-instr-lt': 'bkrIess2_instr_lt',
+                            'cb-r-cc-ped': 'bkrIess2_cc_ped_winch',
+                            'cb-r-ldg': 'bkrIess2_ldg',
+                            'cb-r-a-coll': 'bkrIess2_a_coll',
+                            'cb-r-ground-rel': 'bkrIess2_ground_rel',
+                            'cb-r-pitch-damp': 'bkrIess2_pitch_damp',
+                            'cb-r-vhf-tx2': 'bkrIess2_vhf_tx2',
+                            'cb-r-ics2': 'bkrIess2_ics2',
+                            'cb-r-rotor-rpm': 'bkrIess2_rotor_rpm',
+                            'cb-r-bus2': 'bkrIess2_bus2',
+                            'cb-r-master2': 'bkrIess2_master2',
+                            'cb-r-fadec': 'bkrIess2_fadec',
+                            'cb-r-start': 'bkrIess2_start',
+                            'cb-r-ign': 'bkrIess2_ign',
+                            'cb-r-fuel-v': 'bkrIess2_fuel_v',
+                            'cb-r-fire-d': 'bkrIess2_fire_d',
+                            'cb-r-prime-p': 'bkrIess2_prime_p',
+                            'cb-r-n2': 'bkrIess2_n2',
+                            'cb-r-aux-tank': 'bkrIess2_aux_tank',
+                            'cb-r-pit-htr': 'bkrIess2_pit_htr',
+                            'cb-r-vemd': 'bkrIess2_vemd',
+                            'cb-r-cad': 'bkrIess2_cad',
+                            'cb-r-warn': 'bkrIess2_warn',
+                            'cb-r-hyd-p': 'bkrIess2_hydp',
+                            'cb-r-fuel-l': 'bkrIess2_fuel_l',
+                            'cb-r-fire-e': 'bkrIess2_fire_e',
+                            'cb-r-inv2': 'bkrIess2_inv2',
+                            'cb-r-htg-cont': 'bkrIess2_htg_cont'
+                        };
+
+                        var cbBtns = root.querySelectorAll('.cb-btn');
+                        for (var cbi = 0; cbi < cbBtns.length; cbi++) {
+                            var btn = cbBtns[cbi];
+                            var bkrName = idToBkr[btn.id] || btn.getAttribute('data-bkr');
+                            if (bkrName && cbMap[bkrName] !== undefined) {
+                                var isEngaged = !!cbMap[bkrName];
+                                btn.classList.toggle('popped', !isEngaged);
+                            }
+                        }
+
+                        var ohpBadge = root.querySelector('#tel-ohp-cb-badge');
+                        if (ohpBadge && data.cb_summary) {
+                            ohpBadge.textContent = data.cb_summary.status;
+                            ohpBadge.style.color = (data.cb_summary.tripped_count === 0) ? '#10b981' : '#f43f5e';
+                            ohpBadge.style.borderColor = (data.cb_summary.tripped_count === 0) ? 'rgba(16,185,129,0.4)' : 'rgba(244,63,94,0.4)';
+                        }
+                    }
+
                     // Hydrate Overhead Center Panel (Rotor Brake display)
                     var chronoDisplay = root.querySelector('#ohp-chrono-val');
                     if (chronoDisplay && data.powerplant) {
@@ -4905,7 +5763,7 @@
                     // 9. Hydrate EC135JAP Power Controller & Power Supply
                     if (data.power_supply) {
                         var ps = data.power_supply;
-                        var setHexLed = function(id, isOn, isRed) {
+                        var setHexLed = function (id, isOn, isRed) {
                             var el = root.querySelector('#' + id);
                             if (el) {
                                 el.classList.toggle(isRed ? 'active-red' : 'active-green', !!isOn);
@@ -4921,7 +5779,7 @@
 
                     if (data.sim_status) {
                         var ss = data.sim_status;
-                        var setSimBtn = function(id, isOn, isAmber) {
+                        var setSimBtn = function (id, isOn, isAmber) {
                             var el = root.querySelector('#' + id);
                             if (el) el.classList.toggle(isAmber ? 'active-amber' : 'active-green', !!isOn);
                         };
@@ -5027,9 +5885,9 @@
                     // Update Stats
                     if (data.stats) {
                         var statTemp = this.container.querySelector('#tel-stat-1y-temp');
-                        var statHum  = this.container.querySelector('#tel-stat-1y-hum');
+                        var statHum = this.container.querySelector('#tel-stat-1y-hum');
                         if (statTemp) statTemp.textContent = data.stats.avg_1y_temp;
-                        if (statHum)  statHum.textContent  = data.stats.avg_1y_hum;
+                        if (statHum) statHum.textContent = data.stats.avg_1y_hum;
                     }
 
                     // Update Cherrypick Table
@@ -5041,7 +5899,7 @@
                                     '<td>' + cp.hour + '</td>' +
                                     '<td>' + cp.humidity + ' %</td>' +
                                     '<td>' + cp.temperature + ' C</td>' +
-                                '</tr>';
+                                    '</tr>';
                             }).join('');
                         }
                     }
@@ -5732,22 +6590,22 @@
 
                             return '<div class="file-row">' +
                                 '<div class="file-info-group">' +
-                                    '<span class="file-badge-type ' + badge.cls + '">' + badge.label + '</span>' +
-                                    '<span class="file-icon-badge">' + icon + '</span>' +
-                                    '<div style="overflow: hidden;">' +
-                                        '<div class="file-name-text" title="' + f.name + '">' + cleanName + '</div>' +
-                                        '<div class="file-meta-sub">' + f.date + ' • ' + sizeKb + ' KB</div>' +
-                                    '</div>' +
+                                '<span class="file-badge-type ' + badge.cls + '">' + badge.label + '</span>' +
+                                '<span class="file-icon-badge">' + icon + '</span>' +
+                                '<div style="overflow: hidden;">' +
+                                '<div class="file-name-text" title="' + f.name + '">' + cleanName + '</div>' +
+                                '<div class="file-meta-sub">' + f.date + ' • ' + sizeKb + ' KB</div>' +
+                                '</div>' +
                                 '</div>' +
                                 '<div class="file-actions-group">' +
-                                    '<button class="btn-file-view" onclick="window.open(\'' + url + '\', \'_blank\')">' +
-                                        self.t('sim_maint.view_pdf_btn', '👁️ View / Export PDF') +
-                                    '</button>' +
-                                    '<button class="btn-file-delete" data-del-month="' + arch.month + '" data-del-file="' + f.name + '" title="' + self.t('sim_maint.delete_report', 'Delete') + '">' +
-                                        '🗑️ ' + self.t('sim_maint.delete_report', 'Delete') +
-                                    '</button>' +
+                                '<button class="btn-file-view" onclick="window.open(\'' + url + '\', \'_blank\')">' +
+                                self.t('sim_maint.view_pdf_btn', '👁️ View / Export PDF') +
+                                '</button>' +
+                                '<button class="btn-file-delete" data-del-month="' + arch.month + '" data-del-file="' + f.name + '" title="' + self.t('sim_maint.delete_report', 'Delete') + '">' +
+                                '🗑️ ' + self.t('sim_maint.delete_report', 'Delete') +
+                                '</button>' +
                                 '</div>' +
-                            '</div>';
+                                '</div>';
                         }).join('');
 
                         var reportsCountText = self.t('sim_maint.reports_count', '{n} Report(s)').replace('{n}', arch.count);
@@ -5755,19 +6613,19 @@
 
                         return '<div class="' + folderClass + '" data-month-id="' + arch.month + '">' +
                             '<div class="month-header" data-toggle-month="' + arch.month + '">' +
-                                '<div class="month-title-group">' +
-                                    '<span class="month-chevron">▼</span>' +
-                                    '<span style="font-size: 14px; font-weight: 700; color: var(--text-main, #0f172a);">📁 ' + arch.month + '</span>' +
-                                    '<span class="month-count-badge">' + reportsCountText + '</span>' +
-                                '</div>' +
-                                '<div class="month-actions">' +
-                                    '<button type="button" class="btn-print-month" data-print-url="' + printMonthUrl + '">' +
-                                        self.t('sim_maint.print_month_pdf', '🖨️ Print Entire Month (PDF)') +
-                                    '</button>' +
-                                '</div>' +
+                            '<div class="month-title-group">' +
+                            '<span class="month-chevron">▼</span>' +
+                            '<span style="font-size: 14px; font-weight: 700; color: var(--text-main, #0f172a);">📁 ' + arch.month + '</span>' +
+                            '<span class="month-count-badge">' + reportsCountText + '</span>' +
+                            '</div>' +
+                            '<div class="month-actions">' +
+                            '<button type="button" class="btn-print-month" data-print-url="' + printMonthUrl + '">' +
+                            self.t('sim_maint.print_month_pdf', '🖨️ Print Entire Month (PDF)') +
+                            '</button>' +
+                            '</div>' +
                             '</div>' +
                             '<div class="files-list">' + filesHtml + '</div>' +
-                        '</div>';
+                            '</div>';
                     }).join('');
 
                     // Bind Accordion Header Toggles
@@ -5861,61 +6719,107 @@
             var ringIcon = (pct >= 90) ? '✓' : (pct >= 60 ? '⚠️' : '✕');
 
             var filterText = this.netFilterText ? this.netFilterText.toLowerCase().trim() : '';
+            var activeSubnet = this.netSubnetFilter || 'ALL';
 
-            var categories = [
-                { id: 'core', title: '🖥️ ' + this.t('sim_maint.net_cat_core', 'Calculateurs Centraux & Avionique (Core & Avionics)') },
-                { id: 'visual', title: '🌐 ' + this.t('sim_maint.net_cat_visual', 'Générateurs Visuels & Alignement (Visual Systems)') },
-                { id: 'visual_channels', title: '📽️ ' + this.t('sim_maint.net_cat_channels', 'Canaux Visuels Projecteurs (VIS_01 à VIS_10)') },
-                { id: 'cameras', title: '📹 ' + this.t('sim_maint.net_cat_cameras', 'Caméras & Flux Vidéo Cockpit (Video Feeds & CAM)') }
+            // Category Icons & Friendly Labels Map
+            var catMeta = {
+                'PROCESSOR RACK': { icon: '🖥️', title: this.t('sim_maint.cat_proc_rack', 'PROCESSOR RACK — Baie Calculateurs & Temps Réel') },
+                'VISUAL RACK': { icon: '🌐', title: this.t('sim_maint.cat_vis_rack', 'VISUAL RACK — Baie Système Visuel & Canaux') },
+                'DEBRIEFING RACK': { icon: '📊', title: this.t('sim_maint.cat_dbf_rack', 'DEBRIEFING RACK — Baie Débriefing & Enregistrement') },
+                'PROJECTORS': { icon: '📽️', title: this.t('sim_maint.cat_projectors', 'PROJECTEURS — Barco FL-35 WQXGA') },
+                'cameras': { icon: '📹', title: this.t('sim_maint.cat_cameras', 'CAMÉRAS — Flux Vidéo Cockpit & Instructeur') },
+                'CAMERAS': { icon: '📹', title: this.t('sim_maint.cat_cameras', 'CAMÉRAS — Flux Vidéo Cockpit & Instructeur') },
+                'NETWORK': { icon: '🔀', title: this.t('sim_maint.cat_network', 'RÉSEAU & COMMUTATEURS — Netgear Switches & Wi-Fi') },
+                'SPACER': { icon: '⚙️', title: this.t('sim_maint.cat_spacer', 'SPACER & AUXILIAIRES — Plateforme Vibration') }
+            };
+
+            // Discover dynamic categories in original order
+            var categoryList = [];
+            var seenCats = {};
+            data.devices.forEach(function (dev) {
+                var c = dev.category || 'OTHER';
+                if (!seenCats[c]) {
+                    seenCats[c] = true;
+                    var meta = catMeta[c] || { icon: '📦', title: c };
+                    categoryList.push({ id: c, icon: meta.icon, title: meta.title });
+                }
+            });
+
+            // Subnet definitions for badges
+            var subnets = [
+                { id: 'ALL', label: 'TOUS' },
+                { id: 'MTN', label: 'MTN (172.120.1.x)' },
+                { id: 'MSS', label: 'MSS (20.0.0.x)' },
+                { id: 'RTN', label: 'RTN (192.168.4.x)' },
+                { id: 'DBF', label: 'DBF (192.168.7.x)' },
+                { id: 'VSN', label: 'VSN (10.0.0.x)' },
+                { id: 'PRN', label: 'PRN (169.254.36.x)' },
+                { id: 'VNH', label: 'VNH (192.168.5.x)' }
             ];
 
             var self = this;
-            var renderCards = function(catId) {
-                var devs = data.devices.filter(function(d) {
+            var renderCards = function (catId) {
+                var devs = data.devices.filter(function (d) {
                     if (d.category !== catId) return false;
+
+                    if (activeSubnet !== 'ALL') {
+                        var hasSubnet = d.ips && d.ips.some(function (ipObj) {
+                            return (ipObj.label || '').toUpperCase() === activeSubnet;
+                        });
+                        if (!hasSubnet) return false;
+                    }
+
                     if (!filterText) return true;
                     var dDesc = self.t('sim_maint.dev_' + d.id + '_desc', d.desc || '');
                     if (d.name.toLowerCase().indexOf(filterText) !== -1) return true;
                     if (dDesc.toLowerCase().indexOf(filterText) !== -1) return true;
                     if (d.desc && d.desc.toLowerCase().indexOf(filterText) !== -1) return true;
-                    if (d.ips && d.ips.some(function(ipObj) { return ipObj.ip.indexOf(filterText) !== -1; })) return true;
+                    if (d.ips && d.ips.some(function (ipObj) { return ipObj.ip.indexOf(filterText) !== -1 || (ipObj.label && ipObj.label.toLowerCase().indexOf(filterText) !== -1); })) return true;
                     return false;
                 });
 
                 if (devs.length === 0) {
-                    return '<div style="color: #64748b; font-size: 12px; font-style: italic; padding: 8px;">' + self.t('sim_maint.net_no_match', 'No devices found matching filter.') + '</div>';
+                    return '<div style="color: #64748b; font-size: 12px; font-style: italic; padding: 8px;">' + self.t('sim_maint.net_no_match', 'Aucun équipement ne correspond au filtre dans cette section.') + '</div>';
                 }
 
-                return '<div class="net-grid-cards">' + devs.map(function(dev) {
+                return '<div class="net-grid-cards">' + devs.map(function (dev) {
                     var isOnline = dev.is_online;
                     var cardClass = isOnline ? 'net-device-card is-online' : 'net-device-card is-offline';
                     var badgeClass = isOnline ? 'net-dev-badge online' : 'net-dev-badge offline';
                     var badgeText = isOnline ? 'ONLINE' : (dev.ips && dev.ips.length === 0 ? 'N/A' : 'OFFLINE');
                     var devDesc = self.t('sim_maint.dev_' + dev.id + '_desc', dev.desc || '');
 
-                    var ipRows = (dev.ips && dev.ips.length > 0) ? dev.ips.map(function(ipObj) {
+                    var filteredIps = dev.ips || [];
+                    if (activeSubnet !== 'ALL') {
+                        filteredIps = filteredIps.filter(function (ipObj) {
+                            return (ipObj.label || '').toUpperCase() === activeSubnet;
+                        });
+                    }
+
+                    var ipRows = (filteredIps.length > 0) ? filteredIps.map(function (ipObj) {
                         var ipOnline = (ipObj.status === 'online');
                         var dotCls = ipOnline ? 'net-dot-indicator online' : 'net-dot-indicator offline';
                         var latTxt = (ipOnline && ipObj.latency_ms !== null) ? (ipObj.latency_ms + ' ms') : (ipOnline ? '< 1 ms' : 'timeout');
+                        var lblClass = 'net-ip-lbl lbl-' + (ipObj.label || 'lan').toLowerCase();
                         return '<div class="net-ip-row">' +
-                            '<div><span class="net-ip-lbl">' + (ipObj.label || 'LAN') + '</span><span class="net-ip-val">' + ipObj.ip + '</span></div>' +
+                            '<div><span class="' + lblClass + '">' + (ipObj.label || 'LAN') + '</span><span class="net-ip-val">' + ipObj.ip + '</span></div>' +
                             '<div class="net-ip-stat">' +
-                                '<span class="net-latency-pill">' + latTxt + '</span>' +
-                                '<div class="' + dotCls + '"></div>' +
+                            '<span class="net-latency-pill">' + latTxt + '</span>' +
+                            '<div class="' + dotCls + '"></div>' +
                             '</div>' +
-                        '</div>';
-                    }).join('') : '<div style="color: #64748b; font-size: 11px; font-style: italic;">No IP configured</div>';
+                            '</div>';
+                    }).join('') : '<div style="color: #64748b; font-size: 11px; font-style: italic;">Aucune IP</div>';
 
                     return '<div class="' + cardClass + '">' +
                         '<div class="net-card-top">' +
-                            '<div>' +
-                                '<div class="net-dev-name">' + dev.name + '</div>' +
-                                '<div class="net-dev-desc">' + devDesc + '</div>' +
-                            '</div>' +
-                            '<span class="' + badgeClass + '">' + badgeText + '</span>' +
+                        '<div>' +
+                        '<div class="net-dev-name">' + dev.name + '</div>' +
+                        '<div class="net-dev-desc">' + devDesc + '</div>' +
+                        '</div>' +
+                        '<span class="' + badgeClass + '">' + badgeText + '</span>' +
                         '</div>' +
                         '<div class="net-ip-list">' + ipRows + '</div>' +
-                    '</div>';
+                        '</div>';
                 }).join('') + '</div>';
             };
 
@@ -5932,6 +6836,13 @@
                                 <div class="net-hero-sub">
                                     <strong>${summary.online_devices} / ${summary.total_devices}</strong> ${this.t('sim_maint.net_online_count', 'appareils joignables')} • <strong>${pct}%</strong> ${this.t('sim_maint.net_availability', 'disponibilité')} • ${data.date_str || ''}
                                 </div>
+                                <div class="net-subnet-filters">
+                                    <span style="font-size: 10.5px; font-weight: 700; color: #94a3b8; margin-right: 2px;">Sous-réseau :</span>
+                                    ${subnets.map(function (s) {
+                var isAct = (activeSubnet === s.id) ? 'active' : '';
+                return `<span class="net-subnet-chip ${isAct}" data-subnet="${s.id}">${s.label}</span>`;
+            }).join('')}
+                                </div>
                             </div>
                         </div>
 
@@ -5943,17 +6854,17 @@
                         </div>
                     </div>
 
-                    <!-- Category Sections -->
-                    ${categories.map(function(cat) {
-                        return `
+                    <!-- Dynamic Category Sections -->
+                    ${categoryList.map(function (cat) {
+                return `
                             <div class="net-section-box">
                                 <div class="net-section-hdr">
-                                    <span class="net-section-title-txt">${cat.title}</span>
+                                    <span class="net-section-title-txt">${cat.icon} ${cat.title}</span>
                                 </div>
                                 ${renderCards(cat.id)}
                             </div>
                         `;
-                    }).join('')}
+            }).join('')}
                 </div>
             `;
         }
@@ -5965,7 +6876,7 @@
             var self = this;
             var searchInput = container.querySelector('#net-search-filter');
             if (searchInput) {
-                searchInput.addEventListener('input', function(e) {
+                searchInput.addEventListener('input', function (e) {
                     self.netFilterText = e.target.value;
                     self.renderNetworkDashboard(self.networkData);
                     var newInp = container.querySelector('#net-search-filter');
@@ -5976,9 +6887,19 @@
                 });
             }
 
+            var subnetChips = container.querySelectorAll('.net-subnet-chip[data-subnet]');
+            for (var sc = 0; sc < subnetChips.length; sc++) {
+                (function (chip) {
+                    chip.addEventListener('click', function () {
+                        self.netSubnetFilter = chip.getAttribute('data-subnet');
+                        self.renderNetworkDashboard(self.networkData);
+                    });
+                })(subnetChips[sc]);
+            }
+
             var pingBtn = container.querySelector('#net-btn-refresh-ping');
             if (pingBtn) {
-                pingBtn.addEventListener('click', function() {
+                pingBtn.addEventListener('click', function () {
                     self.loadNetworkStatus(true);
                 });
             }

@@ -64,22 +64,27 @@ if (!function_exists('getTelemetryDbConnection')) {
         static $pdo = null;
         if ($pdo !== null) return $pdo;
 
-        $host = 'localhost';
+        $hosts = ['172.120.1.253', 'localhost', '127.0.0.1'];
         $dbname = 'ffs_operation_log';
         $user = 'root';
-        $pass = 'ebbdec135';
+        $passwords = ['ebbdec135', ''];
 
-        try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_TIMEOUT => 2
-            ]);
-            return $pdo;
-        } catch (Exception $e) {
-            $pdo = false;
-            return false;
+        foreach ($hosts as $host) {
+            foreach ($passwords as $pass) {
+                try {
+                    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_TIMEOUT => 2
+                    ]);
+                    return $pdo;
+                } catch (Exception $e) {
+                    // Try next
+                }
+            }
         }
+        $pdo = false;
+        return false;
     }
 }
 
@@ -320,12 +325,21 @@ if (!function_exists('ensureUdpBridgeRunning')) {
         $isWin = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
         $phpBin = 'php';
         if ($isWin) {
-            if (defined('PHP_BINARY') && PHP_BINARY && is_file(PHP_BINARY) && stripos(PHP_BINARY, 'fpm') === false) {
+            $winCandidates = [
+                'C:\\xampp\\php\\php.exe',
+                'C:\\php\\php.exe',
+                'D:\\xampp\\php\\php.exe',
+                'E:\\xampp\\php\\php.exe',
+                (isset($_SERVER['DOCUMENT_ROOT']) ? dirname($_SERVER['DOCUMENT_ROOT']) . '\\php\\php.exe' : '')
+            ];
+            foreach ($winCandidates as $cand) {
+                if (!empty($cand) && file_exists($cand) && is_file($cand)) {
+                    $phpBin = $cand;
+                    break;
+                }
+            }
+            if ($phpBin === 'php' && defined('PHP_BINARY') && stripos(PHP_BINARY, 'httpd') === false && stripos(PHP_BINARY, 'apache') === false && is_file(PHP_BINARY)) {
                 $phpBin = PHP_BINARY;
-            } elseif (file_exists('C:\\php\\php.exe')) {
-                $phpBin = 'C:\\php\\php.exe';
-            } elseif (file_exists('C:\\xampp\\php\\php.exe')) {
-                $phpBin = 'C:\\xampp\\php\\php.exe';
             }
         } else {
             // Linux / Unix server: prioritize CLI binary over php-fpm
@@ -361,7 +375,18 @@ if (!function_exists('ensureUdpBridgeRunning')) {
             @fclose($fp);
 
             if ($isWin) {
-                pclose(popen("start /B \"\" " . escapeshellarg($phpBin) . " " . escapeshellarg($bridgeScript), "r"));
+                $spawned = false;
+                if (class_exists('COM')) {
+                    try {
+                        $wsh = new COM("WScript.Shell");
+                        $wsh->Run('"' . $phpBin . '" "' . $bridgeScript . '"', 0, false);
+                        $spawned = true;
+                    } catch (Exception $e) {}
+                }
+                if (!$spawned) {
+                    $cmd = "start /B \"\" " . escapeshellarg($phpBin) . " " . escapeshellarg($bridgeScript) . " > NUL 2>&1";
+                    pclose(popen($cmd, "r"));
+                }
             } else {
                 exec("nohup " . escapeshellarg($phpBin) . " " . escapeshellarg($bridgeScript) . " > /dev/null 2>&1 &");
             }

@@ -1,254 +1,499 @@
 [
   {
+    "id": "MAINTENANCE",
+    "category": "PROCESSOR RACK",
+    "name": "MAINTENANCE",
+    "desc": "MAINTENANCE Computer",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.69" },
+      { "label": "MSS", "ip": "20.0.0.69" },
+      { "label": "RTN", "ip": "192.168.4.69" },
+      { "label": "DBF", "ip": "192.168.7.69" },
+      { "label": "VSN", "ip": "10.0.0.69" },
+      { "label": "PRN", "ip": "169.254.36.69" }
+    ]
+  },
+  {
+    "id": "CLS",
+    "category": "PROCESSOR RACK",
+    "name": "CLS",
+    "desc": "Control Loading System",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.10" },
+      { "label": "RTN", "ip": "192.168.4.10" }
+    ]
+  },
+  {
+    "id": "MOTION",
+    "category": "PROCESSOR RACK",
+    "name": "MOTION",
+    "desc": "Motion Computer",
+    "ips": [
+      { "label": "RTN", "ip": "192.168.4.11" }
+    ]
+  },
+  {
+    "id": "IOS",
+    "category": "PROCESSOR RACK",
+    "name": "IOS",
+    "desc": "Instructor Operating Station",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.2" },
+      { "label": "MSS", "ip": "20.0.0.2" },
+      { "label": "RTN", "ip": "192.168.4.10" }
+    ]
+  },
+  {
+    "id": "RTIO",
+    "category": "PROCESSOR RACK",
+    "name": "RTIO",
+    "desc": "Real Time IO",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.7" },
+      { "label": "MSS", "ip": "20.0.0.7" },
+      { "label": "RTN", "ip": "192.168.4.7" }
+    ]
+  },
+  {
+    "id": "SOUND/COMMS",
+    "category": "PROCESSOR RACK",
+    "name": "SOUND/COMMS",
+    "desc": "Sound and Comms Computer",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.8" },
+      { "label": "MSS", "ip": "20.0.0.8" },
+      { "label": "RTN", "ip": "192.168.4.8" },
+      { "label": "DBF", "ip": "192.168.7.8" }
+    ]
+  },
+  {
     "id": "host",
-    "category": "core",
+    "category": "PROCESSOR RACK",
     "name": "HOST",
     "desc": "Calculateur Central Temps Réel (Indra FFS)",
     "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.3" },
-      { "label": "Aux LAN", "ip": "192.168.7.69" }
+      { "label": "MTN", "ip": "172.120.1.3" },
+      { "label": "RTN", "ip": "192.168.4.3" },
+      { "label": "VNH", "ip": "192.168.5.3" }
     ]
   },
   {
-    "id": "dbf",
-    "category": "core",
-    "name": "DBF (Local Web)",
-    "desc": "Serveur Web & Base de Données (Hôte actuel)",
+    "id": "vis_database",
+    "category": "VISUAL RACK",
+    "name": "VIS_DATABASE",
+    "desc": "Serveur Base de donnée visuelle",
     "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.253" },
-      { "label": "Aux LAN", "ip": "192.168.7.100" }
+      { "label": "MSS", "ip": "20.0.0.250" }
     ]
-  },
-  {
-    "id": "maint",
-    "category": "core",
-    "name": "MAINTENANCE",
-    "desc": "Poste Maintenance & Ingénierie",
-    "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.69" },
-      { "label": "Aux LAN", "ip": "192.168.7.69" }
-    ]
-  },
-  {
-    "id": "ios",
-    "category": "core",
-    "name": "IOS",
-    "desc": "Poste Instructeur (Instructor Operator Station)",
-    "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.2" },
-      { "label": "Aux LAN", "ip": "192.168.7.69" }
-    ]
-  },
-  {
-    "id": "rtio",
-    "category": "core",
-    "name": "RTIO",
-    "desc": "Baie Entrées / Sorties Temps Réel",
-    "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.7" }
-    ]
-  },
-  {
-    "id": "cls",
-    "category": "core",
-    "name": "CLS",
-    "desc": "Système de Restitution d'Efforts Commandes de Vol",
-    "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.10" }
-    ]
-  },
-  {
-    "id": "sound",
-    "category": "core",
-    "name": "SOUND/COMMS",
-    "desc": "Générateur Audio & Interphonie Cockpit / IOS",
-    "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.8" },
-      { "label": "Aux LAN", "ip": "192.168.7.8" }
-    ]
-  },
-  {
-    "id": "instr",
-    "category": "core",
-    "name": "INSTRUMENTS",
-    "desc": "Générateur Écrans & Instruments Cockpit",
-    "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.211" },
-      { "label": "Aux LAN", "ip": "192.168.7.211" }
-    ]
-  },
-  {
-    "id": "motion",
-    "category": "core",
-    "name": "MOTION",
-    "desc": "Système de Mouvement Plateforme Vérins",
-    "ips": []
   },
   {
     "id": "vis_master",
-    "category": "visual",
+    "category": "VISUAL RACK",
     "name": "VIS_MASTER",
     "desc": "Serveur Maître Générateur Visuel",
     "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.100" }
+      { "label": "MTN", "ip": "172.120.1.100" },
+      { "label": "MSS", "ip": "20.0.0.100" },
+      { "label": "VSN", "ip": "10.0.0.100" },
+      { "label": "VNH", "ip": "192.168.5.1" }
     ]
   },
   {
     "id": "vis_align",
-    "category": "visual",
+    "category": "VISUAL RACK",
     "name": "VIS_ALIGN",
     "desc": "Serveur Alignement & Calibrage Projecteurs",
     "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.11" }
+      { "label": "MTN", "ip": "172.120.1.11" },
+      { "label": "MSS", "ip": "20.0.0.11" },
+      { "label": "VSN", "ip": "10.0.0.11" },
+      { "label": "PRN", "ip": "169.254.36.100" }
+	  ]
+  },
+  {
+    "id": "vis_01",
+    "category": "VISUAL RACK",
+    "name": "VIS_01",
+    "desc": "Générateur Canal Visuel 01",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.101" },
+      { "label": "MSS", "ip": "20.0.0.1" },
+      { "label": "VSN", "ip": "10.0.0.1" }
+	]
+  },
+  {
+    "id": "vis_02",
+    "category": "VISUAL RACK",
+    "name": "VIS_02",
+    "desc": "Générateur Canal Visuel 02",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.102" },
+      { "label": "MSS", "ip": "20.0.0.2" },
+      { "label": "VSN", "ip": "10.0.0.2" }
+	]
+  },
+  {
+    "id": "vis_03",
+    "category": "VISUAL RACK",
+    "name": "VIS_03",
+    "desc": "Générateur Canal Visuel 03",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.103" },
+      { "label": "MSS", "ip": "20.0.0.3" },
+      { "label": "VSN", "ip": "10.0.0.4" }
+	]
+  },
+  {
+    "id": "vis_04",
+    "category": "VISUAL RACK",
+    "name": "VIS_04",
+    "desc": "Générateur Canal Visuel 04",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.104" },
+      { "label": "MSS", "ip": "20.0.0.4" },
+      { "label": "VSN", "ip": "10.0.0.4" }
+	]
+  },
+  {
+    "id": "vis_05",
+    "category": "VISUAL RACK",
+    "name": "VIS_05",
+    "desc": "Générateur Canal Visuel 05",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.105" },
+      { "label": "MSS", "ip": "20.0.0.5" },
+      { "label": "VSN", "ip": "10.0.0.5" }
+	]
+  },
+  {
+    "id": "vis_06",
+    "category": "VISUAL RACK",
+    "name": "VIS_06",
+    "desc": "Générateur Canal Visuel 06",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.106" },
+      { "label": "MSS", "ip": "20.0.0.6" },
+      { "label": "VSN", "ip": "10.0.0.6" }
+	]
+  },
+  {
+    "id": "vis_07",
+    "category": "VISUAL RACK",
+    "name": "VIS_07",
+    "desc": "Générateur Canal Visuel 07",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.107" },
+      { "label": "MSS", "ip": "20.0.0.7" },
+      { "label": "VSN", "ip": "10.0.0.7" }
+	]
+  },
+  {
+    "id": "vis_08",
+    "category": "VISUAL RACK",
+    "name": "VIS_08",
+    "desc": "Générateur Canal Visuel 08",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.108" },
+      { "label": "MSS", "ip": "20.0.0.8" },
+      { "label": "VSN", "ip": "10.0.0.8" }
+	]
+  },
+  {
+    "id": "vis_09",
+    "category": "VISUAL RACK",
+    "name": "VIS_09",
+    "desc": "Générateur Canal Visuel 09",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.109" },
+      { "label": "MSS", "ip": "20.0.0.9" },
+      { "label": "VSN", "ip": "10.0.0.9" }
+	]
+  },
+  {
+    "id": "vis_10",
+    "category": "VISUAL RACK",
+    "name": "VIS_10",
+    "desc": "Générateur Canal Visuel 10",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.110" },
+      { "label": "MSS", "ip": "20.0.0.10" },
+      { "label": "VSN", "ip": "10.0.0.10" }
+	]
+  },
+  {
+    "id": "dbf",
+    "category": "DEBRIEFING RACK",
+    "name": "DBF (Local Web)",
+    "desc": "Serveur Web & Base de Données (Hôte actuel)",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.253" },
+      { "label": "DBF", "ip": "192.168.7.100" }
+    ]
+  },
+  {
+    "id": "instr",
+    "category": "DEBRIEFING RACK",
+    "name": "INSTRUMENTS",
+    "desc": "Générateur Écrans & Instruments Cockpit",
+    "ips": [
+      { "label": "MTN", "ip": "172.120.1.211" },
+      { "label": "RTN", "ip": "192.168.4.211" },
+      { "label": "DBF", "ip": "192.168.7.211" }
     ]
   },
   {
     "id": "stealthview",
-    "category": "visual",
+    "category": "DEBRIEFING RACK",
     "name": "STEALTHVIEW",
     "desc": "Station Visualisation Tactique StealthView",
     "ips": [
-      { "label": "Sim LAN", "ip": "172.120.1.111" }
+      { "label": "MTN", "ip": "172.120.1.111" },
+      { "label": "MSS", "ip": "20.0.0.111" }
     ]
   },
-  {
-    "id": "vis_01",
-    "category": "visual_channels",
-    "name": "VIS_01",
-    "desc": "Générateur Canal Visuel 01",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.101" }]
-  },
-  {
-    "id": "vis_02",
-    "category": "visual_channels",
-    "name": "VIS_02",
-    "desc": "Générateur Canal Visuel 02",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.102" }]
-  },
-  {
-    "id": "vis_03",
-    "category": "visual_channels",
-    "name": "VIS_03",
-    "desc": "Générateur Canal Visuel 03",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.103" }]
-  },
-  {
-    "id": "vis_04",
-    "category": "visual_channels",
-    "name": "VIS_04",
-    "desc": "Générateur Canal Visuel 04",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.104" }]
-  },
-  {
-    "id": "vis_05",
-    "category": "visual_channels",
-    "name": "VIS_05",
-    "desc": "Générateur Canal Visuel 05",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.105" }]
-  },
-  {
-    "id": "vis_06",
-    "category": "visual_channels",
-    "name": "VIS_06",
-    "desc": "Générateur Canal Visuel 06",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.106" }]
-  },
-  {
-    "id": "vis_07",
-    "category": "visual_channels",
-    "name": "VIS_07",
-    "desc": "Générateur Canal Visuel 07",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.107" }]
-  },
-  {
-    "id": "vis_08",
-    "category": "visual_channels",
-    "name": "VIS_08",
-    "desc": "Générateur Canal Visuel 08",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.108" }]
-  },
-  {
-    "id": "vis_09",
-    "category": "visual_channels",
-    "name": "VIS_09",
-    "desc": "Générateur Canal Visuel 09",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.109" }]
-  },
-  {
-    "id": "vis_10",
-    "category": "visual_channels",
-    "name": "VIS_10",
-    "desc": "Générateur Canal Visuel 10",
-    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.110" }]
-  },
+
+
   {
     "id": "cam_mfd1",
     "category": "cameras",
     "name": "CAM_MFD1",
     "desc": "Caméra Vidéo MFD 1 (Pilote)",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.101" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.101" }]
   },
   {
     "id": "cam_mfd2",
     "category": "cameras",
     "name": "CAM_MFD2",
     "desc": "Caméra Vidéo MFD 2 (Pilote)",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.102" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.102" }]
   },
   {
     "id": "cam_mfd3",
     "category": "cameras",
     "name": "CAM_MFD3",
     "desc": "Caméra Vidéo MFD 3 (Central)",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.103" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.103" }]
   },
   {
     "id": "cam_mfd4",
     "category": "cameras",
     "name": "CAM_MFD4",
     "desc": "Caméra Vidéo MFD 4 (Copilote)",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.104" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.104" }]
   },
   {
     "id": "cam_mfd5",
     "category": "cameras",
     "name": "CAM_MFD5",
     "desc": "Caméra Vidéo MFD 5 (Copilote)",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.105" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.105" }]
   },
   {
     "id": "cam_mfd6",
     "category": "cameras",
     "name": "CAM_MFD6",
     "desc": "Caméra Vidéo MFD 6 (Aux)",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.106" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.106" }]
   },
   {
     "id": "cam_stealth",
     "category": "cameras",
     "name": "CAM_STEALTH",
     "desc": "Caméra Vue Furtive / Vue Tactique",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.107" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.107" }]
   },
   {
     "id": "cam_inst",
     "category": "cameras",
     "name": "CAM_INST",
     "desc": "Caméra Vue Pupitre Instructeur",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.108" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.108" }]
   },
   {
     "id": "cam_cockpit",
     "category": "cameras",
     "name": "CAM_COCKPIT",
     "desc": "Caméra Ambiance Cabine Cockpit",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.109" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.109" }]
   },
   {
     "id": "cam_exterior",
     "category": "cameras",
     "name": "CAM_EXTERIOR",
     "desc": "Caméra Vue Extérieure Simulateur",
-    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.109" }]
+    "ips": [{ "label": "DBF", "ip": "192.168.7.109" }]
+  },
+  {
+    "id": "VIBRATION",
+    "category": "SPACER",
+    "name": "VIBRATION",
+    "desc": "Vibration platform",
+    "ips": [
+	  { "label": "DBF", "ip": "192.168.4.12" }
+	]
+  },
+  {
+    "id": "PROJECTOR 1",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 1",
+    "desc": "Barco FL-35 WQXGA 1",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.1" }
+	]
+  },
+  {
+    "id": "PROJECTOR 2",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 2",
+    "desc": "Barco FL-35 WQXGA 2",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.2" }
+	]
+  },
+  {
+    "id": "PROJECTOR 3",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 3",
+    "desc": "Barco FL-35 WQXGA 3",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.3" }
+	]
+  },
+  {
+    "id": "PROJECTOR 4",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 4",
+    "desc": "Barco FL-35 WQXGA 4",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.4" }
+	]
+  },
+  {
+    "id": "PROJECTOR 5",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 5",
+    "desc": "Barco FL-35 WQXGA 5",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.5" }
+	]
+  },
+  {
+    "id": "PROJECTOR 6",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 6",
+    "desc": "Barco FL-35 WQXGA 6",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.6" }
+	]
+  },
+  {
+    "id": "PROJECTOR 7",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 7",
+    "desc": "Barco FL-35 WQXGA 7",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.7" }
+	]
+  },
+  {
+    "id": "PROJECTOR 8",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 8",
+    "desc": "Barco FL-35 WQXGA 8",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.8" }
+	]
+  },
+  {
+    "id": "PROJECTOR 9",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 9",
+    "desc": "Barco FL-35 WQXGA 9",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.9" }
+	]
+  },
+  {
+    "id": "PROJECTOR 10",
+    "category": "PROJECTORS",
+    "name": "PROJECTOR 10",
+    "desc": "Barco FL-35 WQXGA 10",
+    "ips": [
+	  { "label": "PRN", "ip": "169.254.36.10" }
+	]
+  },
+  {
+    "id": "NETGEAR PROCESSOR",
+    "category": "NETWORK",
+    "name": "NETGEAR PROCESSOR",
+    "desc": "Netgear Switch In Processor Rack",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.201" },
+	  { "label": "MSS", "ip": "20.0.0.201" },
+	  { "label": "RTN", "ip": "192.168.4.201" }
+	]
+  },
+  {
+    "id": "NETGEAR VISUAL 1",
+    "category": "NETWORK",
+    "name": "NETGEAR VISUAL 1",
+    "desc": "Netgear Switch In Visual Rack",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.202" },
+	  { "label": "MSS", "ip": "20.0.0.202" },
+	  { "label": "RTN", "ip": "192.168.4.202" }
+	]
+  },
+  {
+    "id": "NETGEAR VISUAL 2",
+    "category": "NETWORK",
+    "name": "NETGEAR VISUAL 2",
+    "desc": "Netgear Switch In Visual Rack",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.203" },
+	  { "label": "MSS", "ip": "20.0.0.203" }
+	]
+  },
+  {
+    "id": "NETGEAR DEBRIEFING",
+    "category": "NETWORK",
+    "name": "NETGEAR DEBRIEFING",
+    "desc": "Netgear Switch In Debriefing Rack",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.204" },
+	  { "label": "MSS", "ip": "20.0.0.204" },
+	  { "label": "RTN", "ip": "192.168.4.204" },
+	  { "label": "DBF", "ip": "192.168.7.204" }
+	]
+  },
+  {
+    "id": "NETGEAR SPACER 1",
+    "category": "NETWORK",
+    "name": "NETGEAR SPACER 1",
+    "desc": "Netgear Switch In Spacer Rack 1",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.205" },
+	  { "label": "RTN", "ip": "192.168.4.205" },
+	  { "label": "PRN", "ip": "169.254.36.205" }
+	]
+  },
+  {
+    "id": "NETGEAR SPACER 2",
+    "category": "NETWORK",
+    "name": "NETGEAR SPACER 2",
+    "desc": "Netgear Switch In Spacer Rack 2",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.99" },
+	  { "label": "PRN", "ip": "169.254.36.101" }
+	]
+  },
+  {
+    "id": "WIFI",
+    "category": "NETWORK",
+    "name": "WIFI",
+    "desc": "SPacer Wifi",
+    "ips": [
+	  { "label": "MTN", "ip": "172.120.1.1" }
+	]
   }
 ]

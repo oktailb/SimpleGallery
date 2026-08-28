@@ -219,28 +219,28 @@ class TelemetrySchema {
             'n2_eng2'      => round($n2e2, 1)
         ];
 
-        // 4. Autopilot Control Console (APC)
+        // 4. Autopilot Control Console (APC) - Mastered at exact offsets 104..119 in st_OUT
         $apc = [
-            'ap_off'   => $getBool('ltApOff'),
-            'trim_off' => $getBool('ltTrimOff'),
-            'test_on'  => $getBool('ltTestOn'),
-            'app_a'    => $getBool('ltAppA'),
-            'app_c'    => $getBool('ltAppC'),
-            'hdg'      => $getBool('ltHdg'),
-            'nav_a'    => $getBool('ltNavA'),
-            'nav_c'    => $getBool('ltNavC'),
-            'alt_a'    => $getBool('ltAltA'),
-            'bc_a'     => $getBool('ltBcA'),
-            'bc_c'     => $getBool('ltBcC'),
-            'gs_a'     => $getBool('ltGsA'),
-            'gs_c'     => $getBool('ltGsC'),
-            'vs_on'    => $getBool('ltVsOn'),
-            'ias'      => $getBool('ltIas'),
-            'alt'      => $getBool('ltAlt'),
-            'target_hdg' => round(fmod($hdg + 360.0, 360.0), 0),
-            'target_alt' => round($alt, 0),
-            'target_ias' => round($spd, 0),
-            'target_vs'  => 0
+            'ap_off'     => $getBool('ltAutopilotOff') || $getBool('ltApOff'),
+            'trim_off'   => $getBool('ltAutopilotTrimOff') || $getBool('ltTrimOff'),
+            'test_on'    => $getBool('ltAutopilotTestOn') || $getBool('ltTestOn'),
+            'app_a'      => $getBool('ltAutopilotAppA') || $getBool('ltAppA'),
+            'app_c'      => $getBool('ltAutopilotAppC') || $getBool('ltAppC'),
+            'hdg'        => $getBool('ltAutopilotHdgArrow') || $getBool('ltHdg'),
+            'nav_a'      => $getBool('ltAutopilotNavA') || $getBool('ltNavA'),
+            'nav_c'      => $getBool('ltAutopilotNavC') || $getBool('ltNavC'),
+            'alt_a'      => $getBool('ltAutopilotAltAArrow') || $getBool('ltAltA'),
+            'bc_a'       => $getBool('ltAutopilotBcA') || $getBool('ltBcA'),
+            'bc_c'       => $getBool('ltAutopilotBcC') || $getBool('ltBcC'),
+            'gs_a'       => $getBool('ltAutopilotGsA') || $getBool('ltGsA'),
+            'gs_c'       => $getBool('ltAutopilotGsC') || $getBool('ltGsC'),
+            'vs_on'      => $getBool('ltAutopilotVsOn') || $getBool('ltVsOn'),
+            'ias'        => $getBool('ltAutopilotIas') || $getBool('ltIas'),
+            'alt'        => $getBool('ltAutopilotAlt') || $getBool('ltAlt'),
+            'target_hdg' => null,
+            'target_alt' => null,
+            'target_ias' => null,
+            'target_vs'  => null
         ];
 
         // 5. Garmin Air Data & Fuel Computer Messages (Shadin / Garmin RS-232 format)
@@ -320,6 +320,12 @@ class TelemetrySchema {
             'outer_o'  => $getBool('ltOuterO') || $getBool('outer_o'),
             'middle_m' => $getBool('ltMiddleM') || $getBool('middle_m'),
         ];
+        $radioNav = [
+            'dme' => $dme,
+            'gps' => $gps,
+            'mbr' => $mbr
+        ];
+        $autopilot = $apc;
 
         // 6. Audio selectors (Mastered from st_icsOut: JAP_ICS_OUT[0] Pilot, JAP_ICS_OUT[1] Copilot)
         $audioPlt = [
@@ -431,6 +437,24 @@ class TelemetrySchema {
             'lights'         => $getBool('ltLightsOnOff'),
         ];
 
+        // 12. Circuit Breakers (Overhead Panel - 117 physical breakers mapped in st_OUT)
+        $circuitBreakers = [];
+        $trippedCount = 0;
+        foreach ($schema as $fName => $fMeta) {
+            if (strpos($fName, 'bkr') === 0) {
+                $isEngaged = $getBool($fName);
+                $circuitBreakers[$fName] = $isEngaged;
+                if (!$isEngaged) {
+                    $trippedCount++;
+                }
+            }
+        }
+        $cbSummary = [
+            'total'         => count($circuitBreakers),
+            'tripped_count' => $trippedCount,
+            'status'        => ($trippedCount === 0 ? 'ALL BUS OK' : "{$trippedCount} TRIPPED")
+        ];
+
         return [
             'success'          => true,
             'is_live'          => true,
@@ -459,6 +483,8 @@ class TelemetrySchema {
             'power_supply'     => $powerSupply,
             'sim_status'       => $simStatus,
             'instructor_panel' => $instructorPanel,
+            'circuit_breakers' => $circuitBreakers,
+            'cb_summary'       => $cbSummary,
             'xml_schema'       => [
                 'fields_loaded' => count($schema),
                 'total_bytes'   => self::$totalSize
