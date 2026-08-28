@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "icon": "🗺️",
   "author": "SimpleGallery Team",
-  "category": "utility",
+  "category": "viewer",
   "locales": {
     "fr": {
       "title": "Exploration Cartographique & Trajets GPS",
