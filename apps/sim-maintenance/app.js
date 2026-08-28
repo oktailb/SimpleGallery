@@ -125,21 +125,33 @@
         }
 
         async onLocaleChanged() {
-            var loc = this.getCurrentLocale();
-            await this.loadLocalLocale(loc);
-            if (this.win && typeof this.win.setTitle === 'function') {
-                this.win.setTitle('🛠️ ' + this.t('apps.sim-maintenance.title', 'Sim Maintenance') + ' — EC135 FFS');
-            }
-            if (this.container) {
-                this.renderLayout();
-                if (this.activeTab === 'checklists') {
-                    this.loadActiveChecklist();
-                } else if (this.activeTab === 'telemetry') {
-                    this.loadTelemetry();
-                    this.loadTelemetryHistory();
-                } else if (this.activeTab === 'archives') {
-                    this.loadArchives();
+            if (this._isChangingLocale) return;
+            this._isChangingLocale = true;
+            try {
+                var loc = this.getCurrentLocale();
+                await this.loadLocalLocale(loc);
+                if (this.win && typeof this.win.setTitle === 'function') {
+                    this.win.setTitle('🛠️ ' + this.t('apps.sim-maintenance.title', 'Sim Maintenance') + ' — EC135 FFS');
                 }
+                if (this.container) {
+                    this.renderLayout();
+                    if (this.activeTab === 'checklists') {
+                        this.loadActiveChecklist();
+                    } else if (this.activeTab === 'climate') {
+                        this.loadTelemetry();
+                        this.loadTelemetryHistory();
+                    } else if (this.activeTab === 'subsystems') {
+                        this.loadTelemetry();
+                    } else if (this.activeTab === 'network') {
+                        if (!this.networkData) {
+                            this.loadNetworkStatus();
+                        }
+                    } else if (this.activeTab === 'archives') {
+                        this.loadArchives();
+                    }
+                }
+            } finally {
+                this._isChangingLocale = false;
             }
         }
 
@@ -148,9 +160,15 @@
                 this.renderLayout();
                 if (this.activeTab === 'checklists') {
                     this.loadActiveChecklist();
-                } else if (this.activeTab === 'telemetry') {
+                } else if (this.activeTab === 'climate') {
                     this.loadTelemetry();
                     this.loadTelemetryHistory();
+                } else if (this.activeTab === 'subsystems') {
+                    this.loadTelemetry();
+                } else if (this.activeTab === 'network') {
+                    if (!this.networkData) {
+                        this.loadNetworkStatus();
+                    }
                 } else if (this.activeTab === 'archives') {
                     this.loadArchives();
                 }
@@ -1533,6 +1551,9 @@
                             <button class="sim-tab-btn ${this.activeTab === 'subsystems' ? 'active' : ''}" data-tab="subsystems">
                                 📡 ${this.t('sim_maint.tab_subsystems', 'FFS Telemetry & Systems')}
                             </button>
+                            <button class="sim-tab-btn ${this.activeTab === 'network' ? 'active' : ''}" data-tab="network">
+                                🌐 ${this.t('sim_maint.tab_network', 'Network Infrastructure')}
+                            </button>
                             <button class="sim-tab-btn ${this.activeTab === 'archives' ? 'active' : ''}" data-tab="archives">
                                 📁 ${this.t('sim_maint.tab_archives', 'Certified Archives')}
                             </button>
@@ -2581,7 +2602,14 @@
                         </div>
                     </div>
 
-                    <!-- Tab 4: Certified Archives -->
+                    <!-- Tab 4: Network & Hardware Infrastructure -->
+                    <div class="sim-tab-view ${this.activeTab === 'network' ? 'active' : ''}" id="sim-view-network">
+                        <div id="maint-network-container">
+                            ${this.getNetworkDashboardHtml(this.networkData)}
+                        </div>
+                    </div>
+
+                    <!-- Tab 5: Certified Archives -->
                     <div class="sim-tab-view ${this.activeTab === 'archives' ? 'active' : ''}" id="sim-view-archives">
                         <div class="archives-tree" id="maint-archives-tree">
                             <div style="color: var(--text-muted, #9ca3af); text-align: center; padding: 24px;">${this.t('sim_maint.loading_archives', 'Loading archived reports...')}</div>
@@ -2609,6 +2637,8 @@
         }
 
         bindEvents() {
+            this.bindNetworkEvents();
+
             var langBtns = this.container.querySelectorAll('.sim-lang-pill[data-lang]');
             for (var l = 0; l < langBtns.length; l++) {
                 (function (btn, self) {
@@ -3175,6 +3205,8 @@
                 this.loadTelemetryHistory();
             } else if (tabName === 'subsystems') {
                 this.startFastTelemetryPolling();
+            } else if (tabName === 'network') {
+                this.loadNetworkStatus();
             } else if (tabName === 'archives') {
                 this.loadArchives();
             } else if (tabName === 'checklists') {
@@ -5786,6 +5818,177 @@
                 console.error("Error loading archives", err);
                 tree.innerHTML = '<div style="color: #f87171; padding: 20px;">Failed to load archives.</div>';
             }
+        }
+
+        async loadNetworkStatus(isManual) {
+            var container = this.container ? this.container.querySelector('#maint-network-container') : null;
+            if (!container) return;
+
+            var pingBtn = this.container.querySelector('#net-btn-refresh-ping');
+            if (pingBtn && isManual) {
+                pingBtn.disabled = true;
+                pingBtn.innerHTML = '<span>⏳ <strong>Pinging...</strong></span>';
+            }
+
+            try {
+                var res = await fetch(this.getApiUrl('get_network_status'));
+                var data = await res.json();
+                if (data && data.success) {
+                    this.networkData = data;
+                    this.renderNetworkDashboard(data);
+                } else {
+                    container.innerHTML = '<div style="color: #f87171; padding: 30px; text-align: center;">❌ Failed to load network status: ' + (data && data.error ? data.error : 'Unknown error') + '</div>';
+                }
+            } catch (err) {
+                console.error("Error loading network status", err);
+                container.innerHTML = '<div style="color: #f87171; padding: 30px; text-align: center;">❌ Network error while scanning devices.</div>';
+            } finally {
+                if (pingBtn && isManual) {
+                    pingBtn.disabled = false;
+                    pingBtn.innerHTML = '<span>⚡ ' + this.t('sim_maint.net_refresh_btn', 'Scan All (Ping)') + '</span>';
+                }
+            }
+        }
+
+        getNetworkDashboardHtml(data) {
+            if (!data || !data.devices) {
+                return '<div style="color: var(--text-muted, #9ca3af); text-align: center; padding: 30px;">' + this.t('sim_maint.loading_network', 'Scanning simulator network devices (ICMP ping)...') + '</div>';
+            }
+
+            var summary = data.summary || { total_devices: 0, online_devices: 0, offline_devices: 0, availability_pct: 0 };
+            var pct = summary.availability_pct || 0;
+            var ringClass = (pct >= 90) ? '' : (pct >= 60 ? 'warning' : 'critical');
+            var ringIcon = (pct >= 90) ? '✓' : (pct >= 60 ? '⚠️' : '✕');
+
+            var filterText = this.netFilterText ? this.netFilterText.toLowerCase().trim() : '';
+
+            var categories = [
+                { id: 'core', title: '🖥️ ' + this.t('sim_maint.net_cat_core', 'Calculateurs Centraux & Avionique (Core & Avionics)') },
+                { id: 'visual', title: '🌐 ' + this.t('sim_maint.net_cat_visual', 'Générateurs Visuels & Alignement (Visual Systems)') },
+                { id: 'visual_channels', title: '📽️ ' + this.t('sim_maint.net_cat_channels', 'Canaux Visuels Projecteurs (VIS_01 à VIS_10)') },
+                { id: 'cameras', title: '📹 ' + this.t('sim_maint.net_cat_cameras', 'Caméras & Flux Vidéo Cockpit (Video Feeds & CAM)') }
+            ];
+
+            var self = this;
+            var renderCards = function(catId) {
+                var devs = data.devices.filter(function(d) {
+                    if (d.category !== catId) return false;
+                    if (!filterText) return true;
+                    var dDesc = self.t('sim_maint.dev_' + d.id + '_desc', d.desc || '');
+                    if (d.name.toLowerCase().indexOf(filterText) !== -1) return true;
+                    if (dDesc.toLowerCase().indexOf(filterText) !== -1) return true;
+                    if (d.desc && d.desc.toLowerCase().indexOf(filterText) !== -1) return true;
+                    if (d.ips && d.ips.some(function(ipObj) { return ipObj.ip.indexOf(filterText) !== -1; })) return true;
+                    return false;
+                });
+
+                if (devs.length === 0) {
+                    return '<div style="color: #64748b; font-size: 12px; font-style: italic; padding: 8px;">' + self.t('sim_maint.net_no_match', 'No devices found matching filter.') + '</div>';
+                }
+
+                return '<div class="net-grid-cards">' + devs.map(function(dev) {
+                    var isOnline = dev.is_online;
+                    var cardClass = isOnline ? 'net-device-card is-online' : 'net-device-card is-offline';
+                    var badgeClass = isOnline ? 'net-dev-badge online' : 'net-dev-badge offline';
+                    var badgeText = isOnline ? 'ONLINE' : (dev.ips && dev.ips.length === 0 ? 'N/A' : 'OFFLINE');
+                    var devDesc = self.t('sim_maint.dev_' + dev.id + '_desc', dev.desc || '');
+
+                    var ipRows = (dev.ips && dev.ips.length > 0) ? dev.ips.map(function(ipObj) {
+                        var ipOnline = (ipObj.status === 'online');
+                        var dotCls = ipOnline ? 'net-dot-indicator online' : 'net-dot-indicator offline';
+                        var latTxt = (ipOnline && ipObj.latency_ms !== null) ? (ipObj.latency_ms + ' ms') : (ipOnline ? '< 1 ms' : 'timeout');
+                        return '<div class="net-ip-row">' +
+                            '<div><span class="net-ip-lbl">' + (ipObj.label || 'LAN') + '</span><span class="net-ip-val">' + ipObj.ip + '</span></div>' +
+                            '<div class="net-ip-stat">' +
+                                '<span class="net-latency-pill">' + latTxt + '</span>' +
+                                '<div class="' + dotCls + '"></div>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('') : '<div style="color: #64748b; font-size: 11px; font-style: italic;">No IP configured</div>';
+
+                    return '<div class="' + cardClass + '">' +
+                        '<div class="net-card-top">' +
+                            '<div>' +
+                                '<div class="net-dev-name">' + dev.name + '</div>' +
+                                '<div class="net-dev-desc">' + devDesc + '</div>' +
+                            '</div>' +
+                            '<span class="' + badgeClass + '">' + badgeText + '</span>' +
+                        '</div>' +
+                        '<div class="net-ip-list">' + ipRows + '</div>' +
+                    '</div>';
+                }).join('') + '</div>';
+            };
+
+            return `
+                <div class="net-diag-container">
+                    <!-- Hero Status Bar -->
+                    <div class="net-diag-hero">
+                        <div class="net-diag-hero-left">
+                            <div class="net-status-ring-large ${ringClass}">${ringIcon}</div>
+                            <div>
+                                <div class="net-hero-title">
+                                    ${this.t('sim_maint.net_title', 'Disponibilité Réseau & Équipements Simulateur')}
+                                </div>
+                                <div class="net-hero-sub">
+                                    <strong>${summary.online_devices} / ${summary.total_devices}</strong> ${this.t('sim_maint.net_online_count', 'appareils joignables')} • <strong>${pct}%</strong> ${this.t('sim_maint.net_availability', 'disponibilité')} • ${data.date_str || ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="net-hero-actions">
+                            <input type="text" class="net-search-input" id="net-search-filter" placeholder="${this.t('sim_maint.net_filter_placeholder', '🔍 Filtrer par nom ou IP...')}" value="${this.netFilterText || ''}">
+                            <button type="button" class="net-hero-btn" id="net-btn-refresh-ping">
+                                <span>⚡ ${this.t('sim_maint.net_refresh_btn', 'Scanner (Ping)')}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Category Sections -->
+                    ${categories.map(function(cat) {
+                        return `
+                            <div class="net-section-box">
+                                <div class="net-section-hdr">
+                                    <span class="net-section-title-txt">${cat.title}</span>
+                                </div>
+                                ${renderCards(cat.id)}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        bindNetworkEvents() {
+            var container = this.container ? this.container.querySelector('#maint-network-container') : null;
+            if (!container) return;
+
+            var self = this;
+            var searchInput = container.querySelector('#net-search-filter');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    self.netFilterText = e.target.value;
+                    self.renderNetworkDashboard(self.networkData);
+                    var newInp = container.querySelector('#net-search-filter');
+                    if (newInp) {
+                        newInp.focus();
+                        newInp.setSelectionRange(newInp.value.length, newInp.value.length);
+                    }
+                });
+            }
+
+            var pingBtn = container.querySelector('#net-btn-refresh-ping');
+            if (pingBtn) {
+                pingBtn.addEventListener('click', function() {
+                    self.loadNetworkStatus(true);
+                });
+            }
+        }
+
+        renderNetworkDashboard(data) {
+            var container = this.container ? this.container.querySelector('#maint-network-container') : null;
+            if (!container) return;
+            container.innerHTML = this.getNetworkDashboardHtml(data);
+            this.bindNetworkEvents();
         }
     }
 

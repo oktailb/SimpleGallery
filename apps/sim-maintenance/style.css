@@ -5481,6 +5481,288 @@ input[type="date"].paper-input {
     transform: translateY(-2px);
 }
 
+/* ==========================================================================
+   NETWORK & INFRASTRUCTURE DIAGNOSTIC DASHBOARD
+   ========================================================================== */
+.net-diag-container {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1300px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.net-diag-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.net-diag-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.net-status-ring-large {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #22c55e, #15803d);
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+}
+
+.net-status-ring-large.warning {
+    background: radial-gradient(circle at 35% 35%, #f59e0b, #b45309);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+}
+
+.net-status-ring-large.critical {
+    background: radial-gradient(circle at 35% 35%, #ef4444, #991b1b);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+}
+
+.net-hero-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #f8fafc;
+    margin-bottom: 4px;
+}
+
+.net-hero-sub {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.net-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.net-search-input {
+    background: #090d16;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #f8fafc;
+    font-size: 12px;
+    width: 200px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.net-search-input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.net-hero-btn {
+    background: #0284c7;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.net-hero-btn:hover {
+    background: #0369a1;
+    transform: translateY(-1px);
+}
+
+.net-section-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.net-section-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 8px;
+}
+
+.net-section-title-txt {
+    font-size: 14px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.5px;
+}
+
+.net-grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.net-device-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s, border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+}
+
+.net-device-card:hover {
+    border-color: #475569;
+    transform: translateY(-2px);
+}
+
+.net-device-card.is-online {
+    border-left: 4px solid #22c55e;
+}
+
+.net-device-card.is-offline {
+    border-left: 4px solid #ef4444;
+}
+
+.net-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.net-dev-name {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 0.5px;
+}
+
+.net-dev-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.net-dev-badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.net-dev-badge.online {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.net-dev-badge.offline {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.net-dev-badge.checking {
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.net-ip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.net-ip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+    font-size: 11.5px;
+}
+
+.net-ip-lbl {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #64748b;
+    margin-right: 6px;
+    text-transform: uppercase;
+}
+
+.net-ip-val {
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+.net-ip-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.net-latency-pill {
+    font-size: 10px;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.net-dot-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #475569;
+}
+
+.net-dot-indicator.online {
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+}
+
+.net-dot-indicator.offline {
+    background: #ef4444;
+}
+
+.net-dot-indicator.checking {
+    background: #38bdf8;
+    animation: netPulse 1s infinite alternate;
+}
+
+@keyframes netPulse {
+    from { opacity: 0.4; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1.15); }
+}
+
 
 
 

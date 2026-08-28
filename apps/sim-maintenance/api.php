@@ -1229,6 +1229,209 @@ switch ($action) {
         echo json_encode(['success' => true, 'archives' => $archives]);
         break;
 
+    case 'get_network_status':
+        if (!function_exists('pingAllNetworkHosts')) {
+            function pingAllNetworkHosts() {
+                $hostsFile = __DIR__ . '/network_hosts.json';
+                if (!file_exists($hostsFile)) {
+                    return ['success' => false, 'error' => 'network_hosts.json not found'];
+                }
+
+                $devices = json_decode(file_get_contents($hostsFile), true);
+                if (!is_array($devices)) {
+                    return ['success' => false, 'error' => 'Invalid network_hosts.json'];
+                }
+
+                $isWin = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+                
+                // Collect distinct IP addresses to ping
+                $ipMap = [];
+                foreach ($devices as $dev) {
+                    if (!empty($dev['ips']) && is_array($dev['ips'])) {
+                        foreach ($dev['ips'] as $ipObj) {
+                            $ip = trim($ipObj['ip'] ?? '');
+                            if (!empty($ip) && filter_var($ip, FILTER_VALIDATE_IP)) {
+                                $ipMap[$ip] = [
+                                    'status' => 'offline',
+                                    'latency_ms' => null,
+                                    'packet_loss' => 100
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                $uniqueIps = array_keys($ipMap);
+                if (empty($uniqueIps)) {
+                    return [
+                        'success' => true,
+                        'timestamp' => microtime(true),
+                        'date_str' => date('Y-m-d H:i:s'),
+                        'summary' => ['total_devices' => count($devices), 'online_devices' => 0, 'offline_devices' => count($devices), 'availability_pct' => 0],
+                        'devices' => $devices
+                    ];
+                }
+
+                // Fast path 1: Check if fping is available on Linux
+                $fpingPath = null;
+                if (!$isWin) {
+                    foreach (['/usr/bin/fping', '/usr/sbin/fping', '/usr/local/bin/fping', 'fping'] as $cand) {
+                        if (is_executable($cand) || ($cand === 'fping' && @exec('which fping 2>/dev/null'))) {
+                            $fpingPath = $cand;
+                            break;
+                        }
+                    }
+                }
+
+                if ($fpingPath) {
+                    $ipListStr = implode(' ', array_map('escapeshellarg', $uniqueIps));
+                    $cmd = "{$fpingPath} -C 1 -q -t 250 {$ipListStr} 2>&1";
+                    $output = [];
+                    @exec($cmd, $output);
+                    foreach ($output as $line) {
+                        if (preg_match('/^([0-9\.]+)\s*:\s*([0-9\.\-]+)/', trim($line), $m)) {
+                            $ip = $m[1];
+                            $val = $m[2];
+                            if (isset($ipMap[$ip])) {
+                                if ($val !== '-' && is_numeric($val)) {
+                                    $ipMap[$ip]['status'] = 'online';
+                                    $ipMap[$ip]['latency_ms'] = round(floatval($val), 2);
+                                    $ipMap[$ip]['packet_loss'] = 0;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Fast path 2: Parallel proc_open standard ICMP ping
+                    $descriptors = [
+                        0 => ['pipe', 'r'],
+                        1 => ['pipe', 'w'],
+                        2 => ['pipe', 'w']
+                    ];
+                    $processes = [];
+
+                    foreach ($uniqueIps as $ip) {
+                        if ($isWin) {
+                            $cmd = "ping -n 1 -w 300 " . escapeshellarg($ip);
+                        } else {
+                            $cmd = "ping -c 1 -W 1 " . escapeshellarg($ip);
+                        }
+                        $proc = @proc_open($cmd, $descriptors, $pipes);
+                        if (is_resource($proc)) {
+                            @fclose($pipes[0]);
+                            stream_set_blocking($pipes[1], false);
+                            stream_set_blocking($pipes[2], false);
+                            $processes[$ip] = [
+                                'proc' => $proc,
+                                'pipes' => $pipes,
+                                't0' => microtime(true),
+                                'output' => ''
+                            ];
+                        }
+                    }
+
+                    // Wait for all non-blocking ping processes concurrently (max 650ms timeout)
+                    $tDeadline = microtime(true) + 0.65;
+                    while (!empty($processes) && microtime(true) < $tDeadline) {
+                        foreach ($processes as $ip => &$pInfo) {
+                            $chunk = @fread($pInfo['pipes'][1], 4096);
+                            if ($chunk !== false && strlen($chunk) > 0) {
+                                $pInfo['output'] .= $chunk;
+                            }
+                            $status = @proc_get_status($pInfo['proc']);
+                            if (!$status['running']) {
+                                $rem = @stream_get_contents($pInfo['pipes'][1]);
+                                if ($rem) $pInfo['output'] .= $rem;
+                                @fclose($pInfo['pipes'][1]);
+                                @fclose($pInfo['pipes'][2]);
+                                @proc_close($pInfo['proc']);
+
+                                $out = $pInfo['output'];
+                                if ($isWin) {
+                                    if (preg_match('/time[=<]([0-9]+)ms/i', $out, $m) || preg_match('/temps[=<]([0-9]+)ms/i', $out, $m)) {
+                                        $ipMap[$ip]['status'] = 'online';
+                                        $ipMap[$ip]['latency_ms'] = (float)$m[1];
+                                        $ipMap[$ip]['packet_loss'] = 0;
+                                    } elseif (stripos($out, 'TTL=') !== false) {
+                                        $ipMap[$ip]['status'] = 'online';
+                                        $ipMap[$ip]['latency_ms'] = round((microtime(true) - $pInfo['t0']) * 1000, 1);
+                                        $ipMap[$ip]['packet_loss'] = 0;
+                                    }
+                                } else {
+                                    if (preg_match('/time=([0-9\.]+)\s*ms/i', $out, $m)) {
+                                        $ipMap[$ip]['status'] = 'online';
+                                        $ipMap[$ip]['latency_ms'] = round((float)$m[1], 2);
+                                        $ipMap[$ip]['packet_loss'] = 0;
+                                    } elseif (preg_match('/rtt min\/avg\/max\/mdev = [0-9\.]+\/([0-9\.]+)\//i', $out, $m)) {
+                                        $ipMap[$ip]['status'] = 'online';
+                                        $ipMap[$ip]['latency_ms'] = round((float)$m[1], 2);
+                                        $ipMap[$ip]['packet_loss'] = 0;
+                                    } elseif (stripos($out, '1 received') !== false || stripos($out, '1 packets received') !== false) {
+                                        $ipMap[$ip]['status'] = 'online';
+                                        $ipMap[$ip]['latency_ms'] = round((microtime(true) - $pInfo['t0']) * 1000, 2);
+                                        $ipMap[$ip]['packet_loss'] = 0;
+                                    }
+                                }
+                                unset($processes[$ip]);
+                            }
+                        }
+                        usleep(5000); // 5ms sleep between poll ticks
+                    }
+
+                    // Cleanup any remaining processes
+                    foreach ($processes as $ip => $pInfo) {
+                        @fclose($pInfo['pipes'][1]);
+                        @fclose($pInfo['pipes'][2]);
+                        @proc_terminate($pInfo['proc']);
+                        @proc_close($pInfo['proc']);
+                    }
+                }
+
+                // Merge ping results into devices list
+                $totalDevices = count($devices);
+                $onlineDevices = 0;
+                $offlineDevices = 0;
+
+                foreach ($devices as &$dev) {
+                    $isDeviceOnline = false;
+                    if (!empty($dev['ips']) && is_array($dev['ips'])) {
+                        foreach ($dev['ips'] as &$ipObj) {
+                            $ip = trim($ipObj['ip'] ?? '');
+                            if (isset($ipMap[$ip])) {
+                                $ipObj['status'] = $ipMap[$ip]['status'];
+                                $ipObj['latency_ms'] = $ipMap[$ip]['latency_ms'];
+                                if ($ipMap[$ip]['status'] === 'online') {
+                                    $isDeviceOnline = true;
+                                }
+                            } else {
+                                $ipObj['status'] = 'unconfigured';
+                                $ipObj['latency_ms'] = null;
+                            }
+                        }
+                    }
+                    $dev['is_online'] = $isDeviceOnline;
+                    if ($isDeviceOnline) $onlineDevices++;
+                    else $offlineDevices++;
+                }
+
+                return [
+                    'success' => true,
+                    'timestamp' => microtime(true),
+                    'date_str' => date('Y-m-d H:i:s'),
+                    'summary' => [
+                        'total_devices' => $totalDevices,
+                        'online_devices' => $onlineDevices,
+                        'offline_devices' => $offlineDevices,
+                        'availability_pct' => ($totalDevices > 0) ? round(($onlineDevices / $totalDevices) * 100, 1) : 0
+                    ],
+                    'devices' => $devices
+                ];
+            }
+        }
+
+        echo json_encode(pingAllNetworkHosts(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Unknown action.']);
         break;

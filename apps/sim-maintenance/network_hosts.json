@@ -1,0 +1,254 @@
+[
+  {
+    "id": "host",
+    "category": "core",
+    "name": "HOST",
+    "desc": "Calculateur Central Temps Réel (Indra FFS)",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.3" },
+      { "label": "Aux LAN", "ip": "192.168.7.69" }
+    ]
+  },
+  {
+    "id": "dbf",
+    "category": "core",
+    "name": "DBF (Local Web)",
+    "desc": "Serveur Web & Base de Données (Hôte actuel)",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.253" },
+      { "label": "Aux LAN", "ip": "192.168.7.100" }
+    ]
+  },
+  {
+    "id": "maint",
+    "category": "core",
+    "name": "MAINTENANCE",
+    "desc": "Poste Maintenance & Ingénierie",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.69" },
+      { "label": "Aux LAN", "ip": "192.168.7.69" }
+    ]
+  },
+  {
+    "id": "ios",
+    "category": "core",
+    "name": "IOS",
+    "desc": "Poste Instructeur (Instructor Operator Station)",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.2" },
+      { "label": "Aux LAN", "ip": "192.168.7.69" }
+    ]
+  },
+  {
+    "id": "rtio",
+    "category": "core",
+    "name": "RTIO",
+    "desc": "Baie Entrées / Sorties Temps Réel",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.7" }
+    ]
+  },
+  {
+    "id": "cls",
+    "category": "core",
+    "name": "CLS",
+    "desc": "Système de Restitution d'Efforts Commandes de Vol",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.10" }
+    ]
+  },
+  {
+    "id": "sound",
+    "category": "core",
+    "name": "SOUND/COMMS",
+    "desc": "Générateur Audio & Interphonie Cockpit / IOS",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.8" },
+      { "label": "Aux LAN", "ip": "192.168.7.8" }
+    ]
+  },
+  {
+    "id": "instr",
+    "category": "core",
+    "name": "INSTRUMENTS",
+    "desc": "Générateur Écrans & Instruments Cockpit",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.211" },
+      { "label": "Aux LAN", "ip": "192.168.7.211" }
+    ]
+  },
+  {
+    "id": "motion",
+    "category": "core",
+    "name": "MOTION",
+    "desc": "Système de Mouvement Plateforme Vérins",
+    "ips": []
+  },
+  {
+    "id": "vis_master",
+    "category": "visual",
+    "name": "VIS_MASTER",
+    "desc": "Serveur Maître Générateur Visuel",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.100" }
+    ]
+  },
+  {
+    "id": "vis_align",
+    "category": "visual",
+    "name": "VIS_ALIGN",
+    "desc": "Serveur Alignement & Calibrage Projecteurs",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.11" }
+    ]
+  },
+  {
+    "id": "stealthview",
+    "category": "visual",
+    "name": "STEALTHVIEW",
+    "desc": "Station Visualisation Tactique StealthView",
+    "ips": [
+      { "label": "Sim LAN", "ip": "172.120.1.111" }
+    ]
+  },
+  {
+    "id": "vis_01",
+    "category": "visual_channels",
+    "name": "VIS_01",
+    "desc": "Générateur Canal Visuel 01",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.101" }]
+  },
+  {
+    "id": "vis_02",
+    "category": "visual_channels",
+    "name": "VIS_02",
+    "desc": "Générateur Canal Visuel 02",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.102" }]
+  },
+  {
+    "id": "vis_03",
+    "category": "visual_channels",
+    "name": "VIS_03",
+    "desc": "Générateur Canal Visuel 03",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.103" }]
+  },
+  {
+    "id": "vis_04",
+    "category": "visual_channels",
+    "name": "VIS_04",
+    "desc": "Générateur Canal Visuel 04",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.104" }]
+  },
+  {
+    "id": "vis_05",
+    "category": "visual_channels",
+    "name": "VIS_05",
+    "desc": "Générateur Canal Visuel 05",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.105" }]
+  },
+  {
+    "id": "vis_06",
+    "category": "visual_channels",
+    "name": "VIS_06",
+    "desc": "Générateur Canal Visuel 06",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.106" }]
+  },
+  {
+    "id": "vis_07",
+    "category": "visual_channels",
+    "name": "VIS_07",
+    "desc": "Générateur Canal Visuel 07",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.107" }]
+  },
+  {
+    "id": "vis_08",
+    "category": "visual_channels",
+    "name": "VIS_08",
+    "desc": "Générateur Canal Visuel 08",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.108" }]
+  },
+  {
+    "id": "vis_09",
+    "category": "visual_channels",
+    "name": "VIS_09",
+    "desc": "Générateur Canal Visuel 09",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.109" }]
+  },
+  {
+    "id": "vis_10",
+    "category": "visual_channels",
+    "name": "VIS_10",
+    "desc": "Générateur Canal Visuel 10",
+    "ips": [{ "label": "Sim LAN", "ip": "172.120.1.110" }]
+  },
+  {
+    "id": "cam_mfd1",
+    "category": "cameras",
+    "name": "CAM_MFD1",
+    "desc": "Caméra Vidéo MFD 1 (Pilote)",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.101" }]
+  },
+  {
+    "id": "cam_mfd2",
+    "category": "cameras",
+    "name": "CAM_MFD2",
+    "desc": "Caméra Vidéo MFD 2 (Pilote)",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.102" }]
+  },
+  {
+    "id": "cam_mfd3",
+    "category": "cameras",
+    "name": "CAM_MFD3",
+    "desc": "Caméra Vidéo MFD 3 (Central)",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.103" }]
+  },
+  {
+    "id": "cam_mfd4",
+    "category": "cameras",
+    "name": "CAM_MFD4",
+    "desc": "Caméra Vidéo MFD 4 (Copilote)",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.104" }]
+  },
+  {
+    "id": "cam_mfd5",
+    "category": "cameras",
+    "name": "CAM_MFD5",
+    "desc": "Caméra Vidéo MFD 5 (Copilote)",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.105" }]
+  },
+  {
+    "id": "cam_mfd6",
+    "category": "cameras",
+    "name": "CAM_MFD6",
+    "desc": "Caméra Vidéo MFD 6 (Aux)",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.106" }]
+  },
+  {
+    "id": "cam_stealth",
+    "category": "cameras",
+    "name": "CAM_STEALTH",
+    "desc": "Caméra Vue Furtive / Vue Tactique",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.107" }]
+  },
+  {
+    "id": "cam_inst",
+    "category": "cameras",
+    "name": "CAM_INST",
+    "desc": "Caméra Vue Pupitre Instructeur",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.108" }]
+  },
+  {
+    "id": "cam_cockpit",
+    "category": "cameras",
+    "name": "CAM_COCKPIT",
+    "desc": "Caméra Ambiance Cabine Cockpit",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.109" }]
+  },
+  {
+    "id": "cam_exterior",
+    "category": "cameras",
+    "name": "CAM_EXTERIOR",
+    "desc": "Caméra Vue Extérieure Simulateur",
+    "ips": [{ "label": "Cam LAN", "ip": "192.168.7.109" }]
+  }
+]
