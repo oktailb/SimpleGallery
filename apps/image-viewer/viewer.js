@@ -365,7 +365,7 @@
 
       img.onerror = () => {
         ctx.showLoading(false);
-        ctx.showToast(ctx.t('editor.load_error') || "⚠️ Impossible de charger l'image pour l'édition.", 'error');
+        ctx.showToast(ctx.t('editor.load_error'), 'error');
       };
 
       img.src = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
@@ -847,7 +847,7 @@
           this.closeSaveChoiceModal();
           this.closeImageEditor();
           if (currentCtx && typeof currentCtx.showToast === 'function') {
-            currentCtx.showToast(json.message || 'Image enregistrée avec succès !', 'success');
+            currentCtx.showToast(json.message || ctx.t('editor.save_success'), 'success');
           }
 
           // Reload gallery directory to display new/updated image
@@ -867,11 +867,11 @@
             }
           }
         } else {
-          ctx.showToast('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde.'), 'error');
+          ctx.showToast('⚠️ ' + (json.error || ctx.t('editor.save_error')), 'error');
         }
       } catch (err) {
         ctx.showLoading(false);
-        ctx.showToast('⚠️ Erreur réseau lors de la sauvegarde : ' + err.message, 'error');
+        ctx.showToast('⚠️ ' + ctx.t('editor.network_error') + ': ' + err.message, 'error');
       }
     }
   };

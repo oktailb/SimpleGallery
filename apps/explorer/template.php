@@ -7,27 +7,27 @@
 <template id="explorerAppTemplate">
   <!-- Explorer Application Workspace (Mounted inside WebOS Window) -->
   <div class="webos-explorer-container">
-    <!-- Breadcrumbs Navigation Bar (Moved above filter pills for maximum readability) -->
+    <!-- Breadcrumbs Navigation Bar -->
     <div class="breadcrumbs-container">
       <nav class="breadcrumbs" aria-label="Breadcrumb Navigation">
-        <span class="crumb-item crumb-active crumb-root-item" title="Stockage (Racine)"><span class="crumb-root-icon" aria-hidden="true">💾</span> <span class="crumb-root-name" data-i18n="nav.root">Stockage</span></span>
+        <span class="crumb-item crumb-active crumb-root-item" data-i18n-title="nav.root" title="<?php echo htmlspecialchars(__t('nav.root'), ENT_QUOTES, 'UTF-8'); ?>"><span class="crumb-root-icon" aria-hidden="true">💾</span> <span class="crumb-root-name" data-i18n="nav.root"><?php echo htmlspecialchars(__t('nav.root'), ENT_QUOTES, 'UTF-8'); ?></span></span>
       </nav>
     </div>
 
     <!-- Filter Pills Bar -->
     <div class="filter-bar">
       <div class="filter-pills">
-        <button class="pill-btn active" data-category="all" data-i18n="view.filter_all">Tout</button>
-        <button class="pill-btn" data-category="image" data-i18n="view.filter_images">Photos</button>
-        <button class="pill-btn" data-category="video" data-i18n="view.filter_videos">Vidéos</button>
-        <button class="pill-btn" data-category="audio" data-i18n="view.filter_audio">Audio</button>
-        <button class="pill-btn" data-category="doc" data-i18n="view.filter_docs">Documents</button>
-        <button class="pill-btn" data-category="archive" data-i18n="view.filter_archives">Archives</button>
+        <button class="pill-btn active" data-category="all" data-i18n="view.filter_all"><?php echo htmlspecialchars(__t('view.filter_all'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button class="pill-btn" data-category="image" data-i18n="view.filter_images"><?php echo htmlspecialchars(__t('view.filter_images'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button class="pill-btn" data-category="video" data-i18n="view.filter_videos"><?php echo htmlspecialchars(__t('view.filter_videos'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button class="pill-btn" data-category="audio" data-i18n="view.filter_audio"><?php echo htmlspecialchars(__t('view.filter_audio'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button class="pill-btn" data-category="doc" data-i18n="view.filter_docs"><?php echo htmlspecialchars(__t('view.filter_docs'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button class="pill-btn" data-category="archive" data-i18n="view.filter_archives"><?php echo htmlspecialchars(__t('view.filter_archives'), ENT_QUOTES, 'UTF-8'); ?></button>
       </div>
 
-      <div class="gallery-stats" data-i18n="stats.loading">Chargement...</div>
-      <button type="button" class="folder-map-btn" style="display: none;" title="Explorer la carte et le trajet GPS interactif des photos du dossier" data-i18n-title="nav.map">
-        🗺️ <span data-i18n="nav.map">Carte GPS</span>
+      <div class="gallery-stats" data-i18n="stats.loading"><?php echo htmlspecialchars(__t('stats.loading'), ENT_QUOTES, 'UTF-8'); ?></div>
+      <button type="button" class="folder-map-btn" style="display: none;" data-i18n-title="nav.map">
+        🗺️ <span data-i18n="nav.map"><?php echo htmlspecialchars(__t('nav.map'), ENT_QUOTES, 'UTF-8'); ?></span>
       </button>
     </div>
 
@@ -40,39 +40,39 @@
           <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
             <span style="font-size: 1.5rem; line-height: 1;">⚠️</span>
             <div>
-              <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem; color: #fef08a;">
-                Diagnostic Stockage : Mode Fallback Racine Actif
+              <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem; color: #fef08a;" data-i18n="storage.diag_fallback_title">
+                <?php echo htmlspecialchars(__t('storage.diag_fallback_title'), ENT_QUOTES, 'UTF-8'); ?>
               </div>
               <div style="font-size: 0.85rem; line-height: 1.4; color: #fde68a;">
                 <?php echo htmlspecialchars($storage_status['reason'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
               </div>
               <div style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.9; display: flex; flex-direction: column; gap: 0.2rem; font-family: ui-monospace, monospace;">
-                <div>📁 <strong>Dossier configuré ($storage_media_dir) :</strong> <?php echo htmlspecialchars($storage_status['configured_path'], ENT_QUOTES, 'UTF-8'); ?></div>
-                <div>📍 <strong>Dossier exploré ($real_base_dir) :</strong> <?php echo htmlspecialchars($storage_status['active_path'], ENT_QUOTES, 'UTF-8'); ?></div>
+                <div>📁 <strong data-i18n="storage.diag_configured"><?php echo htmlspecialchars(__t('storage.diag_configured'), ENT_QUOTES, 'UTF-8'); ?></strong> <?php echo htmlspecialchars($storage_status['configured_path'], ENT_QUOTES, 'UTF-8'); ?></div>
+                <div>📍 <strong data-i18n="storage.diag_explored"><?php echo htmlspecialchars(__t('storage.diag_explored'), ENT_QUOTES, 'UTF-8'); ?></strong> <?php echo htmlspecialchars($storage_status['active_path'], ENT_QUOTES, 'UTF-8'); ?></div>
               </div>
-              <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #cbd5e1;">
-                💡 <em>Pour utiliser le dossier dédié, créez le dossier <code>storage/media/</code> ou modifiez <code>$storage_media_dir</code> dans <code>config/config.php</code>.</em>
+              <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #cbd5e1;" data-i18n="storage.diag_hint">
+                💡 <em><?php echo htmlspecialchars(__t('storage.diag_hint'), ENT_QUOTES, 'UTF-8'); ?></em>
               </div>
             </div>
           </div>
-          <button type="button" onclick="this.closest('.storage-diagnostic-banner').style.display='none';" style="background: none; border: none; color: #fef08a; font-size: 1.2rem; cursor: pointer; padding: 0.2rem 0.5rem;" title="Fermer">✕</button>
+          <button type="button" onclick="this.closest('.storage-diagnostic-banner').style.display='none';" style="background: none; border: none; color: #fef08a; font-size: 1.2rem; cursor: pointer; padding: 0.2rem 0.5rem;" data-i18n-title="lightbox.close">✕</button>
         </div>
       <?php endif; ?>
 
       <!-- Search Active Results Banner -->
       <div class="search-results-banner" style="display: none;">
         <div class="search-results-left">
-          <span class="search-results-badge" data-i18n="search.badge">🔍 Recherche</span>
-          <span class="search-results-count-text search-results-text" data-i18n="search.results_found">Résultats trouvés</span>
+          <span class="search-results-badge" data-i18n="search.badge"><?php echo htmlspecialchars(__t('search.badge'), ENT_QUOTES, 'UTF-8'); ?></span>
+          <span class="search-results-count-text search-results-text" data-i18n="search.results_found"><?php echo htmlspecialchars(__t('search.results_found'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
-        <button type="button" class="exit-search-btn" title="Quitter la recherche et revenir à la navigation du dossier" data-i18n-title="search.exit_title">
-          <span data-i18n="search.exit_btn">✕ Quitter la recherche</span>
+        <button type="button" class="exit-search-btn" data-i18n-title="search.exit_title">
+          <span data-i18n="search.exit_btn"><?php echo htmlspecialchars(__t('search.exit_btn'), ENT_QUOTES, 'UTF-8'); ?></span>
         </button>
       </div>
 
       <!-- Subfolders Section -->
       <section class="folder-section" style="display: none;">
-        <h2 class="section-title">📂 <span data-i18n="nav.subfolders">Sous-dossiers</span></h2>
+        <h2 class="section-title">📂 <span data-i18n="nav.subfolders"><?php echo htmlspecialchars(__t('nav.subfolders'), ENT_QUOTES, 'UTF-8'); ?></span></h2>
         <div class="folders-grid"></div>
       </section>
 
@@ -84,138 +84,138 @@
       <!-- Loading State -->
       <div class="loading-spinner">
         <div class="spinner"></div>
-        <p data-i18n="stats.indexing">Indexation des fichiers médias...</p>
+        <p data-i18n="stats.indexing"><?php echo htmlspecialchars(__t('stats.indexing'), ENT_QUOTES, 'UTF-8'); ?></p>
       </div>
 
       <!-- Empty State -->
       <div class="empty-state" style="display: none;">
         <div class="empty-state-icon">📂</div>
-        <h3 data-i18n="stats.empty">Ce dossier ne contient aucun fichier média.</h3>
-        <p data-i18n="stats.drag_drop_hint">Glissez-déposez des fichiers ici pour les ajouter.</p>
+        <h3 data-i18n="stats.empty"><?php echo htmlspecialchars(__t('stats.empty'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p data-i18n="stats.drag_drop_hint"><?php echo htmlspecialchars(__t('stats.drag_drop_hint'), ENT_QUOTES, 'UTF-8'); ?></p>
         <div style="margin-top: 0.75rem; font-size: 0.82rem; color: var(--text-muted); opacity: 0.85;">
-          📁 Emplacement exploré : <code><?php echo htmlspecialchars($storage_status['active_path'], ENT_QUOTES, 'UTF-8'); ?></code>
+          📁 <span data-i18n="stats.explored_location"><?php echo htmlspecialchars(__t('stats.explored_location'), ENT_QUOTES, 'UTF-8'); ?></span> : <code><?php echo htmlspecialchars($storage_status['active_path'], ENT_QUOTES, 'UTF-8'); ?></code>
         </div>
       </div>
     </main>
 
     <!-- Floating Multi-Selection Action Toolbar -->
     <div class="selection-toolbar" style="display: none;">
-      <span class="selection-toolbar-count">0 élément(s) sélectionné(s)</span>
-      <button type="button" class="selection-info-btn selection-btn" data-i18n="lightbox.metadata_btn">ℹ️ Propriétés</button>
-      <button type="button" class="selection-select-all-btn selection-btn" data-i18n="selection.select_all">Tout sélectionner</button>
-      <button type="button" class="selection-clear-btn selection-btn" data-i18n="selection.clear">Désélectionner tout</button>
+      <span class="selection-toolbar-count"></span>
+      <button type="button" class="selection-info-btn selection-btn" data-i18n="lightbox.metadata_btn"><?php echo htmlspecialchars(__t('lightbox.metadata_btn'), ENT_QUOTES, 'UTF-8'); ?></button>
+      <button type="button" class="selection-select-all-btn selection-btn" data-i18n="selection.select_all"><?php echo htmlspecialchars(__t('selection.select_all'), ENT_QUOTES, 'UTF-8'); ?></button>
+      <button type="button" class="selection-clear-btn selection-btn" data-i18n="selection.clear"><?php echo htmlspecialchars(__t('selection.clear'), ENT_QUOTES, 'UTF-8'); ?></button>
     </div>
 
     <!-- Google Drive Style Advanced Search Modal -->
     <div class="search-modal search-modal-backdrop" style="display: none;">
       <div class="search-modal-card">
         <div class="gdrive-modal-header">
-          <h3 class="gdrive-modal-title" data-i18n="adv_search.title">Recherche avancée</h3>
-          <button type="button" class="search-modal-close-btn gdrive-modal-close" title="Fermer (Échap)" data-i18n-title="common.close">✕</button>
+          <h3 class="gdrive-modal-title" data-i18n="adv_search.title"><?php echo htmlspecialchars(__t('adv_search.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+          <button type="button" class="search-modal-close-btn gdrive-modal-close" data-i18n-title="lightbox.close">✕</button>
         </div>
 
         <form class="search-advanced-form gdrive-search-form">
           <!-- Row 1: Type -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="sort.title">Type</label>
+            <label class="gdrive-form-label" data-i18n="sort.title"><?php echo htmlspecialchars(__t('sort.title'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control">
               <select class="adv-search-category gdrive-select">
-                <option value="all" data-i18n="adv_search.type_all">Tout</option>
-                <option value="image" data-i18n="adv_search.type_image">Photos (Images)</option>
-                <option value="video" data-i18n="adv_search.type_video">Vidéos</option>
-                <option value="audio" data-i18n="adv_search.type_audio">Audio / Musique</option>
-                <option value="doc" data-i18n="view.filter_docs">Documents</option>
-                <option value="archive" data-i18n="view.filter_archives">Archives</option>
+                <option value="all" data-i18n="adv_search.type_all"><?php echo htmlspecialchars(__t('adv_search.type_all'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="image" data-i18n="adv_search.type_image"><?php echo htmlspecialchars(__t('adv_search.type_image'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="video" data-i18n="adv_search.type_video"><?php echo htmlspecialchars(__t('adv_search.type_video'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="audio" data-i18n="adv_search.type_audio"><?php echo htmlspecialchars(__t('adv_search.type_audio'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="doc" data-i18n="view.filter_docs"><?php echo htmlspecialchars(__t('view.filter_docs'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="archive" data-i18n="view.filter_archives"><?php echo htmlspecialchars(__t('view.filter_archives'), ENT_QUOTES, 'UTF-8'); ?></option>
               </select>
             </div>
           </div>
 
           <!-- Row 2: Nom de l'élément -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="sort.name">Nom de l'élément</label>
+            <label class="gdrive-form-label" data-i18n="sort.name"><?php echo htmlspecialchars(__t('sort.name'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control">
-              <input type="text" class="adv-search-name gdrive-input" placeholder="Saisissez un terme figurant dans le nom du fichier" data-i18n-placeholder="nav.search_placeholder">
+              <input type="text" class="adv-search-name gdrive-input" data-i18n-placeholder="nav.search_placeholder" placeholder="<?php echo htmlspecialchars(__t('nav.search_placeholder'), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
           </div>
 
           <!-- Row 3: Contient les mots -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="comment.title">Contient les mots</label>
+            <label class="gdrive-form-label" data-i18n="comment.title"><?php echo htmlspecialchars(__t('comment.title'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control">
-              <input type="text" class="adv-search-words gdrive-input" placeholder="Saisissez des mots figurant dans la légende ou description" data-i18n-placeholder="comment.placeholder">
+              <input type="text" class="adv-search-words gdrive-input" data-i18n-placeholder="comment.placeholder" placeholder="<?php echo htmlspecialchars(__t('comment.placeholder'), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
           </div>
 
           <!-- Row 4: Emplacement -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="common.search">Emplacement</label>
+            <label class="gdrive-form-label" data-i18n="common.search"><?php echo htmlspecialchars(__t('common.search'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control">
               <select class="adv-search-location gdrive-select">
-                <option value="everywhere" data-i18n="adv_search.loc_everywhere">Partout (recherche récursive dans tous les sous-dossiers)</option>
-                <option value="current" data-i18n="adv_search.loc_current">Dans ce dossier uniquement</option>
+                <option value="everywhere" data-i18n="adv_search.loc_everywhere"><?php echo htmlspecialchars(__t('adv_search.loc_everywhere'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="current" data-i18n="adv_search.loc_current"><?php echo htmlspecialchars(__t('adv_search.loc_current'), ENT_QUOTES, 'UTF-8'); ?></option>
               </select>
             </div>
           </div>
 
           <!-- Row 5: Date -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="sort.date">Date</label>
+            <label class="gdrive-form-label" data-i18n="sort.date"><?php echo htmlspecialchars(__t('sort.date'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control">
               <select class="adv-search-timing gdrive-select">
-                <option value="all" data-i18n="adv_search.time_all">N'importe quand</option>
-                <option value="today" data-i18n="adv_search.time_today">Aujourd'hui</option>
-                <option value="week" data-i18n="adv_search.time_week">7 derniers jours</option>
-                <option value="month" data-i18n="adv_search.time_month">30 derniers jours</option>
-                <option value="year" data-i18n="adv_search.time_year">Cette année</option>
-                <option value="custom" data-i18n="adv_search.time_custom">Période personnalisée...</option>
+                <option value="all" data-i18n="adv_search.time_all"><?php echo htmlspecialchars(__t('adv_search.time_all'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="today" data-i18n="adv_search.time_today"><?php echo htmlspecialchars(__t('adv_search.time_today'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="week" data-i18n="adv_search.time_week"><?php echo htmlspecialchars(__t('adv_search.time_week'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="month" data-i18n="adv_search.time_month"><?php echo htmlspecialchars(__t('adv_search.time_month'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="year" data-i18n="adv_search.time_year"><?php echo htmlspecialchars(__t('adv_search.time_year'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="custom" data-i18n="adv_search.time_custom"><?php echo htmlspecialchars(__t('adv_search.time_custom'), ENT_QUOTES, 'UTF-8'); ?></option>
               </select>
             </div>
           </div>
 
-          <!-- Row 5b: Custom Date Range (hidden by default) -->
+          <!-- Row 5b: Custom Date Range -->
           <div class="adv-search-custom-date-row gdrive-form-row" style="display: none;">
-            <label class="gdrive-form-label" data-i18n="adv_search.date_range">Période</label>
+            <label class="gdrive-form-label" data-i18n="adv_search.date_range"><?php echo htmlspecialchars(__t('adv_search.date_range'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control gdrive-date-range">
-              <span class="gdrive-date-label" data-i18n="adv_search.date_from">Du</span>
+              <span class="gdrive-date-label" data-i18n="adv_search.date_from"><?php echo htmlspecialchars(__t('adv_search.date_from'), ENT_QUOTES, 'UTF-8'); ?></span>
               <input type="date" class="adv-search-date-from gdrive-input gdrive-date-input">
-              <span class="gdrive-date-label" data-i18n="adv_search.date_to">Au</span>
+              <span class="gdrive-date-label" data-i18n="adv_search.date_to"><?php echo htmlspecialchars(__t('adv_search.date_to'), ENT_QUOTES, 'UTF-8'); ?></span>
               <input type="date" class="adv-search-date-to gdrive-input gdrive-date-input">
             </div>
           </div>
 
           <!-- Row 6: Taille -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="sort.size">Taille</label>
+            <label class="gdrive-form-label" data-i18n="sort.size"><?php echo htmlspecialchars(__t('sort.size'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control">
               <select class="adv-search-size gdrive-select">
-                <option value="all" data-i18n="adv_search.size_all">N'importe quelle taille</option>
-                <option value="small" data-i18n="adv_search.size_small">Petite (&lt; 1 Mo)</option>
-                <option value="medium" data-i18n="adv_search.size_medium">Moyenne (1 Mo à 10 Mo)</option>
-                <option value="large" data-i18n="adv_search.size_large">Grande (10 Mo à 50 Mo)</option>
-                <option value="xlarge" data-i18n="adv_search.size_xlarge">Très grande (&gt; 50 Mo)</option>
+                <option value="all" data-i18n="adv_search.size_all"><?php echo htmlspecialchars(__t('adv_search.size_all'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="small" data-i18n="adv_search.size_small"><?php echo htmlspecialchars(__t('adv_search.size_small'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="medium" data-i18n="adv_search.size_medium"><?php echo htmlspecialchars(__t('adv_search.size_medium'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="large" data-i18n="adv_search.size_large"><?php echo htmlspecialchars(__t('adv_search.size_large'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="xlarge" data-i18n="adv_search.size_xlarge"><?php echo htmlspecialchars(__t('adv_search.size_xlarge'), ENT_QUOTES, 'UTF-8'); ?></option>
               </select>
             </div>
           </div>
 
           <!-- Row 7: Options (GPS, Favoris) -->
           <div class="gdrive-form-row">
-            <label class="gdrive-form-label" data-i18n="adv_search.options_label">Options</label>
+            <label class="gdrive-form-label" data-i18n="adv_search.options_label"><?php echo htmlspecialchars(__t('adv_search.options_label'), ENT_QUOTES, 'UTF-8'); ?></label>
             <div class="gdrive-form-control gdrive-checkbox-group">
               <label class="gdrive-checkbox-label">
                 <input type="checkbox" class="adv-search-gps-only gdrive-checkbox">
-                <span data-i18n="adv_search.gps_only">📍 Avec coordonnées GPS uniquement</span>
+                <span data-i18n="adv_search.gps_only">📍 <?php echo htmlspecialchars(__t('adv_search.gps_only'), ENT_QUOTES, 'UTF-8'); ?></span>
               </label>
               <label class="gdrive-checkbox-label">
                 <input type="checkbox" class="adv-search-fav-only gdrive-checkbox">
-                <span data-i18n="nav.favorites">❤️ Uniquement les favoris</span>
+                <span data-i18n="nav.favorites">❤️ <?php echo htmlspecialchars(__t('nav.favorites'), ENT_QUOTES, 'UTF-8'); ?></span>
               </label>
             </div>
           </div>
 
           <!-- Modal Footer -->
           <div class="gdrive-modal-footer">
-            <button type="button" class="adv-search-reset-btn gdrive-btn-text" data-i18n="adv_search.reset">Réinitialiser</button>
-            <button type="submit" class="adv-search-submit-btn gdrive-btn-primary" data-i18n="adv_search.submit">Rechercher</button>
+            <button type="button" class="adv-search-reset-btn gdrive-btn-text" data-i18n="adv_search.reset"><?php echo htmlspecialchars(__t('adv_search.reset'), ENT_QUOTES, 'UTF-8'); ?></button>
+            <button type="submit" class="adv-search-submit-btn gdrive-btn-primary" data-i18n="adv_search.submit"><?php echo htmlspecialchars(__t('adv_search.submit'), ENT_QUOTES, 'UTF-8'); ?></button>
           </div>
         </form>
       </div>
@@ -226,25 +226,25 @@
       <div class="map-modal-card">
         <div class="map-modal-header">
           <div class="map-modal-title-group">
-            <h3 class="map-modal-title" data-i18n="map.title">🗺️ Exploration Cartographique &amp; Trajet GPS</h3>
-            <span class="map-modal-count-badge map-count-badge" data-i18n="map.count_badge">0 photos géolocalisées</span>
+            <h3 class="map-modal-title" data-i18n="map.title">🗺️ <?php echo htmlspecialchars(__t('map.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+            <span class="map-modal-count-badge map-count-badge" data-i18n="map.count_badge"></span>
           </div>
           <div class="map-modal-controls">
             <div class="map-layer-selector">
-              <button type="button" class="map-layer-btn" data-layer="dark" title="Fond de carte sombre" data-i18n-title="map.layer_dark" data-i18n="map.layer_dark">🌙 Sombre</button>
-              <button type="button" class="map-layer-btn active" data-layer="streets" title="Plan de rues (OpenStreetMap)" data-i18n-title="map.layer_streets" data-i18n="map.layer_streets">🗺️ Rues</button>
-              <button type="button" class="map-layer-btn" data-layer="satellite" title="Vue Satellite (Esri)" data-i18n-title="map.layer_satellite" data-i18n="map.layer_satellite">🛰️ Satellite</button>
+              <button type="button" class="map-layer-btn" data-layer="dark" data-i18n-title="map.layer_dark" data-i18n="map.layer_dark">🌙 <?php echo htmlspecialchars(__t('map.layer_dark'), ENT_QUOTES, 'UTF-8'); ?></button>
+              <button type="button" class="map-layer-btn active" data-layer="streets" data-i18n-title="map.layer_streets" data-i18n="map.layer_streets">🗺️ <?php echo htmlspecialchars(__t('map.layer_streets'), ENT_QUOTES, 'UTF-8'); ?></button>
+              <button type="button" class="map-layer-btn" data-layer="satellite" data-i18n-title="map.layer_satellite" data-i18n="map.layer_satellite">🛰️ <?php echo htmlspecialchars(__t('map.layer_satellite'), ENT_QUOTES, 'UTF-8'); ?></button>
             </div>
-            <button type="button" class="map-toggle-smart-gps-btn map-ctrl-btn active" title="Activer / Désactiver l'interpolation et déduction GPS intelligente des photos prises à proximité temporelle">
-              <span data-i18n="map.smart_deduction">✨ Déduction auto</span> (<span class="map-smart-gps-count">0</span>)
+            <button type="button" class="map-toggle-smart-gps-btn map-ctrl-btn active" data-i18n-title="map.smart_deduction">
+              <span data-i18n="map.smart_deduction">✨ <?php echo htmlspecialchars(__t('map.smart_deduction'), ENT_QUOTES, 'UTF-8'); ?></span> (<span class="map-smart-gps-count">0</span>)
             </button>
-            <button type="button" class="map-toggle-route-btn map-ctrl-btn active" title="Afficher / Masquer le tracé chronologique du parcours" data-i18n="map.route">
-              〰️ Trajet
+            <button type="button" class="map-toggle-route-btn map-ctrl-btn active" data-i18n-title="map.route" data-i18n="map.route">
+              〰️ <?php echo htmlspecialchars(__t('map.route'), ENT_QUOTES, 'UTF-8'); ?>
             </button>
-            <button type="button" class="map-fit-bounds-btn map-ctrl-btn" title="Recentrer la carte sur tous les médias" data-i18n="map.recenter">
-              🎯 Recentrer
+            <button type="button" class="map-fit-bounds-btn map-ctrl-btn" data-i18n-title="map.recenter" data-i18n="map.recenter">
+              🎯 <?php echo htmlspecialchars(__t('map.recenter'), ENT_QUOTES, 'UTF-8'); ?>
             </button>
-            <button type="button" class="map-modal-close-btn map-modal-close" title="Fermer la carte (Échap)" data-i18n-title="common.close">✕</button>
+            <button type="button" class="map-modal-close-btn map-modal-close" data-i18n-title="lightbox.close">✕</button>
           </div>
         </div>
         <div class="gallery-leaflet-map map-canvas"></div>
@@ -252,4 +252,3 @@
     </div>
   </div>
 </template>
-

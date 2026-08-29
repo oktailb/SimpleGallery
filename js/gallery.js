@@ -953,11 +953,11 @@
             <span>${icon}</span> <span>${this.escapeHtml(shortcut.name || shortcut.defaultName || shortcut.appId)}</span>
           </div>
           <button type="button" class="context-menu-item" id="desktopCtxOpen">
-            <span>▶️</span> <span>Ouvrir</span>
+            <span>▶️</span> <span data-i18n="desktop.open">${this.escapeHtml(this.t('desktop.open'))}</span>
           </button>
           <div class="context-menu-divider"></div>
           <button type="button" class="context-menu-item danger" id="desktopCtxDelete">
-            <span>🗑️</span> <span>Supprimer du bureau</span>
+            <span>🗑️</span> <span data-i18n="desktop.delete_shortcut">${this.escapeHtml(this.t('desktop.delete_shortcut'))}</span>
           </button>
         `;
 

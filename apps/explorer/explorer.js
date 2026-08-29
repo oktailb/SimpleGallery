@@ -990,7 +990,7 @@
         this.el.selectionToolbar.style.display = count > 0 ? 'flex' : 'none';
       }
       if (this.el.selectionToolbarCount) {
-        this.el.selectionToolbarCount.textContent = `${count} élément(s) sélectionné(s)`;
+        this.el.selectionToolbarCount.textContent = this.t('selection.selected_count', { count });
       }
       if (this.el.mediaGrid) {
         this.el.mediaGrid.querySelectorAll('[data-index]').forEach(card => {
@@ -1783,7 +1783,7 @@
             </div>
 
             <!-- New Window / Instance Action -->
-            <button id="newExplorerWindowBtn" class="btn-toggle" title="Ouvrir une nouvelle fenêtre d'Explorateur" style="display:inline-flex;">
+            <button id="newExplorerWindowBtn" class="btn-toggle" title="${this.escapeHtml(this.t('explorer.new_window'))}" style="display:inline-flex;">
               <span>🗂️+</span>
             </button>
 

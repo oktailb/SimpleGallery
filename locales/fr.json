@@ -558,6 +558,19 @@
     "nav.search_apps": "Rechercher une application...",
 
     "apps.sim-maintenance.title": "Sim Maintenance",
-    "apps.sim-maintenance.subtitle": "Supervision technique, checklists réglementaires et télémétrie du simulateur EC135"
+    "apps.sim-maintenance.subtitle": "Supervision technique, checklists réglementaires et télémétrie du simulateur EC135",
+
+    "desktop.open": "Ouvrir",
+    "desktop.delete_shortcut": "Supprimer du bureau",
+    "explorer.new_window": "Ouvrir une nouvelle fenêtre d'Explorateur",
+    "editor.load_error": "⚠️ Impossible de charger l'image pour l'édition.",
+    "editor.save_success": "Image enregistrée avec succès !",
+    "editor.save_error": "Erreur lors de la sauvegarde.",
+    "editor.network_error": "Erreur réseau lors de la sauvegarde",
+    "stats.explored_location": "Emplacement exploré",
+    "storage.diag_fallback_title": "Diagnostic Stockage : Mode Fallback Racine Actif",
+    "storage.diag_configured": "Dossier configuré ($storage_media_dir) :",
+    "storage.diag_explored": "Dossier exploré ($real_base_dir) :",
+    "storage.diag_hint": "Pour utiliser le dossier dédié, créez le dossier storage/media/ ou modifiez $storage_media_dir dans config/config.php."
   }
 }

@@ -558,6 +558,19 @@
     "nav.search_apps": "Search applications...",
 
     "apps.sim-maintenance.title": "Sim Maintenance",
-    "apps.sim-maintenance.subtitle": "Technical Checklists, Environmental Telemetry & Compliance for EC135 FFS"
+    "apps.sim-maintenance.subtitle": "Technical Checklists, Environmental Telemetry & Compliance for EC135 FFS",
+
+    "desktop.open": "Open",
+    "desktop.delete_shortcut": "Remove from desktop",
+    "explorer.new_window": "Open new Explorer window",
+    "editor.load_error": "⚠️ Unable to load image for editing.",
+    "editor.save_success": "Image saved successfully!",
+    "editor.save_error": "Error while saving image.",
+    "editor.network_error": "Network error while saving",
+    "stats.explored_location": "Explored location",
+    "storage.diag_fallback_title": "Storage Diagnostic: Root Fallback Mode Active",
+    "storage.diag_configured": "Configured directory ($storage_media_dir):",
+    "storage.diag_explored": "Explored directory ($real_base_dir):",
+    "storage.diag_hint": "To use the dedicated directory, create storage/media/ or modify $storage_media_dir in config/config.php."
   }
 }
