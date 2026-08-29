@@ -261,7 +261,7 @@
       this.state.currentPath = cleanPath;
 
       try {
-        const json = await window.sys.api.get('', { dir: cleanPath, _t: Date.now() });
+        const json = await window.sys.api.get('get_gallery', { dir: cleanPath, _t: Date.now() });
 
         if (!json.success) {
           this.state.directories = [];
