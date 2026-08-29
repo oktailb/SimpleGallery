@@ -2,7 +2,7 @@
  * SimpleGallery 2026 - Explorer Application (apps/explorer/explorer.js)
  * Fully modular, autonomous, multi-instance Gallery Explorer with Cross-Window Drag & Drop.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   // -------------------------------------------------------------
@@ -81,7 +81,7 @@
 
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('explorer')
-        : (this.t('apps.explorer.title') || "Explorateur de Galerie");
+        : (this.t('apps.explorer.title'));
 
       const isFirst = (this.manager.instances.size === 0);
       const offset = ((this.id - 1) * 32) % 160;
@@ -209,7 +209,7 @@
         if (savedView) this.state.viewMode = savedView;
         const savedFavs = JSON.parse(localStorage.getItem('sg_favorites') || '[]');
         this.state.favorites = Array.isArray(savedFavs) ? savedFavs : [];
-      } catch (e) {}
+      } catch (e) { }
     }
 
     t(key, params = {}) {
@@ -429,7 +429,7 @@
             try {
               const text = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
               if (text) paths = JSON.parse(text);
-            } catch (err) {}
+            } catch (err) { }
           }
           if (paths && paths.length > 0) {
             await this.moveItems(paths, destPath);
@@ -566,7 +566,7 @@
             try {
               const data = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
               if (data) pathsToMove = JSON.parse(data);
-            } catch (err) {}
+            } catch (err) { }
           }
 
           if (pathsToMove && pathsToMove.length > 0) {
@@ -702,7 +702,7 @@
       this.state.viewMode = mode;
       try {
         localStorage.setItem('sg_explorer_view_mode', mode);
-      } catch (e) {}
+      } catch (e) { }
 
       this.renderMedia();
 
@@ -909,7 +909,7 @@
         const sorts = JSON.parse(localStorage.getItem('sg_folder_sorts') || '{}');
         sorts[dirPath || '__root__'] = { sortBy, sortOrder };
         localStorage.setItem('sg_folder_sorts', JSON.stringify(sorts));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     getFolderSort(dirPath) {
@@ -932,7 +932,7 @@
       }
       try {
         localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
-      } catch (e) {}
+      } catch (e) { }
 
       this.manager.updateMenuBarForActiveInstance();
       this.applyFilterAndRender();
@@ -1571,7 +1571,7 @@
           try {
             const data = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
             if (data) pathsToMove = JSON.parse(data);
-          } catch (err) {}
+          } catch (err) { }
         }
 
         if (pathsToMove && pathsToMove.length > 0) {
@@ -1632,12 +1632,14 @@
       this.bindMenuBar();
       this.bindGlobalModals();
 
-      // Listen for filesystem changes across all instances (Point 3)
-      this.subscribe('fs:changed', () => {
-        this.instances.forEach(inst => {
-          inst.loadDirectory(inst.state.currentPath);
+      // Listen for filesystem changes across all instances
+      if (window.EventBus && typeof window.EventBus.on === 'function') {
+        window.EventBus.on('fs:changed', () => {
+          this.instances.forEach(inst => {
+            inst.loadDirectory(inst.state.currentPath);
+          });
         });
-      });
+      }
 
       // Initial window on DOMContentLoaded handled by OS Boot / Autostart Processor
       if (!window.SG_AUTOSTART_CONFIG) {
