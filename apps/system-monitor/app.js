@@ -372,11 +372,11 @@
                       <td>
                         <strong style="display: flex; align-items: center; gap: 6px;">
                           <span>${this.escapeHtml(w.icon || '📱')}</span>
-                          <span>${this.escapeHtml(w.appName || w.appId || 'App')}</span>
+                          <span>${this.escapeHtml(this.t(w.appName) !== w.appName ? this.t(w.appName) : (w.appName || w.appId || 'App'))}</span>
                         </strong>
                       </td>
                       <td style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        ${this.escapeHtml(w.title || w.fileName || w.appName)}
+                        ${this.escapeHtml(this.t(w.title) !== w.title ? this.t(w.title) : (w.title || w.fileName || w.appName))}
                       </td>
                       <td>
                         ${isMin ? `<span class="sysmon-badge minimized">${this.escapeHtml(this.t('sysmon.state_minimized'))}</span>` : (isActive ? `<span class="sysmon-badge active">● ${this.escapeHtml(this.t('sysmon.state_foreground'))}</span>` : `<span class="sysmon-badge system">${this.escapeHtml(this.t('sysmon.state_background'))}</span>`)}
@@ -544,6 +544,16 @@
           content: testsHtml
         })}
       `;
+    }
+
+    bindStorageEvents() {
+      const clearBtn = document.getElementById('sysmonClearCacheBtn');
+      const pingBtn = document.getElementById('sysmonPingBtn');
+      const runTestsBtn = document.getElementById('sysmonRunTestsBtn');
+
+      if (clearBtn) clearBtn.onclick = () => this.clearCaches();
+      if (pingBtn) pingBtn.onclick = () => this.pingApi();
+      if (runTestsBtn) runTestsBtn.onclick = () => this.runUnitTests();
     }
 
 

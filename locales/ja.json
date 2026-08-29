@@ -545,10 +545,16 @@
     "sysmon.chart_mem": "JSヒープメモリ (MB)",
     "sysmon.chart_cpu": "メインスレッド負荷 (CPU %)",
 
-    "categories.productivity": "📁 ファイル＆生産性",
-    "categories.media": "🎬 メディア＆クリエイション",
-    "categories.games": "🎮 ゲーム＆アーケード",
-    "categories.system": "⚙️ システム＆設定",
+    "categories.productivity": "📁 ファイル & 生産性",
+    "categories.media": "🎬 メディア & 作成",
+    "categories.game": "🎮 ゲーム & アーケード",
+    "categories.games": "🎮 ゲーム & アーケード",
+    "categories.system": "⚙️ システム & 設定",
+    "categories.communication": "💬 コミュニケーション & 掲示板",
+    "categories.player": "🎵 プレイヤー & オーディオ",
+    "categories.viewer": "🖼️ ビューア & ギャラリー",
+    "categories.utilities": "🛠️ ユーティリティ & ツール",
+    "categories.view": "👁️ エクスプローラー & ビュー",
     "taskbar.show_desktop": "デスクトップを表示",
     "taskbar.running": "実行中",
     "taskbar.minimized": "最小化",
@@ -558,6 +564,19 @@
     "nav.search_apps": "アプリケーションを検索...",
 
     "apps.sim-maintenance.title": "Sim Maintenance",
-    "apps.sim-maintenance.subtitle": "EC135 シミュレーター保守点検・環境監視"
+    "apps.sim-maintenance.subtitle": "技術チェックリスト、環境テレメトリ、EC135 FFSのコンプライアンス",
+
+    "desktop.open": "開く",
+    "desktop.delete_shortcut": "デスクトップから削除",
+    "explorer.new_window": "新しいエクスプローラーウィンドウを開く",
+    "editor.load_error": "⚠️ 編集用の画像を読み込めませんでした。",
+    "editor.save_success": "画像を正常に保存しました！",
+    "editor.save_error": "保存中にエラーが発生しました。",
+    "editor.network_error": "保存中のネットワークエラー",
+    "stats.explored_location": "探索された場所",
+    "storage.diag_fallback_title": "ストレージ診断 : ルートフォールバックモード有効",
+    "storage.diag_configured": "設定フォルダ ($storage_media_dir) :",
+    "storage.diag_explored": "探索フォルダ ($real_base_dir) :",
+    "storage.diag_hint": "専用フォルダを使用するには、storage/media/ フォルダを作成するか、config/config.php で $storage_media_dir を変更してください。"
   }
 }

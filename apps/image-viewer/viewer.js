@@ -2,7 +2,7 @@
  * SimpleGallery 2026 - Image Viewer Application
  * Fully autonomous Image Lightbox Explorer + Canvas Retouching Studio + Filter/Save Engine.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   const ImageViewerPlugin = {
@@ -85,9 +85,9 @@
       if (window.WindowManager) {
         const defaultW = Math.min(920, Math.max(480, Math.round(window.innerWidth * 0.75)));
         const defaultH = Math.min(640, Math.max(360, Math.round(window.innerHeight * 0.70)));
-        const appTitle = (window.sys && window.sys.appManager) 
-          ? window.sys.appManager.getAppTitle('image-viewer') 
-          : (ctx.t('apps.image-viewer.title') || "Visionneuse d'Images");
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('image-viewer')
+          : (ctx.t('apps.image-viewer.title'));
 
         const win = window.WindowManager.createWindow({
           id: winId,
@@ -350,7 +350,7 @@
       img.onload = () => {
         ctx.showLoading(false);
         this.editorState.imageObj = img;
-        
+
         // Initialize source canvas with original image resolution
         const srcCanvas = this.editorState.sourceCanvas;
         srcCanvas.width = img.naturalWidth;
@@ -847,7 +847,7 @@
           this.closeSaveChoiceModal();
           this.closeImageEditor();
           if (currentCtx && typeof currentCtx.showToast === 'function') {
-            currentCtx.showToast(json.message || ctx.t('editor.save_success'), 'success');
+            currentCtx.showToast(json.message || 'Image enregistrée avec succès !', 'success');
           }
 
           // Reload gallery directory to display new/updated image
@@ -867,11 +867,11 @@
             }
           }
         } else {
-          ctx.showToast('⚠️ ' + (json.error || ctx.t('editor.save_error')), 'error');
+          ctx.showToast('⚠️ ' + (json.error || 'Erreur lors de la sauvegarde.'), 'error');
         }
       } catch (err) {
         ctx.showLoading(false);
-        ctx.showToast('⚠️ ' + ctx.t('editor.network_error') + ': ' + err.message, 'error');
+        ctx.showToast('⚠️ Erreur réseau lors de la sauvegarde : ' + err.message, 'error');
       }
     }
   };

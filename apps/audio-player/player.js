@@ -2,7 +2,7 @@
  * SimpleGallery 2026 - Audio Player Application
  * Autonomous audio player widget with playback controls, glowing frequency wave animation, and ID3 tags.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   const AudioViewerPlugin = {
@@ -38,9 +38,9 @@
 
       // 1. WebOS Window Manager Mode (Primary)
       if (window.WindowManager) {
-        const appTitle = (window.sys && window.sys.appManager) 
-          ? window.sys.appManager.getAppTitle('audio-player') 
-          : (effectiveCtx.t('apps.audio-player.title') || "Lecteur Audio");
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('audio-player')
+          : (effectiveCtx.t('apps.audio-player.title'));
 
         const win = window.WindowManager.createWindow({
           id: winId,

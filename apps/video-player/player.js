@@ -2,7 +2,7 @@
  * SimpleGallery 2026 - Video & Video Wall Player Application
  * Combines floating PiP video player + multi-screen synchronized video wall engine.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   // -------------------------------------------------------------
@@ -41,9 +41,9 @@
 
       // 1. WebOS Window Manager Mode (Primary)
       if (window.WindowManager) {
-        const appTitle = (window.sys && window.sys.appManager) 
-          ? window.sys.appManager.getAppTitle('video-player') 
-          : (effectiveCtx.t('apps.video-player.title') || "Lecteur Vidéo");
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('video-player')
+          : (effectiveCtx.t('apps.video-player.title'));
 
         const win = window.WindowManager.createWindow({
           id: winId,
@@ -198,9 +198,9 @@
       if (window.WindowManager) {
         const defaultW = Math.min(960, Math.max(540, Math.round(window.innerWidth * 0.80)));
         const defaultH = Math.min(640, Math.max(380, Math.round(window.innerHeight * 0.75)));
-        const appTitle = (window.sys && window.sys.appManager) 
-          ? window.sys.appManager.getAppTitle('videowall') 
-          : (ctx.t('apps.video-player.title') || "Mur Vidéo Synchronisé");
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('videowall')
+          : (ctx.t('apps.video-player.title'));
 
         const win = window.WindowManager.createWindow({
           id: winId,
@@ -277,7 +277,7 @@
         const iniText = await res.text();
         const config = this.parseIniConfig(iniText);
         this.renderVideoWall(file, config, ctx);
-      } catch (err) {}
+      } catch (err) { }
       return true;
     },
 
@@ -557,7 +557,7 @@
 
       const togglePlay = () => {
         if (masterVideo.paused) {
-          videos.forEach(v => v.play().catch(() => {}));
+          videos.forEach(v => v.play().catch(() => { }));
           if (playBtn) playBtn.textContent = '⏸';
         } else {
           videos.forEach(v => v.pause());
@@ -615,9 +615,9 @@
         fullscreenBtn.onclick = () => {
           const stage = document.getElementById('videowallStage');
           if (!document.fullscreenElement) {
-            stage.requestFullscreen().catch(() => {});
+            stage.requestFullscreen().catch(() => { });
           } else {
-            document.exitFullscreen().catch(() => {});
+            document.exitFullscreen().catch(() => { });
           }
         };
       }
@@ -670,8 +670,8 @@
           if (currentAudioVideo) currentAudioVideo.muted = !currentAudioVideo.muted;
         } else if (e.key === 'f' || e.key === 'F') {
           const stage = document.getElementById('videowallStage');
-          if (!document.fullscreenElement) stage.requestFullscreen().catch(() => {});
-          else document.exitFullscreen().catch(() => {});
+          if (!document.fullscreenElement) stage.requestFullscreen().catch(() => { });
+          else document.exitFullscreen().catch(() => { });
         } else if (e.key === 'ArrowRight') {
           videos.forEach(v => { v.currentTime = Math.min(v.duration || 99999, v.currentTime + 5); });
         } else if (e.key === 'ArrowLeft') {

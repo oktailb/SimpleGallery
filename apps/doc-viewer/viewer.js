@@ -3,7 +3,7 @@
  * Autonomous viewer supporting embedded PDF preview, interactive Text/Markdown/Code reader,
  * and integrated WYSIWYG / Markdown Editor (Toast UI Editor) in WebOS Windows.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   let toastUiLoadingPromise = null;
@@ -357,9 +357,9 @@
           `;
         }
 
-        const appTitle = (window.sys && window.sys.appManager) 
-          ? window.sys.appManager.getAppTitle('doc-viewer') 
-          : (effectiveCtx.t('apps.doc-viewer.title') || "Lecteur de Documents");
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('doc-viewer')
+          : (effectiveCtx.t('apps.doc-viewer.title'));
 
         let activeEditorInstance = null;
         let isEditing = false;

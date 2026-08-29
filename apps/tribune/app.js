@@ -125,7 +125,7 @@
     saveTotozCache() {
       try {
         localStorage.setItem('tribune_totoz_cache', JSON.stringify(this.totozCache));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     loadReadCalls() {
@@ -140,11 +140,11 @@
     saveReadCalls() {
       try {
         localStorage.setItem('tribune_read_calls', JSON.stringify(Array.from(this.readCalls)));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     updateWindowTitle(unreadCount = 0) {
-      const title = this.t('tribune.title') || "Tribune Libre";
+      const title = this.t('tribune.title');
       const fullTitle = unreadCount > 0 ? `🔔 (${unreadCount}) 🦆 ${title}` : `🦆 ${title}`;
 
       if (this.window && typeof this.window.setTitle === 'function') {
@@ -157,7 +157,7 @@
     open(params = {}) {
       if (!window.WindowManager) return;
 
-      const title = this.t('tribune.title') || "Tribune Libre";
+      const title = this.t('tribune.title');
       let win = window.WindowManager.windows.get(this.winId);
 
       if (win) {
@@ -239,17 +239,17 @@
                 this.renderPosts(false);
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         };
-        this.sseSource.onerror = () => {};
-      } catch (e) {}
+        this.sseSource.onerror = () => { };
+      } catch (e) { }
     }
 
     stopSSE() {
       if (this.sseSource) {
         try {
           this.sseSource.close();
-        } catch (e) {}
+        } catch (e) { }
         this.sseSource = null;
       }
     }
@@ -353,7 +353,7 @@
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     onLocaleChanged() {
@@ -385,7 +385,7 @@
     saveBAKLogins() {
       try {
         localStorage.setItem('tribune_bak_logins', JSON.stringify(Array.from(this.bakLogins)));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     toggleBAKLogin(login) {
@@ -462,7 +462,7 @@
           }
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
 
       try {
         const raw = localStorage.getItem('tribune_boards');
@@ -473,7 +473,7 @@
             return;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       this.boards = defaultBoards;
     }
@@ -520,7 +520,7 @@
             return { ...defaultBoards, ...parsed };
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       return defaultBoards;
     }
@@ -528,11 +528,11 @@
     async saveBoards() {
       try {
         localStorage.setItem('tribune_boards', JSON.stringify(this.boards));
-      } catch (e) {}
+      } catch (e) { }
 
       try {
         await window.sys.api.post('tribune_boards_save', { boards: this.boards });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     loadBoardAuth() {
@@ -546,7 +546,7 @@
     saveBoardAuth() {
       try {
         localStorage.setItem('tribune_board_auth', JSON.stringify(this.boardAuth));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     renderUI() {
@@ -939,7 +939,7 @@
 
         const pendingPost = {
           id: 'pending_' + Date.now(),
-          time: `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${hours}${minutes}${seconds}`,
+          time: `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${hours}${minutes}${seconds}`,
           clock: clock,
           login: login,
           info: 'Envoi...',
@@ -1120,7 +1120,7 @@
               try {
                 await window.sys.api.post('tribune_schedule_cancel', { id });
                 this.refreshScheduledList();
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         });
@@ -1199,12 +1199,12 @@
             const baseClock = clockRef.dataset.baseClock || clockTime;
             if (clockTime) {
               const targetRow = feed.querySelector(`.tribune-post-row[data-clock="${clockTime}"]`) ||
-                                feed.querySelector(`.tribune-post-row[data-clock="${baseClock}"]`) ||
-                                Array.from(feed.querySelectorAll('.tribune-post-row')).find(row => {
-                                  const c = row.dataset.clock || '';
-                                  const tid = row.dataset.timeId || '';
-                                  return c === clockTime || c === baseClock || c.startsWith(baseClock) || tid.includes(clockTime) || c.includes(clockTime);
-                                });
+                feed.querySelector(`.tribune-post-row[data-clock="${baseClock}"]`) ||
+                Array.from(feed.querySelectorAll('.tribune-post-row')).find(row => {
+                  const c = row.dataset.clock || '';
+                  const tid = row.dataset.timeId || '';
+                  return c === clockTime || c === baseClock || c.startsWith(baseClock) || tid.includes(clockTime) || c.includes(clockTime);
+                });
               if (targetRow) {
                 targetRow.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
                 targetRow.classList.remove('clock-target-flash');
@@ -1281,7 +1281,7 @@
                 this.highlightClocks(clockTime, true, 'target');
 
                 if (clockPopover) {
-                  const foundPost = this.posts.find(p => p.clock === clockTime || p.time?.includes(clockTime) || p.clock?.substring(0,5) === clockTime.substring(0,5));
+                  const foundPost = this.posts.find(p => p.clock === clockTime || p.time?.includes(clockTime) || p.clock?.substring(0, 5) === clockTime.substring(0, 5));
                   if (foundPost) {
                     const formatted = this.formatMessageText(foundPost.message);
                     clockPopover.innerHTML = `
@@ -1425,12 +1425,12 @@
     }
 
     toSuperscript(num) {
-      const superMap = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+      const superMap = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
       return String(num).split('').map(c => superMap[c] || c).join('');
     }
 
     fromSuperscript(str) {
-      const reverseMap = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+      const reverseMap = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' };
       return String(str).split('').map(c => reverseMap[c] !== undefined ? reverseMap[c] : c).join('');
     }
 
@@ -1586,18 +1586,18 @@
         </div>
         <div class="totoz-popover-grid">
           ${displayList.map(item => {
-            const name = item.name;
-            const isNsfw = item.nsfw || name.toLowerCase().includes('nsfw');
-            const imgUrl = window.sys.api.url('totoz_proxy', { name: name });
-            const blurClass = (isNsfw && !this.nsfwEnabled) ? 'nsfw-blurred' : '';
+        const name = item.name;
+        const isNsfw = item.nsfw || name.toLowerCase().includes('nsfw');
+        const imgUrl = window.sys.api.url('totoz_proxy', { name: name });
+        const blurClass = (isNsfw && !this.nsfwEnabled) ? 'nsfw-blurred' : '';
 
-            return `
+        return `
               <div class="totoz-item-preview" data-totoz="${this.escapeHtml(name)}" title="[:${this.escapeHtml(name)}]">
                 <img class="${blurClass}" src="${imgUrl}" alt="[:${this.escapeHtml(name)}]" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><path d=\'M8 14s1.5 2 4 2 4-2 4-2\'/><line x1=\'9\' y1=\'9\' x2=\'9.01\' y2=\'9\'/><line x1=\'15\' y1=\'9\' x2=\'15.01\' y2=\'9\'/></svg>'" />
                 <span>${this.escapeHtml(name)}</span>
               </div>
             `;
-          }).join('')}
+      }).join('')}
         </div>
       `;
 
@@ -1730,7 +1730,7 @@
 
           let clock = '00:00:00';
           if (timeAttr.length >= 14) {
-            clock = `${timeAttr.substring(8,10)}:${timeAttr.substring(10,12)}:${timeAttr.substring(12,14)}`;
+            clock = `${timeAttr.substring(8, 10)}:${timeAttr.substring(10, 12)}:${timeAttr.substring(12, 14)}`;
           } else if (timeAttr.length >= 6 && timeAttr.includes(':')) {
             clock = timeAttr;
           }
@@ -1762,35 +1762,35 @@
         const postNodes = doc.querySelectorAll('post');
         const parsed = [];
 
-      postNodes.forEach((node, idx) => {
-        const id = node.getAttribute('id') || idx + 1;
-        const timeAttr = node.getAttribute('time') || '';
-        const login = node.querySelector('login')?.textContent || 'Anonyme';
-        const info = node.querySelector('info')?.textContent || '';
-        const message = node.querySelector('message')?.textContent || '';
+        postNodes.forEach((node, idx) => {
+          const id = node.getAttribute('id') || idx + 1;
+          const timeAttr = node.getAttribute('time') || '';
+          const login = node.querySelector('login')?.textContent || 'Anonyme';
+          const info = node.querySelector('info')?.textContent || '';
+          const message = node.querySelector('message')?.textContent || '';
 
-        let clock = '00:00:00';
-        if (timeAttr.length >= 14) {
-          clock = `${timeAttr.substring(8,10)}:${timeAttr.substring(10,12)}:${timeAttr.substring(12,14)}`;
-        } else if (timeAttr.length >= 12) {
-          clock = `${timeAttr.substring(8,10)}:${timeAttr.substring(10,12)}:00`;
-        } else if (timeAttr.includes(':')) {
-          const parts = timeAttr.split(':');
-          if (parts.length === 2) clock = `${parts[0].padStart(2,'0')}:${parts[1].padStart(2,'0')}:00`;
-          else if (parts.length === 3) clock = `${parts[0].padStart(2,'0')}:${parts[1].padStart(2,'0')}:${parts[2].padStart(2,'0')}`;
-        }
+          let clock = '00:00:00';
+          if (timeAttr.length >= 14) {
+            clock = `${timeAttr.substring(8, 10)}:${timeAttr.substring(10, 12)}:${timeAttr.substring(12, 14)}`;
+          } else if (timeAttr.length >= 12) {
+            clock = `${timeAttr.substring(8, 10)}:${timeAttr.substring(10, 12)}:00`;
+          } else if (timeAttr.includes(':')) {
+            const parts = timeAttr.split(':');
+            if (parts.length === 2) clock = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:00`;
+            else if (parts.length === 3) clock = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:${parts[2].padStart(2, '0')}`;
+          }
 
-        parsed.push({
-          id,
-          time: timeAttr,
-          clock,
-          login,
-          info,
-          message,
-          is_admin: false,
-          board: this.currentBoard
+          parsed.push({
+            id,
+            time: timeAttr,
+            clock,
+            login,
+            info,
+            message,
+            is_admin: false,
+            board: this.currentBoard
+          });
         });
-      });
 
         return parsed.reverse();
       } catch (e) {
@@ -1908,7 +1908,7 @@
 
         if (data && data.success) {
           this.lastPostedMessage = message;
-          try { localStorage.setItem('tribune_last_posted_message', message); } catch (e) {}
+          try { localStorage.setItem('tribune_last_posted_message', message); } catch (e) { }
           if (this.soundEnabled) this.playCoincoinSound();
           return true;
         } else {
@@ -1940,13 +1940,13 @@
       const getFullClock = (p) => {
         if (p && p.time && String(p.time).length >= 14) {
           const t = String(p.time);
-          return `${t.substring(8,10)}:${t.substring(10,12)}:${t.substring(12,14)}`;
+          return `${t.substring(8, 10)}:${t.substring(10, 12)}:${t.substring(12, 14)}`;
         }
         if (p && p.clock) {
           let raw = String(p.clock).trim().replace(/([¹²³⁴⁵⁶⁷⁸⁹⁰]+|[:#^\.]\d+)$/, '');
           const parts = raw.split(':');
           if (parts.length === 3) return raw;
-          if (parts.length === 2) return `${parts[0].padStart(2,'0')}:${parts[1].padStart(2,'0')}:00`;
+          if (parts.length === 2) return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:00`;
         }
         return '00:00:00';
       };
@@ -2219,7 +2219,7 @@
           gain.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + 0.2);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       setTimeout(() => {
@@ -2786,7 +2786,7 @@
 
         osc.start();
         osc.stop(ctx.currentTime + 0.15);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     escapeHtml(str) {

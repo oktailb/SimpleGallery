@@ -795,11 +795,14 @@
     // =========================================================================
     // 10. Cards, Gauges & Info Grids (`sys.ui.card`, `sys.ui.gauge`)
     // =========================================================================
-    resolveText(text) {
+    resolveText(text, allowHtml = false) {
       if (text == null) return '';
       const str = String(text);
       const i18n = (window.sys && window.sys.i18n) || window.I18nEngine;
       const translated = (i18n && typeof i18n.t === 'function' && str.includes('.')) ? i18n.t(str) : str;
+      if (allowHtml || (typeof translated === 'string' && translated.includes('<') && translated.includes('>'))) {
+        return translated;
+      }
       return this.escapeHtml(translated);
     }
 

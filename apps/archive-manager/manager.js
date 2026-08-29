@@ -2,7 +2,7 @@
  * SimpleGallery 2026 - Archive Manager Application
  * Autonomous archive inspector displaying internal file structures, unpacked sizes, search filter, and compression stats in WebOS Windows.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   const ArchiveViewerPlugin = {
@@ -43,9 +43,9 @@
       if (window.WindowManager) {
         const defaultW = Math.min(840, Math.max(480, Math.round(window.innerWidth * 0.75)));
         const defaultH = Math.min(580, Math.max(360, Math.round(window.innerHeight * 0.70)));
-        const appTitle = (window.sys && window.sys.appManager) 
-          ? window.sys.appManager.getAppTitle('archive-manager') 
-          : (effectiveCtx.t('apps.archive-manager.title') || "Gestionnaire d'Archives");
+        const appTitle = (window.sys && window.sys.appManager)
+          ? window.sys.appManager.getAppTitle('archive-manager')
+          : (effectiveCtx.t('apps.archive-manager.title'));
 
         const win = window.WindowManager.createWindow({
           id: winId,
@@ -111,14 +111,14 @@
         // Fetch Archive Metadata Asynchronously
         try {
           const json = await window.sys.api.fs.getMetadata(file.path);
-          
+
           const listEl = document.getElementById(`archiveFileList-${cleanPathId}`);
           const statsEl = document.getElementById(`archiveStats-${cleanPathId}`);
           const filterInput = document.getElementById(`archiveFilterInput-${cleanPathId}`);
 
           if (json.success && json.metadata && json.metadata.specific && json.metadata.specific.archive) {
             const arch = json.metadata.specific.archive;
-            
+
             if (statsEl) {
               statsEl.innerHTML = `
                 <div>${ctx.escapeHtml(ctx.t('archive.compressed_size') || 'Taille compressée')} : <strong style="color:#f8fafc;">${file.size_formatted}</strong></div>
@@ -141,7 +141,7 @@
                 const name = (typeof f === 'string') ? f : (f.name || 'Fichier');
                 const size = (typeof f === 'object' && f.size_formatted) ? f.size_formatted : '';
                 const isDir = name.endsWith('/');
-                
+
                 let icon = isDir ? '📁' : '📄';
                 const fileExt = name.split('.').pop().toLowerCase();
                 if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExt)) icon = '🖼️';
@@ -188,7 +188,7 @@
               `;
             }
           }
-        } catch(err) {
+        } catch (err) {
           const listEl = document.getElementById(`archiveFileList-${cleanPathId}`);
           if (listEl) {
             listEl.innerHTML = `<div style="padding:2.5rem;text-align:center;color:#ef4444;">Erreur lors de l'inspection de l'archive: ${err.message}</div>`;

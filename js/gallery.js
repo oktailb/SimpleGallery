@@ -421,9 +421,13 @@
       }
 
       const transKey = `categories.${catKey}`;
-      const trans = this.t(transKey);
-      if (trans && trans !== transKey) {
-        return { id: catKey, label: trans, icon: '📁' };
+      let trans = this.t(transKey);
+      if (!trans || trans === transKey) {
+        const altKey = catKey.endsWith('s') ? catKey.slice(0, -1) : `${catKey}s`;
+        const altTrans = this.t(`categories.${altKey}`);
+        if (altTrans && altTrans !== `categories.${altKey}`) {
+          trans = altTrans;
+        }
       }
 
       const iconMap = {
@@ -434,17 +438,31 @@
         viewer: '🖼️',
         player: '🎵',
         utility: '🛠️',
+        utilities: '🛠️',
         tools: '🛠️',
         productivity: '📂',
-        office: '📑'
+        communication: '💬',
+        office: '📑',
+        view: '👁️'
       };
 
-      const icon = iconMap[catKey.toLowerCase()] || '📁';
+      const defaultIcon = iconMap[catKey.toLowerCase()] || '📁';
+
+      if (trans && trans !== transKey) {
+        const emojiMatch = trans.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEF6])\s*/u);
+        if (emojiMatch) {
+          const icon = emojiMatch[1];
+          const label = trans.slice(emojiMatch[0].length);
+          return { id: catKey, icon, label };
+        }
+        return { id: catKey, icon: defaultIcon, label: trans };
+      }
+
       const formattedName = catKey.charAt(0).toUpperCase() + catKey.slice(1);
       return {
         id: catKey,
-        icon,
-        label: `${icon} ${formattedName}`
+        icon: defaultIcon,
+        label: formattedName
       };
     }
 

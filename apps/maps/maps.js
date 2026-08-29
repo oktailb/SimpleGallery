@@ -3,7 +3,7 @@
  * Modular WebOS Map Application with Leaflet, Multi-layer Tiles, Chronological Trajectory & Smart Timeline AI Deduction.
  * Supports concurrent multi-instances to compare trajectories from multiple folders side-by-side.
  */
-(function(window) {
+(function (window) {
   'use strict';
 
   class MapsInstance {
@@ -42,7 +42,7 @@
     initWindow() {
       const baseAppTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('maps')
-        : (this.t('map.title') || "Exploration Cartographique & Trajet GPS");
+        : (this.t('map.title'));
 
       let displayTitle = baseAppTitle;
       if (this.mode === 'single' && this.singleFile) {
@@ -168,7 +168,7 @@
 
       const baseAppTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('maps')
-        : (this.t('map.title') || "Exploration Cartographique & Trajet GPS");
+        : (this.t('map.title'));
 
       let displayTitle = baseAppTitle;
       if (this.currentPath) {
@@ -228,10 +228,10 @@
 
       this.markersLayer = (typeof window.L.markerClusterGroup === 'function')
         ? window.L.markerClusterGroup({
-            maxClusterRadius: 40,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false
-          })
+          maxClusterRadius: 40,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false
+        })
         : window.L.featureGroup();
 
       this.leafletMap.addLayer(this.markersLayer);
@@ -606,8 +606,8 @@
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       };
 
