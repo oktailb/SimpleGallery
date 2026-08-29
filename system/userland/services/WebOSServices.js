@@ -38,6 +38,13 @@
         const fullKey = `webos_app_${appId}_${key}`;
         localStorage.removeItem(fullKey);
       } catch (e) {}
+    },
+    forApp(appId) {
+      return {
+        get: (key, defaultValue = null) => StorageService.get(appId, key, defaultValue),
+        set: (key, value) => StorageService.set(appId, key, value),
+        remove: (key) => StorageService.remove(appId, key)
+      };
     }
   };
 

@@ -1632,14 +1632,12 @@
       this.bindMenuBar();
       this.bindGlobalModals();
 
-      // Listen for filesystem changes across all instances
-      if (window.EventBus && typeof window.EventBus.on === 'function') {
-        window.EventBus.on('fs:changed', () => {
-          this.instances.forEach(inst => {
-            inst.loadDirectory(inst.state.currentPath);
-          });
+      // Listen for filesystem changes across all instances (Point 3)
+      this.subscribe('fs:changed', () => {
+        this.instances.forEach(inst => {
+          inst.loadDirectory(inst.state.currentPath);
         });
-      }
+      });
 
       // Initial window on DOMContentLoaded handled by OS Boot / Autostart Processor
       if (!window.SG_AUTOSTART_CONFIG) {

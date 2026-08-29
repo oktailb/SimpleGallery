@@ -54,6 +54,51 @@
     }
 
     /**
+     * Subscribe to EventBus event with automatic cleanup on window close (Point 3)
+     * @param {string} event 
+     * @param {Function} callback 
+     * @returns {Function} Unsubscribe callback
+     */
+    subscribe(event, callback) {
+      const bus = window.EventBus || (window.sys && window.sys.events);
+      if (bus && typeof bus.on === 'function') {
+        const unsub = bus.on(event, callback);
+        if (typeof unsub === 'function') {
+          this.eventUnsubscribers.push(unsub);
+        }
+        return unsub;
+      }
+      return () => {};
+    }
+
+    /**
+     * Namespaced per-app storage engine (Point 4)
+     */
+    get storage() {
+      if (window.sys && window.sys.storage && typeof window.sys.storage.forApp === 'function') {
+        return window.sys.storage.forApp(this.id);
+      }
+      const self = this;
+      return {
+        get: (k, d = null) => {
+          try {
+            const raw = localStorage.getItem(`webos_app_${self.id}_${k}`);
+            return raw !== null ? JSON.parse(raw) : d;
+          } catch(e) { return d; }
+        },
+        set: (k, v) => {
+          try {
+            localStorage.setItem(`webos_app_${self.id}_${k}`, JSON.stringify(v));
+            return true;
+          } catch(e) { return false; }
+        },
+        remove: (k) => {
+          try { localStorage.removeItem(`webos_app_${self.id}_${k}`); } catch(e) {}
+        }
+      };
+    }
+
+    /**
      * Check if current user has administrator privileges
      * @returns {boolean}
      */
