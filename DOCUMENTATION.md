@@ -412,7 +412,7 @@ Rechargez le navigateur : votre application est automatiquement découverte par 
 
 ## 9. Framework `WebOSApp` & Toolkit UI Standardisé (`WebOSToolkit`)
 
-Pour accélérer le développement d'applications modulaires modernes et réduire le code répétitif (*boilerplate*) de **>65%**, le WebOS met à disposition la classe de base `WebOSApp` (`window.sys.App`) et le couteau suisse d'UI `WebOSToolkit` (`window.sys.ui` et `window.sys.api`).
+Pour accélérer le développement d'applications modulaires modernes et réduire le code répétitif (*boilerplate*) de **>65%**, le WebOS met à disposition la classe de base `WebOSApp` (`window.sys.App`) et le couteau suisse d'UI `WebOSToolkit` (`window.sys.ui`, `window.sys.api`, `window.sys.storage`, `window.sys.dialog`).
 
 ### 📦 9.1 La Classe de Base `WebOSApp` (`window.sys.App`)
 
@@ -431,14 +431,31 @@ class MyCustomApp extends window.sys.App {
       tabs: [
         { id: 'general', label: 'my_app.tab_general', icon: '⚙️' },
         { id: 'details', label: 'my_app.tab_details', icon: '📊' }
-      ]
+      ],
+      state: {
+        itemCount: 0,
+        filter: 'all'
+      }
     });
   }
 
-  // Hook appelé automatiquement après l'injection HTML dans le DOM
+  // Hook appelé une seule fois à l'initialisation de l'application
+  onInit() {
+    // Écoute automatique d'un événement avec désinscription garantie à la fermeture de la fenêtre
+    this.subscribe('folder:changed', (data) => {
+      this.toast.info(this.t('my_app.folder_updated'));
+    });
+  }
+
+  // Hook appelé après chaque rendu du DOM
   bindEvents(container) {
     window.sys.ui.bindActions(container, {
-      'click #myBtn': () => this.handleButtonClick()
+      'click #myBtn': () => this.handleButtonClick(),
+      'click #saveStateBtn': () => {
+        // Enregistrement sécurisé avec sys.storage (namespacé par appId)
+        this.storage.set('filter', this.state.filter);
+        this.toast.success(this.t('my_app.saved'));
+      }
     });
   }
 
@@ -460,25 +477,21 @@ class MyCustomApp extends window.sys.App {
 window.MyCustomApp = new MyCustomApp();
 ```
 
-#### Cycle de vie & Hooks de `WebOSApp` :
+#### Cycle de vie, Helpers & Propriétés de `WebOSApp` :
 - `super(config)` : Initialise les métadonnées (`id`, `title`, `icon`, `width`, `height`, `tabs`, `state`).
-- `onInit()` : Appelé une seule fois lors de l'initialisation de l'application (exécuté automatiquement après la fin du constructeur de la classe dérivée).
-- `onOpen()` : Appelé à chaque ouverture de la fenêtre de l'application.
-- `onClose()` : Appelé à la fermeture de la fenêtre.
-- `renderHeaderExtra()` : (Optionnel) Retourne du HTML pour ajouter des boutons/contrôles dans la barre d'onglets (ex: bouton actualiser, checkbox auto-refresh).
-- `renderTab(tabId)` / `renderContent()` : Retourne le HTML de l'onglet actif ou du corps principal.
-- `bindEvents(container)` : Hook automatique déclenché après chaque rendu du DOM pour attacher des écouteurs d'événements sans aucun `document.getElementById` manuel.
-- `this.isAdmin` : Property getter retournant un booléen `true`/`false` si l'utilisateur courant possède les droits administrateur.
-- `this.api` : Client API unifié d'instance (`this.api.get(action, params)` et `this.api.post(action, payload)`).
-- `this.toast` : Notification toast d'instance (`this.toast.success(msg)`, `this.toast.info(msg)`).
-- `this.t(key, replacements)` : Raccourci d'internationalisation réactif de l'instance.
-- `this.escapeHtml(str)` : Échappement anti-XSS.
+- `this.storage` : Helper de stockage local namespacé par application (`this.storage.get(k, default)`, `this.storage.set(k, v)`, `this.storage.remove(k)`). Stocke automatiquement sous la clé isolée `webos_app_<appId>_<key>`.
+- `this.subscribe(event, callback)` : Souscription réactive à l'EventBus IPC avec mémoire automatique de désinscription. Garantit **0 fuite mémoire** lors de la fermeture de la fenêtre (`onClose`).
+- `this.api` : Passerelle API unifiée d'instance (`this.api.get(action, params)` et `this.api.post(action, payload)`).
+- `this.toast` : Notification toast d'instance (`this.toast.success(msg)`, `this.toast.info(msg)`, `this.toast.error(msg)`).
+- `this.t(key, replacements)` : Raccourci d'internationalisation réactif délégué au moteur `I18nEngine`.
+- `this.isAdmin` : Property getter retournant `true` si l'utilisateur possède les privilèges administrateur.
+- `this.escapeHtml(str)` : Échappement anti-XSS réutilisable.
 
 ---
 
-### 🎨 9.2 Composants UI Déclaratifs (`window.sys.ui`)
+### 🎨 9.2 Composants UI Déclaratifs & Formulaires (`window.sys.ui`)
 
-Toutes les méthodes de `window.sys.ui` résolvent automatiquement les clés i18n et échappent les valeurs.
+Toutes les méthodes de `window.sys.ui` résolvent automatiquement les clés i18n et appliquent un échappement sécurisé.
 
 #### 🃏 `sys.ui.card(options)`
 Crée une carte stylisée avec effet glassmorphism :
@@ -500,16 +513,26 @@ window.sys.ui.infoGrid([
 ]);
 ```
 
-#### 🏷️ `sys.ui.chipList(chips)`
-Génère une liste de puces/badges d'état :
+#### 🎛️ `sys.ui.forms.switch(options)` & `sys.ui.forms.slider(options)`
+Génère des composants d'entrée de formulaire modernes (Interrupteur Switch & Curseur Slider avec visibilité optimale) :
 ```javascript
-window.sys.ui.chipList([
-  { label: 'ZipArchive', enabled: true, icon: '✓' },
-  { label: 'FFMPEG CLI', disabled: true, icon: '✗' }
-]);
+const mySwitch = window.sys.ui.forms.switch({
+  label: 'my_app.enable_feature',
+  checked: true,
+  onChange: (enabled) => console.log('Switch status:', enabled)
+});
+
+const mySlider = window.sys.ui.forms.slider({
+  label: 'my_app.volume_level',
+  min: 0,
+  max: 100,
+  value: 80,
+  unit: '%',
+  onChange: (val) => console.log('Slider val:', val)
+});
 ```
 
-#### 🎛️ `sys.ui.gauge(options)`
+#### 📈 `sys.ui.gauge(options)`
 Génère une jauge de télémétrie avec barre de progression :
 ```javascript
 window.sys.ui.gauge({
@@ -517,25 +540,8 @@ window.sys.ui.gauge({
   label: 'sysmon.disk_used_label',
   value: '45.2%',
   percent: 45.2,
-  detail: '120 GB / 256 GB'
+  detail: '120 GB / <strong>256 GB</strong>'
 });
-```
-
-#### 📈 `sys.ui.chart.card(options)` & `sys.ui.chart.grid(cards)`
-Génère une grille réactive et des cartes de graphiques télémétriques temps réel avec Canvas HiDPI :
-```javascript
-window.sys.ui.chart.grid([
-  {
-    title: 'sysmon.chart_fps',
-    icon: '⚡',
-    canvasId: 'myFpsCanvas',
-    valueId: 'myFpsVal',
-    value: '60 FPS',
-    valueColor: '#22c55e',
-    footerLeft: 'Min: 0',
-    footerRight: 'Target: 60 FPS'
-  }
-]);
 ```
 
 #### 🔗 `sys.ui.bindActions(container, actionMap)`
@@ -550,14 +556,46 @@ window.sys.ui.bindActions(container, {
 
 ---
 
-### 🌐 9.3 Client API Unifié (`window.sys.api`)
+### 🌐 9.3 Passerelle API Unifiée (`window.sys.api`)
 
-Centralise les requêtes HTTP vers `api.php` avec injection automatique du jeton CSRF et gestion d'erreurs :
+Les applications **ne doivent JAMAIS effectuer d'appels directs** via `fetch('api.php'...)` ou parser manuellement les jetons CSRF. Elles utilisent exclusivement le client unifié `window.sys.api` (ou `this.api`) :
 
 ```javascript
-// Requête GET (Ex: api.php?action=get_system_info&_t=123)
-const sysInfo = await window.sys.api.get('get_system_info');
+// 1. Appel GET récursif sécurisé (Ex: api.php?action=get_system_info&_t=123)
+const sysInfo = await window.sys.api.get('get_system_info', { refresh: 1 });
 
-// Requête POST (Injecte automatiquement le jeton CSRF_TOKEN)
+// 2. Appel POST avec injection automatique du jeton CSRF_TOKEN
 const result = await window.sys.api.post('clear_all_caches', { target: 'thumbnails' });
+
+// 3. Envoi de fichier binaire (Upload)
+const uploadRes = await window.sys.api.upload('upload_media', formData);
+
+// 4. Assistant de génération d'URL d'API
+const downloadUrl = window.sys.api.url('get_file', { path: 'documents/report.pdf' });
 ```
+
+---
+
+## 10. ⚠️ Règles d'Or d'Architecture & Antipatterns Interdits
+
+Pour préserver la simplicité de l'architecture et garantir qu'un nouveau développeur puisse créer une application rapidement, tout contributeur **DOIT STRICTEMENT RESPECTER** les règles suivantes :
+
+1. 🚫 **Interdiction des appels directs à `api.php`** :
+   - **Interdit** : `fetch('api.php?action=...')` ou `new XMLHttpRequest()`.
+   - **Requis** : `this.api.get(...)` ou `this.api.post(...)` via `window.sys.api`.
+
+2. 🚫 **Interdiction des chaînes de fallback en dur dans `this.t('key')`** :
+   - **Interdit** : `this.t('sysmon.title') || "Titre par défaut"` ou `this.t('key', "Défaut")`.
+   - **Requis** : `this.t('key', replacements)` directement. Le moteur i18n renvoie la clé si la traduction est manquante, ce qui permet de détecter immédiatement tout oubli dans les dictionnaires lors des tests.
+
+3. 🚫 **Interdiction de manipulation brute de `localStorage` sans namespace** :
+   - **Interdit** : `localStorage.setItem('my_key', val)` (risque de collisions entre applications).
+   - **Requis** : `this.storage.set('my_key', val)` ou `window.sys.storage.forApp(appId)`.
+
+4. 🚫 **Interdiction de souscriptions orphelines sur le bus d'événements** :
+   - **Interdit** : `window.sys.events.on('event', callback)` sans conserver et révoquer la fonction de désinscription dans `onClose`.
+   - **Requis** : `this.subscribe('event', callback)` (gestion 100% automatique par `WebOSApp`).
+
+5. 🚫 **Séparation binationale Serveur (PHP) & Client (JS) en i18n** :
+   - **Serveur (PHP)** : Utiliser `<?php echo htmlspecialchars(__t('key'), ENT_QUOTES, 'UTF-8'); ?>` dans les fichiers `template.php`.
+   - **Client (JS)** : Placer les attributs `data-i18n="key"`, `data-i18n-title="key"`, `data-i18n-placeholder="key"` sur les éléments du DOM pour permettre la mise à jour dynamique réactive lors d'un changement de langue.
