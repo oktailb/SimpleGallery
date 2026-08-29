@@ -1,0 +1,13 @@
+{
+  "apps.template-app.title": "Dev Template App",
+  "template.tab_overview": "Overview",
+  "template.tab_widgets": "Widgets & Forms",
+  "template.tab_api": "Services & API",
+  "template.welcome_title": "Welcome to the WebOS App Template!",
+  "template.welcome_subtitle": "This reference template helps developers rapidly build clean, modular WebOS applications.",
+  "template.btn_toast": "Trigger Toast",
+  "template.btn_confirm": "Open Dialog",
+  "template.btn_audio": "Play WebAudio Sound",
+  "template.input_placeholder": "Enter demo text...",
+  "template.status_ready": "WebOS System Ready"
+}

@@ -812,7 +812,8 @@
       if (!win) return;
 
       if (typeof win.onClose === 'function') {
-        win.onClose(win);
+        const res = win.onClose(win);
+        if (res === false) return;
       }
 
       if (win.element && win.element.parentNode) {

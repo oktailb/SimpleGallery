@@ -7,116 +7,11 @@
   'use strict';
 
   class FootSoundEngine {
-    constructor() {
-      this.ctx = null;
-    }
-
-    ensureContext() {
-      if (!this.ctx && typeof AudioContext !== 'undefined') {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (this.ctx && this.ctx.state === 'suspended') {
-        this.ctx.resume();
-      }
-    }
-
-    playKick(power = 1) {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(140 * power, now);
-        osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
-
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.13);
-      } catch (e) {}
-    }
-
-    playBounce() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(280, now);
-        osc.frequency.exponentialRampToValueAtTime(160, now + 0.06);
-
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.07);
-      } catch (e) {}
-    }
-
-    playWhistle() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1800, now);
-        osc.frequency.linearRampToValueAtTime(2200, now + 0.1);
-        osc.frequency.linearRampToValueAtTime(1900, now + 0.25);
-
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.32);
-      } catch (e) {}
-    }
-
-    playGoal() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        this.playWhistle();
-        const now = this.ctx.currentTime;
-        // Crowd cheer noise synthesis
-        const bufferSize = this.ctx.sampleRate * 1.5;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.7));
-        }
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 800;
-
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.4);
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-        noise.start(now);
-      } catch (e) {}
-    }
+    get audio() { return (window.sys && window.sys.audio) || null; }
+    playKick(power = 1) { if (this.audio) this.audio.playBounce(); }
+    playBounce() { if (this.audio) this.audio.playBounce(); }
+    playWhistle() { if (this.audio) this.audio.playClick(); }
+    playGoal() { if (this.audio) this.audio.playWin(); }
   }
 
   class FootGameInstance {
@@ -822,21 +717,17 @@
     }
   }
 
-  class WebOSFootApp {
+  const WebOSGameApp = (window.sys && window.sys.GameApp) || window.WebOSGameApp || Object;
+
+  class WebOSFootApp extends WebOSGameApp {
     constructor() {
+      super({
+        id: 'foot',
+        title: 'apps.foot.title',
+        icon: '⚽'
+      });
       this.instances = new Map();
       this.instanceCounter = 0;
-
-      if (window.sys && window.sys.events) {
-        window.sys.events.on('locale:changed', () => {
-          this.instances.forEach(inst => inst.updateLocale());
-        });
-      }
-    }
-
-    t(key, replacements = {}) {
-      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
-      return key;
     }
 
     open(options = {}) {
@@ -845,6 +736,10 @@
       const instance = new FootGameInstance(this, id, options);
       this.instances.set(id, instance);
       return instance;
+    }
+
+    onLocaleChanged() {
+      this.instances.forEach(inst => inst.updateLocale());
     }
   }
 

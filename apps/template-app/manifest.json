@@ -1,0 +1,32 @@
+{
+  "id": "template-app",
+  "name": "App Template Dev",
+  "version": "1.0.0",
+  "description": "Application modèle clé en main pour le développement d'applications SimpleGallery WebOS",
+  "icon": "🧪",
+  "category": "utilities",
+  "main": "app.js",
+  "css": "style.css",
+  "window": {
+    "width": 840,
+    "height": 580,
+    "minWidth": 480,
+    "minHeight": 360,
+    "resizable": true,
+    "maximizable": true
+  },
+  "locales": {
+    "fr": {
+      "title": "Application Modèle",
+      "description": "Template de développement WebOS"
+    },
+    "en": {
+      "title": "Template App",
+      "description": "WebOS development template app"
+    },
+    "ja": {
+      "title": "テンプレートアプリ",
+      "description": "WebOS開発用テンプレートアプリ"
+    }
+  }
+}

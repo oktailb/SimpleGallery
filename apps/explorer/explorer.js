@@ -1783,8 +1783,15 @@
   // -------------------------------------------------------------
   // EXPLORER MULTI-INSTANCE MANAGER (window.explorerApp)
   // -------------------------------------------------------------
-  class ExplorerApp {
+  const WebOSApp = (window.sys && window.sys.App) || window.WebOSApp || Object;
+
+  class ExplorerApp extends WebOSApp {
     constructor() {
+      super({
+        id: 'explorer',
+        title: 'apps.explorer.title',
+        icon: '📁'
+      });
       this.instances = new Map();
       this.instanceCounter = 0;
       this.activeInstance = null;

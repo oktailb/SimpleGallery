@@ -1,0 +1,13 @@
+{
+  "apps.template-app.title": "Application Modèle Dev",
+  "template.tab_overview": "Vue d'ensemble",
+  "template.tab_widgets": "Widgets & Formulaires",
+  "template.tab_api": "Services & API",
+  "template.welcome_title": "Bienvenue dans l'App Template WebOS !",
+  "template.welcome_subtitle": "Cette application modèle sert de référence aux développeurs pour créer facilement de nouvelles fonctionnalités.",
+  "template.btn_toast": "Déclencher un Toast",
+  "template.btn_confirm": "Ouvrir une Dialogue",
+  "template.btn_audio": "Effet Sonore WebAudio",
+  "template.input_placeholder": "Saisissez un texte de démonstration...",
+  "template.status_ready": "Système WebOS prêt"
+}

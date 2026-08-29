@@ -437,8 +437,8 @@
     }
 
     createSlider(options = {}) {
-      const group = document.createElement('div');
-      group.className = 'webos-slider-group';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'webos-slider-wrapper';
 
       const min = options.min !== undefined ? options.min : 0;
       const max = options.max !== undefined ? options.max : 100;
@@ -446,13 +446,18 @@
       const value = options.value !== undefined ? options.value : min;
       const unit = options.unit || '';
 
-      group.innerHTML = `
-        <input type="range" class="webos-slider-input" min="${min}" max="${max}" step="${step}" value="${value}" />
-        <span class="webos-slider-value">${value}${unit}</span>
+      const labelHtml = options.label ? `<label class="webos-slider-label">${this.escapeHtml(options.label)}</label>` : '';
+
+      wrapper.innerHTML = `
+        ${labelHtml}
+        <div class="webos-slider-group">
+          <input type="range" class="webos-slider-input" min="${min}" max="${max}" step="${step}" value="${value}" />
+          <span class="webos-slider-value">${value}${unit}</span>
+        </div>
       `;
 
-      const input = group.querySelector('.webos-slider-input');
-      const valDisplay = group.querySelector('.webos-slider-value');
+      const input = wrapper.querySelector('.webos-slider-input');
+      const valDisplay = wrapper.querySelector('.webos-slider-value');
 
       input.addEventListener('input', () => {
         valDisplay.textContent = `${input.value}${unit}`;
@@ -460,7 +465,8 @@
       });
 
       return {
-        element: group,
+        element: wrapper,
+        input: input,
         getValue: () => parseFloat(input.value),
         setValue: (val) => {
           input.value = val;
@@ -1079,6 +1085,187 @@
         </div>
       `;
     }
+
+    /**
+     * Toolbar Widget
+     */
+    createToolbar(container, options = {}) {
+      if (!container) return;
+      const toolbar = document.createElement('div');
+      toolbar.className = `webos-toolbar ${options.className || ''}`;
+      toolbar.style.display = 'flex';
+      toolbar.style.alignItems = 'center';
+      toolbar.style.gap = '8px';
+      toolbar.style.padding = '8px 12px';
+      toolbar.style.background = 'var(--header-bg, rgba(255, 255, 255, 0.05))';
+      toolbar.style.borderBottom = '1px solid var(--border-color, rgba(255, 255, 255, 0.1))';
+
+      (options.items || []).forEach(item => {
+        if (item.type === 'separator') {
+          const sep = document.createElement('div');
+          sep.style.width = '1px';
+          sep.style.height = '18px';
+          sep.style.background = 'var(--border-color, rgba(255, 255, 255, 0.15))';
+          sep.style.margin = '0 4px';
+          toolbar.appendChild(sep);
+        } else if (item.type === 'spacer') {
+          const spacer = document.createElement('div');
+          spacer.style.flex = '1';
+          toolbar.appendChild(spacer);
+        } else {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `webos-btn ${item.primary ? 'webos-btn-primary' : ''} ${item.danger ? 'webos-btn-danger' : ''} ${item.className || ''}`;
+          if (item.id) btn.id = item.id;
+          btn.innerHTML = `${item.icon ? `<span>${item.icon}</span> ` : ''}${item.label ? this.escapeHtml(item.label) : ''}`;
+          if (item.title) btn.title = item.title;
+          if (item.disabled) btn.disabled = true;
+          if (typeof item.onClick === 'function') {
+            btn.addEventListener('click', (e) => item.onClick(e, btn));
+          }
+          toolbar.appendChild(btn);
+        }
+      });
+
+      container.appendChild(toolbar);
+      return toolbar;
+    }
+
+    /**
+     * StatusBar Widget
+     */
+    createStatusBar(container, options = {}) {
+      if (!container) return;
+      const bar = document.createElement('div');
+      bar.className = 'webos-statusbar';
+      bar.style.display = 'flex';
+      bar.style.alignItems = 'center';
+      bar.style.justifyContent = 'space-between';
+      bar.style.padding = '4px 12px';
+      bar.style.fontSize = '0.8rem';
+      bar.style.color = 'var(--text-muted, #94a3b8)';
+      bar.style.background = 'var(--header-bg, rgba(0, 0, 0, 0.2))';
+      bar.style.borderTop = '1px solid var(--border-color, rgba(255, 255, 255, 0.08))';
+
+      bar.innerHTML = `
+        <div class="webos-statusbar-left" style="display:flex; align-items:center; gap:8px;">
+          ${options.statusDot ? `<span class="webos-status-dot" style="width:8px; height:8px; border-radius:50%; background:${options.statusDotColor || '#22c55e'}; display:inline-block;"></span>` : ''}
+          <span class="webos-statusbar-text">${this.escapeHtml(options.text || '')}</span>
+        </div>
+        <div class="webos-statusbar-right" style="display:flex; align-items:center; gap:12px;">
+          ${options.extraHtml || ''}
+        </div>
+      `;
+
+      container.appendChild(bar);
+      return {
+        element: bar,
+        setText: (txt) => {
+          const el = bar.querySelector('.webos-statusbar-text');
+          if (el) el.textContent = txt;
+        },
+        setStatusColor: (color) => {
+          const dot = bar.querySelector('.webos-status-dot');
+          if (dot) dot.style.background = color;
+        }
+      };
+    }
+
+    /**
+     * SplitView Layout Helper
+     */
+    createSplitView(container, options = {}) {
+      if (!container) return;
+      container.style.display = 'flex';
+      container.style.width = '100%';
+      container.style.height = '100%';
+      container.style.overflow = 'hidden';
+
+      const sidebar = document.createElement('div');
+      sidebar.className = 'webos-split-sidebar';
+      sidebar.style.width = typeof options.sidebarWidth === 'number' ? `${options.sidebarWidth}px` : (options.sidebarWidth || '240px');
+      sidebar.style.borderRight = '1px solid var(--border-color, rgba(255, 255, 255, 0.1))';
+      sidebar.style.overflowY = 'auto';
+      sidebar.style.flexShrink = '0';
+
+      const main = document.createElement('div');
+      main.className = 'webos-split-main';
+      main.style.flex = '1';
+      main.style.overflowY = 'auto';
+
+      container.appendChild(sidebar);
+      container.appendChild(main);
+
+      return { sidebar, main };
+    }
+
+    /**
+     * Floating ContextMenu Helper
+     */
+    createContextMenu(event, items = [], options = {}) {
+      if (event && typeof event.preventDefault === 'function') event.preventDefault();
+
+      const existing = document.querySelector('.webos-context-menu');
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+      const menu = document.createElement('div');
+      menu.className = 'webos-context-menu';
+      menu.style.position = 'fixed';
+      menu.style.zIndex = '99999';
+      menu.style.background = 'var(--window-bg, #1e293b)';
+      menu.style.border = '1px solid var(--border-color, rgba(255, 255, 255, 0.15))';
+      menu.style.borderRadius = '8px';
+      menu.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+      menu.style.padding = '6px';
+      menu.style.minWidth = '160px';
+
+      items.forEach(item => {
+        if (item.type === 'separator') {
+          const sep = document.createElement('div');
+          sep.style.height = '1px';
+          sep.style.background = 'var(--border-color, rgba(255, 255, 255, 0.1))';
+          sep.style.margin = '4px 0';
+          menu.appendChild(sep);
+        } else {
+          const menuItem = document.createElement('div');
+          menuItem.className = 'webos-context-item';
+          menuItem.style.padding = '6px 12px';
+          menuItem.style.borderRadius = '4px';
+          menuItem.style.cursor = 'pointer';
+          menuItem.style.display = 'flex';
+          menuItem.style.alignItems = 'center';
+          menuItem.style.gap = '8px';
+          menuItem.style.fontSize = '0.85rem';
+          menuItem.style.color = item.danger ? '#ef4444' : 'var(--text-main, #f8fafc)';
+          menuItem.innerHTML = `${item.icon ? `<span>${item.icon}</span>` : ''} <span>${this.escapeHtml(item.label || '')}</span>`;
+
+          menuItem.addEventListener('mouseenter', () => menuItem.style.background = 'rgba(99, 102, 241, 0.2)');
+          menuItem.addEventListener('mouseleave', () => menuItem.style.background = 'transparent');
+          menuItem.addEventListener('click', () => {
+            if (menu.parentNode) menu.parentNode.removeChild(menu);
+            if (typeof item.onClick === 'function') item.onClick();
+          });
+          menu.appendChild(menuItem);
+        }
+      });
+
+      const x = event ? (event.clientX || 100) : 100;
+      const y = event ? (event.clientY || 100) : 100;
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+
+      document.body.appendChild(menu);
+
+      const closeMenu = (e) => {
+        if (!menu.contains(e.target) && menu.parentNode) {
+          menu.parentNode.removeChild(menu);
+          document.removeEventListener('click', closeMenu);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeMenu), 50);
+
+      return menu;
+    }
   }
 
   // Instantiate and bind to global namespace
@@ -1093,6 +1280,11 @@
       warning: toolkitInstance.toastWarning.bind(toolkitInstance),
       info: toolkitInstance.toastInfo.bind(toolkitInstance)
     },
+    showToast: toolkitInstance.showToast.bind(toolkitInstance),
+    toastSuccess: toolkitInstance.toastSuccess.bind(toolkitInstance),
+    toastError: toolkitInstance.toastError.bind(toolkitInstance),
+    toastWarning: toolkitInstance.toastWarning.bind(toolkitInstance),
+    toastInfo: toolkitInstance.toastInfo.bind(toolkitInstance),
     modal: {
       create: toolkitInstance.createModal.bind(toolkitInstance)
     },
@@ -1101,6 +1293,13 @@
       alert: toolkitInstance.alertDialog.bind(toolkitInstance),
       prompt: toolkitInstance.promptDialog.bind(toolkitInstance)
     },
+    confirmDialog: toolkitInstance.confirmDialog.bind(toolkitInstance),
+    alertDialog: toolkitInstance.alertDialog.bind(toolkitInstance),
+    promptDialog: toolkitInstance.promptDialog.bind(toolkitInstance),
+    toolbar: toolkitInstance.createToolbar.bind(toolkitInstance),
+    statusBar: toolkitInstance.createStatusBar.bind(toolkitInstance),
+    splitView: toolkitInstance.createSplitView.bind(toolkitInstance),
+    contextMenu: toolkitInstance.createContextMenu.bind(toolkitInstance),
     segmented: toolkitInstance.segmentedControl.bind(toolkitInstance),
     tabs: toolkitInstance.tabs.bind(toolkitInstance),
     breadcrumb: toolkitInstance.createBreadcrumb.bind(toolkitInstance),

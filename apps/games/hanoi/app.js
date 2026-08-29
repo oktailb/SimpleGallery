@@ -7,108 +7,11 @@
   'use strict';
 
   class HanoiSoundEngine {
-    constructor() {
-      this.ctx = null;
-    }
-
-    ensureContext() {
-      if (!this.ctx && typeof AudioContext !== 'undefined') {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (this.ctx && this.ctx.state === 'suspended') {
-        this.ctx.resume();
-      }
-    }
-
-    playPickup() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, now);
-        osc.frequency.exponentialRampToValueAtTime(660, now + 0.08);
-
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.09);
-      } catch (e) {}
-    }
-
-    playDrop() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(320, now);
-        osc.frequency.exponentialRampToValueAtTime(180, now + 0.1);
-
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.11);
-      } catch (e) {}
-    }
-
-    playError() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.setValueAtTime(120, now + 0.08);
-
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.18);
-      } catch (e) {}
-    }
-
-    playVictory() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-        notes.forEach((freq, i) => {
-          const now = this.ctx.currentTime + i * 0.12;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now);
-
-          gain.gain.setValueAtTime(0.25, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.45);
-        });
-      } catch (e) {}
-    }
+    get audio() { return (window.sys && window.sys.audio) || null; }
+    playPickup() { if (this.audio) this.audio.playClick(); }
+    playDrop() { if (this.audio) this.audio.playMove(); }
+    playError() { if (this.audio) this.audio.playError(); }
+    playVictory() { if (this.audio) this.audio.playWin(); }
   }
 
   class HanoiInstance {
@@ -637,21 +540,17 @@
     }
   }
 
-  class WebOSHanoiApp {
+  const WebOSGameApp = (window.sys && window.sys.GameApp) || window.WebOSGameApp || Object;
+
+  class WebOSHanoiApp extends WebOSGameApp {
     constructor() {
+      super({
+        id: 'hanoi',
+        title: 'apps.hanoi.title',
+        icon: '🗼'
+      });
       this.instances = new Map();
       this.instanceCounter = 0;
-
-      if (window.sys && window.sys.events) {
-        window.sys.events.on('locale:changed', () => {
-          this.instances.forEach(inst => inst.updateLocale());
-        });
-      }
-    }
-
-    t(key, replacements = {}) {
-      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
-      return key;
     }
 
     open(options = {}) {
@@ -660,6 +559,10 @@
       const instance = new HanoiInstance(this, id, options);
       this.instances.set(id, instance);
       return instance;
+    }
+
+    onLocaleChanged() {
+      this.instances.forEach(inst => inst.updateLocale());
     }
   }
 

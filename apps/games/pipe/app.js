@@ -7,86 +7,10 @@
   'use strict';
 
   class PipeSoundEngine {
-    constructor() {
-      this.ctx = null;
-    }
-
-    ensureContext() {
-      if (!this.ctx && typeof AudioContext !== 'undefined') {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (this.ctx && this.ctx.state === 'suspended') {
-        this.ctx.resume();
-      }
-    }
-
-    playRotate() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(320, now);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.05);
-
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.06);
-      } catch (e) {}
-    }
-
-    playFlow() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(540, now);
-        osc.frequency.linearRampToValueAtTime(720, now + 0.08);
-
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.11);
-      } catch (e) {}
-    }
-
-    playVictory() {
-      try {
-        this.ensureContext();
-        if (!this.ctx) return;
-        const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
-        notes.forEach((freq, i) => {
-          const now = this.ctx.currentTime + i * 0.1;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now);
-
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.38);
-        });
-      } catch (e) {}
-    }
+    get audio() { return (window.sys && window.sys.audio) || null; }
+    playRotate() { if (this.audio) this.audio.playRotate(); }
+    playFlow() { if (this.audio) this.audio.playFlow(); }
+    playVictory() { if (this.audio) this.audio.playVictory(); }
   }
 
   class PipeInstance {
@@ -775,21 +699,17 @@
     }
   }
 
-  class WebOSPipeApp {
+  const WebOSGameApp = (window.sys && window.sys.GameApp) || window.WebOSGameApp || Object;
+
+  class WebOSPipeApp extends WebOSGameApp {
     constructor() {
+      super({
+        id: 'pipe',
+        title: 'apps.pipe.title',
+        icon: '🔧'
+      });
       this.instances = new Map();
       this.instanceCounter = 0;
-
-      if (window.sys && window.sys.events) {
-        window.sys.events.on('locale:changed', () => {
-          this.instances.forEach(inst => inst.updateLocale());
-        });
-      }
-    }
-
-    t(key, replacements = {}) {
-      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
-      return key;
     }
 
     open(options = {}) {
@@ -798,6 +718,10 @@
       const instance = new PipeInstance(this, id, options);
       this.instances.set(id, instance);
       return instance;
+    }
+
+    onLocaleChanged() {
+      this.instances.forEach(inst => inst.updateLocale());
     }
   }
 

@@ -484,53 +484,35 @@
     }
   }
 
-  class WebOSMapsApp {
+  const WebOSApp = (window.sys && window.sys.App) || window.WebOSApp || Object;
+
+  class WebOSMapsApp extends WebOSApp {
     constructor() {
+      super({
+        id: 'maps',
+        title: 'map.title',
+        icon: '🗺️'
+      });
       this.instances = new Map();
       this.instanceCounter = 0;
       this.activeInstance = null;
 
-      this.init();
+      this.initMapsGlobalHandlers();
     }
 
-    t(key, replacements = {}) {
-      if (window.desktop && typeof window.desktop.t === 'function') {
-        return window.desktop.t(key, replacements);
-      }
-      if (window.sys && window.sys.i18n && typeof window.sys.i18n.t === 'function') {
-        return window.sys.i18n.t(key, replacements);
-      }
-      if (window.I18nEngine && typeof window.I18nEngine.t === 'function') {
-        return window.I18nEngine.t(key, replacements);
-      }
-      return key;
-    }
-
-    escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    init() {
+    initMapsGlobalHandlers() {
       window.sys = window.sys || {};
       window.sys.openMaps = (options) => this.open(options);
       window.sys.computeSmartGpsLocations = (files, enabled) => this.computeSmartGpsLocations(files, enabled);
+    }
 
-      if (window.sys && window.sys.events) {
-        window.sys.events.on('locale:changed', () => {
-          this.instances.forEach(inst => {
-            if (inst.leafletMap) {
-              inst.renderMapContent();
-            }
-          });
-          this.updateMenuBarForActiveInstance();
-        });
-      }
+    onLocaleChanged() {
+      this.instances.forEach(inst => {
+        if (inst.leafletMap) {
+          inst.renderMapContent();
+        }
+      });
+      this.updateMenuBarForActiveInstance();
     }
 
     setActiveInstance(instance) {

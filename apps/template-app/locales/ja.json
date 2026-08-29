@@ -1,0 +1,13 @@
+{
+  "apps.template-app.title": "開発用テンプレートアプリ",
+  "template.tab_overview": "概要",
+  "template.tab_widgets": "ウィジェットとフォーム",
+  "template.tab_api": "サービスとAPI",
+  "template.welcome_title": "WebOS アプリテンプレートへようこそ！",
+  "template.welcome_subtitle": "このテンプレートは、開発者が新しいモジュールWebOSアプリを迅速に構築するための参考例です。",
+  "template.btn_toast": "トースト通知を表示",
+  "template.btn_confirm": "確認ダイアログを開く",
+  "template.btn_audio": "WebAudio効果音を再生",
+  "template.input_placeholder": "デモテキストを入力...",
+  "template.status_ready": "WebOS システム準備完了"
+}

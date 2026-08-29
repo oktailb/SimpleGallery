@@ -709,30 +709,17 @@
     }
   }
 
-  class WebOS8QueensApp {
+  const WebOSGameApp = (window.sys && window.sys.GameApp) || window.WebOSGameApp || Object;
+
+  class WebOS8QueensApp extends WebOSGameApp {
     constructor() {
+      super({
+        id: '8queens',
+        title: 'apps.8queens.title',
+        icon: '👑'
+      });
       this.instances = new Map();
       this.instanceCounter = 0;
-
-      if (window.sys && window.sys.events) {
-        window.sys.events.on('locale:changed', () => {
-          this.instances.forEach(inst => inst.updateLocale());
-        });
-      }
-    }
-
-    t(key, replacements = {}) {
-      if (window.I18nEngine) return window.I18nEngine.t(key, replacements);
-      return key;
-    }
-
-    escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
     }
 
     open(options = {}) {
@@ -741,6 +728,10 @@
       const instance = new EightQueensInstance(this, id, options);
       this.instances.set(id, instance);
       return instance;
+    }
+
+    onLocaleChanged() {
+      this.instances.forEach(inst => inst.updateLocale());
     }
   }
 

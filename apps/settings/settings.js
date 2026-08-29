@@ -756,6 +756,7 @@
       });
 
       return `
+        <div id="cookieConsentBanner" style="display:none;"></div>
         ${window.sys.ui.card({
           title: 'cookie.modal_title',
           icon: '🛡️',
