@@ -3,7 +3,7 @@
   "name": "Gallery Explorer Views",
   "version": "2.0.0",
   "icon": "🗂️",
-  "category": "productivity",
+  "category": "view",
   "locales": {
     "fr": {
       "title": "Explorateur de Galerie",

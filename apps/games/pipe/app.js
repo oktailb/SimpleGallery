@@ -50,7 +50,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('pipe')
-        : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+        : this.t('games.pipe.title');
 
       const defaultW = Math.min(760, Math.max(500, Math.round(window.innerWidth * 0.65)));
       const defaultH = Math.min(820, Math.max(540, Math.round(window.innerHeight * 0.85)));
@@ -212,7 +212,7 @@
       if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('pipe')
-          : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+          : this.t('games.pipe.title');
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
       if (this.el.wrapModePill) {
@@ -236,7 +236,7 @@
       if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('pipe')
-          : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+          : this.t('games.pipe.title');
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);
       }
       if (this.el.totalCellsCount) this.el.totalCellsCount.textContent = n * n;
@@ -657,7 +657,7 @@
     updateLocale() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('pipe')
-        : (this.t('games.pipe.title') || "Tuyaux & Réseau Connecté");
+        : this.t('games.pipe.title');
 
       if (window.WindowManager) {
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.gridSize}x${this.gridSize}${this.isWrapAround ? ' - ' + this.t('games.pipe.wrap_on') : ''})`);

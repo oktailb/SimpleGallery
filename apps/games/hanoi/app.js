@@ -53,7 +53,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('hanoi')
-        : (this.t('games.hanoi.title') || "Tours de Hanoï");
+        : this.t('games.hanoi.title');
 
       const defaultW = Math.min(840, Math.max(540, Math.round(window.innerWidth * 0.70)));
       const defaultH = Math.min(680, Math.max(450, Math.round(window.innerHeight * 0.75)));
@@ -261,7 +261,7 @@
       if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('hanoi')
-          : (this.t('games.hanoi.title') || "Tours de Hanoï");
+          : this.t('games.hanoi.title');
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.diskCount} disques)`);
       }
       if (this.el.diskCountVal) this.el.diskCountVal.textContent = this.diskCount;
@@ -499,7 +499,7 @@
     updateLocale() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('hanoi')
-        : (this.t('games.hanoi.title') || "Tours de Hanoï");
+        : this.t('games.hanoi.title');
 
       if (window.WindowManager) {
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.diskCount} disques)`);

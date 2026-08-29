@@ -85,7 +85,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('8queens')
-        : (this.t('games.8queens.title') || "Jeu des 8 Dames");
+        : this.t('games.8queens.title');
 
       const defaultW = Math.min(760, Math.max(500, Math.round(window.innerWidth * 0.65)));
       const defaultH = Math.min(820, Math.max(540, Math.round(window.innerHeight * 0.85)));
@@ -644,7 +644,7 @@
       if (window.WindowManager) {
         const appTitle = (window.sys && window.sys.appManager)
           ? window.sys.appManager.getAppTitle('8queens')
-          : (this.t('games.8queens.title') || "Jeu des 8 Dames");
+          : this.t('games.8queens.title');
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.boardSize}x${this.boardSize})`);
       }
 
@@ -666,7 +666,7 @@
     updateLocale() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('8queens')
-        : (this.t('games.8queens.title') || "Jeu des 8 Dames");
+        : this.t('games.8queens.title');
 
       if (window.WindowManager) {
         window.WindowManager.setTitle(this.winId, `${appTitle} (${this.boardSize}x${this.boardSize})`);

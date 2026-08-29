@@ -99,7 +99,7 @@
     initWindow() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('foot')
-        : (this.t('games.foot.title') || "Foot Pong Arcade");
+        : this.t('games.foot.title');
 
       const defaultW = Math.min(880, Math.max(540, Math.round(window.innerWidth * 0.72)));
       const defaultH = Math.min(680, Math.max(420, Math.round(window.innerHeight * 0.78)));
@@ -690,7 +690,7 @@
     updateLocale() {
       const appTitle = (window.sys && window.sys.appManager)
         ? window.sys.appManager.getAppTitle('foot')
-        : (this.t('games.foot.title') || "Foot Pong Arcade");
+        : this.t('games.foot.title');
 
       if (window.WindowManager) {
         window.WindowManager.setTitle(this.winId, `${appTitle} (1v1)`);
