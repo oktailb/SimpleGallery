@@ -28,8 +28,56 @@
       this.tabs = config.tabs || [];
       this.currentTab = (this.tabs.length > 0) ? this.tabs[0].id : null;
       this.window = null;
+      this.state = config.state || {};
 
-      this.onInit();
+      // Defer onInit so derived class constructor finishes execution first
+      queueMicrotask(() => this.onInit());
+    }
+
+    /**
+     * Check if current user has administrator privileges
+     * @returns {boolean}
+     */
+    get isAdmin() {
+      return (window.desktop && window.desktop.state && window.desktop.state.isAdmin) || window.IS_ADMIN || false;
+    }
+
+    /**
+     * API Client Helper (window.sys.api wrapper)
+     */
+    get api() {
+      if (window.sys && window.sys.api) {
+        return window.sys.api;
+      }
+      return {
+        get: (action, params = {}) => {
+          const query = new URLSearchParams({ action, ...params }).toString();
+          return fetch(`api.php?${query}`).then(r => r.json());
+        },
+        post: (action, payload = {}) => {
+          const csrf = window.CSRF_TOKEN || (window.desktop && window.desktop.state && window.desktop.state.csrfToken) || '';
+          return fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ action, csrf_token: csrf, ...payload })
+          }).then(r => r.json());
+        }
+      };
+    }
+
+    /**
+     * Toast notifications helper
+     */
+    get toast() {
+      if (window.sys && window.sys.ui && window.sys.ui.toast) {
+        return window.sys.ui.toast;
+      }
+      return {
+        info: (msg) => console.log('[Toast Info]', msg),
+        success: (msg) => console.log('[Toast Success]', msg),
+        warning: (msg) => console.warn('[Toast Warning]', msg),
+        error: (msg) => console.error('[Toast Error]', msg)
+      };
     }
 
     /**
@@ -68,9 +116,13 @@
     /**
      * Open or focus application window
      */
-    open() {
+    open(tab) {
+      if (tab && typeof tab === 'string' && this.tabs.some(t => t.id === tab)) {
+        this.currentTab = tab;
+      }
       if (this.window && window.WindowManager && window.WindowManager.windows.has(this.window.id)) {
         window.WindowManager.focusWindow(this.window.id);
+        if (tab && typeof tab === 'string') this.switchTab(tab);
         return;
       }
 

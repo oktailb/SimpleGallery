@@ -753,25 +753,53 @@
     // =========================================================================
     bindActions(container, actionMap = {}) {
       if (!container) return;
+      if (!container._sysActionMap) {
+        container._sysActionMap = {};
+      }
+      Object.assign(container._sysActionMap, actionMap);
+
+      if (!container._sysBoundEvents) {
+        container._sysBoundEvents = new Set();
+      }
+
       Object.keys(actionMap).forEach(key => {
         const parts = key.split(' ');
         const eventName = parts[0];
-        const selector = parts.slice(1).join(' ');
 
-        container.addEventListener(eventName, (e) => {
-          const target = e.target.closest(selector);
-          if (target && container.contains(target)) {
-            actionMap[key](target, e);
-          }
-        });
+        if (!container._sysBoundEvents.has(eventName)) {
+          container._sysBoundEvents.add(eventName);
+
+          container.addEventListener(eventName, (e) => {
+            if (!container._sysActionMap) return;
+            Object.keys(container._sysActionMap).forEach(actionKey => {
+              const [evt, ...selectorParts] = actionKey.split(' ');
+              if (evt !== eventName) return;
+              const selector = selectorParts.join(' ');
+              if (!selector) return;
+              const target = e.target.closest(selector);
+              if (target && container.contains(target)) {
+                container._sysActionMap[actionKey](target, e);
+              }
+            });
+          });
+        }
       });
     }
 
     // =========================================================================
     // 10. Cards, Gauges & Info Grids (`sys.ui.card`, `sys.ui.gauge`)
     // =========================================================================
+    resolveText(text) {
+      if (text == null) return '';
+      const str = String(text);
+      const i18n = (window.sys && window.sys.i18n) || window.I18nEngine;
+      const translated = (i18n && typeof i18n.t === 'function' && str.includes('.')) ? i18n.t(str) : str;
+      return this.escapeHtml(translated);
+    }
+
     createCard(options = {}) {
-      const titleHtml = options.title ? `<h4 class="webos-card-title">${options.icon ? `<span>${options.icon}</span>` : ''}<span>${options.title}</span></h4>` : '';
+      const titleText = options.title ? this.resolveText(options.title) : '';
+      const titleHtml = titleText ? `<h4 class="webos-card-title">${options.icon ? `<span>${options.icon}</span>` : ''}<span>${titleText}</span></h4>` : '';
       const headerHtml = (titleHtml || options.headerAction) ? `
         <div class="webos-card-header">
           ${titleHtml}
@@ -792,17 +820,19 @@
     createGauge(options = {}) {
       const percent = options.percent !== undefined ? options.percent : 0;
       const statusClass = percent > (options.dangerThreshold || 85) ? 'danger' : (percent > (options.warningThreshold || 65) ? 'warning' : '');
+      const labelText = options.label ? this.resolveText(options.label) : '';
+      const detailText = options.detail ? this.resolveText(options.detail) : '';
 
       return `
         <div class="webos-gauge-card ${options.className || ''}">
           <div class="webos-gauge-top">
-            <span class="webos-gauge-label">${options.icon ? `${options.icon} ` : ''}${options.label || ''}</span>
+            <span class="webos-gauge-label">${options.icon ? `${options.icon} ` : ''}${labelText}</span>
             <span class="webos-gauge-val">${options.value || `${percent}%`}</span>
           </div>
           <div class="webos-progress-bar">
             <div class="webos-progress-fill ${statusClass}" style="width: ${Math.min(100, Math.max(0, percent))}%;"></div>
           </div>
-          ${options.detail ? `<span style="font-size: 0.72rem; color: var(--webos-ui-text-muted);">${options.detail}</span>` : ''}
+          ${detailText ? `<span style="font-size: 0.72rem; color: var(--webos-ui-text-muted);">${detailText}</span>` : ''}
         </div>
       `;
     }
@@ -818,20 +848,12 @@
     }
 
     createInfoGrid(items = []) {
-      const i18n = (window.sys && window.sys.i18n) || window.I18nEngine;
-      const resolveText = (text) => {
-        if (text == null) return '';
-        const str = String(text);
-        const translated = (i18n && typeof i18n.t === 'function' && str.includes('.')) ? i18n.t(str) : str;
-        return this.escapeHtml(translated);
-      };
-
       return `
         <div class="webos-info-grid">
           ${items.map(item => `
             <div class="webos-info-row">
-              <span class="webos-info-label">${resolveText(item.label)}</span>
-              <span class="webos-info-val" style="${item.style || ''}">${resolveText(item.value)}</span>
+              <span class="webos-info-label">${this.resolveText(item.label)}</span>
+              <span class="webos-info-val" style="${item.style || ''}">${this.resolveText(item.value)}</span>
             </div>
           `).join('')}
         </div>
@@ -839,19 +861,11 @@
     }
 
     createChipList(chips = []) {
-      const i18n = (window.sys && window.sys.i18n) || window.I18nEngine;
-      const resolveText = (text) => {
-        if (text == null) return '';
-        const str = String(text);
-        const translated = (i18n && typeof i18n.t === 'function' && str.includes('.')) ? i18n.t(str) : str;
-        return this.escapeHtml(translated);
-      };
-
       return `
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           ${chips.map(chip => `
             <span class="webos-chip ${chip.enabled ? 'enabled' : (chip.disabled ? 'disabled' : '')}" style="${chip.style || ''}">
-              ${chip.icon ? `<span>${chip.icon}</span> ` : ''}${resolveText(chip.label)}
+              ${chip.icon ? `<span>${chip.icon}</span> ` : ''}${this.resolveText(chip.label)}
             </span>
           `).join('')}
         </div>
@@ -859,22 +873,14 @@
     }
 
     createChartCard(options = {}) {
-      const i18n = (window.sys && window.sys.i18n) || window.I18nEngine;
-      const resolveText = (text) => {
-        if (text == null) return '';
-        const str = String(text);
-        const translated = (i18n && typeof i18n.t === 'function' && str.includes('.')) ? i18n.t(str) : str;
-        return this.escapeHtml(translated);
-      };
-
-      const title = resolveText(options.title);
+      const title = this.resolveText(options.title);
       const icon = options.icon ? `${options.icon} ` : '';
       const valStyle = options.valueColor ? `style="color: ${options.valueColor};"` : '';
 
       const footerHtml = (options.footerLeft || options.footerRight) ? `
         <div class="webos-chart-footer">
-          <span>${resolveText(options.footerLeft)}</span>
-          <span>${resolveText(options.footerRight)}</span>
+          <span>${this.resolveText(options.footerLeft)}</span>
+          <span>${this.resolveText(options.footerRight)}</span>
         </div>
       ` : '';
 
@@ -882,7 +888,7 @@
         <div class="webos-chart-card ${options.className || ''}">
           <div class="webos-chart-header">
             <span class="webos-chart-title">${icon}${title}</span>
-            <span class="webos-chart-val" ${options.valueId ? `id="${options.valueId}"` : ''} ${valStyle}>${resolveText(options.value)}</span>
+            <span class="webos-chart-val" ${options.valueId ? `id="${options.valueId}"` : ''} ${valStyle}>${this.resolveText(options.value)}</span>
           </div>
           <div class="webos-canvas-wrapper">
             <canvas id="${options.canvasId}" class="webos-chart-canvas"></canvas>

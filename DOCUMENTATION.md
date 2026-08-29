@@ -461,13 +461,16 @@ window.MyCustomApp = new MyCustomApp();
 ```
 
 #### Cycle de vie & Hooks de `WebOSApp` :
-- `super(config)` : Initialise les métadonnées (`id`, `title`, `icon`, `width`, `height`, `tabs`).
-- `onInit()` : Appelé une seule fois au chargement du script.
+- `super(config)` : Initialise les métadonnées (`id`, `title`, `icon`, `width`, `height`, `tabs`, `state`).
+- `onInit()` : Appelé une seule fois lors de l'initialisation de l'application (exécuté automatiquement après la fin du constructeur de la classe dérivée).
 - `onOpen()` : Appelé à chaque ouverture de la fenêtre de l'application.
 - `onClose()` : Appelé à la fermeture de la fenêtre.
 - `renderHeaderExtra()` : (Optionnel) Retourne du HTML pour ajouter des boutons/contrôles dans la barre d'onglets (ex: bouton actualiser, checkbox auto-refresh).
 - `renderTab(tabId)` / `renderContent()` : Retourne le HTML de l'onglet actif ou du corps principal.
 - `bindEvents(container)` : Hook automatique déclenché après chaque rendu du DOM pour attacher des écouteurs d'événements sans aucun `document.getElementById` manuel.
+- `this.isAdmin` : Property getter retournant un booléen `true`/`false` si l'utilisateur courant possède les droits administrateur.
+- `this.api` : Client API unifié d'instance (`this.api.get(action, params)` et `this.api.post(action, payload)`).
+- `this.toast` : Notification toast d'instance (`this.toast.success(msg)`, `this.toast.info(msg)`).
 - `this.t(key, replacements)` : Raccourci d'internationalisation réactif de l'instance.
 - `this.escapeHtml(str)` : Échappement anti-XSS.
 

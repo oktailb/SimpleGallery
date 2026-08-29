@@ -20,8 +20,7 @@
   },
   "entry": {
     "js": "settings.js",
-    "css": "settings.css",
-    "template": "template.php"
+    "css": "settings.css"
   },
   "capabilities": [
     "admin_auth",

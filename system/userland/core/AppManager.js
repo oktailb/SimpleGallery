@@ -125,14 +125,67 @@ class AppManager {
         return (manifest && manifest.description) || '';
     }
 
-    getAllApps() {
+    /**
+     * Get list of disabled application IDs
+     * Default disabled apps: sim-maintenance, sim-logbook
+     */
+    getDisabledAppIds() {
+        try {
+            const stored = localStorage.getItem('sg_disabled_apps');
+            if (stored) return JSON.parse(stored);
+        } catch (e) {}
+        return ['sim-maintenance', 'sim-logbook'];
+    }
+
+    /**
+     * Check whether an application is enabled
+     */
+    isAppEnabled(appId) {
+        return !this.getDisabledAppIds().includes(appId);
+    }
+
+    /**
+     * Enable or disable an application by ID
+     */
+    setAppEnabled(appId, enabled) {
+        let disabledList = this.getDisabledAppIds();
+        if (enabled) {
+            disabledList = disabledList.filter(id => id !== appId);
+        } else {
+            if (!disabledList.includes(appId)) {
+                disabledList.push(appId);
+            }
+        }
+        localStorage.setItem('sg_disabled_apps', JSON.stringify(disabledList));
+
+        if (window.EventBus) {
+            window.EventBus.emit('apps:updated', { appId, enabled, disabledList });
+        }
+    }
+
+    /**
+     * Returns discovered apps list for autostart settings
+     */
+    getDiscoveredApps() {
+        return this.getAllApps(true);
+    }
+
+    /**
+     * Returns list of registered apps
+     * @param {boolean} [includeDisabled=false] Whether to include disabled apps
+     */
+    getAllApps(includeDisabled = false) {
         // Ensure discovered apps are loaded
         if (this.apps.size === 0) {
             this.initDefaultApps();
         }
 
+        const disabledList = this.getDisabledAppIds();
         const list = [];
         this.apps.forEach((entry, id) => {
+            const isEnabled = !disabledList.includes(id);
+            if (!includeDisabled && !isEnabled) return;
+
             const manifestCat = (entry.manifest && entry.manifest.category) ? String(entry.manifest.category).trim() : '';
             const discoveredCat = (window.SG_DISCOVERED_APPS && window.SG_DISCOVERED_APPS[id] && window.SG_DISCOVERED_APPS[id].category) ? window.SG_DISCOVERED_APPS[id].category : '';
             const cat = manifestCat || discoveredCat || '';
@@ -143,6 +196,7 @@ class AppManager {
                 icon: (entry.manifest && entry.manifest.icon) || '🗔',
                 category: cat,
                 description: this.getAppDescription(id),
+                enabled: isEnabled,
                 manifest: entry.manifest,
                 instance: entry.instance
             });
