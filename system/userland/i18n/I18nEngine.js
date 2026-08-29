@@ -44,6 +44,26 @@ class I18nEngine {
         this.currentLocale = code;
         this.translations = translations || {};
     }
+
+    getAvailableLocales() {
+        if (window.desktop && window.desktop.state && window.desktop.state.availableLocales && Object.keys(window.desktop.state.availableLocales).length > 0) {
+            return window.desktop.state.availableLocales;
+        }
+        if (this.availableLocales && Object.keys(this.availableLocales).length > 0) {
+            return this.availableLocales;
+        }
+        return {
+            fr: { code: 'fr', name: 'Français', flag: '🇫🇷' },
+            en: { code: 'en', name: 'English', flag: '🇬🇧' },
+            ja: { code: 'ja', name: '日本語', flag: '🇯🇵' }
+        };
+    }
+
+    setAvailableLocales(locales) {
+        if (locales && typeof locales === 'object') {
+            this.availableLocales = locales;
+        }
+    }
 }
 
 window.sys = window.sys || {};

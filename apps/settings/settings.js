@@ -3,128 +3,6 @@
  * Modernized Control Panel inheriting from WebOSApp (window.sys.App)
  */
 (function(window) {
-  'use strict';
-
-  const WALLPAPER_PRESETS = [
-    {
-      id: 'nebula',
-      nameKey: 'settings.wallpaper_nebula',
-      style: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #0f172a 100%)'
-    },
-    {
-      id: 'ocean',
-      nameKey: 'settings.wallpaper_ocean',
-      style: 'linear-gradient(135deg, #030712 0%, #0c4a6e 50%, #0f172a 100%)'
-    },
-    {
-      id: 'sunset',
-      nameKey: 'settings.wallpaper_sunset',
-      style: 'linear-gradient(135deg, #18052e 0%, #4c1d95 50%, #0f172a 100%)'
-    },
-    {
-      id: 'aurora',
-      nameKey: 'settings.wallpaper_aurora',
-      style: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #020617 100%)'
-    },
-    {
-      id: 'cyberpunk',
-      nameKey: 'settings.wallpaper_cyberpunk',
-      style: 'linear-gradient(135deg, #0d0221 0%, #310842 50%, #020005 100%)'
-    },
-    {
-      id: 'slate',
-      nameKey: 'settings.wallpaper_slate',
-      style: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
-    }
-  ];
-
-  const THEMES = [
-    {
-      id: 'dark-glass',
-      name: 'Dark Glassmorphism',
-      bg_main: '#090d16',
-      window_bg: 'rgba(12, 17, 29, 0.96)',
-      header_bg: 'rgba(24, 32, 50, 0.9)',
-      menu_bar_bg: 'rgba(9, 13, 22, 0.85)',
-      sidebar_bg: 'rgba(0, 0, 0, 0.3)',
-      polaroid_bg: '#182032',
-      polaroid_text: '#f1f5f9',
-      polaroid_sub: '#94a3b8',
-      accent: '#8b5cf6',
-      card_bg: 'rgba(255, 255, 255, 0.04)',
-      border_color: 'rgba(255, 255, 255, 0.08)',
-      border_color_hover: 'rgba(139, 92, 246, 0.4)',
-      text_main: '#f8fafc',
-      text_muted: '#94a3b8',
-      mockupBg: '#090d16',
-      mockupCard: '#182032',
-      mockupAccent: '#8b5cf6'
-    },
-    {
-      id: 'polaroid-classic',
-      name: 'Polaroid Classic',
-      bg_main: '#0f141c',
-      window_bg: 'rgba(15, 20, 28, 0.96)',
-      header_bg: 'rgba(30, 41, 59, 0.9)',
-      menu_bar_bg: 'rgba(15, 23, 42, 0.85)',
-      sidebar_bg: 'rgba(0, 0, 0, 0.25)',
-      polaroid_bg: '#fcfaf5',
-      polaroid_text: '#1e293b',
-      polaroid_sub: '#64748b',
-      accent: '#6366f1',
-      card_bg: 'rgba(255, 255, 255, 0.05)',
-      border_color: 'rgba(255, 255, 255, 0.08)',
-      border_color_hover: 'rgba(99, 102, 241, 0.4)',
-      text_main: '#f8fafc',
-      text_muted: '#94a3b8',
-      mockupBg: '#0f141c',
-      mockupCard: '#fcfaf5',
-      mockupAccent: '#6366f1'
-    },
-    {
-      id: 'light-minimal',
-      name: 'Light Minimal',
-      bg_main: '#f1f5f9',
-      window_bg: 'rgba(255, 255, 255, 0.98)',
-      header_bg: '#f8fafc',
-      menu_bar_bg: 'rgba(255, 255, 255, 0.94)',
-      sidebar_bg: 'rgba(241, 245, 249, 0.95)',
-      polaroid_bg: '#ffffff',
-      polaroid_text: '#0f172a',
-      polaroid_sub: '#64748b',
-      accent: '#2563eb',
-      card_bg: '#ffffff',
-      border_color: 'rgba(0, 0, 0, 0.12)',
-      border_color_hover: 'rgba(37, 99, 235, 0.4)',
-      text_main: '#0f172a',
-      text_muted: '#475569',
-      mockupBg: '#f1f5f9',
-      mockupCard: '#ffffff',
-      mockupAccent: '#2563eb'
-    },
-    {
-      id: 'cyberpunk',
-      name: 'Cyberpunk Neon',
-      bg_main: '#0d0221',
-      window_bg: 'rgba(18, 5, 38, 0.96)',
-      header_bg: 'rgba(36, 12, 65, 0.9)',
-      menu_bar_bg: 'rgba(13, 2, 33, 0.9)',
-      sidebar_bg: 'rgba(255, 0, 127, 0.08)',
-      polaroid_bg: '#1d1135',
-      polaroid_text: '#00f5d4',
-      polaroid_sub: '#a855f7',
-      accent: '#ff007f',
-      card_bg: 'rgba(255, 0, 127, 0.08)',
-      border_color: 'rgba(255, 0, 127, 0.25)',
-      border_color_hover: 'rgba(0, 245, 212, 0.6)',
-      text_main: '#00f5d4',
-      text_muted: '#d946ef',
-      mockupBg: '#0d0221',
-      mockupCard: '#1d1135',
-      mockupAccent: '#ff007f'
-    }
-  ];
-
   const PERMISSION_KEYS = [
     { key: 'can_upload', labelKey: 'admin.perm_upload' },
     { key: 'can_delete', labelKey: 'admin.perm_delete' },
@@ -307,12 +185,13 @@
           ${this.t('admin.manage_settings_hint')}
         </p>
         <div class="permissions-grid-container" id="settingsPermsGrid">
-          ${PERMISSION_KEYS.map(p => `
-            <label class="permission-toggle-row" for="set_perm_${p.key}">
-              <span class="permission-toggle-label">${this.t(p.labelKey)}</span>
-              <input type="checkbox" id="set_perm_${p.key}" ${this.state.permissions[p.key] ? 'checked' : ''} ${this.isAdmin ? '' : 'disabled'} />
-            </label>
-          `).join('')}
+          ${PERMISSION_KEYS.map(p => window.sys.ui.toggleRow({
+            id: `set_perm_${p.key}`,
+            label: p.labelKey,
+            checked: !!this.state.permissions[p.key],
+            disabled: !this.isAdmin,
+            statusLabel: ''
+          })).join('')}
         </div>
 
         <div style="display:flex; gap:10px; margin-top:14px; align-items:center;">
@@ -424,15 +303,12 @@
     // TAB 2: APPEARANCE & DESKTOP WALLPAPER & THEMES
     // -------------------------------------------------------------
     renderAppearanceTab() {
+      const wallpapers = (window.sys && window.sys.theme) ? window.sys.theme.getWallpapers() : [];
+      const themes = (window.sys && window.sys.theme) ? window.sys.theme.getThemes() : [];
+
       const wallpaperContent = `
         <div class="settings-card-title">${this.t('settings.wallpaper_presets')}</div>
-        <div class="wallpaper-presets-grid" id="wallpaperPresetsGrid">
-          ${WALLPAPER_PRESETS.map(w => `
-            <div class="wallpaper-tile ${this.state.activeWallpaper === w.id ? 'active' : ''}" data-wallpaper-id="${w.id}" style="background: ${w.style};">
-              <span class="wallpaper-tile-name">${this.t(w.nameKey)}</span>
-            </div>
-          `).join('')}
-        </div>
+        ${window.sys.ui.wallpaperGrid({ wallpapers, activeWallpaperId: this.state.activeWallpaper })}
 
         <div style="margin-top:1.25rem;">
           <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">
@@ -451,33 +327,7 @@
         <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
           ${this.t('settings.theme_desc')}
         </p>
-        <div class="themes-selection-grid">
-          ${THEMES.map(theme => `
-            <div class="theme-card-preview ${this.state.activeTheme === theme.id ? 'active' : ''}" data-theme-id="${theme.id}">
-              <div class="theme-mockup-window" style="background: ${theme.mockupBg};">
-                <div class="theme-mockup-header">
-                  <div class="theme-mockup-dots">
-                    <span style="background:#ef4444;"></span>
-                    <span style="background:#f59e0b;"></span>
-                    <span style="background:#10b981;"></span>
-                  </div>
-                  <span style="font-size:0.6rem; color:${theme.text_muted}; margin-left:4px;">${theme.name}</span>
-                </div>
-                <div class="theme-mockup-body">
-                  <span class="theme-mockup-chip" style="background:${theme.mockupCard}; color:${theme.text_main}; border:1px solid rgba(255,255,255,0.1);">UI Window</span>
-                  <span class="theme-mockup-chip" style="background:${theme.mockupAccent}; color:#ffffff;">Button</span>
-                </div>
-              </div>
-              <div class="theme-palette-bar">
-                <span style="background:${theme.bg_main};"></span>
-                <span style="background:${theme.polaroid_bg};"></span>
-                <span style="background:${theme.accent};"></span>
-                <span style="background:${theme.text_main};"></span>
-              </div>
-              <span class="theme-card-name">${theme.name}</span>
-            </div>
-          `).join('')}
-        </div>
+        ${window.sys.ui.themeGrid({ themes, activeThemeId: this.state.activeTheme })}
       `;
 
       return `
@@ -509,20 +359,7 @@
     }
 
     renderAutostartTab() {
-      const discoveredApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getDiscoveredApps === 'function')
-        ? window.sys.appManager.getDiscoveredApps()
-        : [
-            { id: 'explorer', name: this.t('apps.explorer.title'), icon: '🗂️', description: this.t('apps.explorer.description') },
-            { id: 'tribune', name: this.t('apps.tribune.title'), icon: '🦆', description: this.t('apps.tribune.description') },
-            { id: 'system-monitor', name: this.t('sysmon.app_title'), icon: '📊', description: this.t('sysmon.header_sub') },
-            { id: 'audio-player', name: this.t('apps.audio-player.title'), icon: '🎵', description: this.t('apps.audio-player.description') },
-            { id: 'video-player', name: this.t('apps.video-player.title'), icon: '🎥', description: this.t('apps.video-player.description') },
-            { id: 'doc-viewer', name: this.t('apps.doc-viewer.title'), icon: '📄', description: this.t('apps.doc-viewer.description') },
-            { id: 'image-viewer', name: this.t('apps.image-viewer.title'), icon: '🖼️', description: this.t('apps.image-viewer.description') },
-            { id: 'archive-manager', name: this.t('apps.archive-manager.title'), icon: '📦', description: this.t('apps.archive-manager.description') },
-            { id: 'maps', name: this.t('apps.maps.title'), icon: '🗺️', description: this.t('apps.maps.description') },
-            { id: 'settings', name: this.t('settings.app_title'), icon: '⚙️', description: this.t('settings.extensible_desc') }
-          ];
+      const discoveredApps = (window.sys && window.sys.appManager) ? window.sys.appManager.getAllApps(true) : [];
 
       const autostartCfg = this.state.autostartConfig || (window.SG_AUTOSTART_CONFIG || { enabled: true, apps: [{ appId: 'explorer', state: 'normal', enabled: true }] });
       const masterEnabled = autostartCfg.enabled !== false;
@@ -544,18 +381,14 @@
         return 0;
       });
 
-      const masterContent = `
-        <label class="permission-toggle-row" for="autostart_master_toggle">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:1.4rem;">🚀</span>
-            <div>
-              <div style="font-weight:600; color:var(--text-main);">${this.t('autostart.master_toggle')}</div>
-              <div style="font-size:0.8rem; color:var(--text-muted);">${this.t('autostart.master_hint')}</div>
-            </div>
-          </div>
-          <input type="checkbox" id="autostart_master_toggle" ${masterEnabled ? 'checked' : ''} ${this.isAdmin ? '' : 'disabled'} />
-        </label>
-      `;
+      const masterContent = window.sys.ui.toggleRow({
+        id: 'autostart_master_toggle',
+        label: '🚀 ' + this.t('autostart.master_toggle'),
+        desc: 'autostart.master_hint',
+        checked: masterEnabled,
+        disabled: !this.isAdmin,
+        statusLabel: ''
+      });
 
       const appsContent = `
         <div class="autostart-apps-table-container">
@@ -730,19 +563,11 @@
 
       const screenRes = `${window.screen.width} × ${window.screen.height} (${window.devicePixelRatio || 1}x)`;
 
-      const langContent = `
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <div>
-            <div style="font-weight:600; font-size:0.9rem;">${this.t('nav.switch_lang')}</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">${this.t('settings.lang_selector_desc')}</div>
-          </div>
-          <select id="settingsLangListBox" class="settings-lang-select" style="font-size:0.85rem; padding:6px 12px;">
-            <option value="fr" ${currentLocale === 'fr' ? 'selected' : ''}>🇫🇷 Français (FR)</option>
-            <option value="en" ${currentLocale === 'en' ? 'selected' : ''}>🇬🇧 English (EN)</option>
-            <option value="ja" ${currentLocale === 'ja' ? 'selected' : ''}>🇯🇵 日本語 (JA)</option>
-          </select>
-        </div>
-      `;
+      const langContent = window.sys.ui.settingRow({
+        label: 'nav.switch_lang',
+        desc: 'settings.lang_selector_desc',
+        controlHtml: window.sys.ui.languageSelect({ currentLocale })
+      });
 
       const serverDiagGrid = window.sys.ui.infoGrid([
         { label: 'Version PHP', value: diag.php_version || 'PHP 8+' },
@@ -893,46 +718,23 @@
         if (stored) cookieConsent = { ...cookieConsent, ...JSON.parse(stored) };
       } catch (e) {}
 
+      const cookieOpts = [
+        { id: 'setCookieOptNecessary', titleKey: 'cookie.opt_necessary_title', descKey: 'cookie.opt_necessary_desc', badgeKey: 'cookie.opt_necessary_badge', badgeClass: 'cookie-badge-req', checked: true, disabled: true },
+        { id: 'setCookieOptPreferences', titleKey: 'cookie.opt_pref_title', descKey: 'cookie.opt_pref_desc', badgeKey: 'cookie.opt_pref_badge', badgeClass: 'cookie-badge-opt', checked: !!cookieConsent.preferences, disabled: false },
+        { id: 'setCookieOptCdn', titleKey: 'cookie.opt_cdn_title', descKey: 'cookie.opt_cdn_desc', badgeKey: 'cookie.opt_cdn_badge', badgeClass: 'cookie-badge-opt', checked: !!cookieConsent.cdn, disabled: false }
+      ];
+
       const privacyContent = `
         <div class="cookie-options-embedded-list">
-          <div class="cookie-option-embedded-card">
-            <div class="cookie-option-text">
-              <h4>
-                <span>${this.t('cookie.opt_necessary_title')}</span>
-                <span class="cookie-option-badge cookie-badge-req">${this.t('cookie.opt_necessary_badge')}</span>
-              </h4>
-              <p>${this.t('cookie.opt_necessary_desc')}</p>
-            </div>
-            <div>
-              <input type="checkbox" id="setCookieOptNecessary" checked disabled style="width:18px; height:18px;" />
-            </div>
-          </div>
-
-          <div class="cookie-option-embedded-card">
-            <div class="cookie-option-text">
-              <h4>
-                <span>${this.t('cookie.opt_pref_title')}</span>
-                <span class="cookie-option-badge cookie-badge-opt">${this.t('cookie.opt_pref_badge')}</span>
-              </h4>
-              <p>${this.t('cookie.opt_pref_desc')}</p>
-            </div>
-            <div>
-              <input type="checkbox" id="setCookieOptPreferences" ${cookieConsent.preferences ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;" />
-            </div>
-          </div>
-
-          <div class="cookie-option-embedded-card">
-            <div class="cookie-option-text">
-              <h4>
-                <span>${this.t('cookie.opt_cdn_title')}</span>
-                <span class="cookie-option-badge cookie-badge-opt">${this.t('cookie.opt_cdn_badge')}</span>
-              </h4>
-              <p>${this.t('cookie.opt_cdn_desc')}</p>
-            </div>
-            <div>
-              <input type="checkbox" id="setCookieOptCdn" ${cookieConsent.cdn ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;" />
-            </div>
-          </div>
+          ${cookieOpts.map(opt => window.sys.ui.toggleRow({
+            id: opt.id,
+            label: `${this.t(opt.titleKey)} <span class="cookie-option-badge ${opt.badgeClass}">${this.t(opt.badgeKey)}</span>`,
+            desc: opt.descKey,
+            checked: opt.checked,
+            disabled: opt.disabled,
+            allowHtml: true,
+            statusLabel: ''
+          })).join('')}
         </div>
 
         <div style="display:flex; gap:10px; margin-top:14px;">
@@ -943,17 +745,15 @@
         <div id="setCookieSuccessMsg" class="admin-success-msg" style="display:none; margin-top:10px;"></div>
       `;
 
-      const resetContent = `
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <div>
-            <div style="font-weight:600; font-size:0.9rem;">${this.t('settings.reset_cache_title')}</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">${this.t('settings.reset_cache_desc')}</div>
-          </div>
+      const resetContent = window.sys.ui.settingRow({
+        label: 'settings.reset_cache_title',
+        desc: 'settings.reset_cache_desc',
+        controlHtml: `
           <button type="button" id="settingsResetStorageBtn" class="sysmon-action-btn kill" style="padding:6px 14px;">
             🗑️ ${this.t('settings.reset_cache_btn')}
           </button>
-        </div>
-      `;
+        `
+      });
 
       return `
         ${window.sys.ui.card({
@@ -1014,20 +814,9 @@
 
       const appsContent = `
         <div class="settings-apps-list">
-          ${apps.map(app => `
-            <div class="settings-app-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color, rgba(255,255,255,0.06)); gap:12px;">
-              <div class="settings-app-left" style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
-                <span class="settings-app-icon" style="font-size:1.6rem; flex-shrink:0;">${app.icon || '🗔'}</span>
-                <div style="min-width:0;">
-                  <div class="settings-app-name" style="font-weight:600; font-size:0.9rem;">
-                    ${this.escapeHtml(app.name)} <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(${app.id})</span>
-                  </div>
-                  <div class="settings-app-desc" style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    ${this.escapeHtml(app.description || this.t('settings.extensible_desc'))}
-                  </div>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; gap:14px; flex-shrink:0;">
+          ${apps.map(app => {
+            const controlsHtml = `
+              <div style="display:flex; align-items:center; gap:14px;">
                 <label class="permission-toggle-row" style="margin:0; padding:0; border:none; display:flex; align-items:center; gap:6px;">
                   <span style="font-size:0.8rem; color:${app.enabled ? 'var(--accent-primary, #6366f1)' : 'var(--text-muted)'}; font-weight:600;">
                     ${app.enabled ? this.t('settings.app_enabled') : this.t('settings.app_disabled')}
@@ -1038,8 +827,16 @@
                   ▶ ${this.t('settings.launch_app')}
                 </button>
               </div>
-            </div>
-          `).join('')}
+            `;
+
+            return window.sys.ui.settingRow({
+              icon: app.icon || '🗔',
+              label: app.name,
+              subLabel: `(${app.id})`,
+              desc: app.description || this.t('settings.extensible_desc'),
+              controlHtml: controlsHtml
+            });
+          }).join('')}
         </div>
       `;
 
@@ -1078,7 +875,8 @@
     }
 
     setWallpaper(wallpaperId) {
-      const preset = WALLPAPER_PRESETS.find(w => w.id === wallpaperId);
+      const wallpapers = (window.sys && window.sys.theme) ? window.sys.theme.getWallpapers() : [];
+      const preset = wallpapers.find(w => w.id === wallpaperId);
       if (!preset) return;
 
       this.state.activeWallpaper = wallpaperId;
@@ -1124,7 +922,7 @@
     }
 
     setTheme(themeId) {
-      const theme = THEMES.find(t => t.id === themeId);
+      const theme = (window.sys && window.sys.theme) ? window.sys.theme.getTheme(themeId) : null;
       if (!theme) return;
 
       this.state.activeTheme = themeId;

@@ -902,6 +902,183 @@
       const cardsHtml = Array.isArray(cards) ? cards.map(c => typeof c === 'string' ? c : this.createChartCard(c)).join('') : '';
       return `<div class="webos-charts-grid">${cardsHtml}</div>`;
     }
+
+    /**
+     * Standardized setting row container
+     */
+    settingRow(opts = {}) {
+      const icon = opts.icon || '';
+      const label = opts.label || '';
+      const subLabel = opts.subLabel || '';
+      const desc = opts.desc || '';
+      const controlHtml = opts.controlHtml || '';
+      const style = opts.style || '';
+      const allowHtml = opts.allowHtml === true;
+
+      const labelTrans = (typeof label === 'string' && label.includes('.')) ? this.t(label) : label;
+      const descTrans = (typeof desc === 'string' && desc.includes('.')) ? this.t(desc) : desc;
+
+      const titleFormatted = allowHtml ? labelTrans : this.escapeHtml(labelTrans);
+      const descFormatted = allowHtml ? descTrans : this.escapeHtml(descTrans);
+
+      return `
+        <div class="sys-setting-row" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:12px; border-bottom:1px solid var(--border-color, rgba(255,255,255,0.06)); ${style}">
+          <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+            ${icon ? `<span style="font-size:1.4rem; flex-shrink:0;">${icon}</span>` : ''}
+            <div style="min-width:0; flex:1;">
+              <div style="font-weight:600; font-size:0.88rem;">
+                ${titleFormatted}
+                ${subLabel ? `<span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-left:6px;">${this.escapeHtml(subLabel)}</span>` : ''}
+              </div>
+              ${descTrans ? `<div style="font-size:0.75rem; color:var(--text-muted); line-height:1.35; margin-top:2px;">${descFormatted}</div>` : ''}
+            </div>
+          </div>
+          <div style="flex-shrink:0;">
+            ${controlHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Standardized toggle switch setting row
+     */
+    toggleRow(opts = {}) {
+      const id = opts.id || '';
+      const label = opts.label || '';
+      const subLabel = opts.subLabel || '';
+      const icon = opts.icon || '';
+      const desc = opts.desc || '';
+      const checked = opts.checked !== false;
+      const disabled = opts.disabled === true;
+      const actionClass = opts.actionClass || 'ui-toggle-input';
+      const dataAttrs = opts.dataAttrs || {};
+      const allowHtml = opts.allowHtml === true;
+
+      const dataStr = Object.entries(dataAttrs)
+        .map(([k, v]) => `data-${k}="${this.escapeHtml(String(v))}"`)
+        .join(' ');
+
+      const statusBadge = opts.statusLabel !== undefined ? opts.statusLabel : (checked ? this.t('settings.app_enabled') : this.t('settings.app_disabled'));
+      const badgeHtml = statusBadge ? `
+        <span style="font-size:0.8rem; color:${checked ? 'var(--accent-primary, #6366f1)' : 'var(--text-muted)'}; font-weight:600;">
+          ${this.escapeHtml(statusBadge)}
+        </span>
+      ` : '';
+
+      const control = `
+        <label class="permission-toggle-row" style="margin:0; padding:0; border:none; display:flex; align-items:center; gap:8px;">
+          ${badgeHtml}
+          <input type="checkbox" ${id ? `id="${this.escapeHtml(id)}"` : ''} class="${this.escapeHtml(actionClass)}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} ${dataStr} />
+        </label>
+      `;
+
+      return this.settingRow({ icon, label, subLabel, desc, allowHtml, controlHtml: control, style: opts.style });
+    }
+
+    /**
+     * Language select dropdown auto-populated from I18nEngine
+     */
+    languageSelect(opts = {}) {
+      const id = opts.id || 'settingsLangListBox';
+      const actionClass = opts.actionClass || 'settings-lang-select';
+      const current = opts.currentLocale || (window.sys.i18n ? window.sys.i18n.currentLocale : 'fr');
+      
+      const locales = (window.sys.i18n && typeof window.sys.i18n.getAvailableLocales === 'function') 
+        ? window.sys.i18n.getAvailableLocales()
+        : (window.desktop && window.desktop.state && window.desktop.state.availableLocales) || {
+            fr: { code: 'fr', name: 'Français', flag: '🇫🇷' },
+            en: { code: 'en', name: 'English', flag: '🇬🇧' },
+            ja: { code: 'ja', name: '日本語', flag: '🇯🇵' }
+          };
+
+      const optionsHtml = Object.entries(locales).map(([code, meta]) => {
+        const flag = meta.flag || '🌐';
+        const name = meta.name || code.toUpperCase();
+        const isSelected = code === current ? 'selected' : '';
+        return `<option value="${this.escapeHtml(code)}" ${isSelected}>${flag} ${this.escapeHtml(name)} (${code.toUpperCase()})</option>`;
+      }).join('');
+
+      return `
+        <select id="${this.escapeHtml(id)}" class="${this.escapeHtml(actionClass)}" style="font-size:0.85rem; padding:6px 12px; border-radius:6px; background:var(--bg-main, rgba(0,0,0,0.3)); color:var(--text-main, #fff); border:1px solid var(--border-color, rgba(255,255,255,0.15)); cursor:pointer;">
+          ${optionsHtml}
+        </select>
+      `;
+    }
+
+    /**
+     * Theme Card Preview Widget
+     */
+    themeCard(opts = {}) {
+      const theme = opts.theme || {};
+      const isActive = theme.id === opts.activeThemeId;
+      const mockupBg = theme.mockupBg || theme.bg_main || '#0f172a';
+      const mockupCard = theme.mockupCard || theme.card_bg || '#1e293b';
+      const mockupAccent = theme.mockupAccent || theme.accent || '#6366f1';
+      const textMain = theme.text_main || '#fff';
+      const textMuted = theme.text_muted || '#94a3b8';
+
+      return `
+        <div class="theme-card-preview ${isActive ? 'active' : ''}" data-theme-id="${this.escapeHtml(theme.id)}">
+          <div class="theme-mockup-window" style="background:${mockupBg};">
+            <div class="theme-mockup-header">
+              <div class="theme-mockup-dots">
+                <span style="background:#ef4444;"></span>
+                <span style="background:#f59e0b;"></span>
+                <span style="background:#10b981;"></span>
+              </div>
+              <span style="font-size:0.6rem; color:${textMuted}; margin-left:4px;">${this.escapeHtml(theme.name)}</span>
+            </div>
+            <div class="theme-mockup-body">
+              <span class="theme-mockup-chip" style="background:${mockupCard}; color:${textMain}; border:1px solid rgba(255,255,255,0.1);">UI Window</span>
+              <span class="theme-mockup-chip" style="background:${mockupAccent}; color:#ffffff;">Button</span>
+            </div>
+          </div>
+          <div class="theme-palette-bar">
+            <span style="background:${theme.bg_main || '#000'};"></span>
+            <span style="background:${theme.window_bg || theme.bg_main || '#111'};"></span>
+            <span style="background:${theme.header_bg || theme.card_bg || '#222'};"></span>
+            <span style="background:${theme.polaroid_bg || '#fff'};"></span>
+            <span style="background:${theme.accent || '#6366f1'};"></span>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Theme Grid Widget
+     */
+    themeGrid(opts = {}) {
+      const themes = opts.themes || (window.sys.theme ? window.sys.theme.getThemes() : []);
+      const activeThemeId = opts.activeThemeId;
+      return `
+        <div class="themes-selection-grid">
+          ${themes.map(t => this.themeCard({ theme: t, activeThemeId })).join('')}
+        </div>
+      `;
+    }
+
+    /**
+     * Wallpaper Grid Widget
+     */
+    wallpaperGrid(opts = {}) {
+      const wallpapers = opts.wallpapers || (window.sys.theme ? window.sys.theme.getWallpapers() : []);
+      const activeId = opts.activeWallpaperId;
+
+      return `
+        <div class="wallpaper-presets-grid" id="wallpaperPresetsGrid">
+          ${wallpapers.map(w => {
+            const nameTrans = (w.nameKey && w.nameKey.includes('.')) ? this.t(w.nameKey) : (w.name || w.id);
+            const isActive = w.id === activeId;
+            return `
+              <div class="wallpaper-tile ${isActive ? 'active' : ''}" data-wallpaper-id="${this.escapeHtml(w.id)}" style="background: ${this.escapeHtml(w.style)};">
+                <span class="wallpaper-tile-name">${this.escapeHtml(nameTrans)}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
   }
 
   // Instantiate and bind to global namespace
@@ -948,6 +1125,12 @@
     gauge: toolkitInstance.createGauge.bind(toolkitInstance),
     infoGrid: toolkitInstance.createInfoGrid.bind(toolkitInstance),
     chipList: toolkitInstance.createChipList.bind(toolkitInstance),
+    settingRow: toolkitInstance.settingRow.bind(toolkitInstance),
+    toggleRow: toolkitInstance.toggleRow.bind(toolkitInstance),
+    languageSelect: toolkitInstance.languageSelect.bind(toolkitInstance),
+    themeCard: toolkitInstance.themeCard.bind(toolkitInstance),
+    themeGrid: toolkitInstance.themeGrid.bind(toolkitInstance),
+    wallpaperGrid: toolkitInstance.wallpaperGrid.bind(toolkitInstance),
     escapeHtml: toolkitInstance.escapeHtml.bind(toolkitInstance)
   };
 
