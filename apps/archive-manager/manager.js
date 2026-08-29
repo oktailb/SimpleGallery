@@ -110,8 +110,7 @@
 
         // Fetch Archive Metadata Asynchronously
         try {
-          const res = await fetch(`api.php?action=get_metadata&file=${encodeURIComponent(file.path)}`);
-          const json = await res.json();
+          const json = await window.sys.api.fs.getMetadata(file.path);
           
           const listEl = document.getElementById(`archiveFileList-${cleanPathId}`);
           const statsEl = document.getElementById(`archiveStats-${cleanPathId}`);

@@ -132,12 +132,9 @@
 
     async loadGalleryFiles() {
       try {
-        const res = await fetch(`api.php?dir=${encodeURIComponent(this.currentPath)}&_t=${Date.now()}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.files)) {
-            this.currentFiles = json.files;
-          }
+        const json = await window.sys.api.get('', { dir: this.currentPath, _t: Date.now() });
+        if (json && json.success && Array.isArray(json.files)) {
+          this.currentFiles = json.files;
         }
       } catch (e) {
         console.error('[MapsInstance] Failed to load files:', e);

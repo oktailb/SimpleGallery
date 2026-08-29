@@ -261,9 +261,7 @@
       this.state.currentPath = cleanPath;
 
       try {
-        const query = cleanPath ? `dir=${encodeURIComponent(cleanPath)}` : 'dir=';
-        const res = await fetch(`api.php?${query}&_t=${Date.now()}`);
-        const json = await res.json();
+        const json = await window.sys.api.get('', { dir: cleanPath, _t: Date.now() });
 
         if (!json.success) {
           this.state.directories = [];
@@ -865,31 +863,8 @@
         return;
       }
 
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       try {
-        const payload = {
-          action: 'move_item',
-          source_paths: sourcePaths,
-          target_dir: targetDir,
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
+        const json = await window.sys.api.fs.moveItem(sourcePaths, targetDir);
         if (json.success) {
           this.clearSelection();
           const targetName = targetDir ? targetDir.split('/').pop() : 'la racine';
@@ -1286,32 +1261,8 @@
       const name = this.el.newFolderNameInput.value.trim();
       if (!name) return;
 
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       try {
-        const payload = {
-          action: 'create_folder',
-          dir: this.state.currentPath,
-          folder_name: name,
-          name: name,
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
+        const json = await window.sys.api.fs.createFolder(this.state.currentPath, name);
         if (json.success) {
           this.closeCreateFolderModal();
           this.showToast(this.t('folder.create_success') || 'Dossier créé avec succès', 'success');
@@ -1354,30 +1305,8 @@
       if (!this.pendingDeletePath) return;
       const path = this.pendingDeletePath;
 
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       try {
-        const payload = {
-          action: 'delete_item',
-          target_path: path,
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
+        const json = await window.sys.api.fs.deleteItem(path);
         if (json.success) {
           this.closeDeleteConfirmModal();
           this.showToast(json.message || (this.t('api.success_deleted') || 'Élément supprimé avec succès'), 'success');
@@ -1415,32 +1344,8 @@
       if (!this.pendingCommentFilename || !this.el.mediaCommentInput) return;
       const comment = this.el.mediaCommentInput.value.trim();
 
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       try {
-        const payload = {
-          action: 'save_comment',
-          dir: this.state.currentPath,
-          filename: this.pendingCommentFilename,
-          comment: comment,
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
+        const json = await window.sys.api.fs.saveComment(this.state.currentPath, this.pendingCommentFilename, comment);
         if (json.success) {
           this.closeMediaCommentModal();
           this.showToast('Légende enregistrée', 'success');
@@ -1481,31 +1386,8 @@
       if (!this.pendingUnlockDirPath || !this.el.folderPasswordInput) return;
       const password = this.el.folderPasswordInput.value;
 
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       try {
-        const payload = {
-          action: 'unlock_folder',
-          dir: this.pendingUnlockDirPath,
-          password: password,
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
+        const json = await window.sys.api.fs.unlockFolder(this.pendingUnlockDirPath, password);
         if (json.success) {
           const unlockedPath = this.pendingUnlockDirPath;
           this.closeFolderUnlockModal();
@@ -1544,35 +1426,15 @@
     }
 
     async saveFolderSettings() {
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       try {
-        const payload = {
-          action: 'save_folder_settings',
+        const json = await window.sys.api.fs.saveFolderSettings({
           dir: this.state.currentPath,
           title: this.el.dotfileTitleInput ? this.el.dotfileTitleInput.value.trim() : '',
           description: this.el.dotfileDescInput ? this.el.dotfileDescInput.value.trim() : '',
           background: this.el.dotfileBgInput ? this.el.dotfileBgInput.value.trim() : '',
           access_mode: this.el.dotfileAccessModeSelect ? this.el.dotfileAccessModeSelect.value : 'public',
-          password: this.el.dotfilePasswordInput ? this.el.dotfilePasswordInput.value : '',
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
+          password: this.el.dotfilePasswordInput ? this.el.dotfilePasswordInput.value : ''
         });
-
-        const json = await res.json();
         if (json.success) {
           this.closeFolderSettingsModal();
           this.showToast(json.message || 'Paramètres du dossier enregistrés', 'success');
@@ -1593,17 +1455,8 @@
       if (!files || files.length === 0) return;
       const destination = (targetDir !== null && typeof targetDir === 'string') ? targetDir : this.state.currentPath;
 
-      const csrfToken = (this.state && this.state.csrfToken)
-        || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-        || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        || '';
-
       const formData = new FormData();
-      formData.append('action', 'upload_file');
       formData.append('dir', destination);
-      formData.append('csrf_token', csrfToken);
-
       for (let i = 0; i < files.length; i++) {
         formData.append('files[]', files[i]);
       }
@@ -1626,54 +1479,28 @@
         this.showToast(`Téléversement de ${files.length} fichier(s)...`, 'info');
       }
 
-      return new Promise((resolve) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'api.php', true);
-        xhr.withCredentials = true;
-        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable && progressBar) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            progressBar.style.width = `${percent}%`;
-            progressBar.textContent = `${percent}%`;
-          }
-        };
-
-        xhr.onload = async () => {
-          if (progressModal) {
-            progressModal.style.display = 'none';
-            progressModal.classList.remove('open');
-          }
-          try {
-            const json = JSON.parse(xhr.responseText);
-            if (json.success) {
-              this.showToast(json.message || 'Fichiers téléversés avec succès', 'success');
-              if (window.EventBus) {
-                window.EventBus.emit('fs:changed', { action: 'upload', dir: destination });
-              } else {
-                await this.loadDirectory(this.state.currentPath);
-              }
-            } else {
-              this.showToast('⚠️ ' + (json.error || 'Erreur lors du téléversement'), 'error');
-            }
-          } catch (err) {
-            this.showToast(`⚠️ Erreur serveur (${xhr.status})`, 'error');
-          }
-          resolve();
-        };
-
-        xhr.onerror = () => {
-          if (progressModal) {
-            progressModal.style.display = 'none';
-            progressModal.classList.remove('open');
-          }
-          this.showToast('⚠️ Erreur réseau lors du téléversement', 'error');
-          resolve();
-        };
-
-        xhr.send(formData);
+      const json = await window.sys.api.upload('upload_file', formData, (percent) => {
+        if (progressBar) {
+          progressBar.style.width = `${percent}%`;
+          progressBar.textContent = `${percent}%`;
+        }
       });
+
+      if (progressModal) {
+        progressModal.style.display = 'none';
+        progressModal.classList.remove('open');
+      }
+
+      if (json.success) {
+        this.showToast(json.message || 'Fichiers téléversés avec succès', 'success');
+        if (window.EventBus) {
+          window.EventBus.emit('fs:changed', { action: 'upload', dir: destination });
+        } else {
+          await this.loadDirectory(this.state.currentPath);
+        }
+      } else {
+        this.showToast('⚠️ ' + (json.error || 'Erreur lors du téléversement'), 'error');
+      }
     }
 
     renderProtectedState(dirPath) {
@@ -1823,6 +1650,11 @@
     get state() {
       const active = this.getActiveInstance();
       return active ? active.state : {};
+    }
+
+    set state(val) {
+      const active = this.getActiveInstance();
+      if (active) active.state = val;
     }
 
     getActiveInstance() {

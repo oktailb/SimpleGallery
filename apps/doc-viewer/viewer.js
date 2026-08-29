@@ -433,31 +433,8 @@
           }
           if (saveBtn) saveBtn.disabled = true;
 
-          const csrfToken = (effectiveCtx && effectiveCtx.state && effectiveCtx.state.csrfToken)
-            || (typeof window !== 'undefined' && window.CSRF_TOKEN)
-            || (typeof window !== 'undefined' && window.SG_CSRF_TOKEN)
-            || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-            || (window.explorerApp && window.explorerApp.state && window.explorerApp.state.csrfToken)
-            || (window.galleryApp && window.galleryApp.state && window.galleryApp.state.csrfToken)
-            || '';
-
           try {
-            const res = await fetch('api.php', {
-              method: 'POST',
-              credentials: 'same-origin',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
-              },
-              body: JSON.stringify({
-                action: 'save_text_file',
-                target_path: file.path,
-                content: newContent,
-                csrf_token: csrfToken
-              })
-            });
-
-            const json = await res.json();
+            const json = await window.sys.api.fs.saveTextFile(file.path, newContent);
             if (saveBtn) saveBtn.disabled = false;
 
             if (json.success) {

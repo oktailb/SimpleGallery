@@ -833,25 +833,12 @@
         const quality = (mime === 'image/png') ? undefined : 0.92;
         const dataUrl = canvas.toDataURL(mime, quality);
 
-        const payload = {
-          action: 'edit_image',
+        const json = await window.sys.api.post('edit_image', {
           target_path: file.path,
           save_mode: saveMode,
-          image_data: dataUrl,
-          csrf_token: csrfToken
-        };
-
-        const res = await fetch('api.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(payload)
+          image_data: dataUrl
         });
 
-        const json = await res.json();
         if (currentCtx && typeof currentCtx.showLoading === 'function') {
           currentCtx.showLoading(false);
         }

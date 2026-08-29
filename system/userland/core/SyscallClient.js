@@ -1,64 +1,165 @@
 /**
  * SimpleGallery Userland - Syscall Client
- * Native JavaScript API wrapper communicating with the Kernel via api.php.
+ * Unified, zero-boilerplate API client for WebOS communicating with Kernel (api.php).
  */
 class SyscallClient {
-    constructor(endpoint = 'api.php') {
-        this.endpoint = endpoint;
-        this.csrfToken = window.SG_CSRF_TOKEN || '';
-    }
+  constructor(endpoint = 'api.php') {
+    this.endpoint = endpoint;
+  }
 
-    setCsrfToken(token) {
-        this.csrfToken = token;
-    }
+  getCsrfToken() {
+    return (typeof window !== 'undefined' && (
+      window.SG_CSRF_TOKEN ||
+      window.CSRF_TOKEN ||
+      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    )) || '';
+  }
 
-    async call(action, params = {}, method = 'POST') {
-        const headers = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': this.csrfToken
+  /**
+   * Build complete API URL for action and parameters
+   */
+  url(action, params = {}) {
+    const url = new URL(this.endpoint, window.location.href);
+    if (action) url.searchParams.set('action', action);
+    Object.keys(params).forEach(k => {
+      if (params[k] !== undefined && params[k] !== null) {
+        url.searchParams.set(k, params[k]);
+      }
+    });
+    return url.toString();
+  }
+
+  /**
+   * Perform HTTP GET request to API
+   */
+  async get(action, params = {}) {
+    const fetchUrl = this.url(action, params);
+    try {
+      const res = await fetch(fetchUrl, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      return await res.json();
+    } catch (err) {
+      console.error(`[SyscallClient] GET ${action} failed:`, err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Perform HTTP POST request to API with JSON payload & CSRF token
+   */
+  async post(action, payload = {}) {
+    const csrfToken = this.getCsrfToken();
+    const bodyData = {
+      action,
+      csrf_token: csrfToken,
+      ...payload
+    };
+
+    try {
+      const res = await fetch(this.endpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify(bodyData)
+      });
+      return await res.json();
+    } catch (err) {
+      console.error(`[SyscallClient] POST ${action} failed:`, err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Perform Multipart / FormData File Upload with optional progress listener
+   */
+  upload(action, formData, onProgress = null) {
+    return new Promise((resolve) => {
+      const csrfToken = this.getCsrfToken();
+      if (!(formData instanceof FormData)) {
+        const fd = new FormData();
+        Object.keys(formData).forEach(k => fd.append(k, formData[k]));
+        formData = fd;
+      }
+
+      if (!formData.has('action') && action) {
+        formData.append('action', action);
+      }
+      if (!formData.has('csrf_token') && csrfToken) {
+        formData.append('csrf_token', csrfToken);
+      }
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', this.endpoint, true);
+      xhr.withCredentials = true;
+      if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+
+      if (typeof onProgress === 'function') {
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(percent, e.loaded, e.total);
+          }
         };
+      }
 
-        let url = this.endpoint;
-        let options = { method, headers };
-
-        if (method === 'GET') {
-            const query = new URLSearchParams({ action, ...params }).toString();
-            url += (url.includes('?') ? '&' : '?') + query;
-        } else {
-            headers['Content-Type'] = 'application/json';
-            options.body = JSON.stringify({ action, csrf_token: this.csrfToken, ...params });
-        }
-
+      xhr.onload = () => {
         try {
-            const response = await fetch(url, options);
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error(`[Syscall] Error calling ${action}:`, error);
-            return { success: false, error: error.message };
+          const json = JSON.parse(xhr.responseText);
+          resolve(json);
+        } catch (err) {
+          resolve({ success: false, error: 'Réponse serveur invalide' });
         }
-    }
+      };
 
-    // High-level FS Syscalls
-    get fs() {
-        return {
-            list: (path = '') => this.call('list_dir', { path }, 'GET'),
-            search: (params = {}) => this.call('search', params, 'GET'),
-            createFolder: (parentPath, name) => this.call('create_folder', { path: parentPath, name }),
-            deleteItem: (path) => this.call('delete_item', { path }),
-            moveItem: (source, destination) => this.call('move_item', { source, destination }),
-            updateDotfile: (path, type, content) => this.call('update_dotfile', { path, type, content })
-        };
-    }
+      xhr.onerror = () => {
+        resolve({ success: false, error: 'Erreur réseau lors du téléversement' });
+      };
 
-    // High-level Auth Syscalls
-    get auth() {
-        return {
-            login: (password) => this.call('login', { password }),
-            logout: () => this.call('logout', {}),
-            changePassword: (oldPassword, newPassword) => this.call('change_password', { old_password: oldPassword, new_password: newPassword })
-        };
+      xhr.send(formData);
+    });
+  }
+
+  /**
+   * Generic call method for backwards compatibility
+   */
+  async call(action, params = {}, method = 'POST') {
+    if (method.toUpperCase() === 'GET') {
+      return this.get(action, params);
     }
+    return this.post(action, params);
+  }
+
+  // High-level FS Syscalls
+  get fs() {
+    return {
+      list: (path = '') => this.get('', { dir: path }),
+      search: (params = {}) => this.get('search', params),
+      createFolder: (dir, name) => this.post('create_folder', { dir, folder_name: name, name }),
+      deleteItem: (target_path) => this.post('delete_item', { target_path }),
+      moveItem: (source_paths, target_dir) => this.post('move_item', { source_paths, target_dir }),
+      saveTextFile: (file, content) => this.post('save_text_file', { file, content }),
+      getMetadata: (file) => this.get('get_metadata', { file }),
+      unlockFolder: (dir, password) => this.post('unlock_folder', { dir, password }),
+      saveFolderSettings: (params) => this.post('save_folder_settings', params),
+      saveComment: (dir, filename, comment) => this.post('save_comment', { dir, filename, comment })
+    };
+  }
+
+  // High-level Auth Syscalls
+  get auth() {
+    return {
+      login: (password) => this.post('login', { password }),
+      logout: () => this.post('logout', {}),
+      changePassword: (oldPassword, newPassword) => this.post('change_password', { old_password: oldPassword, new_password: newPassword })
+    };
+  }
 }
 
 window.sys = window.sys || {};

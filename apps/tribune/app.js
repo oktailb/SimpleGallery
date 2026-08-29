@@ -228,7 +228,7 @@
       if (!window.EventSource || this.sseSource || !this.container) return;
 
       try {
-        this.sseSource = new EventSource('api.php?action=tribune_stream');
+        this.sseSource = new EventSource(window.sys.api.url('tribune_stream'));
         this.sseSource.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
@@ -325,8 +325,7 @@
       const listView = this.container.querySelector('#tribuneScheduleListView');
 
       try {
-        const res = await fetch('api.php?action=tribune_scheduled_list');
-        const data = await res.json();
+        const data = await window.sys.api.get('tribune_scheduled_list');
         if (data && data.success && Array.isArray(data.scheduled)) {
           const count = data.scheduled.length;
           if (badge) {
@@ -453,18 +452,15 @@
       };
 
       try {
-        const res = await fetch(`api.php?action=tribune_boards_get&_t=${Date.now()}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.success && data.boards && typeof data.boards === 'object') {
-            this.boards = { ...defaultBoards, ...data.boards };
-            if (this.container) {
-              this.renderUI();
-              this.bindEvents();
-              this.renderPosts(false);
-            }
-            return;
+        const data = await window.sys.api.get('tribune_boards_get', { _t: Date.now() });
+        if (data && data.success && data.boards && typeof data.boards === 'object') {
+          this.boards = { ...defaultBoards, ...data.boards };
+          if (this.container) {
+            this.renderUI();
+            this.bindEvents();
+            this.renderPosts(false);
           }
+          return;
         }
       } catch (e) {}
 
@@ -535,18 +531,7 @@
       } catch (e) {}
 
       try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || '';
-        await fetch('api.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify({
-            action: 'tribune_boards_save',
-            boards: this.boards
-          })
-        });
+        await window.sys.api.post('tribune_boards_save', { boards: this.boards });
       } catch (e) {}
     }
 
@@ -848,7 +833,7 @@
           const popupW = 600, popupH = 700;
           const left = (window.innerWidth - popupW) / 2 + window.screenX;
           const top = (window.innerHeight - popupH) / 2 + window.screenY;
-          const authUrl = `api.php?action=tribune_oauth_authorize&board_id=${encodeURIComponent(this.currentBoard)}`;
+          const authUrl = window.sys.api.url('tribune_oauth_authorize', { board_id: this.currentBoard });
           window.open(authUrl, `oauth_${this.currentBoard}`, `width=${popupW},height=${popupH},top=${top},left=${left},scrollbars=yes,status=yes`);
         });
       }
@@ -1000,23 +985,7 @@
             formData.append('action', 'tribune_file_upload');
             formData.append('file', file);
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || window.CSRF_TOKEN || '';
-            if (csrfToken) {
-              formData.append('csrf_token', csrfToken);
-            }
-
-            const headers = {};
-            if (csrfToken) {
-              headers['X-CSRF-Token'] = csrfToken;
-            }
-
-            const response = await fetch('api.php', {
-              method: 'POST',
-              headers: headers,
-              body: formData
-            });
-
-            const resData = await response.json();
+            const resData = await window.sys.api.upload('tribune_file_upload', formData);
             if (resData && resData.success && resData.url) {
               const fullUrl = new URL(resData.url, window.location.href).href;
               if (msgInput) {
@@ -1118,12 +1087,7 @@
           }
 
           try {
-            const res = await fetch('api.php', {
-              method: 'POST',
-              body: formData,
-              headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
-            });
-            const data = await res.json();
+            const data = await window.sys.api.upload('tribune_schedule_post', formData);
             if (data && data.success) {
               msgInput.value = '';
               schedulePopover.style.display = 'none';
@@ -1153,18 +1117,8 @@
           if (cancelBtn) {
             const id = cancelBtn.dataset.id;
             if (id) {
-              const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || window.CSRF_TOKEN || '';
-              const formData = new FormData();
-              formData.append('action', 'tribune_schedule_cancel');
-              formData.append('id', id);
-              if (csrfToken) formData.append('csrf_token', csrfToken);
-
               try {
-                await fetch('api.php', {
-                  method: 'POST',
-                  body: formData,
-                  headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
-                });
+                await window.sys.api.post('tribune_schedule_cancel', { id });
                 this.refreshScheduledList();
               } catch (e) {}
             }
@@ -1374,8 +1328,7 @@
                 }
 
                 try {
-                  const res = await fetch(`api.php?action=url_preview&url=${encodeURIComponent(href)}`);
-                  const data = await res.json();
+                  const data = await window.sys.api.get('url_preview', { url: href });
                   // Guard check: verify active hover URL still matches this link
                   if (this.activeHoverUrl === href && link.matches(':hover')) {
                     if (data && data.success && data.preview) {
@@ -1583,8 +1536,7 @@
           totozList = this.totozCache[query];
         } else {
           try {
-            const res = await fetch(`api.php?action=totoz_search&q=${encodeURIComponent(query)}`);
-            const data = await res.json();
+            const data = await window.sys.api.get('totoz_search', { q: query });
 
             // Guard 1: Verify user is still typing this exact query and popover wasn't closed
             if (this.activeTotozQuery !== query) return;
@@ -1619,7 +1571,7 @@
 
       // Preload images into memory cache for instant rendering
       displayList.forEach(item => {
-        const imgUrl = `api.php?action=totoz_proxy&name=${encodeURIComponent(item.name)}`;
+        const imgUrl = window.sys.api.url('totoz_proxy', { name: item.name });
         if (!this.totozImageCache.has(imgUrl)) {
           this.totozImageCache.add(imgUrl);
           const img = new Image();
@@ -1636,7 +1588,7 @@
           ${displayList.map(item => {
             const name = item.name;
             const isNsfw = item.nsfw || name.toLowerCase().includes('nsfw');
-            const imgUrl = `api.php?action=totoz_proxy&name=${encodeURIComponent(name)}`;
+            const imgUrl = window.sys.api.url('totoz_proxy', { name: name });
             const blurClass = (isNsfw && !this.nsfwEnabled) ? 'nsfw-blurred' : '';
 
             return `
@@ -1697,30 +1649,16 @@
         const auth = this.boardAuth[boardKey] || {};
 
         if (boardConfig.type === 'local') {
-          const res = await fetch(`api.php?action=tribune_get&_t=${Date.now()}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
+          const data = await window.sys.api.get('tribune_get', { _t: Date.now() });
           if (data && data.success && data.messages) {
             fetchedPosts = data.messages;
           }
         } else if (boardConfig.type === 'remote_tsv' || boardConfig.type === 'remote_xml' || boardConfig.type === 'miaoli') {
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || '';
-          const res = await fetch('api.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify({
-              action: 'tribune_proxy_fetch',
-              url: boardConfig.url,
-              cookie: auth.cookie || '',
-              user_agent: auth.user_agent || ''
-            })
+          const data = await window.sys.api.post('tribune_proxy_fetch', {
+            url: boardConfig.url,
+            cookie: auth.cookie || '',
+            user_agent: auth.user_agent || ''
           });
-
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
           if (data && data.success && data.content) {
             fetchedPosts = (boardConfig.type === 'remote_tsv' || boardConfig.type === 'miaoli') ? this.parseRemoteTSV(data.content) : this.parseRemoteXML(data.content);
           }
@@ -1964,16 +1902,9 @@
           };
         }
 
-        const res = await fetch('api.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify(bodyData)
-        });
-
-        const data = await res.json();
+        const actionName = bodyData.action || 'tribune_post';
+        delete bodyData.action;
+        const data = await window.sys.api.post(actionName, bodyData);
 
         if (data && data.success) {
           this.lastPostedMessage = message;
@@ -2328,8 +2259,7 @@
         if (index >= urlsToFetch.length) return;
         const href = urlsToFetch[index];
         try {
-          const res = await fetch(`api.php?action=url_preview&url=${encodeURIComponent(href)}`);
-          const data = await res.json();
+          const data = await window.sys.api.get('url_preview', { url: href });
           if (data && data.success && data.preview) {
             this.urlPreviewCache[href] = data.preview;
           }
@@ -2470,7 +2400,7 @@
       html = html.replace(/\[:([a-zA-Z0-9_\.: -]+)\]/g, (match, totozName) => {
         const isNsfw = totozName.toLowerCase().includes('nsfw');
         const blurClass = (isNsfw && !this.nsfwEnabled) ? 'nsfw-blurred' : '';
-        const proxyUrl = `api.php?action=totoz_proxy&name=${encodeURIComponent(totozName)}`;
+        const proxyUrl = window.sys.api.url('totoz_proxy', { name: totozName });
         return `<img class="totoz-img ${blurClass}" src="${proxyUrl}" alt="[:${this.escapeHtml(totozName)}]" title="[:${this.escapeHtml(totozName)}]" />`;
       });
 

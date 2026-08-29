@@ -246,9 +246,7 @@
 
     async fetchServerInfo(renderAfter = true) {
       try {
-        const json = window.sys && window.sys.api 
-          ? await window.sys.api.get('get_system_info')
-          : await fetch('api.php?action=get_system_info').then(r => r.json());
+        const json = await window.sys.api.get('get_system_info');
 
         if (json.success && json.system_info) {
           this.serverData = json.system_info;
@@ -566,13 +564,7 @@
       if (!confirmed) return;
 
       try {
-        const json = (window.sys && window.sys.api)
-          ? await window.sys.api.post('clear_all_caches')
-          : await fetch('api.php', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.CSRF_TOKEN || '' },
-              body: JSON.stringify({ action: 'clear_all_caches', csrf_token: window.CSRF_TOKEN || '' })
-            }).then(r => r.json());
+        const json = await window.sys.api.post('clear_all_caches');
 
         if (json.success) {
           const msg = this.t('sysmon.clear_cache_success', { count: json.deleted_count, freed: json.freed_fmt });
@@ -606,11 +598,7 @@
 
       const t0 = performance.now();
       try {
-        if (window.sys && window.sys.api) {
-          await window.sys.api.get('get_system_info', { _t: Date.now() });
-        } else {
-          await fetch('api.php?action=get_system_info&_t=' + Date.now()).then(r => r.json());
-        }
+        await window.sys.api.get('get_system_info', { _t: Date.now() });
         const t1 = performance.now();
         const ms = Math.round(t1 - t0);
         const text = this.t('sysmon.ping_result', { ms });

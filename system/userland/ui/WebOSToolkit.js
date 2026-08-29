@@ -1334,25 +1334,7 @@
   };
 
   // Unified API Client for WebOS (api.php)
-  window.sys.api = {
-    async get(action, params = {}) {
-      const url = new URL('api.php', window.location.href);
-      url.searchParams.set('action', action);
-      Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      return await res.json();
-    },
-    async post(action, payload = {}) {
-      const csrf = window.CSRF_TOKEN || (window.sys && window.sys.csrf) || document.querySelector('meta[name="csrf-token"]')?.content || '';
-      const body = { action, csrf_token: csrf, ...payload };
-      const res = await fetch('api.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      return await res.json();
-    }
-  };
+  if (typeof window.SyscallClient !== 'undefined' && !(window.sys.api instanceof window.SyscallClient)) {
+    window.sys.api = new window.SyscallClient();
+  }
 })(window, document);

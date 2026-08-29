@@ -31,7 +31,7 @@
       this.tabs = config.tabs || [];
       this.currentTab = (this.tabs.length > 0) ? this.tabs[0].id : null;
       this.window = null;
-      this.state = config.state || {};
+      this._state = config.state || {};
 
       // Event Bus Subscriptions
       this.eventUnsubscribers = [];
@@ -43,6 +43,14 @@
 
       // Defer onInit so derived class constructor finishes execution first
       queueMicrotask(() => this.onInit());
+    }
+
+    get state() {
+      return this._state;
+    }
+
+    set state(val) {
+      this._state = val;
     }
 
     /**
