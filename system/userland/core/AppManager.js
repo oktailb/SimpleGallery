@@ -35,6 +35,24 @@ class AppManager {
         this.initDefaultApps();
     }
 
+    /**
+     * Universal registration method (supports instance, (appId, instance), or (manifest, instance))
+     */
+    register(arg1, arg2) {
+        if (arg1 && typeof arg1 === 'object' && arg1.id && (typeof arg1.open === 'function' || arg2 === undefined)) {
+            // Called as register(appInstance)
+            this.registerInstance(arg1.id, arg1);
+            return;
+        }
+        if (typeof arg1 === 'string') {
+            // Called as register('app-id', appInstance)
+            this.registerInstance(arg1, arg2);
+            return;
+        }
+        // Called as register(manifest, appInstance)
+        this.registerApp(arg1, arg2);
+    }
+
     registerApp(manifest, appInstance) {
         if (typeof manifest === 'string') {
             manifest = { id: manifest };
@@ -394,4 +412,6 @@ class AppManager {
 }
 
 window.sys = window.sys || {};
+window.AppManager = AppManager;
 window.sys.appManager = new AppManager();
+window.WebOSAppManager = window.sys.appManager;
