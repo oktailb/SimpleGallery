@@ -40,6 +40,34 @@
       });
     }
 
+    /**
+     * Modal compatibility method supporting onSelect / onCancel callbacks
+     * @param {Object} options { title, initialPath, accept, allowMultiple, onSelect, onCancel }
+     */
+    openModal(options = {}) {
+      const opts = {
+        title: options.title || 'Sélectionner un fichier',
+        initialPath: options.initialPath || '',
+        accept: options.accept || '*/*',
+        multiple: Boolean(options.allowMultiple || options.multiple),
+        selectFolder: Boolean(options.selectFolder)
+      };
+
+      return this._openDialog(opts).then((result) => {
+        if (result && typeof options.onSelect === 'function') {
+          options.onSelect(result);
+        }
+        if (!result && typeof options.onCancel === 'function') {
+          options.onCancel();
+        }
+        return result;
+      });
+    }
+
+    open(options = {}) {
+      return this.openModal(options);
+    }
+
     _openDialog(options) {
       return new Promise((resolve) => {
         if (this.activeDialog) {
