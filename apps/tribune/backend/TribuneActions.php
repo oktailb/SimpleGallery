@@ -339,12 +339,11 @@ class TribuneActions {
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
             $req_path = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
-            if (strpos($req_path, '/apps/tribune/api.php') !== false) {
-                $endpoint_path = str_replace('/apps/tribune/api.php', '/system/endpoints/api.php', $req_path);
-            } else {
-                $endpoint_path = $req_path;
+            $root_api_path = preg_replace('#/(apps/tribune|system/endpoints)/api\.php$#', '/api.php', $req_path);
+            if (!str_ends_with($root_api_path, '/api.php')) {
+                $root_api_path = rtrim(dirname($req_path), '/') . '/api.php';
             }
-            $base_uri = $scheme . '://' . $host . $endpoint_path;
+            $base_uri = $scheme . '://' . $host . $root_api_path;
             $redirect_uri = !empty($oauth_cfg['redirect_uri']) ? $oauth_cfg['redirect_uri'] : ($base_uri . '?action=tribune_oauth_callback&board_id=' . urlencode($board_id));
 
             $params = [
@@ -385,12 +384,11 @@ class TribuneActions {
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
             $req_path = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
-            if (strpos($req_path, '/apps/tribune/api.php') !== false) {
-                $endpoint_path = str_replace('/apps/tribune/api.php', '/system/endpoints/api.php', $req_path);
-            } else {
-                $endpoint_path = $req_path;
+            $root_api_path = preg_replace('#/(apps/tribune|system/endpoints)/api\.php$#', '/api.php', $req_path);
+            if (!str_ends_with($root_api_path, '/api.php')) {
+                $root_api_path = rtrim(dirname($req_path), '/') . '/api.php';
             }
-            $base_uri = $scheme . '://' . $host . $endpoint_path;
+            $base_uri = $scheme . '://' . $host . $root_api_path;
             $redirect_uri = !empty($oauth_cfg['redirect_uri']) ? $oauth_cfg['redirect_uri'] : ($base_uri . '?action=tribune_oauth_callback&board_id=' . urlencode($board_id));
 
             $post_fields = [
