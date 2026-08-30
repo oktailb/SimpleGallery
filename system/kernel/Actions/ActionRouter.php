@@ -79,7 +79,27 @@ class ActionRouter {
         'create_folder'           => FileActions::class,
         'upload_file'             => FileActions::class,
         'upload_media'            => FileActions::class,
-        'move_item'               => FileActions::class
+        'move_item'               => FileActions::class,
+
+        // Tribune & Bouchot Actions
+        'tribune_boards_get'      => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_boards_save'     => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_oauth_authorize' => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_oauth_callback'  => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_schedule_post'   => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_scheduled_list'  => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_schedule_cancel' => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_get'             => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_stream'          => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_post'            => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_proxy_fetch'     => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_proxy_post'      => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_clear_history'   => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_file_upload'     => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'tribune_file_get'        => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'totoz_proxy'             => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'totoz_search'            => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+        'url_preview'             => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class
     ];
 
     /**
@@ -95,6 +115,13 @@ class ActionRouter {
             'thumbnail_dir' => $thumbnail_dir,
             'raw_body'      => $raw_body
         ];
+
+        if (strpos($action, 'tribune_') === 0 || strpos($action, 'totoz_') === 0 || $action === 'url_preview') {
+            $tribune_file = dirname(dirname(dirname(__DIR__))) . '/apps/tribune/backend/TribuneActions.php';
+            if (file_exists($tribune_file)) {
+                require_once $tribune_file;
+            }
+        }
 
         // 1. Direct O(1) Lookup
         if (isset(self::ACTION_MAP[$action])) {
