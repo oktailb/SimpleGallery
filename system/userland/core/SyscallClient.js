@@ -179,4 +179,9 @@ class SyscallClient {
 }
 
 window.sys = window.sys || {};
-window.sys.api = new SyscallClient();
+// Expose SyscallClient globally so apps can instantiate it directly if needed
+window.SyscallClient = SyscallClient;
+// window.sys.api  → system API (system/endpoints/api.php)
+window.sys.api = window.sys.api || new SyscallClient();
+// window.sys.syscall → alias with forApp() convenience (same system endpoint by default)
+window.sys.syscall = window.sys.syscall || window.sys.api;

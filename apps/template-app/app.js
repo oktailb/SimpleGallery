@@ -31,9 +31,10 @@
       });
 
       // App Private API Client pointing to apps/template-app/api.php
-      this.appApi = (window.sys && window.sys.syscall) 
-        ? window.sys.syscall.forApp('template-app') 
-        : new window.SyscallClient('apps/template-app/api.php');
+      const syscall = (window.sys && window.sys.syscall) || (window.sys && window.sys.api);
+      this.appApi = syscall
+        ? syscall.forApp('template-app')
+        : new SyscallClient('apps/template-app/api.php');
 
       this.selectedFile = null;
       this.notes = [];
