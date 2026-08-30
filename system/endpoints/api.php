@@ -13,13 +13,10 @@ use SimpleGallery\Kernel\Security\SecurityManager;
 
 ensure_session_started();
 
-header('Content-Type: application/json; charset=utf-8');
-
 $action = $_GET['action'] ?? $_POST['action'] ?? null;
 $raw_body = [];
 $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($request_method === 'POST') {
-
     $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
     if (stripos($content_type, 'application/json') !== false) {
         $raw_input = file_get_contents('php://input');
@@ -39,6 +36,9 @@ if (in_array($action, ActionRouter::MUTATING_ACTIONS, true)) {
     $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? $raw_body['csrf_token'] ?? '';
     if (!SecurityManager::verifyCsrfToken($csrf)) {
         http_response_code(403);
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
         echo json_encode(['success' => false, 'error' => __t('api.err_invalid_csrf', [], null, $real_base_dir)]);
         exit;
     }
@@ -56,6 +56,9 @@ $result = ActionRouter::dispatch(
 
 if ($result === null) {
     http_response_code(404);
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+    }
     echo json_encode(['success' => false, 'error' => __t('api.err_unknown_action', [], null, $real_base_dir)]);
     exit;
 }
@@ -66,5 +69,8 @@ if (function_exists('sanitize_utf8')) {
     $data = sanitize_utf8($data);
 }
 
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+}
 echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 exit;

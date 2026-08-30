@@ -49,6 +49,7 @@ class SyscallClient {
       try {
         return JSON.parse(text);
       } catch (e) {
+        console.warn(`[SyscallClient] Non-JSON payload received for GET "${action}":`, text);
         return { success: false, error: text || `HTTP ${res.status}` };
       }
     } catch (err) {
@@ -83,6 +84,7 @@ class SyscallClient {
       try {
         return JSON.parse(text);
       } catch (e) {
+        console.warn(`[SyscallClient] Non-JSON payload received for POST "${action}":`, text);
         return { success: false, error: text || `HTTP ${res.status}` };
       }
     } catch (err) {
