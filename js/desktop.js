@@ -1093,39 +1093,44 @@
 
     openAdminModal() {
       const modal = document.getElementById('adminModal') || this.el.adminModal;
-      if (!modal) return;
-      this.el.adminModal = modal;
+      if (modal) {
+        this.el.adminModal = modal;
 
-      const isAdmin = (window.explorerApp && window.explorerApp.state && window.explorerApp.state.isAdmin) || this.state.isAdmin || window.IS_ADMIN;
-      this.state.isAdmin = isAdmin;
+        const isAdmin = (window.explorerApp && window.explorerApp.state && window.explorerApp.state.isAdmin) || this.state.isAdmin || window.IS_ADMIN;
+        this.state.isAdmin = isAdmin;
 
-      const loginState = document.getElementById('adminLoginState');
-      const activeState = document.getElementById('adminActiveState');
-      const loginError = document.getElementById('adminLoginError');
-      const passInput = document.getElementById('adminPasswordInput');
-      const changePassMsg = document.getElementById('adminChangePassMsg');
+        const loginState = document.getElementById('adminLoginState');
+        const activeState = document.getElementById('adminActiveState');
+        const loginError = document.getElementById('adminLoginError');
+        const passInput = document.getElementById('adminPasswordInput');
+        const changePassMsg = document.getElementById('adminChangePassMsg');
 
-      if (loginState) loginState.style.display = isAdmin ? 'none' : 'block';
-      if (activeState) activeState.style.display = isAdmin ? 'block' : 'none';
-      if (loginError) {
-        loginError.style.display = 'none';
-        loginError.textContent = '';
-      }
-      if (changePassMsg) {
-        changePassMsg.style.display = 'none';
-        changePassMsg.textContent = '';
-      }
+        if (loginState) loginState.style.display = isAdmin ? 'none' : 'block';
+        if (activeState) activeState.style.display = isAdmin ? 'block' : 'none';
+        if (loginError) {
+          loginError.style.display = 'none';
+          loginError.textContent = '';
+        }
+        if (changePassMsg) {
+          changePassMsg.style.display = 'none';
+          changePassMsg.textContent = '';
+        }
 
-      modal.style.display = 'flex';
-      void modal.offsetWidth;
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
+        modal.style.display = 'flex';
+        void modal.offsetWidth;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
 
-      if (isAdmin) {
-        this.loadAdminPermissions();
-      } else if (passInput) {
-        passInput.value = '';
-        setTimeout(() => passInput.focus(), 60);
+        if (isAdmin) {
+          this.loadAdminPermissions();
+        } else if (passInput) {
+          passInput.value = '';
+          setTimeout(() => passInput.focus(), 60);
+        }
+      } else if (window.SettingsApp && typeof window.SettingsApp.open === 'function') {
+        window.SettingsApp.open('security');
+      } else if (window.sys && window.sys.appManager && typeof window.sys.appManager.launchApp === 'function') {
+        window.sys.appManager.launchApp('settings', { tab: 'security' });
       }
     }
 

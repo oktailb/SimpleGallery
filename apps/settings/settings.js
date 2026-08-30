@@ -99,6 +99,8 @@
 
       window.sys.ui.bindActions(container, {
         'click #settingsAuthActionBtn': () => this.handleAuthAction(),
+        'click #settingsAuthLogoutBtn': () => this.logoutAdmin(),
+        'submit #settingsLoginForm': (form, e) => { e.preventDefault(); this.loginAdmin(container); },
         'click #settingsSavePermsBtn': () => this.savePermissions(container),
         'submit #settingsChangePassForm': (form, e) => { e.preventDefault(); this.changePassword(container); },
         'click [data-wallpaper-id]': (tile) => {
@@ -164,19 +166,32 @@
     // TAB 1: SECURITY & GUEST PERMISSIONS MATRIX
     // -------------------------------------------------------------
     renderSecurityTab() {
-      const authContent = `
+      const authContent = this.isAdmin ? `
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
           <div>
-            <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">
-              ${this.isAdmin ? this.t('admin.status_connected') : '🔒 ' + this.t('admin.login_title')}
+            <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px; color:#22c55e;">
+              ✅ ${this.t('admin.status_connected') || 'Administrateur Connecté'}
             </div>
             <div style="font-size:0.8rem; color:var(--text-muted);">
-              ${this.isAdmin ? this.t('admin.active_notice') : this.t('settings.admin_required_notice')}
+              ${this.t('admin.active_notice') || 'Toutes les fonctionnalités d\'administration sont déverrouillées.'}
             </div>
           </div>
-          <button type="button" id="settingsAuthActionBtn" class="sysmon-action-btn ${this.isAdmin ? '' : 'kill'}" style="padding:6px 14px; font-size:0.85rem;">
-            ${this.isAdmin ? '🚪 ' + this.t('admin.logout_btn') : '🔑 ' + this.t('admin.login_btn')}
+          <button type="button" id="settingsAuthLogoutBtn" class="sysmon-action-btn" style="padding:6px 14px; font-size:0.85rem; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4);">
+            🚪 ${this.t('admin.logout_btn') || 'Déconnexion'}
           </button>
+        </div>
+      ` : `
+        <div>
+          <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+            ${this.t('settings.admin_required_notice') || 'Entrez le mot de passe administrateur pour déverrouiller la gestion des permissions, des fichiers et des paramètres avancés.'}
+          </div>
+          <form id="settingsLoginForm" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <input type="password" id="settingsPassInput" class="admin-input" style="flex:1; min-width:200px;" placeholder="${this.t('admin.password_placeholder') || 'Mot de passe administrateur'}" required autofocus />
+            <button type="submit" class="sysmon-action-btn" style="padding:8px 18px; background:var(--accent-primary, #6366f1); color:#fff; font-weight:600;">
+              🔑 ${this.t('admin.login_btn') || 'Connexion'}
+            </button>
+          </form>
+          <div id="settingsLoginError" style="display:none; color:#f87171; font-size:0.85rem; margin-top:8px;"></div>
         </div>
       `;
 
@@ -233,15 +248,82 @@
       `;
     }
 
+    async loginAdmin(container) {
+      const input = container.querySelector('#settingsPassInput');
+      const errEl = container.querySelector('#settingsLoginError');
+      if (!input || !input.value) return;
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'login');
+        formData.append('csrf_token', window.CSRF_TOKEN || '');
+        formData.append('password', input.value);
+
+        const res = await fetch('system/endpoints/api.php', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': window.CSRF_TOKEN || '' },
+          body: formData
+        });
+        const json = await res.json();
+        if (json.success) {
+          window.IS_ADMIN = true;
+          if (window.desktop) {
+            window.desktop.state.isAdmin = true;
+            if (json.csrf_token) {
+              window.desktop.state.csrfToken = json.csrf_token;
+              window.CSRF_TOKEN = json.csrf_token;
+            }
+            const adminBtn = document.getElementById('adminBtn');
+            if (adminBtn) adminBtn.classList.add('active');
+          }
+          if (window.explorerApp) {
+            window.explorerApp.state.isAdmin = true;
+            window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+          }
+          this.toast.success(this.t('admin.login_success') || 'Connexion administrateur réussie');
+          this.render();
+        } else {
+          if (errEl) {
+            errEl.textContent = '❌ ' + (json.error || this.t('admin.wrong_password') || 'Mot de passe incorrect');
+            errEl.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        if (errEl) {
+          errEl.textContent = '❌ ' + err.message;
+          errEl.style.display = 'block';
+        }
+      }
+    }
+
+    async logoutAdmin() {
+      try {
+        const formData = new FormData();
+        formData.append('action', 'logout');
+        formData.append('csrf_token', window.CSRF_TOKEN || '');
+        await fetch('system/endpoints/api.php', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': window.CSRF_TOKEN || '' },
+          body: formData
+        });
+        window.IS_ADMIN = false;
+        if (window.desktop) {
+          window.desktop.state.isAdmin = false;
+          const adminBtn = document.getElementById('adminBtn');
+          if (adminBtn) adminBtn.classList.remove('active');
+        }
+        if (window.explorerApp) {
+          window.explorerApp.state.isAdmin = false;
+          window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+        }
+        this.toast.info('Déconnexion réussie');
+        this.render();
+      } catch (e) {}
+    }
+
     handleAuthAction() {
       if (this.isAdmin) {
-        if (window.desktop && typeof window.desktop.logoutAdmin === 'function') {
-          window.desktop.logoutAdmin().then(() => this.render());
-        }
-      } else {
-        if (window.desktop && typeof window.desktop.openAdminModal === 'function') {
-          window.desktop.openAdminModal();
-        }
+        this.logoutAdmin();
       }
     }
 
