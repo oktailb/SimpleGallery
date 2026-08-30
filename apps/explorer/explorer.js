@@ -771,8 +771,8 @@
             window.SG_DRAG_SOURCE_INSTANCE = this.id;
 
             const fileIcon = window.IconHelper ? window.IconHelper.getFileIcon(file) : '📄';
-            const fileUrl = file.file_url || (`thumb.php?file=${encodeURIComponent(file.path)}&raw=1`);
-            const thumbUrl = file.thumb_url || (`thumb.php?file=${encodeURIComponent(file.path)}`);
+            const fileUrl = file.file_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}&raw=1`);
+            const thumbUrl = file.thumb_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}`);
             const fileData = {
               type: 'file',
               path: file.path,
@@ -2030,7 +2030,7 @@
       let itemsHtml = '';
       if (Array.isArray(archives) && archives.length > 0) {
         itemsHtml = archives.map(arch => `
-          <a href="${arch.url || `archive.php?dir=${currentDir}&format=${arch.format || 'zip'}`}" download class="archive-menu-item">
+          <a href="${arch.url || `system/endpoints/archive.php?dir=${currentDir}&format=${arch.format || 'zip'}`}" download class="archive-menu-item">
             <span>📦</span> <span>${this.escapeHtml(arch.name || `Télécharger (${(arch.format || 'ZIP').toUpperCase()})`)}</span>
           </a>
         `).join('');
@@ -2038,14 +2038,14 @@
         itemsHtml = Object.keys(archives).map(fmt => {
           const label = fmt.toUpperCase();
           return `
-            <a href="archive.php?dir=${currentDir}&format=${encodeURIComponent(fmt)}" download class="archive-menu-item">
+            <a href="system/endpoints/archive.php?dir=${currentDir}&format=${encodeURIComponent(fmt)}" download class="archive-menu-item">
               <span>📦</span> <span>Télécharger le dossier (${this.escapeHtml(label)})</span>
             </a>
           `;
         }).join('');
       } else {
         itemsHtml = `
-          <a href="archive.php?dir=${currentDir}&format=zip" download class="archive-menu-item">
+          <a href="system/endpoints/archive.php?dir=${currentDir}&format=zip" download class="archive-menu-item">
             <span>📦</span> <span>Télécharger le dossier (ZIP)</span>
           </a>
         `;

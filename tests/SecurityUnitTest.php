@@ -8,8 +8,8 @@ if (php_sapi_name() !== 'cli' && !defined('SG_RUNNING_TESTS_VIA_API')) {
     die("Error: Security unit tests must be executed from CLI.\n");
 }
 
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../system/boot/bootstrap.php';
+require_once __DIR__ . '/../system/kernel/functions.php';
 
 class SecurityUnitTestSuite {
     /** @var int */
@@ -513,7 +513,8 @@ HTACCESS;
         echo "\n🔒 [11/11] Audit Approfondi des Actions Mutantes, CSRF et Injections...\n";
 
         // Read mutating actions from api.php
-        $api_content = file_get_contents($this->base_dir . '/api.php');
+        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
+        $api_content = file_get_contents($api_file);
         $this->assert("Présence de \$mutating_actions dans api.php", strpos($api_content, '$mutating_actions =') !== false);
 
         $expected_mutating = [

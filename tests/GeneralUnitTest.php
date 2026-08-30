@@ -8,7 +8,8 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
     define('SIMPLE_GALLERY_CORE', true);
 }
 
-require_once dirname(__DIR__) . '/config.php';
+require_once dirname(__DIR__) . '/system/boot/bootstrap.php';
+require_once dirname(__DIR__) . '/system/kernel/functions.php';
 
 class GeneralUnitTestSuite {
     /** @var string */
@@ -142,9 +143,9 @@ class GeneralUnitTestSuite {
         $rel_sub = get_relative_path($sub, $this->base_dir);
         $this->assert("get_relative_path('css/gallery.css') renvoie 'css/gallery.css'", $rel_sub === 'css/gallery.css');
 
-        $win_style = str_replace('/', '\\', $this->base_dir . '/js/gallery.js');
+        $win_style = str_replace('/', '\\', $this->base_dir . '/js/desktop.js');
         $rel_win = get_relative_path($win_style, $this->base_dir);
-        $this->assert("get_relative_path normalise les antislashs Windows", $rel_win === 'js/gallery.js');
+        $this->assert("get_relative_path normalise les antislashs Windows", $rel_win === 'js/desktop.js');
     }
 
     /**
@@ -303,8 +304,8 @@ class GeneralUnitTestSuite {
             }
         }
 
-        // Test existence of archive.php
-        $this->assert("Point d'accès archive.php présent à la racine", file_exists($this->base_dir . '/archive.php'));
+        // Test existence of archive.php endpoint
+        $this->assert("Point d'accès archive.php présent", file_exists($this->base_dir . '/system/endpoints/archive.php'));
 
         if (file_exists($out_zip)) @unlink($out_zip);
     }
@@ -348,7 +349,7 @@ class GeneralUnitTestSuite {
         echo "\n🍪 [8/8] Test de la Configuration du Consentement Cookies...\n";
         global $enable_cookie_consent;
 
-        $this->assert("Variable \$enable_cookie_consent définie dans config.php", isset($enable_cookie_consent));
+        $this->assert("Variable \$enable_cookie_consent définie", isset($enable_cookie_consent));
         $this->assert("Consentement des cookies activé par défaut", $enable_cookie_consent === true);
 
         $rendered_ui = $this->getRenderedIndex();
@@ -370,7 +371,8 @@ class GeneralUnitTestSuite {
         $this->assert("Application image-viewer fournit le modal imageEditorModal", strpos($rendered_ui, 'id="imageEditorModal"') !== false);
         $this->assert("Application image-viewer fournit le modal de choix de sauvegarde imageSaveChoiceModal", strpos($rendered_ui, 'id="imageSaveChoiceModal"') !== false);
 
-        $api_content = @file_get_contents($this->base_dir . '/api.php');
+        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
+        $api_content = @file_get_contents($api_file);
         $this->assert("api.php déclare l'action edit_image dans les actions mutantes", strpos($api_content, "'edit_image'") !== false);
         $this->assert("api.php implémente le gestionnaire d'action edit_image", strpos($api_content, "\$action === 'edit_image'") !== false);
 
@@ -515,7 +517,8 @@ class GeneralUnitTestSuite {
         $this->assert("Formatage durée longue 3665s => 01:01:05", $dur_fmt_hr === '01:01:05');
 
         // 4. Test API get_metadata action resolution with sanitize_file_path
-        $api_code = @file_get_contents($this->base_dir . '/api.php');
+        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
+        $api_code = @file_get_contents($api_file);
         $this->assert("api.php utilise sanitize_file_path pour get_metadata", strpos($api_code, "sanitize_file_path(\$file_param") !== false);
 
         // 5. Test Synthetic MP4 Atom Parsing (mvhd duration & tkhd dimensions)
@@ -582,7 +585,8 @@ class GeneralUnitTestSuite {
         $this->assert("Traduction JA de system-monitor chargée", !empty($ja_trans['apps.system-monitor.title']) || !empty($discovered['system-monitor']['locales']['ja']['title']));
 
         // 3. API Declarations
-        $api_code = @file_get_contents($this->base_dir . '/api.php');
+        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
+        $api_code = @file_get_contents($api_file);
         $this->assert("api.php déclare l'action get_system_info", strpos($api_code, "\$action === 'get_system_info'") !== false);
         $this->assert("api.php déclare l'action clear_all_caches dans les actions mutantes", strpos($api_code, "'clear_all_caches'") !== false);
         $this->assert("api.php fournit les métriques de mémoire RAM (current & peak)", strpos($api_code, "'memory_current'") !== false && strpos($api_code, "'memory_peak'") !== false);
@@ -637,7 +641,8 @@ class GeneralUnitTestSuite {
         $this->assert("Traduction FR de tribune chargée", !empty($fr_trans['apps.tribune.title']) || !empty($discovered['tribune']['locales']['fr']['title']));
 
         // 3. Backend Endpoints in api.php
-        $api_code = @file_get_contents($this->base_dir . '/api.php');
+        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
+        $api_code = @file_get_contents($api_file);
         $this->assert("api.php déclare l'action tribune_get", strpos($api_code, "action === 'tribune_get'") !== false);
         $this->assert("api.php déclare l'action tribune_post dans les actions mutantes", strpos($api_code, "'tribune_post'") !== false);
         $this->assert("api.php déclare l'action tribune_proxy_fetch", strpos($api_code, "action === 'tribune_proxy_fetch'") !== false);
@@ -707,7 +712,8 @@ class GeneralUnitTestSuite {
         $this->assert("get_autostart_config renvoie une configuration valide", is_array($config) && isset($config['enabled']));
 
         // 2. API Actions
-        $api_code = file_get_contents($this->base_dir . '/api.php');
+        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
+        $api_code = file_get_contents($api_file);
         $this->assert("api.php déclare l'action get_autostart_settings", strpos($api_code, "action === 'get_autostart_settings'") !== false);
         $this->assert("api.php déclare l'action save_autostart_settings dans les actions mutantes", strpos($api_code, "'save_autostart_settings'") !== false);
 
@@ -717,8 +723,8 @@ class GeneralUnitTestSuite {
         $this->assert("SettingsApp implémente renderAutostartTab", strpos($settings_js, "renderAutostartTab") !== false);
         $this->assert("SettingsApp implémente saveAutostartConfig", strpos($settings_js, "saveAutostartConfig") !== false);
 
-        $gallery_js = file_get_contents($this->base_dir . '/js/gallery.js');
-        $this->assert("WebOS Desktop implémente initAutostartApps au démarrage", strpos($gallery_js, "initAutostartApps") !== false);
+        $desktop_js = file_get_contents($this->base_dir . '/js/desktop.js');
+        $this->assert("WebOS Desktop implémente initAutostartApps au démarrage", strpos($desktop_js, "initAutostartApps") !== false);
         $this->assert("SettingsApp implémente le réordonnancement par flèches autostart-move-up / down", strpos($settings_js, "autostart-move-up") !== false && strpos($settings_js, "autostart-move-down") !== false);
     }
 }

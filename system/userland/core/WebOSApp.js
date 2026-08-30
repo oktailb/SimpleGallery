@@ -116,11 +116,11 @@
       return {
         get: (action, params = {}) => {
           const query = new URLSearchParams({ action, ...params }).toString();
-          return fetch(`api.php?${query}`).then(r => r.json());
+          return fetch(`system/endpoints/api.php?${query}`).then(r => r.json());
         },
         post: (action, payload = {}) => {
           const csrf = window.CSRF_TOKEN || (window.desktop && window.desktop.state && window.desktop.state.csrfToken) || '';
-          return fetch('api.php', {
+          return fetch('system/endpoints/api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
             body: JSON.stringify({ action, csrf_token: csrf, ...payload })

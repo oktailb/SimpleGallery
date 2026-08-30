@@ -114,7 +114,7 @@
         // Fetch Full Asynchronous Metadata
         if (!metadataCache.has(file.path)) {
           try {
-            const res = await fetch(`api.php?action=get_metadata&file=${encodeURIComponent(file.path)}`);
+            const res = await fetch(`system/endpoints/api.php?action=get_metadata&file=${encodeURIComponent(file.path)}`);
             const json = await res.json();
             if (json.success && json.metadata) {
               metadataCache.set(file.path, json.metadata);

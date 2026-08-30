@@ -7,10 +7,11 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
     define('SIMPLE_GALLERY_CORE', true);
 }
 
-require_once __DIR__ . '/system/boot/bootstrap.php';
-require_once __DIR__ . '/includes/exif.php';
-require_once __DIR__ . '/includes/binaries.php';
-require_once __DIR__ . '/includes/metadata/MetadataManager.php';
+$project_root = dirname(dirname(__DIR__));
+require_once $project_root . '/system/boot/bootstrap.php';
+require_once $project_root . '/includes/exif.php';
+require_once $project_root . '/includes/binaries.php';
+require_once $project_root . '/includes/metadata/MetadataManager.php';
 
 /**
  * Safely starts PHP session with secure cookie parameters
@@ -95,7 +96,8 @@ function is_admin_logged_in(): bool {
  * Retrieves configured admin password hash from .admin_password_hash file or legacy $admin_password_hash variable
  */
 function get_admin_password_hash(string $legacy_hash = ''): string {
-    $hash_file = __DIR__ . '/.admin_password_hash';
+    $project_root = dirname(dirname(__DIR__));
+    $hash_file = $project_root . '/.admin_password_hash';
     if (file_exists($hash_file) && is_readable($hash_file)) {
         $content = trim((string)file_get_contents($hash_file));
         if (!empty($content)) {
@@ -109,10 +111,20 @@ function get_admin_password_hash(string $legacy_hash = ''): string {
  * Updates admin password hash in .admin_password_hash file atomically
  */
 function update_admin_password_hash(string $new_password): bool {
+    $project_root = dirname(dirname(__DIR__));
     $hash = password_hash($new_password, PASSWORD_DEFAULT);
-    $hash_file = __DIR__ . '/.admin_password_hash';
+    $hash_file = $project_root . '/.admin_password_hash';
     return (@file_put_contents($hash_file, $hash . "\n", LOCK_EX) !== false);
 }
+
+/**
+ * Dynamically updates admin password hash in .admin_password_hash file
+ */
+function update_admin_password_in_config(string $new_password): bool {
+    return update_admin_password_hash($new_password);
+}
+
+$admin_password_hash = get_admin_password_hash('');
 
 
 /**
@@ -760,7 +772,7 @@ function load_folder_overrides(string $dir_path, string $base_dir): array {
             $possible_image = $dir_path . '/' . $bg_val;
             if (file_exists($possible_image) && is_file($possible_image)) {
                 $rel_bg = get_relative_path($possible_image, $base_dir);
-                $overrides['background'] = 'thumb.php?file=' . rawurlencode($rel_bg) . '&raw=1';
+                $overrides['background'] = 'system/endpoints/thumb.php?file=' . rawurlencode($rel_bg) . '&raw=1';
             } else {
                 $overrides['background'] = $bg_val;
             }
@@ -1014,8 +1026,8 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
                     'mtime'          => $mtime,
                     'effective_mtime'=> $effective_mtime,
                     'exif'           => $exif,
-                    'thumb_url'      => 'thumb.php?file=' . rawurlencode($rel_path),
-                    'file_url'       => 'thumb.php?file=' . rawurlencode($rel_path) . '&raw=1',
+                    'thumb_url'      => 'system/endpoints/thumb.php?file=' . rawurlencode($rel_path),
+                    'file_url'       => 'system/endpoints/thumb.php?file=' . rawurlencode($rel_path) . '&raw=1',
                     'comment'        => $comment
                 ];
             }
@@ -1037,9 +1049,10 @@ function search_gallery_recursive(string $start_dir, string $base_dir, array $pa
  * Format: [ 'fr' => ['code' => 'fr', 'name' => 'Français', 'flag' => '🇫🇷'], ... ]
  */
 function get_available_locales(string $base_dir): array {
+    $project_root = dirname(dirname(__DIR__));
     $locales_dir = rtrim($base_dir, '/\\') . '/locales';
     if (!is_dir($locales_dir)) {
-        $locales_dir = __DIR__ . '/locales';
+        $locales_dir = $project_root . '/locales';
     }
     $locales = [];
 
@@ -1124,10 +1137,11 @@ function detect_browser_locale(array $available_locales, string $default = 'fr')
  * Load translations array for a specific locale code.
  */
 function load_locale_translations(string $base_dir, string $code): array {
+    $project_root = dirname(dirname(__DIR__));
     $clean_code = preg_replace('/[^a-z0-9_-]/i', '', strtolower($code));
     $file = rtrim($base_dir, '/\\') . '/locales/' . $clean_code . '.json';
     if (!is_file($file)) {
-        $file = __DIR__ . '/locales/' . $clean_code . '.json';
+        $file = $project_root . '/locales/' . $clean_code . '.json';
     }
     if (!is_file($file)) return [];
     
@@ -1136,13 +1150,13 @@ function load_locale_translations(string $base_dir, string $code): array {
     $data = @json_decode($content, true);
     $base_translations = (isset($data['translations']) && is_array($data['translations'])) ? $data['translations'] : [];
     if (!class_exists('\SimpleGallery\Kernel\PluginDiscovery')) {
-        $plugin_disc_file = __DIR__ . '/system/kernel/PluginDiscovery.php';
+        $plugin_disc_file = $project_root . '/system/kernel/PluginDiscovery.php';
         if (is_file($plugin_disc_file)) {
             require_once $plugin_disc_file;
         }
     }
     $app_translations = class_exists('\SimpleGallery\Kernel\PluginDiscovery') 
-        ? \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations(__DIR__, $clean_code) 
+        ? \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations($project_root, $clean_code) 
         : [];
 
     return array_merge($base_translations, $app_translations);
@@ -1156,7 +1170,7 @@ function __t(string $key, array $replacements = [], ?string $locale = null, stri
     
     if (empty($base_dir)) {
         global $real_base_dir;
-        $base_dir = $real_base_dir ?? dirname(__DIR__);
+        $base_dir = $real_base_dir ?? dirname(dirname(__DIR__));
     }
 
     if ($locale === null) {

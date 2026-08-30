@@ -62,7 +62,7 @@ Ouvrez ensuite `http://localhost:8080` dans votre navigateur.
    ```
 3. Initialisez le mot de passe d'administration via la ligne de commande :
    ```bash
-   php set_admin_password.php "VotreMotDePasseSecret"
+   php bin/set_admin_password.php "VotreMotDePasseSecret"
    ```
 4. Déposez vos dossiers de photos et médias : ils sont immédiatement détectés et prêts à être explorés !
 

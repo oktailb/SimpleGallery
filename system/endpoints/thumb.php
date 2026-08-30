@@ -8,7 +8,9 @@
 ini_set('display_errors', '0');
 error_reporting(0);
 
-require_once __DIR__ . '/config.php';
+$project_root = dirname(dirname(__DIR__));
+require_once $project_root . '/system/boot/bootstrap.php';
+require_once $project_root . '/system/kernel/functions.php';
 
 
 function send_cached_file(string $file_path, string $content_type, int $max_age = 31536000): void {

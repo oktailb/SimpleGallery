@@ -3,7 +3,7 @@
  * Unified, zero-boilerplate API client for WebOS communicating with Kernel (api.php).
  */
 class SyscallClient {
-  constructor(endpoint = 'api.php') {
+  constructor(endpoint = 'system/endpoints/api.php') {
     this.endpoint = endpoint;
   }
 

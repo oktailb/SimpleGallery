@@ -341,7 +341,7 @@
       }
 
       const finalRelativePath = resolvedParts.join('/');
-      return `thumb.php?file=${encodeURIComponent(finalRelativePath)}&raw=1`;
+      return `system/endpoints/thumb.php?file=${encodeURIComponent(finalRelativePath)}&raw=1`;
     },
 
     resolveVideoUrl(secName, secConfig, vwallFile, ctx) {

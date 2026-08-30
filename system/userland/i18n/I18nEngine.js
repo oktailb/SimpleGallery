@@ -15,7 +15,7 @@ class I18nEngine {
 
     async loadTranslations(code) {
         try {
-            const res = await fetch(`api.php?action=get_locale&code=${encodeURIComponent(code)}`);
+            const res = await fetch(`system/endpoints/api.php?action=get_locale&code=${encodeURIComponent(code)}`);
             const data = await res.json();
             if (data.success && data.translations) {
                 this.translations = data.translations;

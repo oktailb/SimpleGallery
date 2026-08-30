@@ -75,7 +75,7 @@ class VFS {
                     if (in_array($sub_ext, $forbidden_exts, true)) continue;
                     $item_count++;
                     if (!$cover_thumb && in_array($sub_ext, $media_types['image'] ?? [], true)) {
-                        $cover_thumb = 'thumb.php?file=' . rawurlencode(PathValidator::getRelativePath($full_path . '/' . $sub, $base_dir));
+                        $cover_thumb = 'system/endpoints/thumb.php?file=' . rawurlencode(PathValidator::getRelativePath($full_path . '/' . $sub, $base_dir));
                     }
                 }
 
@@ -114,8 +114,8 @@ class VFS {
                     'mtime'           => $mtime,
                     'effective_mtime' => $effective_mtime,
                     'exif'            => $exif,
-                    'thumb_url'       => 'thumb.php?file=' . rawurlencode($rel_path),
-                    'file_url'        => 'thumb.php?file=' . rawurlencode($rel_path) . '&raw=1',
+                    'thumb_url'       => 'system/endpoints/thumb.php?file=' . rawurlencode($rel_path),
+                    'file_url'        => 'system/endpoints/thumb.php?file=' . rawurlencode($rel_path) . '&raw=1',
                     'comment'         => $comment
                 ];
             }

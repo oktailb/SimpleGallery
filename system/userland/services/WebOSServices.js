@@ -181,7 +181,7 @@
       const csrf = window.CSRF_TOKEN || (window.desktop && window.desktop.state && window.desktop.state.csrfToken) || '';
       formData.append('csrf_token', csrf);
 
-      return fetch('api.php', {
+      return fetch('system/endpoints/api.php', {
         method: 'POST',
         headers: { 'X-CSRF-Token': csrf },
         body: formData

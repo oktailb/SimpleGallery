@@ -61,7 +61,7 @@ SimpleGallery repose sur une architecture de type **Micro-WebOS** découplant le
 ### 🖥️ 2.1 Espace Kernel (Serveur PHP)
 - **`system/kernel/PluginDiscovery.php`** : Scanne récursivement le dossier `apps/`, découvre automatiquement les `manifest.json`, enregistre les points d'entrée JS/CSS/Templates et agrège les dictionnaires de traduction `locales/*.json`.
 - **`system/kernel/KernelGateway.php` & `api.php`** : Valide les requêtes entrantes, vérifie les jetons CSRF, contrôle l'authentification et dispatche les appels de bas niveau.
-- **`system/kernel/FileSystem.php` & `functions.php`** : Gestion sécurisée des fichiers avec protection stricte contre le *Path Traversal* (`../`), lecture/écriture des *dotfiles* (`.title`, `.desc`, `.comment`, `.bg`, `.theme`, `.private`, `.password`) et lecture des métadonnées EXIF/ID3.
+- **`system/kernel/FileSystem.php` & `system/kernel/functions.php`** : Gestion sécurisée des fichiers avec protection stricte contre le *Path Traversal* (`../`), lecture/écriture des *dotfiles* (`.title`, `.desc`, `.comment`, `.bg`, `.theme`, `.private`, `.password`) et lecture des métadonnées EXIF/ID3.
 - **`thumb.php`** : Pipeline de génération de vignettes asynchrone (PHP GD pour les photos, extraction FFmpeg pour les vidéos).
 
 ### 🌐 2.2 Espace Userland (Client JavaScript)

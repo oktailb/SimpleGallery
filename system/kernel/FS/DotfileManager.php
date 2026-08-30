@@ -173,7 +173,7 @@ class DotfileManager {
                 $possible_image = $dir_path . '/' . $bg_val;
                 if (file_exists($possible_image) && is_file($possible_image)) {
                     $rel_bg = PathValidator::getRelativePath($possible_image, $base_dir);
-                    $overrides['background'] = 'thumb.php?file=' . rawurlencode($rel_bg) . '&raw=1';
+                    $overrides['background'] = 'system/endpoints/thumb.php?file=' . rawurlencode($rel_bg) . '&raw=1';
                 } else {
                     $overrides['background'] = $bg_val;
                 }

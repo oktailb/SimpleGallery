@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/system/boot/bootstrap.php';
+require_once __DIR__ . '/system/kernel/functions.php';
 
 // Set HTTP Security Headers
 header('X-Content-Type-Options: nosniff');
@@ -159,8 +160,8 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     window.IS_ADMIN = <?php echo is_admin_logged_in() ? 'true' : 'false'; ?>;
   </script>
 
-  <!-- Core Client Application -->
-  <script src="js/gallery.js?v=<?php echo filemtime(__DIR__ . '/js/gallery.js'); ?>" defer></script>
+  <!-- WebOS Desktop Host Environment -->
+  <script src="js/desktop.js?v=<?php echo filemtime(__DIR__ . '/js/desktop.js'); ?>" defer></script>
 
 </head>
 <body data-theme="<?php echo htmlspecialchars($theme_preset, ENT_QUOTES, 'UTF-8'); ?>">

@@ -1,10 +1,11 @@
 <?php
 /**
  * SimpleGallery 2026 - CLI Utility to Set / Change Admin Password Hash in config.php
- * Usage: php set_admin_password.php [new_password]
+ * Usage: php bin/set_admin_password.php [new_password]
  */
 
-require_once __DIR__ . '/config.php';
+require_once dirname(__DIR__) . '/system/boot/bootstrap.php';
+require_once dirname(__DIR__) . '/system/kernel/functions.php';
 
 if (php_sapi_name() !== 'cli') {
     die("Error: This script must be executed from the command line (CLI) for security.\n");
@@ -13,8 +14,8 @@ if (php_sapi_name() !== 'cli') {
 $password = $argv[1] ?? null;
 
 if (empty($password)) {
-    echo "Usage: php set_admin_password.php <new_password>\n";
-    echo "Example: php set_admin_password.php MySecretPass123!\n";
+    echo "Usage: php bin/set_admin_password.php <new_password>\n";
+    echo "Example: php bin/set_admin_password.php MySecretPass123!\n";
     exit(1);
 }
 

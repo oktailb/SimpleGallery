@@ -9,7 +9,9 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
-require_once __DIR__ . '/config.php';
+$project_root = dirname(dirname(__DIR__));
+require_once $project_root . '/system/boot/bootstrap.php';
+require_once $project_root . '/system/kernel/functions.php';
 
 ensure_session_started();
 
@@ -66,7 +68,7 @@ if ($action === 'view_file' || $action === 'raw_file') {
         echo json_encode(['success' => false, 'error' => 'Fichier introuvable']);
         exit;
     }
-    header('Location: thumb.php?file=' . rawurlencode($file_param) . '&raw=1', true, 302);
+    header('Location: system/endpoints/thumb.php?file=' . rawurlencode($file_param) . '&raw=1', true, 302);
     exit;
 }
 
@@ -226,30 +228,33 @@ if (!defined('SG_EXEC')) {
 }
 
 function get_tribune_boards_file_path() {
-    $p1 = __DIR__ . '/storage/tribune_boards.json';
-    if (file_exists($p1)) return $p1;
     global $real_base_dir;
-    $p2 = $real_base_dir . '/storage/tribune_boards.json';
+    $project_root = dirname(dirname(__DIR__));
+    $p1 = $project_root . '/storage/tribune_boards.json';
+    if (file_exists($p1)) return $p1;
+    $p2 = ($real_base_dir ?? $project_root) . '/storage/tribune_boards.json';
     if (file_exists($p2)) return $p2;
     return $p1;
 }
 
 function get_tribune_messages_file_path() {
-    $p1 = __DIR__ . '/storage/tribune_messages.json';
-    if (file_exists($p1)) return $p1;
     global $real_base_dir;
-    $p2 = $real_base_dir . '/storage/tribune_messages.json';
+    $project_root = dirname(dirname(__DIR__));
+    $p1 = $project_root . '/storage/tribune_messages.json';
+    if (file_exists($p1)) return $p1;
+    $p2 = ($real_base_dir ?? $project_root) . '/storage/tribune_messages.json';
     if (file_exists($p2)) return $p2;
     return $p1;
 }
 
 function get_tribune_secrets_config() {
-    $f1 = __DIR__ . '/storage/tribune_secrets.php';
+    global $real_base_dir;
+    $project_root = dirname(dirname(__DIR__));
+    $f1 = $project_root . '/storage/tribune_secrets.php';
     if (file_exists($f1)) {
         return include $f1;
     }
-    global $real_base_dir;
-    $f2 = $real_base_dir . '/storage/tribune_secrets.php';
+    $f2 = ($real_base_dir ?? $project_root) . '/storage/tribune_secrets.php';
     if (file_exists($f2)) {
         return include $f2;
     }
@@ -1365,7 +1370,7 @@ if ($action === 'tribune_file_upload') {
 
     file_put_contents($meta_path, json_encode($meta_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
 
-    $relative_url = 'api.php?action=tribune_file_get&token=' . $token;
+    $relative_url = 'system/endpoints/api.php?action=tribune_file_get&token=' . $token;
 
     echo json_encode([
         'success'   => true,
@@ -1637,7 +1642,7 @@ if ($action === 'run_unit_tests') {
     $total_failed = 0;
 
     try {
-        require_once __DIR__ . '/tests/SecurityUnitTest.php';
+        require_once dirname(dirname(__DIR__)) . '/tests/SecurityUnitTest.php';
         $sec_suite = new SecurityUnitTestSuite();
         $sec_suite->runAll();
         $sec_counts = $sec_suite->getCounts();
@@ -1666,7 +1671,7 @@ if ($action === 'run_unit_tests') {
     }
 
     try {
-        require_once __DIR__ . '/tests/GeneralUnitTest.php';
+        require_once dirname(dirname(__DIR__)) . '/tests/GeneralUnitTest.php';
         $gen_suite = new GeneralUnitTestSuite();
         $gen_suite->runAll();
         $gen_counts = $gen_suite->getCounts();
@@ -1727,7 +1732,7 @@ if ($action === 'login') {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'error'   => 'Admin password is not configured in config.php. Run `php set_admin_password.php <password>` via CLI first.'
+            'error'   => 'Admin password is not configured in config.php. Run `php bin/set_admin_password.php <password>` via CLI first.'
         ]);
         exit;
     }
@@ -2330,7 +2335,8 @@ if ($action === 'save_desktop_shortcuts') {
         exit;
     }
 
-    $config_dir = __DIR__ . '/config';
+    $project_root = dirname(dirname(__DIR__));
+    $config_dir = $project_root . '/config';
     if (!is_dir($config_dir)) {
         @mkdir($config_dir, 0755, true);
     }
@@ -2386,7 +2392,8 @@ if ($action === 'save_desktop_shortcuts') {
 }
 
 if ($action === 'get_desktop_shortcuts') {
-    $desktop_file = __DIR__ . '/config/desktop.json';
+    $project_root = dirname(dirname(__DIR__));
+    $desktop_file = $project_root . '/config/desktop.json';
     $config = ['shortcuts' => []];
     if (file_exists($desktop_file)) {
         $parsed = json_decode((string)file_get_contents($desktop_file), true);
@@ -2400,7 +2407,8 @@ if ($action === 'get_desktop_shortcuts') {
 }
 
 if ($action === 'get_autostart_settings') {
-    $cfg = get_autostart_config(__DIR__);
+    $project_root = dirname(dirname(__DIR__));
+    $cfg = get_autostart_config($project_root);
     echo json_encode([
         'success' => true,
         'config'  => $cfg
@@ -2426,7 +2434,8 @@ if ($action === 'save_autostart_settings') {
         exit;
     }
 
-    $storage_dir = __DIR__ . '/storage';
+    $project_root = dirname(dirname(__DIR__));
+    $storage_dir = $project_root . '/storage';
     if (!is_dir($storage_dir)) {
         @mkdir($storage_dir, 0755, true);
     }
@@ -3028,8 +3037,8 @@ if ($action === 'edit_image') {
             'is_copy'        => $is_copy,
             'file_name'      => $saved_filename,
             'path'           => $saved_relative,
-            'thumb_url'      => 'thumb.php?file=' . rawurlencode($saved_relative) . '&t=' . time(),
-            'file_url'       => 'thumb.php?file=' . rawurlencode($saved_relative) . '&raw=1&t=' . time()
+            'thumb_url'      => 'system/endpoints/thumb.php?file=' . rawurlencode($saved_relative) . '&t=' . time(),
+            'file_url'       => 'system/endpoints/thumb.php?file=' . rawurlencode($saved_relative) . '&raw=1&t=' . time()
         ]);
         exit;
     } else {
@@ -3131,7 +3140,7 @@ function find_first_image_thumbnail(string $dir_path, string $base_dir, array $i
             $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
             if (in_array($ext, $image_exts, true)) {
                 $rel = get_relative_path($full, $base_dir);
-                return 'thumb.php?file=' . rawurlencode($rel);
+                return 'system/endpoints/thumb.php?file=' . rawurlencode($rel);
             }
         }
     }
@@ -3363,8 +3372,8 @@ if ($cached_raw !== null) {
                     'mtime'          => $mtime,
                     'effective_mtime'=> $effective_mtime,
                     'exif'           => $exif,
-                    'thumb_url'      => 'thumb.php?file=' . rawurlencode($item_relative),
-                    'file_url'       => 'thumb.php?file=' . rawurlencode($item_relative) . '&raw=1',
+                    'thumb_url'      => 'system/endpoints/thumb.php?file=' . rawurlencode($item_relative),
+                    'file_url'       => 'system/endpoints/thumb.php?file=' . rawurlencode($item_relative) . '&raw=1',
                     'comment'        => $comments[$item] ?? ''
                 ];
 

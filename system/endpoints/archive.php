@@ -3,7 +3,9 @@
  * SimpleGallery 2026 - Standalone Archive Download Endpoint
  */
 
-require_once __DIR__ . '/config.php';
+$project_root = dirname(dirname(__DIR__));
+require_once $project_root . '/system/boot/bootstrap.php';
+require_once $project_root . '/system/kernel/functions.php';
 
 ensure_session_started();
 

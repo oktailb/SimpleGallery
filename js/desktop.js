@@ -1,5 +1,5 @@
 /**
- * SimpleGallery 2026 - WebOS Desktop Host Kernel (js/gallery.js)
+ * SimpleGallery 2026 - WebOS Desktop Host Environment (js/desktop.js)
  * Minimal desktop shell responsible for system runtime initialization:
  * - WindowManager, MenuBarManager, AppManager, SyscallClient, I18nEngine.
  * - System Tray controls (Language switcher, Admin authentication, Cookie settings).
@@ -207,7 +207,7 @@
         this.finishLocaleChange(code);
       } else {
         try {
-          const res = await fetch(`api.php?action=get_locale&code=${encodeURIComponent(code)}`);
+          const res = await fetch(`system/endpoints/api.php?action=get_locale&code=${encodeURIComponent(code)}`);
           if (res.ok) {
             const json = await res.json();
             if (json.success && json.translations) {
@@ -754,8 +754,8 @@
         const fileCat = shortcut.category || (window.IconHelper ? window.IconHelper.getCategory({ extension: fileExt }) : '');
         const fileUrl = shortcut.file_url && !shortcut.file_url.includes('api.php?action=view_file')
           ? shortcut.file_url
-          : (`thumb.php?file=${encodeURIComponent(shortcut.path)}&raw=1`);
-        const thumbUrl = shortcut.thumb_url || (`thumb.php?file=${encodeURIComponent(shortcut.path)}`);
+          : (`system/endpoints/thumb.php?file=${encodeURIComponent(shortcut.path)}&raw=1`);
+        const thumbUrl = shortcut.thumb_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(shortcut.path)}`);
 
         if (window.MediaViewerRegistry) {
           window.MediaViewerRegistry.open({
@@ -911,7 +911,7 @@
       } catch (e) {}
 
       try {
-        const res = await fetch('api.php', {
+        const res = await fetch('system/endpoints/api.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1153,7 +1153,7 @@
         formData.append('csrf_token', this.state.csrfToken || window.CSRF_TOKEN || '');
         formData.append('password', password);
 
-        const res = await fetch('api.php', {
+        const res = await fetch('system/endpoints/api.php', {
           method: 'POST',
           headers: { 'X-CSRF-Token': this.state.csrfToken || window.CSRF_TOKEN || '' },
           body: formData
@@ -1201,7 +1201,7 @@
         const formData = new FormData();
         formData.append('action', 'logout');
         formData.append('csrf_token', this.state.csrfToken || window.CSRF_TOKEN || '');
-        await fetch('api.php', {
+        await fetch('system/endpoints/api.php', {
           method: 'POST',
           headers: { 'X-CSRF-Token': this.state.csrfToken || window.CSRF_TOKEN || '' },
           body: formData
@@ -1237,7 +1237,7 @@
         formData.append('csrf_token', this.state.csrfToken || window.CSRF_TOKEN || '');
         formData.append('new_password', newPassword);
 
-        const res = await fetch('api.php', {
+        const res = await fetch('system/endpoints/api.php', {
           method: 'POST',
           headers: { 'X-CSRF-Token': this.state.csrfToken || window.CSRF_TOKEN || '' },
           body: formData
@@ -1267,7 +1267,7 @@
       }
 
       try {
-        const res = await fetch('api.php?action=get_permissions');
+        const res = await fetch('system/endpoints/api.php?action=get_permissions');
         const json = await res.json();
         if (!json.success || !json.permissions) return;
 
@@ -1296,7 +1296,7 @@
         formData.append('csrf_token', this.state.csrfToken || window.CSRF_TOKEN || '');
         formData.append('permissions', JSON.stringify(perms));
 
-        const res = await fetch('api.php', {
+        const res = await fetch('system/endpoints/api.php', {
           method: 'POST',
           headers: { 'X-CSRF-Token': this.state.csrfToken || window.CSRF_TOKEN || '' },
           body: formData
