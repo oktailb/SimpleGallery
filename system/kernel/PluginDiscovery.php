@@ -8,15 +8,37 @@ namespace SimpleGallery\Kernel;
 class PluginDiscovery {
 
     /**
-     * Discovers all modular apps in apps/<app_name>/
+     * Get list of disabled application IDs from storage or configuration
      */
-    public static function getDiscoveredApps(string $project_root): array {
+    public static function getDisabledAppIds(string $project_root): array {
+        $storage_file = $project_root . '/storage/disabled_apps.json';
+        if (file_exists($storage_file)) {
+            $content = @file_get_contents($storage_file);
+            $decoded = @json_decode($content, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        global $disabled_apps;
+        if (isset($disabled_apps) && is_array($disabled_apps)) {
+            return $disabled_apps;
+        }
+        return ['sim-maintenance', 'sim-logbook'];
+    }
+
+    /**
+     * Discovers all modular apps in apps/<app_name>/
+     * @param string $project_root
+     * @param bool $include_disabled Whether to include disabled apps (e.g. for Settings UI)
+     */
+    public static function getDiscoveredApps(string $project_root, bool $include_disabled = false): array {
         $apps_dir = $project_root . '/apps';
         $apps = [];
         if (!is_dir($apps_dir)) {
             return $apps;
         }
 
+        $disabled_ids = self::getDisabledAppIds($project_root);
         $folders = @scandir($apps_dir) ?: [];
         $app_dirs = [];
 
@@ -47,6 +69,14 @@ class PluginDiscovery {
             if (file_exists($manifest_file)) {
                 $content = @file_get_contents($manifest_file);
                 $manifest = @json_decode($content, true) ?: [];
+            }
+
+            $app_id = $manifest['id'] ?? $folder;
+            $is_enabled = !in_array($app_id, $disabled_ids, true);
+
+            // Skip completely if app is disabled and we only want active apps
+            if (!$include_disabled && !$is_enabled) {
+                continue;
             }
 
             // Find JS entry point
@@ -83,12 +113,7 @@ class PluginDiscovery {
                 $template_entry = 'apps/' . $rel_key . '/template.html';
             }
 
-            $app_id = $manifest['id'] ?? $folder;
-
-            // Category resolution:
-            // 1. From manifest.json if present and non-empty
-            // 2. Else if inside a subfolder (e.g. apps/games/*), use the subfolder name
-            // 3. Otherwise empty string (root)
+            // Category resolution
             $cat = !empty($manifest['category']) ? trim((string)$manifest['category']) : '';
             if ($cat === '' && strpos($rel_key, '/') !== false) {
                 $cat = dirname($rel_key);
@@ -105,7 +130,8 @@ class PluginDiscovery {
                 'locales'        => $manifest['locales'] ?? [],
                 'js_entry'       => $js_entry,
                 'css_entry'      => $css_entry,
-                'template_entry' => $template_entry
+                'template_entry' => $template_entry,
+                'enabled'        => $is_enabled
             ];
         }
 
@@ -115,13 +141,14 @@ class PluginDiscovery {
     /**
      * Aggregates all app-embedded translations for a given language code
      */
-    public static function getAppTranslations(string $project_root, string $code): array {
+    public static function getAppTranslations(string $project_root, string $code, bool $include_disabled = false): array {
         $apps_dir = $project_root . '/apps';
         $translations = [];
         if (!is_dir($apps_dir)) {
             return $translations;
         }
 
+        $disabled_ids = self::getDisabledAppIds($project_root);
         $code = strtolower($code);
         $folders = @scandir($apps_dir) ?: [];
         $app_dirs = [];
@@ -147,7 +174,17 @@ class PluginDiscovery {
 
         foreach ($app_dirs as $rel_key => $app_path) {
             $folder = basename($app_path);
-            $app_id = $folder;
+            $manifest_file = $app_path . '/manifest.json';
+            $manifest = [];
+            if (file_exists($manifest_file)) {
+                $content = @file_get_contents($manifest_file);
+                $manifest = @json_decode($content, true) ?: [];
+            }
+            $app_id = $manifest['id'] ?? $folder;
+
+            if (!$include_disabled && in_array($app_id, $disabled_ids, true)) {
+                continue;
+            }
 
             // 1. Check apps/<app>/locales/<code>.json
             $locale_file = $app_path . '/locales/' . $code . '.json';
@@ -161,28 +198,22 @@ class PluginDiscovery {
             }
 
             // 2. Check apps/<app>/manifest.json -> locales[code]
-            $manifest_file = $app_path . '/manifest.json';
-            if (file_exists($manifest_file)) {
-                $content = @file_get_contents($manifest_file);
-                $manifest = @json_decode($content, true) ?: [];
-                $app_id = $manifest['id'] ?? $folder;
-                if (!empty($manifest['locales'][$code]) && is_array($manifest['locales'][$code])) {
-                    $loc = $manifest['locales'][$code];
-                    if (!empty($loc['title'])) {
-                        $translations["apps.{$app_id}.title"] = $loc['title'];
-                    }
-                    if (!empty($loc['description'])) {
-                        $translations["apps.{$app_id}.description"] = $loc['description'];
-                    }
-                    if (!empty($loc['translations']) && is_array($loc['translations'])) {
-                        foreach ($loc['translations'] as $k => $v) {
-                            $translations[$k] = $v;
-                        }
+            if (!empty($manifest['locales'][$code]) && is_array($manifest['locales'][$code])) {
+                $loc = $manifest['locales'][$code];
+                if (!empty($loc['title'])) {
+                    $translations["apps.{$app_id}.title"] = $loc['title'];
+                }
+                if (!empty($loc['description'])) {
+                    $translations["apps.{$app_id}.description"] = $loc['description'];
+                }
+                if (!empty($loc['translations']) && is_array($loc['translations'])) {
+                    foreach ($loc['translations'] as $k => $v) {
+                        $translations[$k] = $v;
                     }
                 }
-                if (empty($translations["apps.{$app_id}.title"]) && !empty($manifest['name'])) {
-                    $translations["apps.{$app_id}.title"] = $manifest['name'];
-                }
+            }
+            if (empty($translations["apps.{$app_id}.title"]) && !empty($manifest['name'])) {
+                $translations["apps.{$app_id}.title"] = $manifest['name'];
             }
         }
 

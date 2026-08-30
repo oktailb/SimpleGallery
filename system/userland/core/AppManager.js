@@ -159,6 +159,9 @@ class AppManager {
      * Default disabled apps: sim-maintenance, sim-logbook
      */
     getDisabledAppIds() {
+        if (Array.isArray(window.SG_DISABLED_APPS)) {
+            return window.SG_DISABLED_APPS;
+        }
         try {
             const stored = localStorage.getItem('sg_disabled_apps');
             if (stored) return JSON.parse(stored);
@@ -177,7 +180,7 @@ class AppManager {
      * Enable or disable an application by ID
      */
     setAppEnabled(appId, enabled) {
-        let disabledList = this.getDisabledAppIds();
+        let disabledList = this.getDisabledAppIds().slice();
         if (enabled) {
             disabledList = disabledList.filter(id => id !== appId);
         } else {
@@ -185,7 +188,13 @@ class AppManager {
                 disabledList.push(appId);
             }
         }
+        window.SG_DISABLED_APPS = disabledList;
         localStorage.setItem('sg_disabled_apps', JSON.stringify(disabledList));
+
+        // Sync with server if sys.api available
+        if (window.sys && window.sys.api && typeof window.sys.api.post === 'function') {
+            window.sys.api.post('set_app_enabled', { app_id: appId, enabled }).catch(() => {});
+        }
 
         if (window.EventBus) {
             window.EventBus.emit('apps:updated', { appId, enabled, disabledList });

@@ -126,6 +126,7 @@ class GeneralUnitTestSuite {
         $this->testNextGenTaskbarAndAppCategories();
         $this->testTribuneAppAndMultiBouchot();
         $this->testAutostartConfiguration();
+        $this->testDisabledAppsFilteringAndTribuneStandalone();
 
         $_SESSION = $saved_session;
 
@@ -740,6 +741,33 @@ class GeneralUnitTestSuite {
         $desktop_js = file_get_contents($this->base_dir . '/js/desktop.js');
         $this->assert("WebOS Desktop implémente initAutostartApps au démarrage", strpos($desktop_js, "initAutostartApps") !== false);
         $this->assert("SettingsApp implémente le réordonnancement par flèches autostart-move-up / down", strpos($settings_js, "autostart-move-up") !== false && strpos($settings_js, "autostart-move-down") !== false);
+    }
+
+    public function testDisabledAppsFilteringAndTribuneStandalone(): void {
+        echo "\n🔒 [16/16] Test du Filtrage des Applications Désactivées & Tribune Standalone...\n";
+
+        // 1. PluginDiscovery filtering tests
+        $active_apps = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir, false);
+        $all_apps = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir, true);
+        $disabled_list = \SimpleGallery\Kernel\PluginDiscovery::getDisabledAppIds($this->base_dir);
+
+        $this->assert("Liste des apps désactivées est un tableau", is_array($disabled_list));
+        $this->assert("L'app 'sim-maintenance' est désactivée par défaut", in_array('sim-maintenance', $disabled_list, true));
+        $this->assert("PluginDiscovery omet l'app désactivée quand include_disabled=false", !isset($active_apps['sim-maintenance']));
+        $this->assert("PluginDiscovery inclut toutes les apps quand include_disabled=true", isset($all_apps['sim-maintenance']));
+        $this->assert("L'attribut 'enabled' est false pour l'app désactivée", ($all_apps['sim-maintenance']['enabled'] ?? true) === false);
+
+        // 2. Tribune Standalone Entrypoint tests
+        $tribune_index = $this->base_dir . '/apps/tribune/index.php';
+        $this->assert("Fichier apps/tribune/index.php présent pour mode standalone", file_exists($tribune_index));
+        $tribune_html = file_get_contents($tribune_index);
+        $this->assert("Tribune standalone injecte le conteneur standalone-container", strpos($tribune_html, 'standalone-container') !== false);
+        $this->assert("Tribune standalone instancie SyscallClient pointant sur api.php", strpos($tribune_html, "SyscallClient('api.php')") !== false);
+        $this->assert("Tribune standalone charge les traductions locales", strpos($tribune_html, 'translations') !== false);
+
+        // 3. Tribune app.js auto-mount
+        $tribune_js = file_get_contents($this->base_dir . '/apps/tribune/app.js');
+        $this->assert("Tribune app.js intègre la fonction d'auto-montage standalone", strpos($tribune_js, "document.getElementById('standalone-container')") !== false);
     }
 
 }

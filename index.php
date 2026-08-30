@@ -84,7 +84,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
 
   <script src="system/userland/ui/MetadataInspector.js" defer></script>
 
-  <!-- Synchronous theme restore to avoid flash of unstyled theme -->
+  <!-- Synchronous theme restore and initial disabled apps payload -->
   <script>
     (function() {
       try {
@@ -94,6 +94,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
         }
       } catch(e) {}
     })();
+    window.SG_DISABLED_APPS = <?php echo json_encode(\SimpleGallery\Kernel\PluginDiscovery::getDisabledAppIds(__DIR__)); ?>;
   </script>
 
   <!-- Dynamic Theme Injection from config/themes.php -->
@@ -120,9 +121,13 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
 
   <?php
   use SimpleGallery\Kernel\PluginDiscovery;
-  $discovered_apps = PluginDiscovery::getDiscoveredApps(__DIR__);
+  $discovered_apps = PluginDiscovery::getDiscoveredApps(__DIR__, false);
+  $all_apps_manifests = PluginDiscovery::getDiscoveredApps(__DIR__, true);
   $discovered_views = PluginDiscovery::getDiscoveredViews(__DIR__);
   ?>
+  <script>
+    window.SG_DISCOVERED_APPS = <?php echo json_encode($all_apps_manifests); ?>;
+  </script>
 
   <!-- Auto-Discovered Explorer Views (apps/explorer/views/<name>/manifest.json) -->
   <?php foreach ($discovered_views as $view_info): ?>

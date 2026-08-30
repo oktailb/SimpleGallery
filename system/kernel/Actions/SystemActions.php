@@ -177,7 +177,44 @@ class SystemActions {
             return ['status' => 200, 'data' => ['success' => true, 'shortcuts' => $shortcuts]];
         }
 
+        if ($action === 'get_disabled_apps') {
+            $disabled = \SimpleGallery\Kernel\PluginDiscovery::getDisabledAppIds($base_dir);
+            return ['status' => 200, 'data' => ['success' => true, 'disabled_apps' => $disabled]];
+        }
 
+        if ($action === 'set_app_enabled') {
+            if (!AuthManager::isAdmin()) {
+                return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_admin_required')]];
+            }
+            $app_id = trim((string)($raw_body['app_id'] ?? $_POST['app_id'] ?? ''));
+            $enabled = filter_var($raw_body['enabled'] ?? $_POST['enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+            if ($app_id === '') {
+                return ['status' => 400, 'data' => ['success' => false, 'error' => 'App ID required']];
+            }
+
+            $disabled = \SimpleGallery\Kernel\PluginDiscovery::getDisabledAppIds($base_dir);
+            if ($enabled) {
+                $disabled = array_values(array_filter($disabled, fn($id) => $id !== $app_id));
+            } else {
+                if (!in_array($app_id, $disabled, true)) {
+                    $disabled[] = $app_id;
+                }
+            }
+
+            $storage_dir = $base_dir . '/storage';
+            if (!is_dir($storage_dir)) {
+                @mkdir($storage_dir, 0755, true);
+            }
+            $saved = @file_put_contents($storage_dir . '/disabled_apps.json', json_encode($disabled, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX) !== false;
+
+            return ['status' => 200, 'data' => [
+                'success'       => $saved,
+                'app_id'        => $app_id,
+                'enabled'       => $enabled,
+                'disabled_apps' => $disabled
+            ]];
+        }
 
         return null;
     }

@@ -24,6 +24,7 @@ class ActionRouter {
         'save_folder_settings',
         'save_desktop_shortcuts',
         'save_autostart_settings',
+        'set_app_enabled',
         'clear_all_caches',
         'tribune_clear_history',
         'tribune_boards_save',
@@ -59,6 +60,8 @@ class ActionRouter {
         'clear_all_caches'        => SystemActions::class,
         'save_desktop_shortcuts'  => SystemActions::class,
         'get_desktop_shortcuts'   => SystemActions::class,
+        'get_disabled_apps'       => SystemActions::class,
+        'set_app_enabled'         => SystemActions::class,
 
         // Media & Search
         'search_media'            => MediaActions::class,

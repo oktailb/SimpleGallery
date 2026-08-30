@@ -2813,4 +2813,19 @@
   if (window.AppManager) {
     window.AppManager.registerInstance('tribune', instance);
   }
+
+  // Auto-mount if running in standalone container mode
+  if (typeof document !== 'undefined') {
+    const autoMount = () => {
+      const standalone = document.getElementById('standalone-container');
+      if (standalone && !instance.container) {
+        instance.init(standalone);
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', autoMount);
+    } else {
+      autoMount();
+    }
+  }
 })(window);
