@@ -107,10 +107,22 @@
     html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
     // Images ![alt](url)
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="md-img" />');
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+      const cleanUrl = url.trim();
+      if (cleanUrl.startsWith('file://')) {
+        return `<span class="md-local-ref" title="${cleanUrl}">🖼️ [${alt || cleanUrl.split('/').pop()}]</span>`;
+      }
+      return `<img src="${cleanUrl}" alt="${alt}" class="md-img" />`;
+    });
 
     // Links [text](url)
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+      const cleanUrl = url.trim();
+      if (cleanUrl.startsWith('file://')) {
+        return `<span class="md-local-ref" title="${cleanUrl}">📄 ${text}</span>`;
+      }
+      return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="md-link">${text}</a>`;
+    });
 
     // Lists: Unordered, Ordered, and Task Lists grouping
     const processLists = (text) => {

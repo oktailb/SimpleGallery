@@ -3,6 +3,14 @@
 # Disable Directory Browsing
 Options -Indexes
 
+# Transparently route legacy root endpoints to system/endpoints/ without leaving stub files at root
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^api\.php$ system/endpoints/api.php [L,QSA]
+    RewriteRule ^thumb\.php$ system/endpoints/thumb.php [L,QSA]
+    RewriteRule ^archive\.php$ system/endpoints/archive.php [L,QSA]
+</IfModule>
+
 # Protect Sensitive Dotfiles (.password, .private, .desc, .comment, .title, .theme, .bg, .git, etc.)
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>
