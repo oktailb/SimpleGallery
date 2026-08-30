@@ -276,9 +276,11 @@
             const adminBtn = document.getElementById('adminBtn');
             if (adminBtn) adminBtn.classList.add('active');
           }
-          if (window.explorerApp) {
-            window.explorerApp.state.isAdmin = true;
-            window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+          if (window.explorerApp && typeof window.explorerApp.loadDirectory === 'function') {
+            window.explorerApp.loadDirectory(window.explorerApp.state?.currentPath);
+          }
+          if (window.EventBus) {
+            window.EventBus.emit('fs:changed');
           }
           this.toast.success(this.t('admin.login_success') || 'Connexion administrateur réussie');
           this.render();
@@ -312,9 +314,11 @@
           const adminBtn = document.getElementById('adminBtn');
           if (adminBtn) adminBtn.classList.remove('active');
         }
-        if (window.explorerApp) {
-          window.explorerApp.state.isAdmin = false;
-          window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+        if (window.explorerApp && typeof window.explorerApp.loadDirectory === 'function') {
+          window.explorerApp.loadDirectory(window.explorerApp.state?.currentPath);
+        }
+        if (window.EventBus) {
+          window.EventBus.emit('fs:changed');
         }
         this.toast.info('Déconnexion réussie');
         this.render();

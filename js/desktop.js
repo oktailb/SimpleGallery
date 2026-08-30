@@ -1186,9 +1186,11 @@
             window.SettingsApp.loadPermissions();
           }
 
-          if (window.explorerApp) {
-            window.explorerApp.state.isAdmin = true;
-            window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+          if (window.explorerApp && typeof window.explorerApp.loadDirectory === 'function') {
+            window.explorerApp.loadDirectory(window.explorerApp.state?.currentPath);
+          }
+          if (window.EventBus) {
+            window.EventBus.emit('fs:changed');
           }
         } else {
           if (loginError) {
@@ -1223,9 +1225,11 @@
           window.SettingsApp.loadPermissions();
         }
 
-        if (window.explorerApp) {
-          window.explorerApp.state.isAdmin = false;
-          window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+        if (window.explorerApp && typeof window.explorerApp.loadDirectory === 'function') {
+          window.explorerApp.loadDirectory(window.explorerApp.state?.currentPath);
+        }
+        if (window.EventBus) {
+          window.EventBus.emit('fs:changed');
         }
       } catch (err) {}
     }
@@ -1309,8 +1313,11 @@
         const json = await res.json();
         if (json.success) {
           this.showToast(this.t('admin.permissions_saved') || 'Permissions matrix saved successfully', 'success');
-          if (window.explorerApp) {
-            window.explorerApp.loadDirectory(window.explorerApp.state.currentPath);
+          if (window.explorerApp && typeof window.explorerApp.loadDirectory === 'function') {
+            window.explorerApp.loadDirectory(window.explorerApp.state?.currentPath);
+          }
+          if (window.EventBus) {
+            window.EventBus.emit('fs:changed');
           }
         } else {
           this.showToast(json.error || 'Erreur lors de la sauvegarde des droits', 'error');

@@ -1657,6 +1657,24 @@
       if (active) active.state = val;
     }
 
+    /**
+     * Reload directory across all running Explorer instances or active instance
+     */
+    loadDirectory(path) {
+      if (this.instances && this.instances.size > 0) {
+        this.instances.forEach(inst => {
+          if (typeof inst.loadDirectory === 'function') {
+            inst.loadDirectory(path !== undefined ? path : inst.state.currentPath);
+          }
+        });
+      } else {
+        const active = this.getActiveInstance();
+        if (active && typeof active.loadDirectory === 'function') {
+          active.loadDirectory(path !== undefined ? path : active.state.currentPath);
+        }
+      }
+    }
+
     getActiveInstance() {
       if (this.activeInstance && this.instances.has(this.activeInstance.id)) {
         return this.activeInstance;
