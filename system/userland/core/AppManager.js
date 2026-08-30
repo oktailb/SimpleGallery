@@ -117,6 +117,17 @@ class AppManager {
         return null;
     }
 
+    openFile(file) {
+        if (!file) return;
+        const app = this.getAppForFile(file);
+        if (app && app.manifest && app.manifest.id) {
+            return this.launchApp(app.manifest.id, { file });
+        }
+        if (window.sys && window.sys.toast) {
+            window.sys.toast.info(`Aucune application associée pour ouvrir "${file.name || file.path}"`);
+        }
+    }
+
     getAppTitle(appId) {
         const entry = this.apps.get(appId);
         const manifest = entry ? entry.manifest : null;

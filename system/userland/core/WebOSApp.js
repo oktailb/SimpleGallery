@@ -154,6 +154,39 @@
     }
 
     /**
+     * Modal dialog helper (alert, confirm, prompt)
+     */
+    get dialog() {
+      if (window.sys && window.sys.dialog) return window.sys.dialog;
+      if (window.sys && window.sys.ui) {
+        return {
+          alert: (opts) => typeof opts === 'object' ? window.sys.ui.alertDialog(opts) : window.sys.ui.alertDialog({ message: opts }),
+          confirm: (opts) => {
+            if (typeof opts === 'object') {
+              return window.sys.ui.confirmDialog(opts).then(confirmed => {
+                if (confirmed && typeof opts.onConfirm === 'function') opts.onConfirm();
+                if (!confirmed && typeof opts.onCancel === 'function') opts.onCancel();
+                return confirmed;
+              });
+            }
+            return window.sys.ui.confirmDialog({ message: opts });
+          },
+          prompt: (opts) => typeof opts === 'object' ? window.sys.ui.promptDialog(opts) : window.sys.ui.promptDialog({ message: opts })
+        };
+      }
+      return {
+        alert: (opts) => window.alert(typeof opts === 'object' ? (opts.message || opts.title) : opts),
+        confirm: (opts) => {
+          const res = window.confirm(typeof opts === 'object' ? (opts.message || opts.title) : opts);
+          if (res && typeof opts?.onConfirm === 'function') opts.onConfirm();
+          if (!res && typeof opts?.onCancel === 'function') opts.onCancel();
+          return Promise.resolve(res);
+        },
+        prompt: (opts) => Promise.resolve(window.prompt(typeof opts === 'object' ? opts.message : opts))
+      };
+    }
+
+    /**
      * Translation helper with automatic fallback to key
      */
     t(key, replacements) {

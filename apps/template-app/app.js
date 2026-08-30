@@ -340,14 +340,22 @@
       container.querySelector('#tmplBtnOpenFilePicker')?.addEventListener('click', () => this.openFilePickerDemo());
 
       container.querySelector('#tmplBtnInspectFile')?.addEventListener('click', () => {
-        if (this.selectedFile && window.sys && window.sys.showMetadata) {
-          window.sys.showMetadata(this.selectedFile);
+        if (this.selectedFile) {
+          if (window.sys && typeof window.sys.showMetadata === 'function') {
+            window.sys.showMetadata(this.selectedFile);
+          } else if (window.MetadataInspector && typeof window.MetadataInspector.open === 'function') {
+            window.MetadataInspector.open(this.selectedFile.path || this.selectedFile);
+          }
         }
       });
 
       container.querySelector('#tmplBtnOpenViewer')?.addEventListener('click', () => {
-        if (this.selectedFile && window.sys && window.sys.mediaViewer) {
-          window.sys.mediaViewer.openFile(this.selectedFile);
+        if (this.selectedFile) {
+          if (window.sys && typeof window.sys.openFile === 'function') {
+            window.sys.openFile(this.selectedFile);
+          } else if (window.sys && window.sys.appManager && typeof window.sys.appManager.openFile === 'function') {
+            window.sys.appManager.openFile(this.selectedFile);
+          }
         }
       });
 

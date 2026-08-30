@@ -89,6 +89,13 @@ class StorageRepository {
     }
 
     /**
+     * Alias for setJson
+     */
+    public function saveJson(string $filename, $value): bool {
+        return $this->setJson($filename, $value);
+    }
+
+    /**
      * Read raw file contents
      */
     public function getRaw(string $filename, ?string $default = null): ?string {

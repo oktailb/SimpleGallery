@@ -88,6 +88,7 @@
 
     // Standard Preset Effects for Games & UI
     playClick() { this.playTone(800, 'sine', 0.04, 0.05); }
+    playPop() { this.playTone(600, 'sine', 0.05, 0.08); }
     playSuccess() {
       this.playTone(523.25, 'triangle', 0.08, 0.08); // C5
       setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.08), 80); // E5
@@ -149,6 +150,25 @@
     playWin() {
       this.playVictory();
     }
+
+    /**
+     * Universal sound effect trigger by name
+     */
+    play(name = 'pop') {
+      const n = (name || '').toLowerCase();
+      if (n === 'pop') return this.playPop();
+      if (n === 'click') return this.playClick();
+      if (n === 'success') return this.playSuccess();
+      if (n === 'warning') return this.playWarning();
+      if (n === 'error') return this.playError();
+      if (n === 'bounce') return this.playBounce();
+      if (n === 'score') return this.playScore();
+      if (n === 'move') return this.playMove();
+      if (n === 'rotate') return this.playRotate();
+      if (n === 'flow') return this.playFlow();
+      if (n === 'victory' || n === 'win') return this.playVictory();
+      return this.playClick();
+    }
   }
 
   const AudioService = new WebAudioSynth();
@@ -203,9 +223,33 @@
   };
 
   window.sys.dialog = {
-    alert: (msg, title, opts) => (window.sys.ui ? window.sys.ui.alertDialog({ message: msg, title: title, ...opts }) : Promise.resolve()),
-    confirm: (msg, title, isDanger, opts) => (window.sys.ui ? window.sys.ui.confirmDialog({ message: msg, title: title, danger: isDanger, ...opts }) : Promise.resolve(false)),
-    prompt: (msg, defaultVal, title, opts) => (window.sys.ui ? window.sys.ui.promptDialog({ message: msg, defaultValue: defaultVal, title: title, ...opts }) : Promise.resolve(null))
+    alert: (msgOrOpts, title, opts = {}) => {
+      const options = (typeof msgOrOpts === 'object') ? msgOrOpts : { message: msgOrOpts, title: title, ...opts };
+      return window.sys.ui ? window.sys.ui.alertDialog(options) : Promise.resolve(window.alert(options.message || options.title));
+    },
+    confirm: (msgOrOpts, title, isDanger, opts = {}) => {
+      const options = (typeof msgOrOpts === 'object') ? msgOrOpts : { message: msgOrOpts, title: title, danger: isDanger, ...opts };
+      if (window.sys.ui) {
+        return window.sys.ui.confirmDialog(options).then(confirmed => {
+          if (confirmed && typeof options.onConfirm === 'function') options.onConfirm();
+          if (!confirmed && typeof options.onCancel === 'function') options.onCancel();
+          return confirmed;
+        });
+      }
+      const confirmed = window.confirm(options.message || options.title);
+      if (confirmed && typeof options.onConfirm === 'function') options.onConfirm();
+      if (!confirmed && typeof options.onCancel === 'function') options.onCancel();
+      return Promise.resolve(confirmed);
+    },
+    prompt: (msgOrOpts, defaultVal, title, opts = {}) => {
+      const options = (typeof msgOrOpts === 'object') ? msgOrOpts : { message: msgOrOpts, defaultValue: defaultVal, title: title, ...opts };
+      return window.sys.ui ? window.sys.ui.promptDialog(options) : Promise.resolve(window.prompt(options.message || '', options.defaultValue || ''));
+    }
+  };
+
+  window.sys.openFile = (file) => (window.sys.appManager && typeof window.sys.appManager.openFile === 'function') ? window.sys.appManager.openFile(file) : null;
+  window.sys.mediaViewer = {
+    openFile: (file) => (window.sys.appManager && typeof window.sys.appManager.openFile === 'function') ? window.sys.appManager.openFile(file) : null
   };
 
 })(window, document);
