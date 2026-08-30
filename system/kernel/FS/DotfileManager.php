@@ -141,6 +141,14 @@ class DotfileManager {
         return (@file_put_contents($comment_file, implode("\n", $clean_comments) . "\n", LOCK_EX) !== false);
     }
 
+    public static function loadDirComments(string $dir_path): array {
+        return self::loadComments($dir_path);
+    }
+
+    public static function saveDirComments(string $dir_path, array $comments): bool {
+        return self::saveComments($dir_path, $comments);
+    }
+
     public static function loadFolderOverrides(string $dir_path, string $base_dir, array $theme_colors = []): array {
         $access_info = self::getDirAccessInfo($dir_path, $base_dir);
 
@@ -199,8 +207,6 @@ class DotfileManager {
                     $overrides['theme_name'] = $theme_val;
                     if (!empty($theme_colors[$theme_val])) {
                         $overrides['theme'] = $theme_colors[$theme_val];
-                    } else {
-                        $overrides['theme'] = $theme_val;
                     }
                 }
             }
@@ -208,4 +214,11 @@ class DotfileManager {
 
         return $overrides;
     }
+
+    public static function getFolderOverrides(string $dir_path, string $base_dir, array $theme_colors = []): array {
+        return self::loadFolderOverrides($dir_path, $base_dir, $theme_colors);
+    }
 }
+
+
+

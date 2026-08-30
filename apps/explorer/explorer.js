@@ -283,9 +283,28 @@
         this.state.isSearchActive = false;
         if (this.el.searchResultsBanner) this.el.searchResultsBanner.style.display = 'none';
 
-        this.state.directories = json.directories || [];
-        this.state.files = json.files || [];
+        const normalizeThumbUrl = (url) => {
+          if (!url) return url;
+          if (typeof url === 'string' && url.startsWith('thumb.php?')) {
+            return 'system/endpoints/' + url;
+          }
+          return url;
+        };
+
+        this.state.directories = (json.directories || []).map(d => ({
+          ...d,
+          cover: normalizeThumbUrl(d.cover)
+        }));
+        this.state.files = (json.files || []).map(f => ({
+          ...f,
+          thumb_url: normalizeThumbUrl(f.thumb_url),
+          file_url: normalizeThumbUrl(f.file_url)
+        }));
         this.state.overrides = json.overrides || {};
+        if (this.state.overrides.background) {
+          this.state.overrides.background = normalizeThumbUrl(this.state.overrides.background);
+        }
+
         this.state.isAdmin = !!json.is_admin;
         this.state.adminEnabled = !!json.admin_enabled;
         this.state.userRights = json.user_rights || {};

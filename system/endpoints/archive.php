@@ -1,15 +1,21 @@
 <?php
 /**
- * SimpleGallery 2026 - Standalone Archive Download Endpoint
+ * SimpleGallery 2026 - Standalone Archive Download Controller
  */
 
 $project_root = dirname(dirname(__DIR__));
 require_once $project_root . '/system/boot/bootstrap.php';
 require_once $project_root . '/system/kernel/functions.php';
 
+use SimpleGallery\Kernel\Auth\AuthManager;
+use SimpleGallery\Kernel\FS\ArchiveEngine;
+use SimpleGallery\Kernel\FS\PermissionsManager;
+use SimpleGallery\Kernel\Media\BinaryLocator;
+use SimpleGallery\Kernel\Security\PathValidator;
+
 ensure_session_started();
 
-if (!has_permission('can_download_archive', $real_base_dir)) {
+if (!PermissionsManager::hasPermission('can_download_archive', $real_base_dir)) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
     die("Accès refusé : Le téléchargement d'archives est désactivé.");
@@ -17,24 +23,23 @@ if (!has_permission('can_download_archive', $real_base_dir)) {
 
 $format = strtolower($_GET['format'] ?? 'zip');
 $req_dir = $_GET['dir'] ?? '';
-$dir_target = sanitize_path($req_dir, $real_base_dir);
+$dir_target = PathValidator::sanitizeDirectory($req_dir, $real_base_dir);
 
-if (!$dir_target || !is_dir($dir_target) || is_path_ignored($dir_target, $real_base_dir, $ignore_list)) {
+if (!$dir_target || !is_dir($dir_target) || PathValidator::isPathIgnored($dir_target, $real_base_dir, $ignore_list)) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=utf-8');
     die("Dossier introuvable ou accès refusé.");
 }
 
-// Check if the requested folder itself is accessible
-if (!is_dir_accessible($dir_target, $real_base_dir)) {
+if (!AuthManager::isDirAccessible($dir_target, $real_base_dir)) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
     die("Accès refusé : Ce dossier est protégé ou privé.");
 }
 
-$available_formats = find_archive_binaries();
+$available_formats = BinaryLocator::findArchiveBinaries();
 if (!isset($available_formats[$format])) {
-    $format = 'zip'; // fallback to zip
+    $format = 'zip';
 }
 
 $tmp_dir = sys_get_temp_dir() . '/simplegallery_archives';
@@ -61,7 +66,7 @@ $folder_name_safe = preg_replace('/[^\w\.\-\s]/u', '_', $folder_name);
 $archive_name = $folder_name_safe . '_' . date('Ymd_His') . $file_ext;
 $archive_path = $tmp_dir . '/' . $archive_name;
 
-if (create_archive($format, $dir_target, $archive_path, $real_base_dir, $ignore_list)) {
+if (ArchiveEngine::createArchive($format, $dir_target, $archive_path, $real_base_dir, $ignore_list)) {
     if (ob_get_level()) {
         ob_end_clean();
     }

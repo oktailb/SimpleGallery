@@ -72,8 +72,15 @@
       const index = (typeof options.index === 'number') ? options.index : (foundIdx !== -1 ? foundIdx : 0);
 
       this.currentCtx = effectiveCtx;
+      if (file && file.file_url && typeof file.file_url === 'string' && file.file_url.startsWith('thumb.php?')) {
+        file.file_url = 'system/endpoints/' + file.file_url;
+      }
+      if (file && !file.file_url && file.path) {
+        file.file_url = `system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}&raw=1`;
+      }
       this.currentFile = file;
       this.currentIndex = index;
+
 
       const isEditableImage = effectiveCtx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');

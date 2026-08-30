@@ -576,7 +576,18 @@
     "stats.explored_location": "探索された場所",
     "storage.diag_fallback_title": "ストレージ診断 : ルートフォールバックモード有効",
     "storage.diag_configured": "設定フォルダ ($storage_media_dir) :",
-    "storage.diag_explored": "探索フォルダ ($real_base_dir) :",
-    "storage.diag_hint": "専用フォルダを使用するには、storage/media/ フォルダを作成するか、config/config.php で $storage_media_dir を変更してください。"
+    "storage.diag_hint": "専用フォルダを使用するには、storage/media/ フォルダを作成するか、config/config.php で $storage_media_dir を変更してください。",
+    "api.err_invalid_data": "送信されたデータが無効です。",
+    "api.err_rate_limit": "リクエストが多すぎます。しばらくお待ちください。",
+    "api.msg_auth_success": "認証に成功しました。",
+    "api.err_invalid_password": "パスワードが無効です。",
+    "api.msg_logged_out": "ログアウトしました。",
+    "api.err_admin_required": "アクセス拒否：管理者権限が必要です。",
+    "api.err_pwd_short": "パスワードは4文字以上である必要があります。",
+    "api.err_current_pwd_invalid": "現在のパスワードが正しくありません。",
+    "api.msg_pwd_updated": "パスワードが更新されました。",
+    "api.err_pwd_save": "パスワードの保存エラー。",
+    "api.msg_permissions_saved": "権限が保存されました。",
+    "api.err_permissions_save": "権限の保存エラー。"
   }
 }

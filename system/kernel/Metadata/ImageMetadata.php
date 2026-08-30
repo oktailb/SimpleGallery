@@ -8,36 +8,38 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
     define('SIMPLE_GALLERY_CORE', true);
 }
 
-/**
- * Computes closest standard or simplified aspect ratio string from dimensions
- */
-function compute_aspect_ratio(int $width, int $height): string {
-    if ($width <= 0 || $height <= 0) return '';
-    
-    $gcd = function($a, $b) use (&$gcd) {
-        return ($b === 0) ? $a : $gcd($b, $a % $b);
-    };
-    
-    $divisor = $gcd($width, $height);
-    $w_ratio = $width / $divisor;
-    $h_ratio = $height / $divisor;
+if (!function_exists('compute_aspect_ratio')) {
+    /**
+     * Computes closest standard or simplified aspect ratio string from dimensions
+     */
+    function compute_aspect_ratio(int $width, int $height): string {
+        if ($width <= 0 || $height <= 0) return '';
+        
+        $gcd = function($a, $b) use (&$gcd) {
+            return ($b === 0) ? $a : $gcd($b, $a % $b);
+        };
+        
+        $divisor = $gcd($width, $height);
+        $w_ratio = $width / $divisor;
+        $h_ratio = $height / $divisor;
 
-    // Check common standard aspect ratios with tolerance
-    $val = $width / $height;
-    if (abs($val - (16 / 9)) < 0.03) return '16:9';
-    if (abs($val - (4 / 3)) < 0.03) return '4:3';
-    if (abs($val - (3 / 2)) < 0.03) return '3:2';
-    if (abs($val - 1.0) < 0.01) return '1:1';
-    if (abs($val - (9 / 16)) < 0.03) return '9:16';
-    if (abs($val - (3 / 4)) < 0.03) return '3:4';
-    if (abs($val - (2 / 3)) < 0.03) return '2:3';
-    if (abs($val - (21 / 9)) < 0.05) return '21:9';
+        // Check common standard aspect ratios with tolerance
+        $val = $width / $height;
+        if (abs($val - (16 / 9)) < 0.03) return '16:9';
+        if (abs($val - (4 / 3)) < 0.03) return '4:3';
+        if (abs($val - (3 / 2)) < 0.03) return '3:2';
+        if (abs($val - 1.0) < 0.01) return '1:1';
+        if (abs($val - (9 / 16)) < 0.03) return '9:16';
+        if (abs($val - (3 / 4)) < 0.03) return '3:4';
+        if (abs($val - (2 / 3)) < 0.03) return '2:3';
+        if (abs($val - (21 / 9)) < 0.05) return '21:9';
 
-    if ($w_ratio <= 50 && $h_ratio <= 50) {
-        return $w_ratio . ':' . $h_ratio;
+        if ($w_ratio <= 50 && $h_ratio <= 50) {
+            return $w_ratio . ':' . $h_ratio;
+        }
+
+        return round($val, 2) . ':1';
     }
-
-    return round($val, 2) . ':1';
 }
 
 /**

@@ -609,7 +609,7 @@
       window.SG_AUTOSTART_CONFIG = configData;
 
       try {
-        const json = await this.api.post('save_autostart_settings', { config: JSON.stringify(configData) });
+        const json = await this.api.post('save_autostart_settings', { autostart: configData, config: configData });
 
         if (json && json.success) {
           if (msgEl) {

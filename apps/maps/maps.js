@@ -67,22 +67,23 @@
             </div>
             <div class="map-controls-group" id="mapsWinControlsGroup-${this.id}">
               <div class="map-layer-selector">
-                <button type="button" class="map-layer-btn active" data-layer="streets" title="${this.escapeHtml(this.t('map.layer_streets') || 'Plan de rues')}">🗺️ Rues</button>
-                <button type="button" class="map-layer-btn" data-layer="dark" title="${this.escapeHtml(this.t('map.layer_dark') || 'Fond sombre')}">🌙 Sombre</button>
-                <button type="button" class="map-layer-btn" data-layer="satellite" title="${this.escapeHtml(this.t('map.layer_satellite') || 'Vue Satellite')}">🛰️ Satellite</button>
+                <button type="button" class="map-layer-btn active" data-layer="streets" title="${this.escapeHtml(this.t('map.layer_streets'))}">🗺️ Rues</button>
+                <button type="button" class="map-layer-btn" data-layer="dark" title="${this.escapeHtml(this.t('map.layer_dark'))}">🌙 Sombre</button>
+                <button type="button" class="map-layer-btn" data-layer="satellite" title="${this.escapeHtml(this.t('map.layer_satellite'))}">🛰️ Satellite</button>
               </div>
-              <button type="button" id="mapsWinSmartGpsBtn-${this.id}" class="map-ctrl-btn active" style="${this.mode === 'single' ? 'display:none;' : ''}" title="${this.escapeHtml(this.t('map.smart_deduction') || 'Déduction GPS intelligente')}">
-                <span>${this.escapeHtml(this.t('map.smart_deduction') || '✨ Déduction auto')}</span> (<span id="mapsWinSmartCount-${this.id}">0</span>)
+              <button type="button" id="mapsWinSmartGpsBtn-${this.id}" class="map-ctrl-btn active" style="${this.mode === 'single' ? 'display:none;' : ''}" title="${this.escapeHtml(this.t('map.smart_deduction'))}">
+                <span>${this.escapeHtml(this.t('map.smart_deduction'))}</span> (<span id="mapsWinSmartCount-${this.id}">0</span>)
               </button>
-              <button type="button" id="mapsWinRouteBtn-${this.id}" class="map-ctrl-btn active" style="${this.mode === 'single' ? 'display:none;' : ''}" title="${this.escapeHtml(this.t('map.route') || 'Tracé du parcours')}">
-                〰️ ${this.escapeHtml(this.t('map.route') || 'Trajet')}
+              <button type="button" id="mapsWinRouteBtn-${this.id}" class="map-ctrl-btn active" style="${this.mode === 'single' ? 'display:none;' : ''}" title="${this.escapeHtml(this.t('map.route'))}">
+                〰️ ${this.escapeHtml(this.t('map.route'))}
               </button>
               <button type="button" id="mapsWinShowAllBtn-${this.id}" class="map-ctrl-btn" style="${this.mode === 'single' && this.currentFiles.length > 1 ? '' : 'display:none;'}" title="Afficher l'ensemble des photos géolocalisées du dossier">
                 📁 Voir tout le dossier
               </button>
-              <button type="button" id="mapsWinRecenterBtn-${this.id}" class="map-ctrl-btn" title="${this.escapeHtml(this.t('map.recenter') || 'Recentrer la carte')}">
-                🎯 ${this.escapeHtml(this.t('map.recenter') || 'Recentrer')}
+              <button type="button" id="mapsWinRecenterBtn-${this.id}" class="map-ctrl-btn" title="${this.escapeHtml(this.t('map.recenter'))}">
+                🎯 ${this.escapeHtml(this.t('map.recenter'))}
               </button>
+
             </div>
           </div>
           <div id="webosLeafletCanvas-${this.id}" class="map-canvas-container" style="width:100%;height:100%;flex:1;position:relative;background:#0f172a;"></div>
@@ -532,7 +533,7 @@
 
       window.MenuBarManager.registerAppMenu('maps', (container) => {
         const isSingle = active.mode === 'single';
-        const activeItemTitle = (isSingle && active.singleFile) ? active.singleFile.name : (this.t('map.title') || 'Carte GPS');
+        const activeItemTitle = (isSingle && active.singleFile) ? active.singleFile.name : this.t('map.title');
 
         container.innerHTML = `
           <div class="app-menu-left">
@@ -541,17 +542,18 @@
             <button type="button" class="app-menu-pill" id="menuMapsLayerStreets">🗺️ Rues</button>
             <button type="button" class="app-menu-pill" id="menuMapsLayerSat">🛰️ Satellite</button>
             ${!isSingle ? `
-              <button type="button" class="app-menu-pill ${active.isSmartGpsEnabled ? 'active' : ''}" id="menuMapsToggleSmart">${this.escapeHtml(this.t('map.smart_deduction') || '✨ Déduction auto')}</button>
-              <button type="button" class="app-menu-pill ${active.isRouteVisible ? 'active' : ''}" id="menuMapsToggleRoute">〰️ ${this.escapeHtml(this.t('map.route') || 'Trajet')}</button>
+              <button type="button" class="app-menu-pill ${active.isSmartGpsEnabled ? 'active' : ''}" id="menuMapsToggleSmart">${this.escapeHtml(this.t('map.smart_deduction'))}</button>
+              <button type="button" class="app-menu-pill ${active.isRouteVisible ? 'active' : ''}" id="menuMapsToggleRoute">〰️ ${this.escapeHtml(this.t('map.route'))}</button>
             ` : (active.currentFiles.length > 1 ? `
               <button type="button" class="app-menu-pill" id="menuMapsShowAllBtn">📁 Voir tout le dossier</button>
             ` : '')}
           </div>
           <div class="app-menu-right">
-            <button type="button" class="app-menu-pill" id="menuMapsRecenter">🎯 ${this.escapeHtml(this.t('map.recenter') || 'Recentrer')}</button>
-            <button type="button" class="app-menu-pill" id="menuMapsFsBtn">⛶ ${this.escapeHtml(this.t('lightbox.fullscreen') || 'Plein Écran')}</button>
+            <button type="button" class="app-menu-pill" id="menuMapsRecenter">🎯 ${this.escapeHtml(this.t('map.recenter'))}</button>
+            <button type="button" class="app-menu-pill" id="menuMapsFsBtn">⛶ ${this.escapeHtml(this.t('lightbox.fullscreen'))}</button>
           </div>
         `;
+
 
         const btnDark = container.querySelector('#menuMapsLayerDark');
         const btnStreets = container.querySelector('#menuMapsLayerStreets');

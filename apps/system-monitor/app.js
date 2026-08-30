@@ -281,11 +281,11 @@
     onRender(container) {
       if (this.currentTab === 'processes') {
         this.drawAllCharts();
-        this.bindProcessesEvents();
       } else if (this.currentTab === 'storage') {
         this.bindStorageEvents();
       }
     }
+
 
     // TAB 1: PROCESSES & REAL-TIME CHARTS
     renderProcessesTab() {

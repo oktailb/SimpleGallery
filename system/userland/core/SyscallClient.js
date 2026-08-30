@@ -7,7 +7,12 @@ class SyscallClient {
     this.endpoint = endpoint;
   }
 
+  forApp(appId) {
+    return new SyscallClient(`apps/${appId}/api.php`);
+  }
+
   getCsrfToken() {
+
     return (typeof window !== 'undefined' && (
       window.SG_CSRF_TOKEN ||
       window.CSRF_TOKEN ||
@@ -40,7 +45,12 @@ class SyscallClient {
         credentials: 'same-origin',
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
-      return await res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        return { success: false, error: text || `HTTP ${res.status}` };
+      }
     } catch (err) {
       console.error(`[SyscallClient] GET ${action} failed:`, err);
       return { success: false, error: err.message };
@@ -69,12 +79,18 @@ class SyscallClient {
         },
         body: JSON.stringify(bodyData)
       });
-      return await res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        return { success: false, error: text || `HTTP ${res.status}` };
+      }
     } catch (err) {
       console.error(`[SyscallClient] POST ${action} failed:`, err);
       return { success: false, error: err.message };
     }
   }
+
 
   /**
    * Perform Multipart / FormData File Upload with optional progress listener

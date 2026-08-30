@@ -576,7 +576,18 @@
     "stats.explored_location": "Emplacement exploré",
     "storage.diag_fallback_title": "Diagnostic Stockage : Mode Fallback Racine Actif",
     "storage.diag_configured": "Dossier configuré ($storage_media_dir) :",
-    "storage.diag_explored": "Dossier exploré ($real_base_dir) :",
-    "storage.diag_hint": "Pour utiliser le dossier dédié, créez le dossier storage/media/ ou modifiez $storage_media_dir dans config/config.php."
+    "storage.diag_hint": "Pour utiliser le dossier dédié, créez le dossier storage/media/ ou modifiez $storage_media_dir dans config/config.php.",
+    "api.err_invalid_data": "Données transmises invalides.",
+    "api.err_rate_limit": "Trop de requêtes. Veuillez patienter.",
+    "api.msg_auth_success": "Authentification réussie.",
+    "api.err_invalid_password": "Mot de passe incorrect.",
+    "api.msg_logged_out": "Déconnexion réussie.",
+    "api.err_admin_required": "Droits administrateur requis pour cette action.",
+    "api.err_pwd_short": "Le mot de passe doit comporter au moins 4 caractères.",
+    "api.err_current_pwd_invalid": "Mot de passe actuel incorrect.",
+    "api.msg_pwd_updated": "Mot de passe mis à jour avec succès.",
+    "api.err_pwd_save": "Erreur lors de l'enregistrement du mot de passe.",
+    "api.msg_permissions_saved": "Permissions enregistrées avec succès.",
+    "api.err_permissions_save": "Erreur lors de l'enregistrement des permissions."
   }
 }

@@ -512,10 +512,9 @@ HTACCESS;
     private function testMutatingActionsAndCsrfIntegrity(): void {
         echo "\n🔒 [11/11] Audit Approfondi des Actions Mutantes, CSRF et Injections...\n";
 
-        // Read mutating actions from api.php
-        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
-        $api_content = file_get_contents($api_file);
-        $this->assert("Présence de \$mutating_actions dans api.php", strpos($api_content, '$mutating_actions =') !== false);
+        // Read mutating actions from ActionRouter / api.php
+        $mutating = \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS;
+        $this->assert("Présence de MUTATING_ACTIONS dans ActionRouter", is_array($mutating) && !empty($mutating));
 
         $expected_mutating = [
             'change_password', 'update_dotfile', 'lock_folder', 'unlock_folder',
@@ -525,8 +524,9 @@ HTACCESS;
         ];
 
         foreach ($expected_mutating as $act) {
-            $this->assert("Action mutante sécurisée déclarée ('{$act}')", strpos($api_content, "'{$act}'") !== false);
+            $this->assert("Action mutante sécurisée déclarée ('{$act}')", in_array($act, $mutating, true));
         }
+
 
         // Test save_text_file extension whitelist & forbidden extensions
         $safe_text_exts = ['md', 'markdown', 'txt', 'json', 'csv', 'xml', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'];

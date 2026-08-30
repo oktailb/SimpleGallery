@@ -1929,17 +1929,17 @@ kbd {
 
 .exif-value {
   font-size: 0.875rem;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   font-weight: 500;
   word-break: break-word;
 }
 
 .exif-camera-box {
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: var(--bg-card, rgba(99, 102, 241, 0.1));
+  border: 1px solid var(--border-color, rgba(99, 102, 241, 0.3));
   padding: 0.65rem 0.85rem;
   border-radius: var(--radius-md);
-  color: #a5b4fc;
+  color: var(--accent-primary, #6366f1);
   font-weight: 600;
   font-size: 0.875rem;
 }
@@ -1948,11 +1948,12 @@ kbd {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.65rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-card, rgba(255, 255, 255, 0.03));
   padding: 0.75rem;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
 }
+
 
 .exif-maps-btn {
   display: inline-flex;

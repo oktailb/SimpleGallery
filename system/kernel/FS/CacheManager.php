@@ -58,6 +58,8 @@ class CacheManager {
         return true;
     }
 
+
+
     public static function invalidateDirCache(string $dir_path, string $base_dir, string $thumb_dir): void {
         $cache_file = self::getDirCacheFilePath($dir_path, $base_dir, $thumb_dir);
         if (file_exists($cache_file)) {

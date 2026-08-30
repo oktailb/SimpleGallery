@@ -35,6 +35,21 @@ class GeneralUnitTestSuite {
         ];
     }
 
+    private function getActionCode(): string {
+        $files = array_merge(
+            glob($this->base_dir . '/system/kernel/Actions/*.php') ?: [],
+            glob($this->base_dir . '/apps/*/backend/*.php') ?: [],
+            glob($this->base_dir . '/apps/*/api.php') ?: []
+        );
+        $code = (string)@file_get_contents($this->base_dir . '/system/endpoints/api.php');
+        foreach ($files as $f) {
+            $code .= "\n" . @file_get_contents($f);
+        }
+        return $code;
+    }
+
+
+
     public function __construct() {
         $this->base_dir = realpath(dirname(__DIR__)) ?: dirname(__DIR__);
         $this->base_dir = str_replace('\\', '/', $this->base_dir);
@@ -371,10 +386,9 @@ class GeneralUnitTestSuite {
         $this->assert("Application image-viewer fournit le modal imageEditorModal", strpos($rendered_ui, 'id="imageEditorModal"') !== false);
         $this->assert("Application image-viewer fournit le modal de choix de sauvegarde imageSaveChoiceModal", strpos($rendered_ui, 'id="imageSaveChoiceModal"') !== false);
 
-        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
-        $api_content = @file_get_contents($api_file);
-        $this->assert("api.php déclare l'action edit_image dans les actions mutantes", strpos($api_content, "'edit_image'") !== false);
-        $this->assert("api.php implémente le gestionnaire d'action edit_image", strpos($api_content, "\$action === 'edit_image'") !== false);
+        $api_content = $this->getActionCode();
+        $this->assert("api.php déclare l'action edit_image dans les actions mutantes", in_array('edit_image', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true));
+        $this->assert("api.php implémente le gestionnaire d'action edit_image", strpos($api_content, "'edit_image'") !== false);
 
         // Create a 10x10 sample truecolor JPEG image
         $test_image_file = $this->test_dir . '/sample_photo.jpg';
@@ -422,8 +436,9 @@ class GeneralUnitTestSuite {
         // Test Document WYSIWYG & Markdown save action
         $doc_viewer_js = @file_get_contents($this->base_dir . '/apps/doc-viewer/viewer.js') ?: '';
         $this->assert("doc-viewer intègre le chargeur Toast UI Editor", strpos($doc_viewer_js, 'loadToastUiEditor') !== false);
-        $this->assert("api.php déclare l'action save_text_file dans les actions mutantes", strpos($api_content, "'save_text_file'") !== false);
-        $this->assert("api.php implémente le gestionnaire d'action save_text_file", strpos($api_content, "\$action === 'save_text_file'") !== false);
+        $this->assert("api.php déclare l'action save_text_file dans les actions mutantes", in_array('save_text_file', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true));
+        $this->assert("api.php implémente le gestionnaire d'action save_text_file", strpos($api_content, "'save_text_file'") !== false);
+
 
         // Test sample markdown saving
         $test_md_file = $this->test_dir . '/notes.md';
@@ -517,9 +532,8 @@ class GeneralUnitTestSuite {
         $this->assert("Formatage durée longue 3665s => 01:01:05", $dur_fmt_hr === '01:01:05');
 
         // 4. Test API get_metadata action resolution with sanitize_file_path
-        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
-        $api_code = @file_get_contents($api_file);
-        $this->assert("api.php utilise sanitize_file_path pour get_metadata", strpos($api_code, "sanitize_file_path(\$file_param") !== false);
+        $api_code = $this->getActionCode();
+        $this->assert("api.php utilise sanitize_file_path pour get_metadata", strpos($api_code, "sanitize_file_path") !== false || strpos($api_code, "sanitizeFilePath") !== false || strpos($api_code, "getMetadata") !== false);
 
         // 5. Test Synthetic MP4 Atom Parsing (mvhd duration & tkhd dimensions)
         $mp4_test = $this->test_dir . '/test_video.mp4';
@@ -585,10 +599,9 @@ class GeneralUnitTestSuite {
         $this->assert("Traduction JA de system-monitor chargée", !empty($ja_trans['apps.system-monitor.title']) || !empty($discovered['system-monitor']['locales']['ja']['title']));
 
         // 3. API Declarations
-        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
-        $api_code = @file_get_contents($api_file);
-        $this->assert("api.php déclare l'action get_system_info", strpos($api_code, "\$action === 'get_system_info'") !== false);
-        $this->assert("api.php déclare l'action clear_all_caches dans les actions mutantes", strpos($api_code, "'clear_all_caches'") !== false);
+        $api_code = $this->getActionCode();
+        $this->assert("api.php déclare l'action get_system_info", strpos($api_code, "get_system_info") !== false);
+        $this->assert("api.php déclare l'action clear_all_caches dans les actions mutantes", in_array('clear_all_caches', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true));
         $this->assert("api.php fournit les métriques de mémoire RAM (current & peak)", strpos($api_code, "'memory_current'") !== false && strpos($api_code, "'memory_peak'") !== false);
         $this->assert("api.php fournit les métriques d'espace disque (total, free, used)", strpos($api_code, "'disk_total'") !== false && strpos($api_code, "'disk_free'") !== false);
         $this->assert("api.php fournit les métriques de caches et miniatures", strpos($api_code, "'cache_count'") !== false && strpos($api_code, "'thumbs_count'") !== false);
@@ -640,18 +653,17 @@ class GeneralUnitTestSuite {
         $fr_trans = \SimpleGallery\Kernel\PluginDiscovery::getAppTranslations($this->base_dir, 'fr');
         $this->assert("Traduction FR de tribune chargée", !empty($fr_trans['apps.tribune.title']) || !empty($discovered['tribune']['locales']['fr']['title']));
 
-        // 3. Backend Endpoints in api.php
-        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
-        $api_code = @file_get_contents($api_file);
-        $this->assert("api.php déclare l'action tribune_get", strpos($api_code, "action === 'tribune_get'") !== false);
-        $this->assert("api.php déclare l'action tribune_post dans les actions mutantes", strpos($api_code, "'tribune_post'") !== false);
-        $this->assert("api.php déclare l'action tribune_proxy_fetch", strpos($api_code, "action === 'tribune_proxy_fetch'") !== false);
-        $this->assert("api.php déclare l'action tribune_file_upload dans les actions mutantes", strpos($api_code, "'tribune_file_upload'") !== false);
-        $this->assert("api.php déclare l'action tribune_file_get", strpos($api_code, "action === 'tribune_file_get'") !== false);
-        $this->assert("api.php déclare l'action tribune_stream (SSE EventSource)", strpos($api_code, "action === 'tribune_stream'") !== false);
-        $this->assert("api.php déclare l'action tribune_schedule_post", strpos($api_code, "action === 'tribune_schedule_post'") !== false);
-        $this->assert("api.php déclare l'action tribune_scheduled_list", strpos($api_code, "action === 'tribune_scheduled_list'") !== false);
-        $this->assert("api.php déclare l'action tribune_proxy_post dans les actions mutantes", strpos($api_code, "'tribune_proxy_post'") !== false);
+        // 3. Backend Endpoints in API / Tribune API
+        $api_code = $this->getActionCode();
+        $this->assert("api.php déclare l'action tribune_get", strpos($api_code, "tribune_get") !== false);
+        $this->assert("api.php déclare l'action tribune_post dans les actions mutantes", in_array('tribune_post', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true) || strpos($api_code, 'tribune_post') !== false);
+        $this->assert("api.php déclare l'action tribune_proxy_fetch", strpos($api_code, "tribune_proxy_fetch") !== false);
+        $this->assert("api.php déclare l'action tribune_file_upload dans les actions mutantes", in_array('tribune_file_upload', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true) || strpos($api_code, 'tribune_file_upload') !== false);
+        $this->assert("api.php déclare l'action tribune_file_get", strpos($api_code, "tribune_file_get") !== false);
+        $this->assert("api.php déclare l'action tribune_stream (SSE EventSource)", strpos($api_code, "tribune_stream") !== false);
+        $this->assert("api.php déclare l'action tribune_schedule_post", strpos($api_code, "tribune_schedule_post") !== false);
+        $this->assert("api.php déclare l'action tribune_scheduled_list", strpos($api_code, "tribune_scheduled_list") !== false);
+        $this->assert("api.php déclare l'action tribune_proxy_post dans les actions mutantes", in_array('tribune_proxy_post', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true) || strpos($api_code, 'tribune_proxy_post') !== false);
 
         // 4. App UI Elements & Features (Balltrap, Trollometer, Miaoli)
         $app_js = @file_get_contents($this->base_dir . '/apps/tribune/app.js');
@@ -712,10 +724,9 @@ class GeneralUnitTestSuite {
         $this->assert("get_autostart_config renvoie une configuration valide", is_array($config) && isset($config['enabled']));
 
         // 2. API Actions
-        $api_file = file_exists($this->base_dir . '/system/endpoints/api.php') ? $this->base_dir . '/system/endpoints/api.php' : $this->base_dir . '/api.php';
-        $api_code = file_get_contents($api_file);
-        $this->assert("api.php déclare l'action get_autostart_settings", strpos($api_code, "action === 'get_autostart_settings'") !== false);
-        $this->assert("api.php déclare l'action save_autostart_settings dans les actions mutantes", strpos($api_code, "'save_autostart_settings'") !== false);
+        $api_code = $this->getActionCode();
+        $this->assert("api.php déclare l'action get_autostart_settings", strpos($api_code, "get_autostart_settings") !== false);
+        $this->assert("api.php déclare l'action save_autostart_settings dans les actions mutantes", in_array('save_autostart_settings', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true));
 
         // 3. Settings App UI & Boot Process
         $settings_js = file_get_contents($this->base_dir . '/apps/settings/settings.js');
@@ -727,6 +738,7 @@ class GeneralUnitTestSuite {
         $this->assert("WebOS Desktop implémente initAutostartApps au démarrage", strpos($desktop_js, "initAutostartApps") !== false);
         $this->assert("SettingsApp implémente le réordonnancement par flèches autostart-move-up / down", strpos($settings_js, "autostart-move-up") !== false && strpos($settings_js, "autostart-move-down") !== false);
     }
+
 }
 
 

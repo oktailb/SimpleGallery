@@ -54,4 +54,28 @@ class BinaryLocator {
         $bin_cache[$binary_name] = null;
         return null;
     }
+
+    public static function findBinary($name, array $common_paths = []): ?string {
+        if (is_array($name)) {
+            foreach ($name as $n) {
+                $res = self::findBinary($n, $common_paths);
+                if ($res) return $res;
+            }
+            return null;
+        }
+        $found = self::find((string)$name);
+        if ($found) return $found;
+        foreach ($common_paths as $p) {
+            if (file_exists($p) && is_executable($p)) return $p;
+        }
+        return null;
+    }
+
+    public static function findArchiveBinaries(): array {
+        return [
+            '7z'  => self::find('7z') ?: self::find('7za'),
+            'tar' => self::find('tar'),
+            'zip' => self::find('zip')
+        ];
+    }
 }

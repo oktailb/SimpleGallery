@@ -576,7 +576,18 @@
     "stats.explored_location": "Explored location",
     "storage.diag_fallback_title": "Storage Diagnostic: Root Fallback Mode Active",
     "storage.diag_configured": "Configured directory ($storage_media_dir):",
-    "storage.diag_explored": "Explored directory ($real_base_dir):",
-    "storage.diag_hint": "To use the dedicated directory, create storage/media/ or modify $storage_media_dir in config/config.php."
+    "storage.diag_hint": "To use the dedicated directory, create storage/media/ or modify $storage_media_dir in config/config.php.",
+    "api.err_invalid_data": "Invalid data provided.",
+    "api.err_rate_limit": "Too many requests. Please wait.",
+    "api.msg_auth_success": "Authentication successful.",
+    "api.err_invalid_password": "Invalid password.",
+    "api.msg_logged_out": "Logged out successfully.",
+    "api.err_admin_required": "Admin rights required for this action.",
+    "api.err_pwd_short": "Password must be at least 4 characters long.",
+    "api.err_current_pwd_invalid": "Current password incorrect.",
+    "api.msg_pwd_updated": "Password updated successfully.",
+    "api.err_pwd_save": "Error saving password.",
+    "api.msg_permissions_saved": "Permissions saved successfully.",
+    "api.err_permissions_save": "Error saving permissions."
   }
 }

@@ -334,4 +334,195 @@ class ExifParser {
             'gps'           => $gps_data
         ];
     }
+
+    public static function formatBytes(int $bytes, int $precision = 1): string {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10 * $pow));
+        return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    public static function encodeUrlPath(string $relative_path): string {
+        $parts = explode('/', str_replace('\\', '/', $relative_path));
+        $encoded = array_map('rawurlencode', $parts);
+        return implode('/', $encoded);
+    }
+
+    public static function getMediaCategory(string $extension, array $media_types = []): string {
+        $ext = strtolower(ltrim($extension, '.'));
+        foreach ($media_types as $category => $extensions) {
+            if (in_array($ext, $extensions, true)) {
+                return $category;
+            }
+        }
+        return 'other';
+    }
+
+    public static function parseExifRational(?string $value): ?float {
+        return self::parseRational($value);
+    }
+
+    public static function parseExifGpsCoordinate($coord_array, $ref): ?float {
+        return self::parseGpsCoordinate($coord_array, $ref);
+    }
+
+    public static function extractExifData(string $filepath): ?array {
+        return self::extract($filepath);
+    }
+
+    public static function extractMp4EmbeddedJpeg(string $mp4_file, string $output_jpg_file): bool {
+        if (!file_exists($mp4_file) || !is_readable($mp4_file)) {
+            return false;
+        }
+
+        $fp = @fopen($mp4_file, 'rb');
+        if (!$fp) return false;
+
+        $buffer_size = 65536;
+        $max_search_bytes = 10 * 1024 * 1024;
+        $searched = 0;
+        $prev_chunk = '';
+
+        $found_start = false;
+        $start_pos = 0;
+
+        while (!feof($fp) && $searched < $max_search_bytes) {
+            $chunk = fread($fp, $buffer_size);
+            if ($chunk === false || $chunk === '') break;
+
+            $combined = $prev_chunk . $chunk;
+            $pos = strpos($combined, "\xFF\xD8\xFF");
+
+            if ($pos !== false) {
+                $start_pos = $searched - strlen($prev_chunk) + $pos;
+                $found_start = true;
+                break;
+            }
+
+            $prev_chunk = substr($chunk, -4);
+            $searched += strlen($chunk);
+        }
+
+        if (!$found_start) {
+            fclose($fp);
+            return false;
+        }
+
+        fseek($fp, $start_pos);
+        $searched = 0;
+        $prev_chunk = '';
+        $jpg_data = '';
+        $found_end = false;
+
+        while (!feof($fp) && $searched < 10 * 1024 * 1024) {
+            $chunk = fread($fp, $buffer_size);
+            if ($chunk === false || $chunk === '') break;
+
+            $jpg_data .= $chunk;
+            $combined = $prev_chunk . $chunk;
+            $pos = strpos($combined, "\xFF\xD9");
+
+            if ($pos !== false) {
+                $end_offset = strlen($jpg_data) - strlen($chunk) - strlen($prev_chunk) + $pos + 2;
+                $jpg_data = substr($jpg_data, 0, $end_offset);
+                $found_end = true;
+                break;
+            }
+
+            $prev_chunk = substr($chunk, -2);
+            $searched += strlen($chunk);
+        }
+
+        fclose($fp);
+
+        if ($found_end && strlen($jpg_data) > 100) {
+            $dir = dirname($output_jpg_file);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            return @file_put_contents($output_jpg_file, $jpg_data, LOCK_EX) !== false;
+        }
+
+        return false;
+    }
+
+    public static function transferJpegExif(string $source_file, string $target_binary_or_file): string {
+        if (!file_exists($source_file) || !is_readable($source_file)) {
+            return $target_binary_or_file;
+        }
+
+        $source_fp = @fopen($source_file, 'rb');
+        if (!$source_fp) return $target_binary_or_file;
+
+        $header = fread($source_fp, 2);
+        if ($header !== "\xFF\xD8") {
+            fclose($source_fp);
+            return $target_binary_or_file;
+        }
+
+        $exif_segment = null;
+        while (!feof($source_fp)) {
+            $marker = fread($source_fp, 2);
+            if (strlen($marker) < 2 || $marker[0] !== "\xFF") break;
+            if ($marker[1] === "\xDA" || $marker[1] === "\xD9") break;
+
+            $len_bytes = fread($source_fp, 2);
+            if (strlen($len_bytes) < 2) break;
+            $length = unpack('n', $len_bytes)[1];
+            if ($length <= 2) break;
+
+            $data = fread($source_fp, $length - 2);
+            if ($marker[1] === "\xE1" && $exif_segment === null) {
+                $exif_segment = $marker . $len_bytes . $data;
+            }
+        }
+        fclose($source_fp);
+
+        if (!$exif_segment) {
+            return $target_binary_or_file;
+        }
+
+        $target_content = (file_exists($target_binary_or_file) && is_file($target_binary_or_file))
+            ? (string)@file_get_contents($target_binary_or_file)
+            : $target_binary_or_file;
+
+        if (!$target_content || strlen($target_content) < 4 || substr($target_content, 0, 2) !== "\xFF\xD8") {
+            return $target_binary_or_file;
+        }
+
+        // Insert exif segment right after SOI marker (offset 2)
+        $new_target = "\xFF\xD8" . $exif_segment . substr($target_content, 2);
+
+        if (file_exists($target_binary_or_file) && is_file($target_binary_or_file)) {
+            @file_put_contents($target_binary_or_file, $new_target, LOCK_EX);
+        }
+
+        return $new_target;
+    }
+
+    public static function findFirstImageThumbnail(string $dir_path, string $base_dir, array $image_exts): ?string {
+        $items = @scandir($dir_path);
+        if ($items === false) return null;
+
+        foreach ($items as $item) {
+            if ($item[0] === '.') continue;
+            $full = $dir_path . '/' . $item;
+            if (is_file($full)) {
+                $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                if (in_array($ext, $image_exts, true)) {
+                    $rel = \SimpleGallery\Kernel\Security\PathValidator::getRelativePath($full, $base_dir);
+                    return 'system/endpoints/thumb.php?file=' . rawurlencode($rel);
+                }
+            }
+        }
+        return null;
+    }
+
+    public static function getUnifiedMetadata(string $filepath, string $filename, string $category, string $extension): array {
+        return get_file_unified_metadata($filepath, $filename, $category, $extension);
+    }
 }
+
+

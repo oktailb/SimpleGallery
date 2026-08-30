@@ -1,6 +1,6 @@
 /**
- * SimpleGallery 2026 - WebOS Unified Metadata Inspector & Properties Window
- * Displays comprehensive multi-format file properties, EXIF metadata, GPS maps, and codecs.
+ * SimpleGallery Userland - Metadata Inspector UI Component
+ * Multi-format asynchronous metadata viewer for images (EXIF/GPS), videos, audio, documents, and archives.
  */
 (function(window) {
   'use strict';
@@ -9,22 +9,7 @@
 
   class MetadataInspector {
     constructor() {
-      this.currentWinId = 'meta-inspector-window';
       this.openInspectors = new Map();
-
-      if (window.sys && window.sys.events) {
-        window.sys.events.on('locale:changed', () => this.refreshOpenInspectors());
-      }
-    }
-
-    refreshOpenInspectors() {
-      this.openInspectors.forEach(({ file, meta }, cleanPathId) => {
-        const bodyEl = document.getElementById(`metaInspectorBody-${cleanPathId}`);
-        if (bodyEl) {
-          bodyEl.innerHTML = this.buildHtml(file, meta);
-          this.initMiniMap(cleanPathId, meta.exif || file.exif);
-        }
-      });
     }
 
     t(key, replacements = {}) {
@@ -50,10 +35,17 @@
         .replace(/'/g, '&#039;');
     }
 
+    formatSectionTitle(icon, title) {
+      let clean = String(title || '').trim();
+      clean = clean.replace(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEF6]|\u2139|\uFE0F|\s)+/u, '').trim();
+      return `${icon} ${this.escapeHtml(clean)}`;
+    }
+
     async open(file, ctx = null) {
       if (!file) return;
 
-      const panelTitle = this.t('lightbox.metadata_panel_title') || 'Propriétés du fichier';
+      const rawPanelTitle = this.t('lightbox.metadata_panel_title') || 'Propriétés du fichier';
+      const panelTitle = rawPanelTitle.replace(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEF6]|\u2139|\uFE0F|\s)+/u, '').trim();
       const cleanPathId = encodeURIComponent(file.path || file.name).replace(/%/g, '_');
       const winId = `meta-${cleanPathId}`;
 
@@ -72,14 +64,16 @@
         exif: file.exif || null
       };
 
+      const fileIcon = (window.IconHelper && typeof window.IconHelper.getFileIcon === 'function') ? window.IconHelper.getFileIcon(file) : '📄';
+
       const renderBody = (meta, isLoading = false) => `
-        <div class="webos-metadata-inspector-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--window-bg, var(--bg-main, #0d1117));color:var(--text-main, #c9d1d9);overflow:hidden;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--header-bg, var(--bg-card, rgba(255,255,255,0.03)));border-bottom:1px solid var(--border-color, rgba(255,255,255,0.08));gap:10px;">
+        <div class="webos-metadata-inspector-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--window-bg, var(--bg-main, #ffffff));color:var(--text-main, #0f172a);overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--header-bg, var(--bg-card, rgba(0,0,0,0.03)));border-bottom:1px solid var(--border-color, rgba(0,0,0,0.08));gap:10px;">
             <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
-              <span style="font-size:1.2rem;">ℹ️</span>
-              <strong style="font-size:0.95rem;color:var(--text-main, #f8fafc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.escapeHtml(file.name)}</strong>
+              <span style="font-size:1.2rem;">${fileIcon}</span>
+              <strong style="font-size:0.95rem;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.escapeHtml(file.name)}</strong>
             </div>
-            ${isLoading ? '<div style="font-size:0.8rem;color:var(--accent-primary, #818cf8);animation:pulse 1.5s infinite;">⏳ Chargement...</div>' : ''}
+            ${isLoading ? '<div style="font-size:0.8rem;color:var(--accent-primary, #2563eb);animation:pulse 1.5s infinite;">⏳ Chargement...</div>' : ''}
           </div>
           <div id="metaInspectorBody-${cleanPathId}" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
             ${this.buildHtml(file, meta)}
@@ -98,7 +92,7 @@
             appId: 'metadata-inspector',
             appName: panelTitle,
             fileName: file.name,
-            title: `ℹ️ ${panelTitle} : ${file.name}`,
+            title: `${panelTitle} : ${file.name}`,
             icon: 'ℹ️',
             width: 460,
             height: 580,
@@ -158,7 +152,7 @@
       html += `
         <div class="meta-section-card">
           <div class="meta-section-title">
-            <span>${this.escapeHtml(this.t('meta.general_title') || 'Informations Générales')}</span>
+            <span>${this.formatSectionTitle('📋', this.t('meta.general_title') || 'Informations Générales')}</span>
             <span class="meta-badge">${this.escapeHtml((general.extension || file.extension || '').toUpperCase())}</span>
           </div>
           <div class="meta-row">
@@ -193,7 +187,7 @@
         const img = specific.image;
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">🖼️ ${this.escapeHtml(this.t('meta.image_title') || 'Propriétés Image')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('🖼️', this.t('meta.image_title') || 'Propriétés Image')}</div>
             ${img.resolution ? `
               <div class="meta-row">
                 <span class="meta-row-label">${this.escapeHtml(this.t('meta.resolution') || 'Dimensions')}</span>
@@ -221,7 +215,7 @@
             ${img.is_animated ? `
               <div class="meta-row">
                 <span class="meta-row-label">Animation</span>
-                <span class="meta-row-value" style="color:#38bdf8;">GIF Animé (${img.frames_count || 1} images)</span>
+                <span class="meta-row-value" style="color:var(--accent-primary, #38bdf8);">GIF Animé (${img.frames_count || 1} images)</span>
               </div>
             ` : ''}
           </div>
@@ -233,7 +227,7 @@
         const vid = specific.video;
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">🎬 ${this.escapeHtml(this.t('meta.video_title') || 'Propriétés Vidéo')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('🎬', this.t('meta.video_title') || 'Propriétés Vidéo')}</div>
             ${vid.container ? `
               <div class="meta-row">
                 <span class="meta-row-label">Conteneur</span>
@@ -285,7 +279,7 @@
         const aud = specific.audio;
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">🎵 ${this.escapeHtml(this.t('meta.audio_title') || 'Propriétés Audio')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('🎵', this.t('meta.audio_title') || 'Propriétés Audio')}</div>
             ${aud.format ? `
               <div class="meta-row">
                 <span class="meta-row-label">Format</span>
@@ -367,7 +361,7 @@
         const doc = specific.doc;
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">📄 ${this.escapeHtml(this.t('meta.doc_title') || 'Propriétés Document')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('📄', this.t('meta.doc_title') || 'Propriétés Document')}</div>
             ${doc.doc_type ? `
               <div class="meta-row">
                 <span class="meta-row-label">Type</span>
@@ -437,7 +431,7 @@
         const arch = specific.archive;
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">📦 ${this.escapeHtml(this.t('meta.archive_title') || 'Contenu Archive')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('📦', this.t('meta.archive_title') || 'Contenu Archive')}</div>
             ${arch.archive_type ? `
               <div class="meta-row">
                 <span class="meta-row-label">Format</span>
@@ -459,16 +453,16 @@
             ${arch.compression_ratio ? `
               <div class="meta-row">
                 <span class="meta-row-label">${this.escapeHtml(this.t('meta.compression_ratio') || 'Gain')}</span>
-                <span class="meta-row-value" style="color:#4ade80;font-weight:600;">${this.escapeHtml(arch.compression_ratio)}</span>
+                <span class="meta-row-value" style="color:var(--accent-primary, #22c55e);font-weight:600;">${this.escapeHtml(arch.compression_ratio)}</span>
               </div>
             ` : ''}
             ${(arch.files_sample && arch.files_sample.length > 0) ? `
               <div style="margin-top:10px;">
                 <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Aperçu des fichiers internes (${Math.min(arch.files_sample.length, 50)}) :</div>
-                <div style="max-height:140px;overflow-y:auto;background:rgba(0,0,0,0.25);border-radius:6px;padding:6px 8px;font-size:0.75rem;font-family:monospace;border:1px solid rgba(255,255,255,0.06);">
+                <div style="max-height:140px;overflow-y:auto;background:var(--bg-main, rgba(0,0,0,0.05));border-radius:6px;padding:6px 8px;font-size:0.75rem;font-family:monospace;border:1px solid var(--border-color, rgba(0,0,0,0.08));">
                   ${arch.files_sample.slice(0, 50).map(f => `
-                    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
-                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">${f.is_dir ? '📁 ' : '📄 '}${this.escapeHtml(f.name)}</span>
+                    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border-color, rgba(0,0,0,0.04));">
+                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;color:var(--text-main);">${f.is_dir ? '📁 ' : '📄 '}${this.escapeHtml(f.name)}</span>
                       <span style="color:var(--text-muted);">${this.escapeHtml(f.size_formatted || '')}</span>
                     </div>
                   `).join('')}
@@ -483,9 +477,9 @@
       if (exif && (exif.camera || exif.datetime || exif.fnumber || exif.shutter_speed || exif.iso || exif.focal || exif.artist || exif.software || exif.description)) {
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">📷 ${this.escapeHtml(this.t('exif.title') || 'Métadonnées EXIF')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('📷', this.t('exif.title') || 'Métadonnées EXIF')}</div>
             ${exif.camera ? `
-              <div class="exif-camera-box" style="background:rgba(255,255,255,0.05);padding:6px 10px;border-radius:6px;font-weight:600;color:#f8fafc;margin-bottom:6px;">📷 ${this.escapeHtml(exif.camera)}</div>
+              <div class="exif-camera-box" style="margin-bottom:6px;">📷 ${this.escapeHtml(exif.camera)}</div>
             ` : ''}
             ${exif.datetime ? `
               <div class="meta-row">
@@ -494,10 +488,10 @@
               </div>
             ` : ''}
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
-              ${exif.fnumber ? `<div style="background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.aperture') || 'Ouverture')}</span><div style="font-weight:600;color:#f8fafc;">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
-              ${exif.shutter_speed ? `<div style="background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.shutter') || 'Vitesse')}</span><div style="font-weight:600;color:#f8fafc;">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
-              ${exif.iso ? `<div style="background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.iso') || 'ISO')}</span><div style="font-weight:600;color:#f8fafc;">${this.escapeHtml(exif.iso)}</div></div>` : ''}
-              ${exif.focal ? `<div style="background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.focal') || 'Focale')}</span><div style="font-weight:600;color:#f8fafc;">${this.escapeHtml(exif.focal)}</div></div>` : ''}
+              ${exif.fnumber ? `<div style="background:var(--bg-card, rgba(0,0,0,0.03));border:1px solid var(--border-color, rgba(0,0,0,0.06));padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.aperture') || 'Ouverture')}</span><div style="font-weight:600;color:var(--text-main);">${this.escapeHtml(exif.fnumber)}</div></div>` : ''}
+              ${exif.shutter_speed ? `<div style="background:var(--bg-card, rgba(0,0,0,0.03));border:1px solid var(--border-color, rgba(0,0,0,0.06));padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.shutter') || 'Vitesse')}</span><div style="font-weight:600;color:var(--text-main);">${this.escapeHtml(exif.shutter_speed)}</div></div>` : ''}
+              ${exif.iso ? `<div style="background:var(--bg-card, rgba(0,0,0,0.03));border:1px solid var(--border-color, rgba(0,0,0,0.06));padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.iso') || 'ISO')}</span><div style="font-weight:600;color:var(--text-main);">${this.escapeHtml(exif.iso)}</div></div>` : ''}
+              ${exif.focal ? `<div style="background:var(--bg-card, rgba(0,0,0,0.03));border:1px solid var(--border-color, rgba(0,0,0,0.06));padding:6px 8px;border-radius:6px;"><span style="font-size:0.75rem;color:var(--text-muted);">${this.escapeHtml(this.t('exif.focal') || 'Focale')}</span><div style="font-weight:600;color:var(--text-main);">${this.escapeHtml(exif.focal)}</div></div>` : ''}
             </div>
             ${exif.artist ? `
               <div class="meta-row" style="margin-top:6px;">
@@ -525,13 +519,13 @@
       if (exif && exif.gps && exif.gps.lat && exif.gps.lng) {
         html += `
           <div class="meta-section-card">
-            <div class="meta-section-title">📍 ${this.escapeHtml(this.t('exif.gps_title') || 'Localisation GPS')}</div>
+            <div class="meta-section-title">${this.formatSectionTitle('📍', this.t('exif.gps_title') || 'Localisation GPS')}</div>
             <div class="meta-row">
               <span class="meta-row-label">Coordonnées</span>
               <span class="meta-row-value" style="font-family:monospace; font-size:0.775rem;">${exif.gps.lat}°, ${exif.gps.lng}°</span>
             </div>
-            <div id="exifMiniMap-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="height:160px;width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;" title="Cliquez pour agrandir dans l'application Cartes"></div>
-            <button type="button" class="app-menu-pill" id="openFullMapBtn-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="margin-top:8px;width:100%;justify-content:center;background:#6366f1;color:#fff;border:none;padding:6px;border-radius:8px;cursor:pointer;font-size:0.775rem;">🗺️ Ouvrir dans l'application Cartes</button>
+            <div id="exifMiniMap-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="height:160px;width:100%;border-radius:8px;margin-top:8px;border:1px solid var(--border-color, rgba(0,0,0,0.1));cursor:pointer;" title="Cliquez pour agrandir dans l'application Cartes"></div>
+            <button type="button" class="app-menu-pill" id="openFullMapBtn-${file.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="margin-top:8px;width:100%;justify-content:center;background:var(--accent-primary, #6366f1);color:#fff;border:none;padding:6px;border-radius:8px;cursor:pointer;font-size:0.775rem;">🗺️ Ouvrir dans l'application Cartes</button>
           </div>
         `;
       }

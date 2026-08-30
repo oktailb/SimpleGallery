@@ -9,7 +9,9 @@
   class TribuneApp {
     constructor() {
       this.winId = 'win-tribune';
+      this.api = (window.sys && window.sys.api && window.sys.api.forApp) ? window.sys.api.forApp('tribune') : window.sys.api;
       this.boards = this.loadBoards();
+
       this.currentBoard = localStorage.getItem('tribune_current_board') || 'local';
       if (!this.boards[this.currentBoard]) {
         this.currentBoard = Object.keys(this.boards)[0] || 'local';
@@ -228,7 +230,7 @@
       if (!window.EventSource || this.sseSource || !this.container) return;
 
       try {
-        this.sseSource = new EventSource(window.sys.api.url('tribune_stream'));
+        this.sseSource = new EventSource(this.api.url('tribune_stream'));
         this.sseSource.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
@@ -325,7 +327,7 @@
       const listView = this.container.querySelector('#tribuneScheduleListView');
 
       try {
-        const data = await window.sys.api.get('tribune_scheduled_list');
+        const data = await this.api.get('tribune_scheduled_list');
         if (data && data.success && Array.isArray(data.scheduled)) {
           const count = data.scheduled.length;
           if (badge) {
@@ -452,7 +454,7 @@
       };
 
       try {
-        const data = await window.sys.api.get('tribune_boards_get', { _t: Date.now() });
+        const data = await this.api.get('tribune_boards_get', { _t: Date.now() });
         if (data && data.success && data.boards && typeof data.boards === 'object') {
           this.boards = { ...defaultBoards, ...data.boards };
           if (this.container) {
@@ -531,7 +533,7 @@
       } catch (e) { }
 
       try {
-        await window.sys.api.post('tribune_boards_save', { boards: this.boards });
+        await this.api.post('tribune_boards_save', { boards: this.boards });
       } catch (e) { }
     }
 
@@ -833,7 +835,7 @@
           const popupW = 600, popupH = 700;
           const left = (window.innerWidth - popupW) / 2 + window.screenX;
           const top = (window.innerHeight - popupH) / 2 + window.screenY;
-          const authUrl = window.sys.api.url('tribune_oauth_authorize', { board_id: this.currentBoard });
+          const authUrl = this.api.url('tribune_oauth_authorize', { board_id: this.currentBoard });
           window.open(authUrl, `oauth_${this.currentBoard}`, `width=${popupW},height=${popupH},top=${top},left=${left},scrollbars=yes,status=yes`);
         });
       }
@@ -985,7 +987,7 @@
             formData.append('action', 'tribune_file_upload');
             formData.append('file', file);
 
-            const resData = await window.sys.api.upload('tribune_file_upload', formData);
+            const resData = await this.api.upload('tribune_file_upload', formData);
             if (resData && resData.success && resData.url) {
               const fullUrl = new URL(resData.url, window.location.href).href;
               if (msgInput) {
@@ -1087,7 +1089,7 @@
           }
 
           try {
-            const data = await window.sys.api.upload('tribune_schedule_post', formData);
+            const data = await this.api.upload('tribune_schedule_post', formData);
             if (data && data.success) {
               msgInput.value = '';
               schedulePopover.style.display = 'none';
@@ -1118,7 +1120,7 @@
             const id = cancelBtn.dataset.id;
             if (id) {
               try {
-                await window.sys.api.post('tribune_schedule_cancel', { id });
+                await this.api.post('tribune_schedule_cancel', { id });
                 this.refreshScheduledList();
               } catch (e) { }
             }
@@ -1328,7 +1330,7 @@
                 }
 
                 try {
-                  const data = await window.sys.api.get('url_preview', { url: href });
+                  const data = await this.api.get('url_preview', { url: href });
                   // Guard check: verify active hover URL still matches this link
                   if (this.activeHoverUrl === href && link.matches(':hover')) {
                     if (data && data.success && data.preview) {
@@ -1536,7 +1538,7 @@
           totozList = this.totozCache[query];
         } else {
           try {
-            const data = await window.sys.api.get('totoz_search', { q: query });
+            const data = await this.api.get('totoz_search', { q: query });
 
             // Guard 1: Verify user is still typing this exact query and popover wasn't closed
             if (this.activeTotozQuery !== query) return;
@@ -1571,7 +1573,7 @@
 
       // Preload images into memory cache for instant rendering
       displayList.forEach(item => {
-        const imgUrl = window.sys.api.url('totoz_proxy', { name: item.name });
+        const imgUrl = this.api.url('totoz_proxy', { name: item.name });
         if (!this.totozImageCache.has(imgUrl)) {
           this.totozImageCache.add(imgUrl);
           const img = new Image();
@@ -1588,7 +1590,7 @@
           ${displayList.map(item => {
         const name = item.name;
         const isNsfw = item.nsfw || name.toLowerCase().includes('nsfw');
-        const imgUrl = window.sys.api.url('totoz_proxy', { name: name });
+        const imgUrl = this.api.url('totoz_proxy', { name: name });
         const blurClass = (isNsfw && !this.nsfwEnabled) ? 'nsfw-blurred' : '';
 
         return `
@@ -1649,12 +1651,12 @@
         const auth = this.boardAuth[boardKey] || {};
 
         if (boardConfig.type === 'local') {
-          const data = await window.sys.api.get('tribune_get', { _t: Date.now() });
+          const data = await this.api.get('tribune_get', { _t: Date.now() });
           if (data && data.success && data.messages) {
             fetchedPosts = data.messages;
           }
         } else if (boardConfig.type === 'remote_tsv' || boardConfig.type === 'remote_xml' || boardConfig.type === 'miaoli') {
-          const data = await window.sys.api.post('tribune_proxy_fetch', {
+          const data = await this.api.post('tribune_proxy_fetch', {
             url: boardConfig.url,
             cookie: auth.cookie || '',
             user_agent: auth.user_agent || ''
@@ -1904,7 +1906,7 @@
 
         const actionName = bodyData.action || 'tribune_post';
         delete bodyData.action;
-        const data = await window.sys.api.post(actionName, bodyData);
+        const data = await this.api.post(actionName, bodyData);
 
         if (data && data.success) {
           this.lastPostedMessage = message;
@@ -2259,7 +2261,7 @@
         if (index >= urlsToFetch.length) return;
         const href = urlsToFetch[index];
         try {
-          const data = await window.sys.api.get('url_preview', { url: href });
+          const data = await this.api.get('url_preview', { url: href });
           if (data && data.success && data.preview) {
             this.urlPreviewCache[href] = data.preview;
           }
@@ -2400,7 +2402,7 @@
       html = html.replace(/\[:([a-zA-Z0-9_\.: -]+)\]/g, (match, totozName) => {
         const isNsfw = totozName.toLowerCase().includes('nsfw');
         const blurClass = (isNsfw && !this.nsfwEnabled) ? 'nsfw-blurred' : '';
-        const proxyUrl = window.sys.api.url('totoz_proxy', { name: totozName });
+        const proxyUrl = this.api.url('totoz_proxy', { name: totozName });
         return `<img class="totoz-img ${blurClass}" src="${proxyUrl}" alt="[:${this.escapeHtml(totozName)}]" title="[:${this.escapeHtml(totozName)}]" />`;
       });
 

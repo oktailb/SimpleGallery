@@ -31,7 +31,9 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <meta name="cookie-consent-enabled" content="<?php echo !empty($enable_cookie_consent) ? '1' : '0'; ?>">
   <meta name="default-locale" content="<?php echo htmlspecialchars($default_locale, ENT_QUOTES, 'UTF-8'); ?>">
   <meta name="description" content="SimpleGallery 2026 - Ultra-fast zero-dependency modern PHP web gallery">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>">
   <title><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></title>
+
 
   <!-- Initial i18n Locales Configuration Payload -->
   <script id="initialLocalesConfig" type="application/json">
@@ -73,7 +75,13 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="system/userland/theme/ThemeEngine.js" defer></script>
   <script src="system/userland/ui/WebOSToolkit.js" defer></script>
   <script src="system/userland/services/WebOSServices.js" defer></script>
+  <script src="system/userland/services/FilePickerService.js" defer></script>
+  <script src="system/userland/desktop/WallpaperManager.js" defer></script>
+  <script src="system/userland/desktop/TaskbarClock.js" defer></script>
+  <script src="system/userland/desktop/DesktopShortcuts.js" defer></script>
   <script src="system/userland/core/WebOSApp.js" defer></script>
+
+
   <script src="system/userland/ui/MetadataInspector.js" defer></script>
 
   <!-- Synchronous theme restore to avoid flash of unstyled theme -->

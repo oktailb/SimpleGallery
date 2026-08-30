@@ -8,20 +8,23 @@ if (!defined('SIMPLE_GALLERY_CORE')) {
     define('SIMPLE_GALLERY_CORE', true);
 }
 
-/**
- * Formats duration in seconds to standard MM:SS or HH:MM:SS string
- */
-function format_media_duration(float $seconds): string {
-    $sec = (int)round($seconds);
-    $hours = floor($sec / 3600);
-    $minutes = floor(($sec % 3600) / 60);
-    $remaining_seconds = $sec % 60;
+if (!function_exists('format_media_duration')) {
+    /**
+     * Formats duration in seconds to standard MM:SS or HH:MM:SS string
+     */
+    function format_media_duration(float $seconds): string {
+        $sec = (int)round($seconds);
+        $hours = floor($sec / 3600);
+        $minutes = floor(($sec % 3600) / 60);
+        $remaining_seconds = $sec % 60;
 
-    if ($hours > 0) {
-        return sprintf('%02d:%02d:%02d', $hours, $minutes, $remaining_seconds);
+        if ($hours > 0) {
+            return sprintf('%02d:%02d:%02d', $hours, $minutes, $remaining_seconds);
+        }
+        return sprintf('%02d:%02d', $minutes, $remaining_seconds);
     }
-    return sprintf('%02d:%02d', $minutes, $remaining_seconds);
 }
+
 
 /**
  * Fast pure PHP parser for ISO Base Media File Format (MP4, MOV, M4V, 3GP)

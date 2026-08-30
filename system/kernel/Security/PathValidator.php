@@ -60,6 +60,10 @@ class PathValidator {
         }
     }
 
+    public static function canonicalizeAndValidate(string $user_path, string $base_dir, bool $must_exist = true, bool $allow_root = true): ?string {
+        return self::canonicalize($user_path, $base_dir, $must_exist, $allow_root);
+    }
+
     public static function sanitizeDirectory(?string $requested_dir, string $base_dir): ?string {
         if ($requested_dir === null) return null;
         $result = self::canonicalize($requested_dir, $base_dir, true, true);
@@ -69,6 +73,10 @@ class PathValidator {
         return $result;
     }
 
+    public static function sanitizePath(?string $requested_dir, string $base_dir): ?string {
+        return self::sanitizeDirectory($requested_dir, $base_dir);
+    }
+
     public static function sanitizeFile(?string $requested_file, string $base_dir): ?string {
         if (empty($requested_file)) return null;
         $result = self::canonicalize($requested_file, $base_dir, true, false);
@@ -76,6 +84,10 @@ class PathValidator {
             return null;
         }
         return $result;
+    }
+
+    public static function sanitizeFilePath(?string $requested_file, string $base_dir): ?string {
+        return self::sanitizeFile($requested_file, $base_dir);
     }
 
     public static function getRelativePath(string $full_path, string $base_dir): string {
@@ -95,4 +107,22 @@ class PathValidator {
         }
         return ltrim($full_path, '/');
     }
+
+    public static function isPathIgnored(string $path, string $base_dir, array $ignore_list): bool {
+        $rel = self::getRelativePath($path, $base_dir);
+        if ($rel === '') return false;
+        
+        $parts = explode('/', $rel);
+        foreach ($parts as $part) {
+            if (in_array($part, $ignore_list, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static function isDirAccessible(string $dir_path, string $base_dir): bool {
+        return \SimpleGallery\Kernel\Auth\AuthManager::isDirAccessible($dir_path, $base_dir);
+    }
 }
+
