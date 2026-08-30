@@ -254,17 +254,7 @@
       if (!input || !input.value) return;
 
       try {
-        const formData = new FormData();
-        formData.append('action', 'login');
-        formData.append('csrf_token', window.CSRF_TOKEN || '');
-        formData.append('password', input.value);
-
-        const res = await fetch('system/endpoints/api.php', {
-          method: 'POST',
-          headers: { 'X-CSRF-Token': window.CSRF_TOKEN || '' },
-          body: formData
-        });
-        const json = await res.json();
+        const json = await this.api.post('login', { password: input.value });
         if (json.success) {
           window.IS_ADMIN = true;
           if (window.desktop) {

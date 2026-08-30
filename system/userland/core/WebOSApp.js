@@ -116,7 +116,12 @@
       return {
         get: (action, params = {}) => {
           const query = new URLSearchParams({ action, ...params }).toString();
-          return fetch(`system/endpoints/api.php?${query}`).then(r => r.json());
+          return fetch(`system/endpoints/api.php?${query}`)
+            .then(r => r.text())
+            .then(text => {
+              try { return JSON.parse(text); } catch (e) { return { success: false, error: text || 'Invalid JSON' }; }
+            })
+            .catch(err => ({ success: false, error: err.message }));
         },
         post: (action, payload = {}) => {
           const csrf = window.CSRF_TOKEN || (window.desktop && window.desktop.state && window.desktop.state.csrfToken) || '';
@@ -124,7 +129,12 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
             body: JSON.stringify({ action, csrf_token: csrf, ...payload })
-          }).then(r => r.json());
+          })
+            .then(r => r.text())
+            .then(text => {
+              try { return JSON.parse(text); } catch (e) { return { success: false, error: text || 'Invalid JSON' }; }
+            })
+            .catch(err => ({ success: false, error: err.message }));
         }
       };
     }
