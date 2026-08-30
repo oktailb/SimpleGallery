@@ -676,90 +676,201 @@ class TribuneActions {
         }
 
         if ($action === 'tribune_proxy_post') {
-            $board_id = trim($_POST['board_id'] ?? $raw_body['board_id'] ?? '');
-            $message = trim($_POST['message'] ?? $raw_body['message'] ?? '');
-            $login = trim($_POST['login'] ?? $raw_body['login'] ?? '');
-            $post_url = trim($_POST['post_url'] ?? $raw_body['post_url'] ?? '');
-            $cookie = trim($_POST['cookie'] ?? $raw_body['cookie'] ?? '');
-            $user_agent = trim($_POST['user_agent'] ?? $raw_body['user_agent'] ?? 'SimpleGallery-TribuneClient/2.0');
+            $board_id        = trim($_POST['board_id'] ?? $raw_body['board_id'] ?? '');
+            $remote_url      = trim($_POST['url'] ?? $raw_body['url'] ?? '');
+            $custom_post_url = trim($_POST['post_url'] ?? $raw_body['post_url'] ?? '');
+            $msg_text        = trim($_POST['message'] ?? $raw_body['message'] ?? '');
+            $login           = trim($_POST['login'] ?? $raw_body['login'] ?? 'Anonyme');
+            $cookie_hdr      = trim($_POST['cookie'] ?? $raw_body['cookie'] ?? '');
+            $user_agent      = trim($_POST['user_agent'] ?? $raw_body['user_agent'] ?? 'Mozilla/5.0 (SimpleGallery Tribune)');
 
-            if ($message === '') {
+            // Look up board configuration dynamically from JSON storage
+            $all_boards = self::getBoardsConfig($base_dir);
+            $board_cfg  = $all_boards[$board_id] ?? null;
+
+            if (!$board_cfg) {
+                if (!empty($remote_url)) {
+                    foreach ($all_boards as $bid => $cfg) {
+                        if (!empty($cfg['url']) && strtolower(trim($cfg['url'])) === strtolower($remote_url)) {
+                            $board_cfg = $cfg;
+                            $board_id  = $bid;
+                            break;
+                        }
+                    }
+                }
+                if (!$board_cfg && isset($all_boards['linuxfr'])) {
+                    $board_cfg = $all_boards['linuxfr'];
+                    $board_id  = 'linuxfr';
+                }
+            }
+
+            if (empty($msg_text)) {
                 return ['status' => 400, 'data' => ['success' => false, 'error' => 'Le message ne peut pas être vide.']];
             }
 
-            $all_boards = self::getBoardsConfig($base_dir);
-            $board_cfg = $all_boards[$board_id] ?? null;
-
-            if (empty($post_url) && $board_cfg && !empty($board_cfg['post_url'])) {
+            // Resolve post_url
+            $post_url = '';
+            if (!empty($custom_post_url) && filter_var($custom_post_url, FILTER_VALIDATE_URL)) {
+                $post_url = $custom_post_url;
+            } elseif ($board_cfg && !empty($board_cfg['post_url']) && filter_var($board_cfg['post_url'], FILTER_VALIDATE_URL)) {
                 $post_url = $board_cfg['post_url'];
+            } elseif (!empty($remote_url) && filter_var($remote_url, FILTER_VALIDATE_URL)) {
+                $post_url = preg_replace('/\/index\.xml$/i', '', $remote_url);
+                if (strrpos($post_url, '.xml') !== false) {
+                    $post_url = preg_replace('/\.xml$/i', '', $post_url);
+                }
             }
 
             if (empty($post_url) || !filter_var($post_url, FILTER_VALIDATE_URL)) {
-                return ['status' => 400, 'data' => ['success' => false, 'error' => 'URL de publication distante invalide ou absente.']];
+                return ['status' => 400, 'data' => ['success' => false, 'error' => 'URL de soumission distante invalide.']];
             }
 
-            $headers = [
-                "User-Agent: {$user_agent}",
-                "Content-Type: application/x-www-form-urlencoded",
-                "Accept: text/html,application/xhtml+xml,application/xml,text/plain,*/*"
-            ];
+            $parsed_post_url = parse_url($post_url);
+            $origin = ($parsed_post_url['scheme'] ?? 'https') . '://' . ($parsed_post_url['host'] ?? '');
 
-            // OAuth Token check if available
-            $oauth_token = $_SESSION['tribune_oauth_token_' . $board_id] ?? null;
-            if (!empty($oauth_token)) {
-                $headers[] = "Authorization: Bearer {$oauth_token}";
-            }
+            // Step 1: Resolve CSRF token (use cached session token if available to save latency)
+            $csrf_token = $_SESSION['tribune_csrf_' . $board_id] ?? '';
+            $should_extract_csrf = isset($board_cfg['extract_csrf']) ? (bool)$board_cfg['extract_csrf'] : true;
 
-            if (!empty($cookie)) {
-                $headers[] = "Cookie: {$cookie}";
-            }
-
-            $post_param = $board_cfg['post_param'] ?? 'message';
-            $post_fields = [$post_param => $message];
-
-            if (!empty($board_cfg['extra_params']) && is_array($board_cfg['extra_params'])) {
-                foreach ($board_cfg['extra_params'] as $k => $v) {
-                    $post_fields[$k] = $v;
+            $fetch_csrf_token = function() use ($post_url, $user_agent, &$cookie_hdr) {
+                $get_headers = [
+                    "User-Agent: {$user_agent}",
+                    "Accept: text/html,application/xhtml+xml,*/*"
+                ];
+                if (!empty($cookie_hdr)) {
+                    $get_headers[] = "Cookie: {$cookie_hdr}";
                 }
-            }
 
-            // Remote CSRF extraction if board requires it and no OAuth token
-            if (empty($oauth_token) && !empty($board_cfg['extract_csrf'])) {
-                $fetch_url = $board_cfg['url'] ?? $post_url;
-                $pre_res = self::httpRequestProxy($fetch_url, 'GET', ["User-Agent: {$user_agent}"], null, 4);
-                if (!empty($pre_res['cookies'])) {
-                    $combined_cookies = array_unique(array_merge(explode('; ', $cookie), $pre_res['cookies']));
-                    $headers = array_filter($headers, fn($h) => stripos($h, 'Cookie:') !== 0);
-                    $headers[] = "Cookie: " . implode('; ', array_filter($combined_cookies));
-                }
-                if (!empty($pre_res['body'])) {
-                    if (preg_match('/name=["\']authenticity_token["\']\s+value=["\']([^"\']+)["\']/', $pre_res['body'], $m_csrf) ||
-                        preg_match('/name=["\']csrf-token["\']\s+content=["\']([^"\']+)["\']/', $pre_res['body'], $m_csrf)) {
-                        $post_fields['authenticity_token'] = $m_csrf[1];
+                $get_res = self::httpRequestProxy($post_url, 'GET', $get_headers, null, 5);
+                $tok = '';
+                if (!empty($get_res['body'])) {
+                    if (preg_match('/input[^>]+name="authenticity_token"[^>]+value="([^"]+)"/i', $get_res['body'], $m_tok)) {
+                        $tok = $m_tok[1];
+                    } elseif (preg_match('/meta[^>]+name="csrf-token"[^>]+content="([^"]+)"/i', $get_res['body'], $m_meta)) {
+                        $tok = $m_meta[1];
+                    }
+
+                    if (!empty($get_res['cookies'])) {
+                        $existing_keys = [];
+                        foreach (explode(';', $cookie_hdr) as $part) {
+                            $kv = explode('=', trim($part), 2);
+                            if (!empty($kv[0])) {
+                                $existing_keys[trim($kv[0])] = true;
+                            }
+                        }
+                        foreach ($get_res['cookies'] as $ck) {
+                            $kv = explode('=', trim($ck), 2);
+                            $key = trim($kv[0] ?? '');
+                            if (!empty($key) && !isset($existing_keys[$key])) {
+                                $cookie_hdr = ($cookie_hdr ? $cookie_hdr . '; ' : '') . $ck;
+                                $existing_keys[$key] = true;
+                            }
+                        }
                     }
                 }
+                return $tok;
+            };
+
+            if (empty($csrf_token) && $should_extract_csrf) {
+                $csrf_token = $fetch_csrf_token();
+                if (!empty($csrf_token)) {
+                    $_SESSION['tribune_csrf_' . $board_id] = $csrf_token;
+                }
             }
 
-            @session_write_close();
-            $res = self::httpRequestProxy($post_url, 'POST', $headers, http_build_query($post_fields), 8);
+            // Step 2: Helper to perform POST
+            $execute_post = function($token) use ($board_cfg, $msg_text, $login, $user_agent, $post_url, $origin, $cookie_hdr) {
+                $post_params = [];
+                $is_api_endpoint = (strpos($post_url, '/api/') !== false);
 
-            // In bouchots/tribunes, HTTP 200, 201, 204, 301, 302, 303 indicate a successful post
-            $is_success = ($res['status_code'] >= 200 && $res['status_code'] < 400);
+                if ($is_api_endpoint) {
+                    $post_param_name = ($board_cfg && !empty($board_cfg['post_param'])) ? $board_cfg['post_param'] : 'message';
+                    $post_params[$post_param_name] = $msg_text;
+                } else {
+                    $post_params['utf8'] = '✓';
+                    $post_params['authenticity_token'] = $token;
 
-            if (!$is_success) {
-                return ['status' => 200, 'data' => [
+                    if ($board_cfg && !empty($board_cfg['extra_params']) && is_array($board_cfg['extra_params'])) {
+                        foreach ($board_cfg['extra_params'] as $k => $v) {
+                            if ($k !== 'utf8' && $k !== 'authenticity_token') {
+                                $post_params[$k] = $v;
+                            }
+                        }
+                    }
+
+                    $post_param_name = ($board_cfg && !empty($board_cfg['post_param'])) ? $board_cfg['post_param'] : 'message';
+                    $post_params[$post_param_name] = $msg_text;
+                    $post_params['login'] = $login;
+                }
+
+                $post_data = http_build_query($post_params);
+
+                $post_headers = [
+                    "User-Agent: {$user_agent}",
+                    "Content-Type: application/x-www-form-urlencoded",
+                    "Referer: {$post_url}",
+                    "Origin: {$origin}"
+                ];
+                if (!empty($token) && !$is_api_endpoint) {
+                    $post_headers[] = "X-CSRF-Token: {$token}";
+                }
+                if (!empty($cookie_hdr)) {
+                    if (stripos($cookie_hdr, 'Bearer ') === 0 || strpos($cookie_hdr, '=') === false) {
+                        $token_val = preg_replace('/^Bearer\s+/i', '', trim($cookie_hdr));
+                        $post_headers[] = "Authorization: Bearer {$token_val}";
+                    } else {
+                        $post_headers[] = "Cookie: {$cookie_hdr}";
+                        if (preg_match('/(?:access_token|bearer|token)=([^;]+)/i', $cookie_hdr, $m_bearer)) {
+                            $post_headers[] = "Authorization: Bearer {$m_bearer[1]}";
+                        }
+                    }
+                }
+
+                return self::httpRequestProxy($post_url, 'POST', $post_headers, $post_data, 6);
+            };
+
+            $post_res = $execute_post($csrf_token);
+            $status_code  = $post_res['status_code'];
+            $location_hdr = $post_res['location'];
+
+            // Retry once if token expired or invalid (HTTP 422 or HTTP 400 with token error)
+            if (($status_code === 422 || $status_code === 400) && $should_extract_csrf) {
+                unset($_SESSION['tribune_csrf_' . $board_id]);
+                $csrf_token = $fetch_csrf_token();
+                if (!empty($csrf_token)) {
+                    $_SESSION['tribune_csrf_' . $board_id] = $csrf_token;
+                    $post_res = $execute_post($csrf_token);
+                    $status_code  = $post_res['status_code'];
+                    $location_hdr = $post_res['location'];
+                }
+            }
+
+            if (strpos($location_hdr, 'connexion') !== false || $status_code === 401 || $status_code === 403) {
+                return ['status' => 401, 'data' => [
                     'success'     => false,
-                    'status_code' => $res['status_code'] ?? 0,
-                    'error'       => 'Impossible de poster sur la tribune distante (Code HTTP ' . ($res['status_code'] ?? 0) . ').',
-                    'details'     => $res['error'] ?? ''
+                    'status_code' => $status_code,
+                    'location'    => $location_hdr,
+                    'error'       => 'Authentification refusée par le backend distant (cookie de session linuxfr.org manquant ou expiré).'
                 ]];
             }
 
-            return ['status' => 200, 'data' => [
-                'success' => true,
-                'status_code' => $res['status_code'] ?? 200,
-                'message' => 'Message envoyé avec succès sur la tribune distante.'
-            ]];
+            if ($status_code >= 200 && $status_code < 400) {
+                return ['status' => 200, 'data' => [
+                    'success'     => true,
+                    'status_code' => $status_code,
+                    'location'    => $location_hdr,
+                    'csrf_used'   => !empty($csrf_token),
+                    'message'     => 'Post envoyé au backend distant avec succès.',
+                    'target'      => $post_url
+                ]];
+            } else {
+                return ['status' => 400, 'data' => [
+                    'success'     => false,
+                    'status_code' => $status_code,
+                    'error'       => "Le backend distant a répondu avec le code HTTP {$status_code}.",
+                    'details'     => mb_substr(trim(strip_tags($post_res['body'] ?? '')), 0, 300)
+                ]];
+            }
         }
 
         if ($action === 'tribune_clear_history') {
