@@ -411,7 +411,9 @@ class AppManager {
     }
 }
 
+const appManagerInstance = new AppManager();
+
 window.sys = window.sys || {};
-window.AppManager = AppManager;
-window.sys.appManager = new AppManager();
-window.WebOSAppManager = window.sys.appManager;
+window.sys.appManager = appManagerInstance;
+window.AppManager = appManagerInstance;
+window.WebOSAppManager = appManagerInstance;
