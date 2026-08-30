@@ -640,6 +640,7 @@ class GeneralUnitTestSuite {
      */
     private function testTribuneAppAndMultiBouchot(): void {
         echo "\n🦆 [14/14] Test de l'Application Tribune Libre & Client Bouchot...\n";
+        require_once $this->base_dir . '/apps/tribune/backend/TribuneActions.php';
 
         // 1. App Discovery
         $discovered = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir);
@@ -664,6 +665,8 @@ class GeneralUnitTestSuite {
         $this->assert("api.php déclare l'action tribune_schedule_post", strpos($api_code, "tribune_schedule_post") !== false);
         $this->assert("api.php déclare l'action tribune_scheduled_list", strpos($api_code, "tribune_scheduled_list") !== false);
         $this->assert("api.php déclare l'action tribune_proxy_post dans les actions mutantes", in_array('tribune_proxy_post', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true) || strpos($api_code, 'tribune_proxy_post') !== false);
+        $proxy_post_res = \SimpleGallery\Apps\Tribune\Backend\TribuneActions::handle('tribune_proxy_post', ['message' => ''], $this->base_dir);
+        $this->assert("TribuneActions gère l'action tribune_proxy_post (non-null)", $proxy_post_res !== null && isset($proxy_post_res['data']['success']));
 
         // 4. App UI Elements & Features (Balltrap, Trollometer, Miaoli)
         $app_js = @file_get_contents($this->base_dir . '/apps/tribune/app.js');

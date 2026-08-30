@@ -675,6 +675,93 @@ class TribuneActions {
             return ['status' => 200, 'data' => ['success' => true, 'content' => $res['body']]];
         }
 
+        if ($action === 'tribune_proxy_post') {
+            $board_id = trim($_POST['board_id'] ?? $raw_body['board_id'] ?? '');
+            $message = trim($_POST['message'] ?? $raw_body['message'] ?? '');
+            $login = trim($_POST['login'] ?? $raw_body['login'] ?? '');
+            $post_url = trim($_POST['post_url'] ?? $raw_body['post_url'] ?? '');
+            $cookie = trim($_POST['cookie'] ?? $raw_body['cookie'] ?? '');
+            $user_agent = trim($_POST['user_agent'] ?? $raw_body['user_agent'] ?? 'SimpleGallery-TribuneClient/2.0');
+
+            if ($message === '') {
+                return ['status' => 400, 'data' => ['success' => false, 'error' => 'Le message ne peut pas être vide.']];
+            }
+
+            $all_boards = self::getBoardsConfig($base_dir);
+            $board_cfg = $all_boards[$board_id] ?? null;
+
+            if (empty($post_url) && $board_cfg && !empty($board_cfg['post_url'])) {
+                $post_url = $board_cfg['post_url'];
+            }
+
+            if (empty($post_url) || !filter_var($post_url, FILTER_VALIDATE_URL)) {
+                return ['status' => 400, 'data' => ['success' => false, 'error' => 'URL de publication distante invalide ou absente.']];
+            }
+
+            $headers = [
+                "User-Agent: {$user_agent}",
+                "Content-Type: application/x-www-form-urlencoded",
+                "Accept: text/html,application/xhtml+xml,application/xml,text/plain,*/*"
+            ];
+
+            // OAuth Token check if available
+            $oauth_token = $_SESSION['tribune_oauth_token_' . $board_id] ?? null;
+            if (!empty($oauth_token)) {
+                $headers[] = "Authorization: Bearer {$oauth_token}";
+            }
+
+            if (!empty($cookie)) {
+                $headers[] = "Cookie: {$cookie}";
+            }
+
+            $post_param = $board_cfg['post_param'] ?? 'message';
+            $post_fields = [$post_param => $message];
+
+            if (!empty($board_cfg['extra_params']) && is_array($board_cfg['extra_params'])) {
+                foreach ($board_cfg['extra_params'] as $k => $v) {
+                    $post_fields[$k] = $v;
+                }
+            }
+
+            // Remote CSRF extraction if board requires it and no OAuth token
+            if (empty($oauth_token) && !empty($board_cfg['extract_csrf'])) {
+                $fetch_url = $board_cfg['url'] ?? $post_url;
+                $pre_res = self::httpRequestProxy($fetch_url, 'GET', ["User-Agent: {$user_agent}"], null, 4);
+                if (!empty($pre_res['cookies'])) {
+                    $combined_cookies = array_unique(array_merge(explode('; ', $cookie), $pre_res['cookies']));
+                    $headers = array_filter($headers, fn($h) => stripos($h, 'Cookie:') !== 0);
+                    $headers[] = "Cookie: " . implode('; ', array_filter($combined_cookies));
+                }
+                if (!empty($pre_res['body'])) {
+                    if (preg_match('/name=["\']authenticity_token["\']\s+value=["\']([^"\']+)["\']/', $pre_res['body'], $m_csrf) ||
+                        preg_match('/name=["\']csrf-token["\']\s+content=["\']([^"\']+)["\']/', $pre_res['body'], $m_csrf)) {
+                        $post_fields['authenticity_token'] = $m_csrf[1];
+                    }
+                }
+            }
+
+            @session_write_close();
+            $res = self::httpRequestProxy($post_url, 'POST', $headers, http_build_query($post_fields), 8);
+
+            // In bouchots/tribunes, HTTP 200, 201, 204, 301, 302, 303 indicate a successful post
+            $is_success = ($res['status_code'] >= 200 && $res['status_code'] < 400);
+
+            if (!$is_success) {
+                return ['status' => 200, 'data' => [
+                    'success'     => false,
+                    'status_code' => $res['status_code'] ?? 0,
+                    'error'       => 'Impossible de poster sur la tribune distante (Code HTTP ' . ($res['status_code'] ?? 0) . ').',
+                    'details'     => $res['error'] ?? ''
+                ]];
+            }
+
+            return ['status' => 200, 'data' => [
+                'success' => true,
+                'status_code' => $res['status_code'] ?? 200,
+                'message' => 'Message envoyé avec succès sur la tribune distante.'
+            ]];
+        }
+
         if ($action === 'tribune_clear_history') {
             if (empty($_SESSION['is_admin'])) {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => 'Action réservée à l\'administrateur.']];
