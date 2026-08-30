@@ -3,7 +3,7 @@
  * SimpleGallery 2026 - Tribune Secrets Store
  * Protected PHP file preventing any direct HTTP access.
  */
-if (!defined('SG_EXEC')) {
+if (!defined('SG_EXEC') && !defined('SIMPLE_GALLERY_BOOTED')) {
     http_response_code(403);
     exit('Access Denied');
 }

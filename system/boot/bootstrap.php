@@ -7,6 +7,9 @@
 if (!defined('SIMPLE_GALLERY_BOOTED')) {
     define('SIMPLE_GALLERY_BOOTED', true);
 }
+if (!defined('SG_EXEC')) {
+    define('SG_EXEC', true);
+}
 
 // 1. Ensure minimal PHP version (PHP 7.2+)
 if (PHP_VERSION_ID < 70200) {
