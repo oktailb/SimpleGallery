@@ -1550,12 +1550,14 @@
     }
 
     copySelection() {
-      const selectedPaths = Array.from(this.state.selectedPaths);
+      const selectedPaths = Array.from(this.state.selectedPaths || []);
       if (selectedPaths.length === 0) return;
+      const files = this.state.files || [];
+      const folders = this.state.directories || this.state.folders || [];
       const items = [];
       selectedPaths.forEach(p => {
-        const f = this.state.files.find(item => item.path === p);
-        const folder = this.state.folders.find(item => item.path === p);
+        const f = files.find(item => item.path === p);
+        const folder = folders.find(item => item.path === p);
         if (f) items.push(f);
         else if (folder) items.push({ ...folder, is_folder: true });
         else items.push({ path: p, name: p.split('/').pop() });
@@ -1568,12 +1570,14 @@
     }
 
     cutSelection() {
-      const selectedPaths = Array.from(this.state.selectedPaths);
+      const selectedPaths = Array.from(this.state.selectedPaths || []);
       if (selectedPaths.length === 0) return;
+      const files = this.state.files || [];
+      const folders = this.state.directories || this.state.folders || [];
       const items = [];
       selectedPaths.forEach(p => {
-        const f = this.state.files.find(item => item.path === p);
-        const folder = this.state.folders.find(item => item.path === p);
+        const f = files.find(item => item.path === p);
+        const folder = folders.find(item => item.path === p);
         if (f) items.push(f);
         else if (folder) items.push({ ...folder, is_folder: true });
         else items.push({ path: p, name: p.split('/').pop() });
@@ -1648,31 +1652,35 @@
             this.selectAll();
           }
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
-          if (this.state.selectedPaths.size > 0 && (this.state.isAdmin || (this.state.userRights && this.state.userRights.can_delete))) {
+          if (this.state.selectedPaths && this.state.selectedPaths.size > 0 && (this.state.isAdmin || (this.state.userRights && this.state.userRights.can_delete))) {
             e.preventDefault();
             const first = Array.from(this.state.selectedPaths)[0];
             const name = first.split('/').pop();
-            const isFolder = this.state.folders.some(f => f.path === first);
+            const folders = this.state.directories || this.state.folders || [];
+            const isFolder = folders.some(f => f.path === first);
             this.openDeleteConfirmModal(first, name, isFolder ? 'folder' : 'file');
           }
         } else if (e.key === ' ' || e.key === 'Spacebar') {
-          if (this.state.selectedPaths.size > 0) {
+          if (this.state.selectedPaths && this.state.selectedPaths.size > 0) {
             e.preventDefault();
             const first = Array.from(this.state.selectedPaths)[0];
-            const file = this.state.files.find(f => f.path === first);
+            const files = this.state.files || [];
+            const file = files.find(f => f.path === first);
             if (file && window.sys && window.sys.openFile) {
               window.sys.openFile(file);
             }
           }
         } else if (e.key === 'Enter') {
-          if (this.state.selectedPaths.size > 0) {
+          if (this.state.selectedPaths && this.state.selectedPaths.size > 0) {
             e.preventDefault();
             const first = Array.from(this.state.selectedPaths)[0];
-            const folder = this.state.folders.find(f => f.path === first);
+            const folders = this.state.directories || this.state.folders || [];
+            const folder = folders.find(f => f.path === first);
             if (folder) {
               this.loadDirectory(folder.path);
             } else {
-              const file = this.state.files.find(f => f.path === first);
+              const files = this.state.files || [];
+              const file = files.find(f => f.path === first);
               if (file && window.sys && window.sys.openFile) {
                 window.sys.openFile(file);
               }
