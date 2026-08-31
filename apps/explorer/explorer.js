@@ -391,9 +391,9 @@
         const isLast = idx === crumbs.length - 1;
         const isRoot = idx === 0 || crumb.path === '' || crumb.path === '.';
         const contentHtml = isRoot
-          ? `<span class="crumb-root-icon" aria-hidden="true">💾</span> <span class="crumb-root-name">${this.escapeHtml(rootLabel)}</span>`
+          ? `<span class="crumb-root-icon" aria-hidden="true">💾</span> <span class="crumb-root-name" data-i18n="nav.root">${this.escapeHtml(rootLabel)}</span>`
           : `<span>${this.escapeHtml(crumb.name)}</span>`;
-        const titleAttr = isRoot ? `title="${this.escapeHtml(rootLabel)} (Racine)"` : `title="${this.escapeHtml(crumb.name)}"`;
+        const titleAttr = isRoot ? `data-i18n-title="nav.root" title="${this.escapeHtml(rootLabel)}"` : `title="${this.escapeHtml(crumb.name)}"`;
 
         if (isLast) {
           return `<span class="crumb-item crumb-active ${isRoot ? 'crumb-root-item' : ''}" ${titleAttr}>${contentHtml}</span>`;
@@ -1752,8 +1752,8 @@
       this.updateSelectionUI();
 
       // Refresh breadcrumbs
-      if (this.state && this.state.currentPath !== undefined) {
-        this.renderCrumbs(this.state.currentPath);
+      if (this.state && Array.isArray(this.state.currentBreadcrumbs)) {
+        this.renderBreadcrumbs(this.state.currentBreadcrumbs);
       }
 
       // Refresh file/folder grid

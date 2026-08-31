@@ -131,11 +131,15 @@ class AppManager {
     getAppTitle(appId) {
         const entry = this.apps.get(appId);
         const manifest = entry ? entry.manifest : null;
-        
+        const currentLocale = (window.desktop && window.desktop.state && window.desktop.state.currentLocale) || document.documentElement.lang || 'fr';
+        if (manifest && manifest.locales && manifest.locales[currentLocale] && manifest.locales[currentLocale].title) {
+            return manifest.locales[currentLocale].title;
+        }
+
         const key = `apps.${appId}.title`;
         const trans = window.desktop ? window.desktop.t(key) : (window.I18nEngine ? window.I18nEngine.t(key) : key);
         if (trans && trans !== key) return trans;
-        
+
         return (manifest && manifest.name) || appId;
     }
 
