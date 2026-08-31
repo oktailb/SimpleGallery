@@ -59,6 +59,43 @@ class I18nEngine {
         };
     }
 
+    translateDOM(scope = document) {
+        if (!scope || typeof scope.querySelectorAll !== 'function') return;
+
+        scope.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            const replacements = {};
+            if (el.dataset.i18nCount !== undefined) {
+                replacements.count = el.dataset.i18nCount;
+            }
+            if (el.dataset.i18nParams) {
+                try {
+                    Object.assign(replacements, JSON.parse(el.dataset.i18nParams));
+                } catch (e) {}
+            }
+            const trans = this.t(key, replacements);
+            if (trans && trans !== key) {
+                if (trans.includes('<') && trans.includes('>')) {
+                    el.innerHTML = trans;
+                } else {
+                    el.textContent = trans;
+                }
+            }
+        });
+
+        scope.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.dataset.i18nTitle;
+            const trans = this.t(key);
+            if (trans && trans !== key) el.setAttribute('title', trans);
+        });
+
+        scope.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.dataset.i18nPlaceholder;
+            const trans = this.t(key);
+            if (trans && trans !== key) el.setAttribute('placeholder', trans);
+        });
+    }
+
     setAvailableLocales(locales) {
         if (locales && typeof locales === 'object') {
             this.availableLocales = locales;

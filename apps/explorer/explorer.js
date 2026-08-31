@@ -1012,6 +1012,8 @@
         this.el.selectionToolbar.style.display = count > 0 ? 'flex' : 'none';
       }
       if (this.el.selectionToolbarCount) {
+        this.el.selectionToolbarCount.dataset.i18n = 'selection.selected_count';
+        this.el.selectionToolbarCount.dataset.i18nCount = count;
         this.el.selectionToolbarCount.textContent = this.t('selection.selected_count', { count });
       }
       if (this.el.mediaGrid) {

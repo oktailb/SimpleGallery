@@ -100,7 +100,7 @@
 
     <!-- Floating Multi-Selection Action Toolbar -->
     <div class="selection-toolbar" style="display: none;">
-      <span class="selection-toolbar-count"></span>
+      <span class="selection-toolbar-count" data-i18n="selection.selected_count" data-i18n-count="0"></span>
       <button type="button" class="selection-copy-btn selection-btn" data-i18n-title="clipboard.copy_tooltip" title="<?php echo htmlspecialchars(__t('clipboard.copy_tooltip'), ENT_QUOTES, 'UTF-8'); ?>">📋</button>
       <button type="button" class="selection-cut-btn selection-btn" data-i18n-title="clipboard.cut_tooltip" title="<?php echo htmlspecialchars(__t('clipboard.cut_tooltip'), ENT_QUOTES, 'UTF-8'); ?>">✂️</button>
       <button type="button" class="selection-delete-btn selection-btn" data-i18n-title="clipboard.delete_tooltip" title="<?php echo htmlspecialchars(__t('clipboard.delete_tooltip'), ENT_QUOTES, 'UTF-8'); ?>" style="color: var(--danger-color, #ef4444);">🗑️</button>

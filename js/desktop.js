@@ -291,7 +291,16 @@
     applyTranslations() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
-        const trans = this.t(key);
+        const replacements = {};
+        if (el.dataset.i18nCount !== undefined) {
+          replacements.count = el.dataset.i18nCount;
+        }
+        if (el.dataset.i18nParams) {
+          try {
+            Object.assign(replacements, JSON.parse(el.dataset.i18nParams));
+          } catch (e) {}
+        }
+        const trans = this.t(key, replacements);
         if (trans && trans !== key) {
           if (trans.includes('<') && trans.includes('>')) {
             el.innerHTML = trans;
