@@ -807,6 +807,18 @@
       this.updateTaskbar();
     }
 
+    maximizeWindow(id) {
+      this.toggleMaximize(id);
+    }
+
+    minimizeWindow(id) {
+      this.minimize(id);
+    }
+
+    restoreWindow(id) {
+      this.restore(id);
+    }
+
     closeWindow(id) {
       const win = this.windows.get(id);
       if (!win) return;

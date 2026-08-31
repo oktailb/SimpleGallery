@@ -142,7 +142,11 @@
 
       this.register('alt+m', () => {
         if (window.WindowManager && window.WindowManager.activeWindowId) {
-          window.WindowManager.maximizeWindow(window.WindowManager.activeWindowId);
+          if (typeof window.WindowManager.toggleMaximize === 'function') {
+            window.WindowManager.toggleMaximize(window.WindowManager.activeWindowId);
+          } else if (typeof window.WindowManager.maximizeWindow === 'function') {
+            window.WindowManager.maximizeWindow(window.WindowManager.activeWindowId);
+          }
         }
       }, { description: 'Agrandir / Restaurer la fenêtre active', forceInInputs: true });
 
