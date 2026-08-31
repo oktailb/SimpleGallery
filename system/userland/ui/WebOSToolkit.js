@@ -154,6 +154,14 @@
 
     confirmDialog(options = {}) {
       return new Promise((resolve) => {
+        let isResolved = false;
+        const doResolve = (val) => {
+          if (!isResolved) {
+            isResolved = true;
+            resolve(val);
+          }
+        };
+
         const okText = options.okText || this.t('dialog.ok');
         const cancelText = options.cancelText || this.t('dialog.cancel');
         const isDanger = options.danger || false;
@@ -179,23 +187,31 @@
           body: `<p style="margin:0;">${options.message || ''}</p>`,
           footer: footer,
           width: options.width || 420,
-          onClose: () => resolve(false)
+          onClose: () => doResolve(false)
         });
 
         btnCancel.addEventListener('click', () => {
+          doResolve(false);
           modal.close();
-          resolve(false);
         });
 
         btnOk.addEventListener('click', () => {
+          doResolve(true);
           modal.close();
-          resolve(true);
         });
       });
     }
 
     alertDialog(options = {}) {
       return new Promise((resolve) => {
+        let isResolved = false;
+        const doResolve = () => {
+          if (!isResolved) {
+            isResolved = true;
+            resolve();
+          }
+        };
+
         const okText = options.okText || this.t('dialog.ok');
 
         const btnOk = document.createElement('button');
@@ -208,18 +224,26 @@
           body: `<p style="margin:0;">${options.message || ''}</p>`,
           footer: btnOk,
           width: options.width || 400,
-          onClose: () => resolve()
+          onClose: () => doResolve()
         });
 
         btnOk.addEventListener('click', () => {
+          doResolve();
           modal.close();
-          resolve();
         });
       });
     }
 
     promptDialog(options = {}) {
       return new Promise((resolve) => {
+        let isResolved = false;
+        const doResolve = (val) => {
+          if (!isResolved) {
+            isResolved = true;
+            resolve(val);
+          }
+        };
+
         const okText = options.okText || this.t('dialog.ok');
         const cancelText = options.cancelText || this.t('dialog.cancel');
 
@@ -246,25 +270,25 @@
         footer.appendChild(btnOk);
 
         const modal = this.createModal({
-          title: options.title || this.t('dialog.prompt_title', 'Saisie'),
+          title: options.title || this.t('dialog.prompt_title'),
           icon: options.icon || '✏️',
           body: body,
           footer: footer,
           width: options.width || 420,
-          onClose: () => resolve(null)
+          onClose: () => doResolve(null)
         });
 
         setTimeout(() => input.focus(), 100);
 
         const submit = () => {
           const val = input.value;
+          doResolve(val);
           modal.close();
-          resolve(val);
         };
 
         btnCancel.addEventListener('click', () => {
+          doResolve(null);
           modal.close();
-          resolve(null);
         });
 
         btnOk.addEventListener('click', submit);
