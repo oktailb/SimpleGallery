@@ -140,6 +140,9 @@
         dropZoneOverlay: root.querySelector('.drop-zone-overlay'),
         selectionToolbar: root.querySelector('.selection-toolbar'),
         selectionToolbarCount: root.querySelector('.selection-toolbar-count'),
+        selectionCopyBtn: root.querySelector('.selection-copy-btn'),
+        selectionCutBtn: root.querySelector('.selection-cut-btn'),
+        selectionDeleteBtn: root.querySelector('.selection-delete-btn'),
         selectionInfoBtn: root.querySelector('.selection-info-btn'),
         selectionSelectAllBtn: root.querySelector('.selection-select-all-btn'),
         selectionClearBtn: root.querySelector('.selection-clear-btn'),
@@ -1257,9 +1260,38 @@
     // ADMIN EXPLORER MODALS
     // -------------------------------------------------------------
     openCreateFolderModal() {
-      this.manager.activeModalInstance = this;
       const canCreate = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_create_folder);
-      if (!canCreate || !this.el.createFolderModal) return;
+      if (!canCreate) return;
+
+      if (window.sys && window.sys.dialog && typeof window.sys.dialog.prompt === 'function') {
+        window.sys.dialog.prompt(
+          this.t('folder.new_name_placeholder') || 'Nom du nouveau dossier :',
+          this.t('nav.create_folder') || 'Créer un sous-dossier',
+          ''
+        ).then(async name => {
+          if (name && name.trim()) {
+            try {
+              const json = await window.sys.api.fs.createFolder(this.state.currentPath, name.trim());
+              if (json.success) {
+                this.showToast(this.t('folder.create_success') || 'Dossier créé avec succès', 'success');
+                if (window.EventBus) {
+                  window.EventBus.emit('fs:changed', { action: 'create_folder', dir: this.state.currentPath });
+                } else {
+                  await this.loadDirectory(this.state.currentPath);
+                }
+              } else {
+                this.showToast('⚠️ ' + (json.error || 'Erreur lors de la création'), 'error');
+              }
+            } catch (err) {
+              this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
+            }
+          }
+        });
+        return;
+      }
+
+      this.manager.activeModalInstance = this;
+      if (!this.el.createFolderModal) return;
       if (this.el.createFolderError) this.el.createFolderError.style.display = 'none';
       this.el.createFolderModal.style.display = 'flex';
       this.el.createFolderModal.classList.add('open');
@@ -1299,11 +1331,27 @@
     }
 
     openDeleteConfirmModal(path, name, type = 'file') {
+      const typeLabel = (type === 'folder') ? (this.t('delete_confirm.type_folder') || 'le dossier') : (this.t('delete_confirm.type_file') || 'le fichier');
+      const message = `Êtes-vous sûr de vouloir supprimer définitivement ${typeLabel} « ${name} » ?`;
+
+      if (window.sys && window.sys.dialog && typeof window.sys.dialog.confirm === 'function') {
+        window.sys.dialog.confirm(
+          message,
+          this.t('delete_confirm.title') || 'Confirmation de suppression',
+          true
+        ).then(async confirmed => {
+          if (confirmed) {
+            this.pendingDeletePath = path;
+            await this.confirmDeleteItem();
+          }
+        });
+        return;
+      }
+
       this.manager.activeModalInstance = this;
       this.pendingDeletePath = path;
       this.pendingDeleteType = type;
       if (!this.el.deleteConfirmModal) return;
-      const typeLabel = (type === 'folder') ? (this.t('delete_confirm.type_folder') || 'le dossier') : (this.t('delete_confirm.type_file') || 'le fichier');
       if (this.el.deleteConfirmMessage) {
         this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer définitivement ${typeLabel} <strong>« ${this.escapeHtml(name)} »</strong> ?`;
       }
@@ -1339,6 +1387,50 @@
         }
       } catch (err) {
         this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
+      }
+    }
+
+    deleteSelection() {
+      if (!this.state.selectedPaths || this.state.selectedPaths.size === 0) return;
+      const canDelete = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_delete);
+      if (!canDelete) {
+        this.showToast('⚠️ Action non autorisée', 'error');
+        return;
+      }
+
+      const selected = Array.from(this.state.selectedPaths);
+      if (selected.length === 1) {
+        const first = selected[0];
+        const name = first.split('/').pop();
+        const folders = this.state.directories || this.state.folders || [];
+        const isFolder = folders.some(f => f.path === first);
+        this.openDeleteConfirmModal(first, name, isFolder ? 'folder' : 'file');
+      } else {
+        if (window.sys && window.sys.dialog && typeof window.sys.dialog.confirm === 'function') {
+          window.sys.dialog.confirm(
+            `Êtes-vous sûr de vouloir supprimer définitivement ${selected.length} éléments sélectionnés ?`,
+            'Suppression multiple',
+            true
+          ).then(async confirmed => {
+            if (confirmed) {
+              let deletedCount = 0;
+              for (const p of selected) {
+                try {
+                  const res = await window.sys.api.fs.deleteItem(p);
+                  if (res && res.success) deletedCount++;
+                } catch (err) {}
+              }
+              this.state.selectedPaths.clear();
+              this.updateSelectionToolbar();
+              this.showToast(`${deletedCount} élément(s) supprimé(s)`, 'success');
+              if (window.EventBus) {
+                window.EventBus.emit('fs:changed', { action: 'delete_item', dir: this.state.currentPath });
+              } else {
+                await this.loadDirectory(this.state.currentPath);
+              }
+            }
+          });
+        }
       }
     }
 
@@ -1654,11 +1746,7 @@
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
           if (this.state.selectedPaths && this.state.selectedPaths.size > 0 && (this.state.isAdmin || (this.state.userRights && this.state.userRights.can_delete))) {
             e.preventDefault();
-            const first = Array.from(this.state.selectedPaths)[0];
-            const name = first.split('/').pop();
-            const folders = this.state.directories || this.state.folders || [];
-            const isFolder = folders.some(f => f.path === first);
-            this.openDeleteConfirmModal(first, name, isFolder ? 'folder' : 'file');
+            this.deleteSelection();
           }
         } else if (e.key === ' ' || e.key === 'Spacebar') {
           if (this.state.selectedPaths && this.state.selectedPaths.size > 0) {
@@ -1746,6 +1834,9 @@
       if (this.el.folderMapBtn) this.el.folderMapBtn.onclick = () => this.openMapModal();
       if (this.el.mapModalCloseBtn) this.el.mapModalCloseBtn.onclick = () => this.closeMapModal();
       if (this.el.exitSearchBtn) this.el.exitSearchBtn.onclick = () => this.exitSearch();
+      if (this.el.selectionCopyBtn) this.el.selectionCopyBtn.onclick = () => this.copySelection();
+      if (this.el.selectionCutBtn) this.el.selectionCutBtn.onclick = () => this.cutSelection();
+      if (this.el.selectionDeleteBtn) this.el.selectionDeleteBtn.onclick = () => this.deleteSelection();
       if (this.el.selectionSelectAllBtn) this.el.selectionSelectAllBtn.onclick = () => this.selectAll();
       if (this.el.selectionClearBtn) this.el.selectionClearBtn.onclick = () => this.clearSelection();
 

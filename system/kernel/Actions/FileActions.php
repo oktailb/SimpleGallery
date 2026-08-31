@@ -466,7 +466,9 @@ class FileActions {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_delete_denied')]];
             }
 
-            $target_param = $_POST['target'] ?? $_GET['target'] ?? $raw_body['target'] ?? '';
+            $target_param = $_POST['target'] ?? $_GET['target'] ?? $raw_body['target']
+                ?? $_POST['target_path'] ?? $_GET['target_path'] ?? $raw_body['target_path']
+                ?? $_POST['path'] ?? $_GET['path'] ?? $raw_body['path'] ?? '';
             $target_full = PathValidator::canonicalizeAndValidate($target_param, $base_dir, true, false);
 
             if ($target_full === null || !file_exists($target_full)) {

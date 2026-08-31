@@ -101,6 +101,9 @@
     <!-- Floating Multi-Selection Action Toolbar -->
     <div class="selection-toolbar" style="display: none;">
       <span class="selection-toolbar-count"></span>
+      <button type="button" class="selection-copy-btn selection-btn" title="Copier (Ctrl+C)">📋</button>
+      <button type="button" class="selection-cut-btn selection-btn" title="Couper (Ctrl+X)">✂️</button>
+      <button type="button" class="selection-delete-btn selection-btn" title="Supprimer (Suppr)" style="color: var(--danger-color, #ef4444);">🗑️</button>
       <button type="button" class="selection-info-btn selection-btn" data-i18n="lightbox.metadata_btn"><?php echo htmlspecialchars(__t('lightbox.metadata_btn'), ENT_QUOTES, 'UTF-8'); ?></button>
       <button type="button" class="selection-select-all-btn selection-btn" data-i18n="selection.select_all"><?php echo htmlspecialchars(__t('selection.select_all'), ENT_QUOTES, 'UTF-8'); ?></button>
       <button type="button" class="selection-clear-btn selection-btn" data-i18n="selection.clear"><?php echo htmlspecialchars(__t('selection.clear'), ENT_QUOTES, 'UTF-8'); ?></button>
