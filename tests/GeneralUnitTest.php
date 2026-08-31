@@ -127,6 +127,7 @@ class GeneralUnitTestSuite {
         $this->testTribuneAppAndMultiBouchot();
         $this->testAutostartConfiguration();
         $this->testDisabledAppsFilteringAndTribuneStandalone();
+        $this->testClipboardAndKeyboardShortcuts();
 
         $_SESSION = $saved_session;
 
@@ -768,6 +769,46 @@ class GeneralUnitTestSuite {
         // 3. Tribune app.js auto-mount
         $tribune_js = file_get_contents($this->base_dir . '/apps/tribune/app.js');
         $this->assert("Tribune app.js intègre la fonction d'auto-montage standalone", strpos($tribune_js, "document.getElementById('standalone-container')") !== false);
+    }
+
+    public function testClipboardAndKeyboardShortcuts(): void {
+        echo "\n⌨️ [17/17] Test du Presse-papiers Universel & Raccourcis Clavier WebOS...\n";
+
+        // 1. Files existence & index.php inclusion
+        $clipboard_file = $this->base_dir . '/system/userland/services/ClipboardService.js';
+        $shortcut_file = $this->base_dir . '/system/userland/core/ShortcutManager.js';
+        $this->assert("ClipboardService.js présent", file_exists($clipboard_file));
+        $this->assert("ShortcutManager.js présent", file_exists($shortcut_file));
+
+        $index_html = file_get_contents($this->base_dir . '/index.php');
+        $this->assert("index.php inclut ClipboardService.js", strpos($index_html, 'ClipboardService.js') !== false);
+        $this->assert("index.php inclut ShortcutManager.js", strpos($index_html, 'ShortcutManager.js') !== false);
+
+        // 2. ActionRouter declares copy_item
+        $this->assert("ActionRouter déclare l'action copy_item dans les actions mutantes", in_array('copy_item', \SimpleGallery\Kernel\Actions\ActionRouter::MUTATING_ACTIONS, true));
+
+        // 3. Backend copy_item functional execution
+        $sample_src = $this->test_dir . '/sample_for_copy.txt';
+        file_put_contents($sample_src, "Original content for copy test");
+        $rel_src = ltrim(str_replace($this->base_dir, '', $sample_src), '/');
+        $rel_target_dir = ltrim(str_replace($this->base_dir, '', $this->test_dir), '/');
+
+        $_SESSION['sg_admin_logged'] = true;
+        $copy_res = \SimpleGallery\Kernel\Actions\FileActions::handle('copy_item', [
+            'source'     => $rel_src,
+            'target_dir' => $rel_target_dir
+        ], ['base_dir' => $this->base_dir]);
+        unset($_SESSION['sg_admin_logged']);
+
+        $this->assert("FileActions::copy_item renvoie un statut 200", ($copy_res['status'] ?? 0) === 200);
+        $this->assert("FileActions::copy_item indique success = true", ($copy_res['data']['success'] ?? false) === true);
+        $this->assert("Le fichier copié existe sur le disque avec suffixe _copy", file_exists($this->test_dir . '/sample_for_copy_copy.txt'));
+
+        // 4. Explorer integration
+        $explorer_js = file_get_contents($this->base_dir . '/apps/explorer/explorer.js');
+        $this->assert("Explorer implémente copySelection", strpos($explorer_js, 'copySelection') !== false);
+        $this->assert("Explorer implémente cutSelection", strpos($explorer_js, 'cutSelection') !== false);
+        $this->assert("Explorer implémente pasteClipboard", strpos($explorer_js, 'pasteClipboard') !== false);
     }
 
 }

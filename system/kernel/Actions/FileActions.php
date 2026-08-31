@@ -403,6 +403,64 @@ class FileActions {
             return ['status' => 500, 'data' => ['success' => false, 'error' => __t('api.err_move_failed')]];
         }
 
+        if ($action === 'copy_item') {
+            if (!PermissionsManager::hasPermission('can_upload', $base_dir) && !AuthManager::isAdmin()) {
+                return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_permission_denied')]];
+            }
+
+            $source_param = $_POST['source'] ?? $raw_body['source'] ?? '';
+            $target_dir_param = $_POST['target_dir'] ?? $raw_body['target_dir'] ?? '';
+            $new_name_param = isset($_POST['new_name']) ? trim($_POST['new_name']) : (isset($raw_body['new_name']) ? trim($raw_body['new_name']) : null);
+
+            $source_full = PathValidator::canonicalizeAndValidate($source_param, $base_dir, true, false);
+            $target_dir_full = PathValidator::sanitizeDirectory($target_dir_param, $base_dir);
+
+            if ($source_full === null || $target_dir_full === null || !file_exists($source_full) || !is_dir($target_dir_full)) {
+                return ['status' => 404, 'data' => ['success' => false, 'error' => __t('api.err_source_or_dest_invalid')]];
+            }
+
+            $dest_name = $new_name_param !== null ? basename($new_name_param) : basename($source_full);
+            if (empty($dest_name) || $dest_name[0] === '.' || preg_match('/[\/\\\\:\*\?"<>\|]/', $dest_name)) {
+                return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_invalid_name')]];
+            }
+
+            $destination = $target_dir_full . '/' . $dest_name;
+            if (file_exists($destination)) {
+                $ext = pathinfo($dest_name, PATHINFO_EXTENSION);
+                $name_without_ext = pathinfo($dest_name, PATHINFO_FILENAME);
+                $counter = 1;
+                do {
+                    $candidate = $name_without_ext . '_copy' . ($counter > 1 ? $counter : '') . ($ext ? '.' . $ext : '');
+                    $destination = $target_dir_full . '/' . $candidate;
+                    $counter++;
+                } while (file_exists($destination));
+            }
+
+            $copy_recursive = function(string $src, string $dst) use (&$copy_recursive): bool {
+                if (is_dir($src)) {
+                    @mkdir($dst, 0755, true);
+                    $files = @scandir($src) ?: [];
+                    foreach ($files as $file) {
+                        if ($file === '.' || $file === '..') continue;
+                        if (!$copy_recursive($src . '/' . $file, $dst . '/' . $file)) return false;
+                    }
+                    return true;
+                }
+                return @copy($src, $dst);
+            };
+
+            if ($copy_recursive($source_full, $destination)) {
+                CacheManager::invalidateDirCache($target_dir_full, $base_dir, $thumb_dir_name);
+                return ['status' => 200, 'data' => [
+                    'success'     => true,
+                    'message'     => 'Élément copié avec succès',
+                    'destination' => basename($destination)
+                ]];
+            }
+
+            return ['status' => 500, 'data' => ['success' => false, 'error' => 'Erreur lors de la copie']];
+        }
+
         if ($action === 'delete_item' || $action === 'delete_file' || $action === 'delete_folder') {
             if (!PermissionsManager::hasPermission('can_delete', $base_dir)) {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_delete_denied')]];

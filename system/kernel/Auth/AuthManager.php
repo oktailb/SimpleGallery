@@ -41,6 +41,13 @@ class AuthManager {
     }
 
     /**
+     * Alias for isAdminLoggedIn
+     */
+    public static function isAdmin(): bool {
+        return self::isAdminLoggedIn();
+    }
+
+    /**
      * Get administrator password hash from .admin_password_hash or config fallback
      */
     public static function getPasswordHash(string $legacy_hash = '', string $base_dir = ''): string {

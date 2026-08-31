@@ -601,7 +601,51 @@ window.sys.filePicker.openModal({
 });
 ```
 
-### 7.7 `MediaViewerRegistry` (`window.sys.mediaViewer`)
+### 7.7 `ClipboardService` (`window.sys.clipboard`)
+
+Presse-papiers universel WebOS avec interopérabilité presse-papiers système du navigateur :
+
+```javascript
+// Copier des fichiers
+window.sys.clipboard.copyFiles([
+  { path: 'photos/vacances.jpg', name: 'vacances.jpg' }
+]);
+
+// Couper des fichiers (déplacement)
+window.sys.clipboard.cutFiles(['photos/note.txt']);
+
+// Coller les données dans le presse-papiers
+const clip = window.sys.clipboard.paste();
+// -> { type: 'files', data: [...], op: 'copy' | 'cut' }
+
+// Copier du texte libre
+window.sys.clipboard.copy('Hello WebOS', 'text');
+```
+
+### 7.8 `ShortcutManager` (`window.sys.shortcuts`)
+
+Gestionnaire centralisé des raccourcis clavier pour le bureau, les fenêtres et l'explorateur :
+
+```javascript
+// Enregistrer un raccourci personnalisé
+window.sys.shortcuts.register('ctrl+shift+k', () => {
+  console.log('Raccourci exécuté !');
+}, { description: 'Mon Raccourci' });
+
+// Raccourcis Système par défaut :
+// - Alt+W : Fermer la fenêtre active
+// - Alt+M : Agrandir / Restaurer la fenêtre active
+// - Alt+H / Ctrl+Alt+D : Afficher le bureau (minimiser tout)
+// - Ctrl+Alt+T : Ouvrir le Moniteur Système
+// - Ctrl+Alt+E : Ouvrir l'Explorateur de Fichiers
+// - Ctrl+Alt+S : Ouvrir les Paramètres
+// - Ctrl+Alt+B : Ouvrir la Tribune Libre
+// - Ctrl+C / Ctrl+X / Ctrl+V : Copier / Couper / Coller dans l'explorateur
+// - Espace : Aperçu rapide du fichier sélectionné
+// - Suppr / Retour arrière : Supprimer l'élément sélectionné
+```
+
+### 7.9 `MediaViewerRegistry` (`window.sys.mediaViewer`)
 
 ```javascript
 // Ouvrir un fichier dans son application lectrice associée
@@ -611,7 +655,7 @@ window.sys.mediaViewer.openFile({ path: 'movies/film.mp4', name: 'film.mp4' });
 window.sys.mediaViewer.register(['text/plain', 'text/markdown'], 'markdown-viewer');
 ```
 
-### 7.8 `I18nEngine` (`window.I18nEngine`)
+### 7.10 `I18nEngine` (`window.I18nEngine`)
 
 ```javascript
 // Traduire une clé (avec interpolation optionnelle)

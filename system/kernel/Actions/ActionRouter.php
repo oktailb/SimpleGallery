@@ -14,6 +14,7 @@ class ActionRouter {
         'upload_media',
         'create_folder',
         'move_item',
+        'copy_item',
         'delete_item',
         'delete_file',
         'delete_folder',
@@ -83,6 +84,7 @@ class ActionRouter {
         'upload_file'             => FileActions::class,
         'upload_media'            => FileActions::class,
         'move_item'               => FileActions::class,
+        'copy_item'               => FileActions::class,
 
         // Tribune & Bouchot Actions
         'tribune_boards_get'      => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,

@@ -183,7 +183,7 @@ class SystemActions {
         }
 
         if ($action === 'set_app_enabled') {
-            if (!AuthManager::isAdmin()) {
+            if (!AuthManager::isAdminLoggedIn()) {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_admin_required')]];
             }
             $app_id = trim((string)($raw_body['app_id'] ?? $_POST['app_id'] ?? ''));

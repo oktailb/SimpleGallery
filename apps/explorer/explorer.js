@@ -1549,10 +1549,138 @@
       `;
     }
 
+    copySelection() {
+      const selectedPaths = Array.from(this.state.selectedPaths);
+      if (selectedPaths.length === 0) return;
+      const items = [];
+      selectedPaths.forEach(p => {
+        const f = this.state.files.find(item => item.path === p);
+        const folder = this.state.folders.find(item => item.path === p);
+        if (f) items.push(f);
+        else if (folder) items.push({ ...folder, is_folder: true });
+        else items.push({ path: p, name: p.split('/').pop() });
+      });
+
+      if (window.sys && window.sys.clipboard) {
+        window.sys.clipboard.copyFiles(items);
+        this.showToast(`${items.length} élément(s) copié(s)`, 'info');
+      }
+    }
+
+    cutSelection() {
+      const selectedPaths = Array.from(this.state.selectedPaths);
+      if (selectedPaths.length === 0) return;
+      const items = [];
+      selectedPaths.forEach(p => {
+        const f = this.state.files.find(item => item.path === p);
+        const folder = this.state.folders.find(item => item.path === p);
+        if (f) items.push(f);
+        else if (folder) items.push({ ...folder, is_folder: true });
+        else items.push({ path: p, name: p.split('/').pop() });
+      });
+
+      if (window.sys && window.sys.clipboard) {
+        window.sys.clipboard.cutFiles(items);
+        this.showToast(`${items.length} élément(s) coupé(s)`, 'info');
+      }
+    }
+
+    async pasteClipboard() {
+      if (!window.sys || !window.sys.clipboard || !window.sys.clipboard.hasData()) return;
+      const clip = window.sys.clipboard.paste();
+      if (clip.type !== 'files' || !Array.isArray(clip.data) || clip.data.length === 0) return;
+
+      const dest = this.state.currentPath;
+      let successCount = 0;
+
+      for (const item of clip.data) {
+        const sourcePath = item.path || item;
+        try {
+          if (clip.op === 'cut') {
+            const res = await window.sys.api.fs.moveItem(sourcePath, dest);
+            if (res && res.success) successCount++;
+          } else {
+            const res = await window.sys.api.fs.copyItem(sourcePath, dest);
+            if (res && res.success) successCount++;
+          }
+        } catch (e) {}
+      }
+
+      if (clip.op === 'cut') {
+        window.sys.clipboard.clear();
+      }
+
+      if (successCount > 0) {
+        this.showToast(`${successCount} élément(s) collé(s)`, 'success');
+        if (window.EventBus) {
+          window.EventBus.emit('fs:changed', { action: clip.op, dir: dest });
+        } else {
+          await this.loadDirectory(this.state.currentPath);
+        }
+      }
+    }
+
     // -------------------------------------------------------------
     // INSTANCE EVENTS & DRAG-AND-DROP RECEPTION
     // -------------------------------------------------------------
     bindEvents() {
+      // Keyboard shortcuts within Explorer instance
+      this.containerEl.setAttribute('tabindex', '-1');
+      this.containerEl.addEventListener('keydown', (e) => {
+        const tag = e.target.tagName ? e.target.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) {
+          return;
+        }
+
+        if (e.ctrlKey || e.metaKey) {
+          const key = e.key.toLowerCase();
+          if (key === 'c') {
+            e.preventDefault();
+            this.copySelection();
+          } else if (key === 'x') {
+            e.preventDefault();
+            this.cutSelection();
+          } else if (key === 'v') {
+            e.preventDefault();
+            this.pasteClipboard();
+          } else if (key === 'a') {
+            e.preventDefault();
+            this.selectAll();
+          }
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (this.state.selectedPaths.size > 0 && (this.state.isAdmin || (this.state.userRights && this.state.userRights.can_delete))) {
+            e.preventDefault();
+            const first = Array.from(this.state.selectedPaths)[0];
+            const name = first.split('/').pop();
+            const isFolder = this.state.folders.some(f => f.path === first);
+            this.openDeleteConfirmModal(first, name, isFolder ? 'folder' : 'file');
+          }
+        } else if (e.key === ' ' || e.key === 'Spacebar') {
+          if (this.state.selectedPaths.size > 0) {
+            e.preventDefault();
+            const first = Array.from(this.state.selectedPaths)[0];
+            const file = this.state.files.find(f => f.path === first);
+            if (file && window.sys && window.sys.openFile) {
+              window.sys.openFile(file);
+            }
+          }
+        } else if (e.key === 'Enter') {
+          if (this.state.selectedPaths.size > 0) {
+            e.preventDefault();
+            const first = Array.from(this.state.selectedPaths)[0];
+            const folder = this.state.folders.find(f => f.path === first);
+            if (folder) {
+              this.loadDirectory(folder.path);
+            } else {
+              const file = this.state.files.find(f => f.path === first);
+              if (file && window.sys && window.sys.openFile) {
+                window.sys.openFile(file);
+              }
+            }
+          }
+        }
+      });
+
       // Cross-window and OS file drop target on main instance container
       this.containerEl.addEventListener('dragover', (e) => {
         e.preventDefault();
