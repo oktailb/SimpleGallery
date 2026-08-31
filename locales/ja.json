@@ -98,8 +98,16 @@
     "selection.selected_count": "{count} 件選択中",
     "selection.select_all": "すべて選択",
     "selection.clear": "選択を解除",
-    "selection.download_zip": "選択項目をダウンロード (.zip)",
+    "selection.download_zip": "選択項目を一括ダウンロード (.zip)",
     "selection.delete": "選択項目を削除",
+
+    "clipboard.copy_tooltip": "コピー (Ctrl+C)",
+    "clipboard.cut_tooltip": "切り取り (Ctrl+X)",
+    "clipboard.delete_tooltip": "削除 (Del)",
+    "clipboard.items_copied": "{count} 件の項目をコピーしました",
+    "clipboard.items_cut": "{count} 件の項目を切り取りました",
+    "clipboard.items_pasted": "{count} 件の項目を貼り付けました",
+    "clipboard.items_deleted": "{count} 件の項目を削除しました",
 
     "lightbox.preview_title": "メディアプレビュー",
     "lightbox.prev": "前へ",

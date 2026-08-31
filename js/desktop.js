@@ -269,15 +269,21 @@
 
       // Notify running apps of locale change
       if (window.explorerApp) {
-        if (typeof window.explorerApp.updateMenuBarForActiveInstance === 'function') {
-          window.explorerApp.updateMenuBarForActiveInstance();
-        }
-        if (window.explorerApp.instances) {
-          window.explorerApp.instances.forEach(inst => {
-            if (typeof inst.applyFilterAndRender === 'function') {
-              inst.applyFilterAndRender();
-            }
-          });
+        if (typeof window.explorerApp.onLocaleChanged === 'function') {
+          window.explorerApp.onLocaleChanged();
+        } else {
+          if (typeof window.explorerApp.updateMenuBarForActiveInstance === 'function') {
+            window.explorerApp.updateMenuBarForActiveInstance();
+          }
+          if (window.explorerApp.instances) {
+            window.explorerApp.instances.forEach(inst => {
+              if (typeof inst.onLocaleChanged === 'function') {
+                inst.onLocaleChanged();
+              } else if (typeof inst.applyFilterAndRender === 'function') {
+                inst.applyFilterAndRender();
+              }
+            });
+          }
         }
       }
     }

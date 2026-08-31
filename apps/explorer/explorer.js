@@ -1661,7 +1661,7 @@
 
       if (window.sys && window.sys.clipboard) {
         window.sys.clipboard.copyFiles(items);
-        this.showToast(`${items.length} élément(s) copié(s)`, 'info');
+        this.showToast(this.t('clipboard.items_copied', { count: items.length }), 'info');
       }
     }
 
@@ -1681,7 +1681,7 @@
 
       if (window.sys && window.sys.clipboard) {
         window.sys.clipboard.cutFiles(items);
-        this.showToast(`${items.length} élément(s) coupé(s)`, 'info');
+        this.showToast(this.t('clipboard.items_cut', { count: items.length }), 'info');
       }
     }
 
@@ -1711,12 +1711,55 @@
       }
 
       if (successCount > 0) {
-        this.showToast(`${successCount} élément(s) collé(s)`, 'success');
+        this.showToast(this.t('clipboard.items_pasted', { count: successCount }), 'success');
         if (window.EventBus) {
           window.EventBus.emit('fs:changed', { action: clip.op, dir: dest });
         } else {
           await this.loadDirectory(this.state.currentPath);
         }
+      }
+    }
+
+    onLocaleChanged() {
+      // Re-apply DOM translations inside this instance container
+      if (this.containerEl) {
+        this.containerEl.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.dataset.i18n;
+          const trans = this.t(key);
+          if (trans && trans !== key) {
+            if (trans.includes('<') && trans.includes('>')) {
+              el.innerHTML = trans;
+            } else {
+              el.textContent = trans;
+            }
+          }
+        });
+
+        this.containerEl.querySelectorAll('[data-i18n-title]').forEach(el => {
+          const key = el.dataset.i18nTitle;
+          const trans = this.t(key);
+          if (trans && trans !== key) el.setAttribute('title', trans);
+        });
+
+        this.containerEl.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.dataset.i18nPlaceholder;
+          const trans = this.t(key);
+          if (trans && trans !== key) el.setAttribute('placeholder', trans);
+        });
+      }
+
+      // Update dynamic selection UI
+      this.updateSelectionUI();
+
+      // Refresh breadcrumbs
+      if (this.state && this.state.currentPath !== undefined) {
+        this.renderCrumbs(this.state.currentPath);
+      }
+
+      // Refresh file/folder grid
+      this.applyFilterAndRender();
+      if (typeof this.updateSortUI === 'function') {
+        this.updateSortUI();
       }
     }
 
@@ -1751,6 +1794,11 @@
           if (this.state.selectedPaths && this.state.selectedPaths.size > 0 && (this.state.isAdmin || (this.state.userRights && this.state.userRights.can_delete))) {
             e.preventDefault();
             this.deleteSelection();
+          }
+        } else if (e.key === 'Escape') {
+          if (this.state.selectedPaths && this.state.selectedPaths.size > 0) {
+            e.preventDefault();
+            this.clearSelection();
           }
         } else if (e.key === ' ' || e.key === 'Spacebar') {
           if (this.state.selectedPaths && this.state.selectedPaths.size > 0) {

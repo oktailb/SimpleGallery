@@ -96,10 +96,18 @@
     "stats.summary": "{folders} folders • {files} files",
 
     "selection.selected_count": "{count} item(s) selected",
-    "selection.select_all": "Select all",
-    "selection.clear": "Clear selection",
-    "selection.download_zip": "Download selection (.zip)",
-    "selection.delete": "Delete selection",
+    "selection.select_all": "Select All",
+    "selection.clear": "Clear Selection",
+    "selection.download_zip": "Download Selection (.zip)",
+    "selection.delete": "Delete Selection",
+
+    "clipboard.copy_tooltip": "Copy (Ctrl+C)",
+    "clipboard.cut_tooltip": "Cut (Ctrl+X)",
+    "clipboard.delete_tooltip": "Delete (Del)",
+    "clipboard.items_copied": "{count} item(s) copied",
+    "clipboard.items_cut": "{count} item(s) cut",
+    "clipboard.items_pasted": "{count} item(s) pasted",
+    "clipboard.items_deleted": "{count} item(s) deleted",
 
     "lightbox.preview_title": "Media Preview",
     "lightbox.prev": "Previous",

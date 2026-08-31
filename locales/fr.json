@@ -101,6 +101,14 @@
     "selection.download_zip": "Télécharger la sélection (.zip)",
     "selection.delete": "Supprimer la sélection",
 
+    "clipboard.copy_tooltip": "Copier (Ctrl+C)",
+    "clipboard.cut_tooltip": "Couper (Ctrl+X)",
+    "clipboard.delete_tooltip": "Supprimer (Suppr)",
+    "clipboard.items_copied": "{count} élément(s) copié(s)",
+    "clipboard.items_cut": "{count} élément(s) coupé(s)",
+    "clipboard.items_pasted": "{count} élément(s) collé(s)",
+    "clipboard.items_deleted": "{count} élément(s) supprimé(s)",
+
     "lightbox.preview_title": "Aperçu média",
     "lightbox.prev": "Précédent",
     "lightbox.next": "Suivant",
