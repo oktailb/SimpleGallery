@@ -395,6 +395,13 @@
     "delete_confirm.cancel": "キャンセル",
     "delete_confirm.confirm": "完全に削除",
 
+    "dialog.ok": "OK",
+    "dialog.cancel": "キャンセル",
+    "dialog.confirm_title": "確認",
+    "dialog.alert_title": "お知らせ",
+    "dialog.prompt_title": "入力",
+    "dialog.warning": "警告",
+
     "comment.title": "✏️ キャプションを編集",
     "comment.placeholder": "このメディアのキャプションを入力...",
 

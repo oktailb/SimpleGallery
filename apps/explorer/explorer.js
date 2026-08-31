@@ -1331,13 +1331,15 @@
     }
 
     openDeleteConfirmModal(path, name, type = 'file') {
-      const typeLabel = (type === 'folder') ? (this.t('delete_confirm.type_folder') || 'le dossier') : (this.t('delete_confirm.type_file') || 'le fichier');
-      const message = `Êtes-vous sûr de vouloir supprimer définitivement ${typeLabel} « ${name} » ?`;
+      const message = (type === 'folder')
+        ? this.t('delete_confirm.prompt_folder', { name })
+        : this.t('delete_confirm.prompt_file', { name });
+      const title = this.t('delete_confirm.title');
 
       if (window.sys && window.sys.dialog && typeof window.sys.dialog.confirm === 'function') {
         window.sys.dialog.confirm(
           message,
-          this.t('delete_confirm.title') || 'Confirmation de suppression',
+          title,
           true
         ).then(async confirmed => {
           if (confirmed) {
@@ -1353,10 +1355,10 @@
       this.pendingDeleteType = type;
       if (!this.el.deleteConfirmModal) return;
       if (this.el.deleteConfirmMessage) {
-        this.el.deleteConfirmMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer définitivement ${typeLabel} <strong>« ${this.escapeHtml(name)} »</strong> ?`;
+        this.el.deleteConfirmMessage.innerHTML = this.escapeHtml(message);
       }
       if (this.el.deleteConfirmItemName) this.el.deleteConfirmItemName.textContent = name;
-      if (this.el.deleteConfirmItemType) this.el.deleteConfirmItemType.textContent = typeLabel;
+      if (this.el.deleteConfirmItemType) this.el.deleteConfirmItemType.textContent = (type === 'folder' ? 'dossier' : 'fichier');
       this.el.deleteConfirmModal.style.display = 'flex';
       this.el.deleteConfirmModal.classList.add('open');
     }
@@ -1376,7 +1378,7 @@
         const json = await window.sys.api.fs.deleteItem(path);
         if (json.success) {
           this.closeDeleteConfirmModal();
-          this.showToast(json.message || (this.t('api.success_deleted') || 'Élément supprimé avec succès'), 'success');
+          this.showToast(json.message || this.t('api.success_deleted'), 'success');
           if (window.EventBus) {
             window.EventBus.emit('fs:changed', { action: 'delete_item', target_path: path });
           } else {
@@ -1407,9 +1409,11 @@
         this.openDeleteConfirmModal(first, name, isFolder ? 'folder' : 'file');
       } else {
         if (window.sys && window.sys.dialog && typeof window.sys.dialog.confirm === 'function') {
+          const message = this.t('delete_confirm.prompt_multiple', { count: selected.length });
+          const title = this.t('delete_confirm.title');
           window.sys.dialog.confirm(
-            `Êtes-vous sûr de vouloir supprimer définitivement ${selected.length} éléments sélectionnés ?`,
-            'Suppression multiple',
+            message,
+            title,
             true
           ).then(async confirmed => {
             if (confirmed) {

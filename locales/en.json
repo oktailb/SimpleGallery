@@ -395,6 +395,13 @@
     "delete_confirm.cancel": "Cancel",
     "delete_confirm.confirm": "Delete Permanently",
 
+    "dialog.ok": "OK",
+    "dialog.cancel": "Cancel",
+    "dialog.confirm_title": "Confirmation",
+    "dialog.alert_title": "Information",
+    "dialog.prompt_title": "Input",
+    "dialog.warning": "Warning",
+
     "comment.title": "✏️ Edit Legend",
     "comment.placeholder": "Write a legend for this media...",
 

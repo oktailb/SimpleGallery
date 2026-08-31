@@ -395,6 +395,13 @@
     "delete_confirm.cancel": "Annuler",
     "delete_confirm.confirm": "Supprimer définitivement",
 
+    "dialog.ok": "OK",
+    "dialog.cancel": "Annuler",
+    "dialog.confirm_title": "Confirmation",
+    "dialog.alert_title": "Information",
+    "dialog.prompt_title": "Saisie",
+    "dialog.warning": "Avertissement",
+
     "comment.title": "✏️ Éditer la Légende",
     "comment.placeholder": "Écrivez une légende pour ce média...",
 
