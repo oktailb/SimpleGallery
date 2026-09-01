@@ -1,13 +1,14 @@
 /* Windows 3.11 (Classic Workgroups) Window Manager Skin */
-[data-wm-style="win311"] .webos-window,
-.webos-window[data-wm-style="win311"] {
+.webos-window[data-wm-style="win311"],
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) {
   border-radius: 0;
   border: 4px outset #dfdfdf;
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.7);
   background: #c0c0c0;
 }
-[data-wm-style="win311"] .webos-window .window-header,
-.webos-window[data-wm-style="win311"] .window-header {
+
+.webos-window[data-wm-style="win311"] .window-header,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-header {
   background: #000080;
   color: #ffffff;
   padding: 2px;
@@ -17,8 +18,9 @@
   align-items: center;
   justify-content: space-between;
 }
-[data-wm-style="win311"] .webos-window .window-title-group,
-.webos-window[data-wm-style="win311"] .window-title-group {
+
+.webos-window[data-wm-style="win311"] .window-title-group,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-title-group {
   color: #ffffff;
   font-family: "MS Sans Serif", "Tahoma", monospace, sans-serif;
   font-weight: 700;
@@ -26,13 +28,20 @@
   letter-spacing: 0.5px;
   margin: 0 auto;
 }
-[data-wm-style="win311"] .webos-window .window-traffic-lights,
-.webos-window[data-wm-style="win311"] .window-traffic-lights {
+
+.webos-window[data-wm-style="win311"] .window-title-text,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-title-text {
+  color: #ffffff;
+}
+
+.webos-window[data-wm-style="win311"] .window-traffic-lights,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-traffic-lights {
   order: 3;
   gap: 2px;
 }
-[data-wm-style="win311"] .webos-window .win-btn,
-.webos-window[data-wm-style="win311"] .win-btn {
+
+.webos-window[data-wm-style="win311"] .win-btn,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn {
   width: 18px;
   height: 18px;
   border-radius: 0;
@@ -42,18 +51,18 @@
   font-size: 9px;
   font-weight: 900;
 }
-[data-wm-style="win311"] .webos-window .win-btn.win-minimize {
+
+.webos-window[data-wm-style="win311"] .win-btn.win-minimize,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn.win-minimize {
   order: 1;
 }
-[data-wm-style="win311"] .webos-window .win-btn.win-minimize::after {
-  content: '▼';
-}
-[data-wm-style="win311"] .webos-window .win-btn.win-maximize {
+
+.webos-window[data-wm-style="win311"] .win-btn.win-maximize,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn.win-maximize {
   order: 2;
 }
-[data-wm-style="win311"] .webos-window .win-btn.win-maximize::after {
-  content: '▲';
-}
-[data-wm-style="win311"] .webos-window .win-btn.win-close {
+
+.webos-window[data-wm-style="win311"] .win-btn.win-close,
+:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn.win-close {
   order: 3;
 }

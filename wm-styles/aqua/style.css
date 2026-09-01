@@ -1,28 +1,36 @@
 /* Mac OS X Aqua Window Manager Skin */
-[data-wm-style="aqua"] .webos-window,
-.webos-window[data-wm-style="aqua"] {
+.webos-window[data-wm-style="aqua"],
+:root[data-wm-style="aqua"] .webos-window:not([data-wm-style]) {
   border-radius: 8px 8px 0 0;
   border: 1px solid #999999;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   background: #ededed;
 }
-[data-wm-style="aqua"] .webos-window .window-header,
-.webos-window[data-wm-style="aqua"] .window-header {
+
+.webos-window[data-wm-style="aqua"] .window-header,
+:root[data-wm-style="aqua"] .webos-window:not([data-wm-style]) .window-header {
   background: repeating-linear-gradient(180deg, #f0f0f0 0px, #f0f0f0 1px, #dcdcdc 2px, #dcdcdc 3px);
   border-bottom: 1px solid #a0a0a0;
   padding: 4px 10px;
   height: 26px;
 }
-[data-wm-style="aqua"] .webos-window .window-title-group,
-.webos-window[data-wm-style="aqua"] .window-title-group {
+
+.webos-window[data-wm-style="aqua"] .window-title-group,
+:root[data-wm-style="aqua"] .webos-window:not([data-wm-style]) .window-title-group {
   color: #222222;
   font-family: "Lucida Grande", sans-serif;
   font-weight: 700;
   font-size: 0.8rem;
   margin: 0 auto;
 }
-[data-wm-style="aqua"] .webos-window .win-btn,
-.webos-window[data-wm-style="aqua"] .win-btn {
+
+.webos-window[data-wm-style="aqua"] .window-title-text,
+:root[data-wm-style="aqua"] .webos-window:not([data-wm-style]) .window-title-text {
+  color: #222222;
+}
+
+.webos-window[data-wm-style="aqua"] .win-btn,
+:root[data-wm-style="aqua"] .webos-window:not([data-wm-style]) .win-btn {
   width: 13px;
   height: 13px;
   border-radius: 50%;

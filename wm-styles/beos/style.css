@@ -1,56 +1,97 @@
-/* BeOS / Haiku Window Manager Skin */
-[data-wm-style="beos"] .webos-window,
-.webos-window[data-wm-style="beos"] {
+/* BeOS / Haiku (Yellow Tab) Window Manager Skin */
+.webos-window[data-wm-style="beos"],
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) {
   border-radius: 0;
-  border: 2px solid #888888;
-  box-shadow: 2px 2px 0 #000, 0 12px 35px rgba(0,0,0,0.6);
+  border: 1px solid #737373;
+  box-shadow: 2px 2px 0 #000000, 0 12px 35px rgba(0,0,0,0.5);
   background: #d4d4d4;
-  padding-top: 0;
 }
-[data-wm-style="beos"] .webos-window .window-header,
-.webos-window[data-wm-style="beos"] .window-header {
-  background: transparent;
+
+.webos-window[data-wm-style="beos"] .window-header,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-header {
+  background: #d4d4d4;
+  border-bottom: 2px solid #737373;
+  height: 22px;
   padding: 0;
-  height: 24px;
-  border-bottom: 2px solid #ffc800;
   display: flex;
+  align-items: stretch;
   justify-content: flex-start;
   position: relative;
 }
-[data-wm-style="beos"] .webos-window .window-title-group,
-.webos-window[data-wm-style="beos"] .window-title-group {
+
+/* Yellow Tab Controls (Left part of tab) */
+.webos-window[data-wm-style="beos"] .window-traffic-lights,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-traffic-lights {
   background: #ffc800;
-  color: #000000;
-  font-family: "DejaVu Sans", "Helvetica Neue", sans-serif;
-  font-weight: 700;
-  font-size: 0.78rem;
-  padding: 3px 12px 3px 6px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 6px;
   border-top: 2px solid #ffffff;
   border-left: 2px solid #ffffff;
-  border-right: 2px solid #a07d00;
-  border-radius: 4px 4px 0 0;
   margin: 0;
-  max-width: 65%;
-  box-shadow: 1px 0 0 #000;
+  gap: 5px;
+  order: 1;
 }
-[data-wm-style="beos"] .webos-window .window-traffic-lights,
-.webos-window[data-wm-style="beos"] .window-traffic-lights {
-  position: absolute;
-  right: 6px;
-  top: 3px;
-  gap: 4px;
-}
-[data-wm-style="beos"] .webos-window .win-btn,
-.webos-window[data-wm-style="beos"] .win-btn {
-  width: 14px;
-  height: 14px;
+
+/* Yellow Tab Title (Right part of tab) */
+.webos-window[data-wm-style="beos"] .window-title-group,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-title-group {
+  background: #ffc800;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 4px;
+  border-top: 2px solid #ffffff;
+  border-right: 2px solid #8a6c00;
+  border-bottom: 2px solid #ffc800;
   border-radius: 0;
-  border: 1px solid #333;
-  background: #e8e8e8;
-  color: #000 !important;
-  box-shadow: inset 1px 1px 0 #fff;
-  font-size: 8px;
+  margin: 0;
+  order: 2;
+  color: #000000;
+  font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  box-shadow: 1px 0 0 #000000;
 }
-[data-wm-style="beos"] .webos-window .win-btn.win-close {
-  background: #ffaa00;
+
+.webos-window[data-wm-style="beos"] .window-title-text,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-title-text {
+  color: #000000;
+  font-weight: 700;
+}
+
+/* BeOS close gadget (small square on left) */
+.webos-window[data-wm-style="beos"] .win-btn,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 0;
+  border: 1px solid #333333;
+  background: #e8e8e8;
+  color: transparent !important;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373;
+  margin: 0;
+  padding: 0;
+}
+
+.webos-window[data-wm-style="beos"] .win-btn.win-close,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn.win-close {
+  order: 1;
+}
+
+.webos-window[data-wm-style="beos"] .win-btn.win-maximize,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn.win-maximize {
+  order: 2;
+}
+
+.webos-window[data-wm-style="beos"] .win-btn.win-minimize,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn.win-minimize {
+  display: none;
+}
+
+.webos-window[data-wm-style="beos"] .win-btn:active,
+:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn:active {
+  box-shadow: inset 1px 1px 0 #333333;
+  background: #333333;
 }
