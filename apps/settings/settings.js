@@ -62,12 +62,15 @@
       this.applySavedWallpaper();
       this.applySavedTheme();
       this.applySavedWindowStyle();
+      this.loadWindowStyles();
     }
 
     onOpen() {
       this.loadPermissions();
       this.loadSystemInfo();
       this.loadAutostartConfig();
+      this.loadDisabledApps();
+      this.loadWindowStyles();
     }
 
     registerSection(section) {
@@ -417,10 +420,15 @@
         ${window.sys.ui.themeGrid({ themes, activeThemeId: this.state.activeTheme })}
       `;
 
-      const windowStyles = (window.WindowManager) ? window.WindowManager.getWindowStyles() : [];
+      const windowStyles = (this.state.windowStyles && this.state.windowStyles.length > 0)
+        ? this.state.windowStyles
+        : ((window.WindowManager && typeof window.WindowManager.getWindowStyles === 'function')
+            ? window.WindowManager.getWindowStyles()
+            : (window.SG_DISCOVERED_WM_STYLES || []));
+
       const windowStyleContent = `
         <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
-          ${this.t('settings.wm_style_desc') || 'Choisissez le style visuel des décorations, bordures et boutons de contrôle des fenêtres (macOS, Windows 9x, BeOS, AmigaOS, etc.).'}
+          ${this.t('settings.wm_style_desc')}
         </p>
         ${window.sys.ui.windowStyleGrid({ styles: windowStyles, activeStyleId: this.state.activeWmStyle })}
       `;
@@ -1108,6 +1116,21 @@
       if (saved) {
         this.setWindowStyle(saved);
       }
+    }
+
+    async loadWindowStyles() {
+      if (window.SG_DISCOVERED_WM_STYLES && window.SG_DISCOVERED_WM_STYLES.length > 0) {
+        this.state.windowStyles = window.SG_DISCOVERED_WM_STYLES;
+      }
+      try {
+        const json = await this.api.get('get_wm_styles');
+        if (json && json.success && Array.isArray(json.styles) && json.styles.length > 0) {
+          this.state.windowStyles = json.styles;
+          window.SG_DISCOVERED_WM_STYLES = json.styles;
+          if (window.WindowManager) window.WindowManager.stylesCache = json.styles;
+          this.render();
+        }
+      } catch (e) {}
     }
   }
 

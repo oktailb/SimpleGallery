@@ -18,6 +18,20 @@
       this.currentWindowStyle = (typeof localStorage !== 'undefined' && localStorage.getItem('sg_window_style')) || 'macos';
     }
 
+    getDefaultStyles() {
+      return [
+        { id: 'macos', name: 'macOS Modern', category: 'modern', icon: '🍎', desc: 'Feux tricolores ronds, flou translucide et bordures douces.', css_entry: 'wm-styles/macos/style.css' },
+        { id: 'macos-classic', name: 'Mac OS Classic (System 7)', category: 'retro', icon: '🍏', desc: 'Rayures horizontales pinstripes, boîte carrée de fermeture et zoom.', css_entry: 'wm-styles/macos-classic/style.css' },
+        { id: 'beos', name: 'BeOS / Haiku', category: 'retro', icon: '🟡', desc: 'Onglet jaune asymétrique portant le titre et boîte de zoom.', css_entry: 'wm-styles/beos/style.css' },
+        { id: 'win311', name: 'Windows 3.11', category: 'retro', icon: '🪟', desc: 'Bordures 3D biseautées épaisses, menu tiret et flèches ▲ ▼.', css_entry: 'wm-styles/win311/style.css' },
+        { id: 'win9x', name: 'Windows 95 / 98 / 2000', category: 'retro', icon: '💾', desc: 'Dégradé bleu classique, biseaux 3D gris et boutons carrés 🗕 🗖 🗙.', css_entry: 'wm-styles/win9x/style.css' },
+        { id: 'win11', name: 'Windows 11 (Fluent)', category: 'modern', icon: '🔷', desc: 'Boutons rectangulaires modernes à droite et angles subtils.', css_entry: 'wm-styles/win11/style.css' },
+        { id: 'amigaos', name: 'AmigaOS 3.x', category: 'retro', icon: '🔴', desc: 'Barre bleue/ambre rétro, gadgets de fermeture et profondeur.', css_entry: 'wm-styles/amigaos/style.css' },
+        { id: 'windowmaker', name: 'Window Maker / NeXT', category: 'retro', icon: '⬛', desc: 'Dégradé sombre profond et boutons miniatures carrés en relief.', css_entry: 'wm-styles/windowmaker/style.css' },
+        { id: 'aqua', name: 'Mac OS X Aqua', category: 'retro', icon: '💧', desc: 'Rayures métal brossé pinstripes et boutons effet gelée vitrée.', css_entry: 'wm-styles/aqua/style.css' }
+      ];
+    }
+
     getWindowStyles() {
       if (window.SG_DISCOVERED_WM_STYLES && Array.isArray(window.SG_DISCOVERED_WM_STYLES) && window.SG_DISCOVERED_WM_STYLES.length > 0) {
         return window.SG_DISCOVERED_WM_STYLES;
@@ -25,14 +39,14 @@
       if (this.stylesCache && Array.isArray(this.stylesCache) && this.stylesCache.length > 0) {
         return this.stylesCache;
       }
-      return [];
+      return this.getDefaultStyles();
     }
 
     async loadWindowStyles() {
       try {
         if (window.sys && window.sys.api && typeof window.sys.api.get === 'function') {
           const res = await window.sys.api.get('get_wm_styles');
-          if (res && res.success && Array.isArray(res.styles)) {
+          if (res && res.success && Array.isArray(res.styles) && res.styles.length > 0) {
             this.stylesCache = res.styles;
             window.SG_DISCOVERED_WM_STYLES = res.styles;
             return this.stylesCache;
@@ -40,6 +54,18 @@
         }
       } catch (e) {}
       return this.getWindowStyles();
+    }
+
+    ensureStyleSheet(styleId) {
+      if (!styleId || document.getElementById(`wm-style-${styleId}`)) return;
+      const styles = this.getWindowStyles();
+      const match = styles.find(s => s.id === styleId);
+      const cssPath = match?.css_entry || `wm-styles/${styleId}/style.css`;
+      const link = document.createElement('link');
+      link.id = `wm-style-${styleId}`;
+      link.rel = 'stylesheet';
+      link.href = `${cssPath}?v=${Date.now()}`;
+      document.head.appendChild(link);
     }
 
     setWindowStyle(styleId) {
@@ -57,6 +83,7 @@
 
     applyWindowStyle(styleId) {
       const targetStyle = styleId || this.currentWindowStyle || 'macos';
+      this.ensureStyleSheet(targetStyle);
       document.documentElement.setAttribute('data-wm-style', targetStyle);
       if (this.desktop && this.desktop.setAttribute) {
         this.desktop.setAttribute('data-wm-style', targetStyle);
