@@ -69,6 +69,7 @@
       this.loadPermissions();
       this.loadSystemInfo();
       this.loadAutostartConfig();
+      this.loadDisabledApps();
       this.loadWindowStyles();
     }
 
@@ -980,6 +981,21 @@
         }
       } catch (err) {
         console.error('[SettingsApp] Error loading system info:', err);
+      }
+    }
+
+    async loadDisabledApps() {
+      try {
+        const json = await this.api.get('get_disabled_apps');
+        if (json && json.success && Array.isArray(json.disabled_apps)) {
+          window.SG_DISABLED_APPS = json.disabled_apps;
+          try {
+            localStorage.setItem('sg_disabled_apps', JSON.stringify(json.disabled_apps));
+          } catch (e) {}
+          if (this.currentTab === 'plugins') this.render();
+        }
+      } catch (err) {
+        console.error('[SettingsApp] Error loading disabled apps:', err);
       }
     }
 
