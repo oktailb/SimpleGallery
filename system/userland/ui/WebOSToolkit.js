@@ -1098,8 +1098,10 @@
       const s = opts.style || {};
       const activeStyleId = opts.activeStyleId;
       const isActive = s.id === activeStyleId;
-      const name = (s.nameKey && s.nameKey.includes('.')) ? this.t(s.nameKey) : (s.name || s.id);
-      const desc = (s.descKey && s.descKey.includes('.')) ? this.t(s.descKey) : (s.desc || '');
+      const translatedName = s.nameKey ? this.t(s.nameKey) : '';
+      const name = (translatedName && translatedName !== s.nameKey) ? translatedName : (s.name || s.id);
+      const translatedDesc = s.descKey ? this.t(s.descKey) : '';
+      const desc = (translatedDesc && translatedDesc !== s.descKey) ? translatedDesc : (s.desc || '');
 
       return `
         <div class="theme-card wm-style-card ${isActive ? 'active' : ''}" data-wm-style-id="${this.escapeHtml(s.id)}" style="cursor: pointer; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color, rgba(255,255,255,0.12)); background: rgba(255,255,255,0.03); transition: all 0.2s ease;">
