@@ -55,5 +55,7 @@
   "tribune.no_cookie_found": "No browser cookie found on this origin.",
   "tribune.post_error": "Error posting: ",
   "tribune.post_network_error": "Server connection error while posting: ",
-  "tribune.oauth_success": "OAuth2 connection successful with "
+  "tribune.oauth_success": "OAuth2 connection successful with ",
+  "tribune.toggle_panel": "Side Panel (Tools & Settings)",
+  "tribune.panel_title": "Tools & Settings"
 }

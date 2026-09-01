@@ -55,5 +55,7 @@
   "tribune.no_cookie_found": "このオリジンでクッキーは見つかりませんでした。",
   "tribune.post_error": "投稿エラー: ",
   "tribune.post_network_error": "投稿中にサーバー接続エラーが発生しました: ",
-  "tribune.oauth_success": "OAuth2 ログイン成功: "
+  "tribune.oauth_success": "OAuth2 ログイン成功: ",
+  "tribune.toggle_panel": "サイドパネル (ツール & 設定)",
+  "tribune.panel_title": "ツール & 設定"
 }

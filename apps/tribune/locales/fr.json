@@ -55,5 +55,7 @@
   "tribune.no_cookie_found": "Aucun cookie de navigateur trouvé sur cette origine.",
   "tribune.post_error": "Erreur lors du post : ",
   "tribune.post_network_error": "Erreur de connexion au serveur lors du post : ",
-  "tribune.oauth_success": "Connexion OAuth2 réussie avec "
+  "tribune.oauth_success": "Connexion OAuth2 réussie avec ",
+  "tribune.toggle_panel": "Panneau latéral (Outils & Paramètres)",
+  "tribune.panel_title": "Outils & Paramètres"
 }

@@ -35,10 +35,13 @@
       this.activeTelemetryMetric = 'posts';
       this.triggeredDucks = new Set();
       this.duckRegex = /(\\_o<~|~>o_\/|\\_x<~|~>x_\/|\\_o<|>o_\/|\\_o<|>o_|\\_O<|>O_\/|\\_o<=|=>o_\/|\\_ô<|>ô_\/|\\_@<|>@_\/|\\_°<|>°_\/|\\_°<~|~>°_\/|coin\s*coin|couac)/i;
-      this.container = null;
-
       // Detect initial pseudo from WebOS environment or localStorage
       this.userLogin = this.detectUserIdentity();
+
+      // Side panel visibility: default to hidden on mobile (<=768px), or read from localStorage
+      const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
+      const savedSidePanel = localStorage.getItem('tribune_side_panel_open');
+      this.sidePanelOpen = savedSidePanel !== null ? (savedSidePanel === 'true') : !isMobile;
 
       // EventBus listeners for i18n & theme propagation
       if (window.EventBus) {
@@ -153,6 +156,24 @@
         this.window.setTitle(fullTitle);
       } else if (window.WindowManager && typeof window.WindowManager.setTitle === 'function') {
         window.WindowManager.setTitle(this.winId, fullTitle);
+      }
+    }
+
+    toggleSidePanel(forceState) {
+      this.sidePanelOpen = (typeof forceState === 'boolean') ? forceState : !this.sidePanelOpen;
+      try {
+        localStorage.setItem('tribune_side_panel_open', this.sidePanelOpen ? 'true' : 'false');
+      } catch (e) {}
+      if (this.container) {
+        const sidePanel = this.container.querySelector('.tribune-side-panel');
+        const toggleBtn = this.container.querySelector('#tribuneSidePanelToggle');
+        if (sidePanel) {
+          sidePanel.classList.toggle('collapsed', !this.sidePanelOpen);
+          sidePanel.classList.toggle('open', this.sidePanelOpen);
+        }
+        if (toggleBtn) {
+          toggleBtn.classList.toggle('active', this.sidePanelOpen);
+        }
       }
     }
 
@@ -591,6 +612,7 @@
               <button class="tribune-icon-btn ${this.soundEnabled ? 'active' : ''}" id="tribuneSoundToggle" title="${this.t('tribune.sound_toggle') || 'Audio Coincoin'}">🔊</button>
               <button class="tribune-icon-btn" id="tribuneAddBoardBtn" title="${this.t('tribune.add_board') || 'Ajouter une Tribune'}">➕</button>
               <button class="tribune-icon-btn" id="tribuneRefreshBtn" title="${this.t('tribune.refresh') || 'Rafraîchir'}">🔄</button>
+              <button class="tribune-icon-btn ${this.sidePanelOpen ? 'active' : ''}" id="tribuneSidePanelToggle" data-i18n-title="tribune.toggle_panel" title="${this.t('tribune.toggle_panel') || 'Panneau latéral (Outils & Paramètres)'}">🎛️</button>
             </div>
           </div>
 
@@ -604,7 +626,15 @@
             </div>
 
             <!-- Side Panel (Identity, Auth, Trollometer & BAK) -->
-            <div class="tribune-side-panel">
+            <div class="tribune-side-panel ${this.sidePanelOpen ? 'open' : 'collapsed'}">
+              <div class="tribune-side-panel-header">
+                <span style="font-weight:700; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+                  <span>🎛️</span>
+                  <span data-i18n="tribune.panel_title">${this.t('tribune.panel_title') || 'Outils & Paramètres'}</span>
+                </span>
+                <button type="button" class="tribune-panel-close-btn" id="tribunePanelCloseBtn" data-i18n-title="common.close" title="${this.t('common.close') || 'Fermer'}">✕</button>
+              </div>
+
               <!-- Inline Identity & Auth Card -->
               <div class="tribune-panel-card">
                 <div class="tribune-panel-title">
@@ -922,6 +952,21 @@
             this.saveBoards();
             this.switchBoard(key);
           }
+        });
+      }
+
+      const sidePanelToggle = this.container.querySelector('#tribuneSidePanelToggle');
+      const sidePanelClose = this.container.querySelector('#tribunePanelCloseBtn');
+
+      if (sidePanelToggle) {
+        sidePanelToggle.addEventListener('click', () => {
+          this.toggleSidePanel();
+        });
+      }
+
+      if (sidePanelClose) {
+        sidePanelClose.addEventListener('click', () => {
+          this.toggleSidePanel(false);
         });
       }
 

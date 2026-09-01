@@ -603,6 +603,8 @@
     "api.msg_pwd_updated": "Mot de passe mis à jour avec succès.",
     "api.err_pwd_save": "Erreur lors de l'enregistrement du mot de passe.",
     "api.msg_permissions_saved": "Permissions enregistrées avec succès.",
-    "api.err_permissions_save": "Erreur lors de l'enregistrement des permissions."
+    "api.err_permissions_save": "Erreur lors de l'enregistrement des permissions.",
+    "tribune.toggle_panel": "Panneau latéral (Outils & Paramètres)",
+    "tribune.panel_title": "Outils & Paramètres"
   }
 }

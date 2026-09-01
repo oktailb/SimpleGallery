@@ -298,7 +298,7 @@
 
 /* Side Panel (Trollometer, Identity & BAK) */
 .tribune-side-panel {
-  width: 300px;
+  width: 320px;
   background: var(--bg-card, rgba(15, 23, 42, 0.95));
   border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   display: flex;
@@ -306,6 +306,70 @@
   gap: 14px;
   padding: 16px;
   overflow-y: auto;
+  flex-shrink: 0;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.tribune-side-panel.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-left: none !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.tribune-side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  margin-bottom: -2px;
+}
+
+.tribune-panel-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  color: var(--text-main, #f8fafc);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.tribune-panel-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .tribune-side-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 85vw;
+    max-width: 340px;
+    z-index: 100;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  }
+
+  .tribune-side-panel.collapsed {
+    transform: translateX(100%);
+    display: none;
+  }
 }
 
 .tribune-panel-card {

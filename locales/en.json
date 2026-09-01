@@ -603,6 +603,8 @@
     "api.msg_pwd_updated": "Password updated successfully.",
     "api.err_pwd_save": "Error saving password.",
     "api.msg_permissions_saved": "Permissions saved successfully.",
-    "api.err_permissions_save": "Error saving permissions."
+    "api.err_permissions_save": "Error saving permissions.",
+    "tribune.toggle_panel": "Side Panel (Tools & Settings)",
+    "tribune.panel_title": "Tools & Settings"
   }
 }

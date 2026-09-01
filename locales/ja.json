@@ -602,7 +602,9 @@
     "api.err_current_pwd_invalid": "現在のパスワードが正しくありません。",
     "api.msg_pwd_updated": "パスワードが更新されました。",
     "api.err_pwd_save": "パスワードの保存エラー。",
-    "api.msg_permissions_saved": "権限が保存されました。",
-    "api.err_permissions_save": "権限の保存エラー。"
+    "api.msg_permissions_saved": "権限が正常に保存されました。",
+    "api.err_permissions_save": "権限の保存エラー。",
+    "tribune.toggle_panel": "サイドパネル (ツール & 設定)",
+    "tribune.panel_title": "ツール & 設定"
   }
 }
