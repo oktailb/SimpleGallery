@@ -605,6 +605,9 @@
     "api.msg_permissions_saved": "Permissions enregistrées avec succès.",
     "api.err_permissions_save": "Erreur lors de l'enregistrement des permissions.",
     "tribune.toggle_panel": "Panneau latéral (Outils & Paramètres)",
-    "tribune.panel_title": "Outils & Paramètres"
+    "tribune.panel_title": "Outils & Paramètres",
+    "settings.wm_style_title": "Styles & Décorations de Fenêtres (Skins)",
+    "settings.wm_style_desc": "Basculez entre des apparences de fenêtres mimant les systèmes historiques et modernes (macOS, Windows 9x, BeOS, AmigaOS, etc.).",
+    "settings.wm_style_applied": "Style de fenêtres appliqué avec succès !"
   }
 }

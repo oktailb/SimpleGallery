@@ -605,6 +605,9 @@
     "api.msg_permissions_saved": "権限が正常に保存されました。",
     "api.err_permissions_save": "権限の保存エラー。",
     "tribune.toggle_panel": "サイドパネル (ツール & 設定)",
-    "tribune.panel_title": "ツール & 設定"
+    "tribune.panel_title": "ツール & 設定",
+    "settings.wm_style_title": "ウィンドウマネージャースタイル & スキン",
+    "settings.wm_style_desc": "歴史的および現代のOSを再現したウィンドウ外観（macOS、Windows 9x、BeOS、AmigaOSなど）を切り替えます。",
+    "settings.wm_style_applied": "ウィンドウマネージャースタイルが適用されました！"
   }
 }

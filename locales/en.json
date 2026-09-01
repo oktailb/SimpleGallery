@@ -605,6 +605,9 @@
     "api.msg_permissions_saved": "Permissions saved successfully.",
     "api.err_permissions_save": "Error saving permissions.",
     "tribune.toggle_panel": "Side Panel (Tools & Settings)",
-    "tribune.panel_title": "Tools & Settings"
+    "tribune.panel_title": "Tools & Settings",
+    "settings.wm_style_title": "Window Manager Styles & Skins",
+    "settings.wm_style_desc": "Switch between window appearances mimicking iconic historic and modern operating systems (macOS, Windows 9x, BeOS, AmigaOS, etc.).",
+    "settings.wm_style_applied": "Window manager style applied successfully!"
   }
 }

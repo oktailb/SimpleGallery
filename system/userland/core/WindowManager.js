@@ -14,6 +14,47 @@
       this.topZIndex = 100;
       this.desktop = null;
       this.taskbar = null;
+      this.currentWindowStyle = (typeof localStorage !== 'undefined' && localStorage.getItem('sg_window_style')) || 'macos';
+    }
+
+    getWindowStyles() {
+      return [
+        { id: 'macos', name: 'macOS Modern', category: 'modern', icon: '🍎', desc: 'Feux tricolores ronds, flou translucide et bordures douces.' },
+        { id: 'macos-classic', name: 'Mac OS Classic (System 7)', category: 'retro', icon: '🍏', desc: 'Rayures horizontales pinstripes, boîte carrée de fermeture et zoom.' },
+        { id: 'beos', name: 'BeOS / Haiku', category: 'retro', icon: '🟡', desc: 'Onglet jaune asymétrique portant le titre et boîte de zoom.' },
+        { id: 'win311', name: 'Windows 3.11', category: 'retro', icon: '🪟', desc: 'Bordures 3D biseautées épaisses, menu tiret et flèches ▲ ▼.' },
+        { id: 'win9x', name: 'Windows 95 / 98 / 2000', category: 'retro', icon: '💾', desc: 'Dégradé bleu classique, biseaux 3D gris et boutons carrés 🗕 🗖 🗙.' },
+        { id: 'win11', name: 'Windows 11 (Fluent)', category: 'modern', icon: '🔷', desc: 'Boutons rectangulaires modernes à droite et angles subtils.' },
+        { id: 'amigaos', name: 'AmigaOS 3.x', category: 'retro', icon: '🔴', desc: 'Barre bleue/ambre rétro, gadgets de fermeture et profondeur.' },
+        { id: 'windowmaker', name: 'Window Maker / NeXT', category: 'retro', icon: '⬛', desc: 'Dégradé sombre profond et boutons miniatures carrés en relief.' },
+        { id: 'aqua', name: 'Mac OS X Aqua', category: 'retro', icon: '💧', desc: 'Rayures métal brossé pinstripes et boutons effet gelée vitrée.' }
+      ];
+    }
+
+    setWindowStyle(styleId) {
+      const styles = this.getWindowStyles();
+      const match = styles.find(s => s.id === styleId);
+      this.currentWindowStyle = match ? match.id : 'macos';
+      try {
+        localStorage.setItem('sg_window_style', this.currentWindowStyle);
+      } catch (e) {}
+      this.applyWindowStyle(this.currentWindowStyle);
+      if (window.EventBus) {
+        window.EventBus.emit('wm:style:changed', { styleId: this.currentWindowStyle });
+      }
+    }
+
+    applyWindowStyle(styleId) {
+      const targetStyle = styleId || this.currentWindowStyle || 'macos';
+      document.documentElement.setAttribute('data-wm-style', targetStyle);
+      if (this.desktop && this.desktop.setAttribute) {
+        this.desktop.setAttribute('data-wm-style', targetStyle);
+      }
+      this.windows.forEach(win => {
+        if (win.element) {
+          win.element.setAttribute('data-wm-style', targetStyle);
+        }
+      });
     }
 
     init() {
@@ -27,6 +68,7 @@
         document.body.appendChild(this.taskbar);
       }
 
+      this.applyWindowStyle(this.currentWindowStyle);
       this.initTaskbarDOM();
       this.startClock();
 
@@ -441,6 +483,9 @@
       
       const curTheme = document.documentElement.getAttribute('data-theme') || (window.localStorage && window.localStorage.getItem('sg_active_theme')) || 'dark-glass';
       el.setAttribute('data-theme', curTheme);
+
+      const curWmStyle = this.currentWindowStyle || document.documentElement.getAttribute('data-wm-style') || 'macos';
+      el.setAttribute('data-wm-style', curWmStyle);
 
       el.innerHTML = `
         <div class="window-header">

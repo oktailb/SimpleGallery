@@ -1092,6 +1092,50 @@
     }
 
     /**
+     * Window Manager Styles Grid Widget
+     */
+    windowStyleCard(opts = {}) {
+      const s = opts.style || {};
+      const activeStyleId = opts.activeStyleId;
+      const isActive = s.id === activeStyleId;
+      const name = (s.nameKey && s.nameKey.includes('.')) ? this.t(s.nameKey) : (s.name || s.id);
+      const desc = (s.descKey && s.descKey.includes('.')) ? this.t(s.descKey) : (s.desc || '');
+
+      return `
+        <div class="theme-card wm-style-card ${isActive ? 'active' : ''}" data-wm-style-id="${this.escapeHtml(s.id)}" style="cursor: pointer; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color, rgba(255,255,255,0.12)); background: rgba(255,255,255,0.03); transition: all 0.2s ease;">
+          <div class="wm-style-preview-box webos-window" data-wm-style="${this.escapeHtml(s.id)}" style="position: relative; pointer-events: none; margin-bottom: 10px; height: 50px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div class="window-header" style="height: 100%; box-sizing: border-box;">
+              <div class="window-traffic-lights">
+                <button type="button" class="win-btn win-close"></button>
+                <button type="button" class="win-btn win-minimize"></button>
+                <button type="button" class="win-btn win-maximize"></button>
+              </div>
+              <div class="window-title-group">
+                <span class="window-icon">${s.icon || '🗔'}</span>
+                <span class="window-title-text" style="font-size: 0.72rem;">${this.escapeHtml(name)}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+            <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">${s.icon || '🗔'} ${this.escapeHtml(name)}</span>
+            ${isActive ? '<span class="theme-badge" style="font-size:0.7rem; background:var(--accent-primary, #6366f1); color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">Actif</span>' : ''}
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">${this.escapeHtml(desc)}</p>
+        </div>
+      `;
+    }
+
+    windowStyleGrid(opts = {}) {
+      const styles = opts.styles || (window.WindowManager ? window.WindowManager.getWindowStyles() : []);
+      const activeStyleId = opts.activeStyleId;
+      return `
+        <div class="themes-selection-grid wm-styles-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px;">
+          ${styles.map(s => this.windowStyleCard({ style: s, activeStyleId })).join('')}
+        </div>
+      `;
+    }
+
+    /**
      * Wallpaper Grid Widget
      */
     wallpaperGrid(opts = {}) {
@@ -1356,6 +1400,8 @@
     languageSelect: toolkitInstance.languageSelect.bind(toolkitInstance),
     themeCard: toolkitInstance.themeCard.bind(toolkitInstance),
     themeGrid: toolkitInstance.themeGrid.bind(toolkitInstance),
+    windowStyleCard: toolkitInstance.windowStyleCard.bind(toolkitInstance),
+    windowStyleGrid: toolkitInstance.windowStyleGrid.bind(toolkitInstance),
     wallpaperGrid: toolkitInstance.wallpaperGrid.bind(toolkitInstance),
     escapeHtml: toolkitInstance.escapeHtml.bind(toolkitInstance)
   };

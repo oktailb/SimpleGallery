@@ -622,19 +622,36 @@ class GeneralUnitTestSuite {
         $this->assert("Catégorie de 'explorer' vient du manifest ('view')", ($discovered['explorer']['category'] ?? '') === 'view');
         $this->assert("Catégorie de 'image-viewer' vient du manifest ('viewer')", ($discovered['image-viewer']['category'] ?? '') === 'viewer');
 
-        // 2. WindowManager Next-Gen Taskbar Elements
+        // 2. WindowManager Next-Gen Taskbar Elements & Skins
         $wm_code = @file_get_contents($this->base_dir . '/system/userland/core/WindowManager.js');
         $this->assert("WindowManager implémente le conteneur d'applications taskbar-apps-container", strpos($wm_code, 'taskbarAppsContainer') !== false);
         $this->assert("WindowManager implémente le System Tray taskbar-tray-container", strpos($wm_code, 'taskbarTrayContainer') !== false);
         $this->assert("WindowManager implémente le bouton horloge taskbarCalendarBtn", strpos($wm_code, 'taskbarCalendarBtn') !== false);
         $this->assert("WindowManager implémente le bouton 'Afficher le Bureau' taskbarShowDesktopBtn", strpos($wm_code, 'taskbarShowDesktopBtn') !== false);
         $this->assert("WindowManager implémente la prévisualisation au survol taskbarPreviewCard", strpos($wm_code, 'taskbarPreviewCard') !== false);
+        $this->assert("WindowManager implémente le registre getWindowStyles()", strpos($wm_code, 'getWindowStyles') !== false);
+        $this->assert("WindowManager implémente setWindowStyle()", strpos($wm_code, 'setWindowStyle') !== false);
+        $this->assert("WindowManager supporte les styles rétro et modernes (macos, win9x, beos, win311, amigaos)", strpos($wm_code, 'macos-classic') !== false && strpos($wm_code, 'win311') !== false && strpos($wm_code, 'amigaos') !== false);
 
-        // 3. Category Translations
+        // 3. Window Manager Skins CSS & Toolkit
+        $wm_css = @file_get_contents($this->base_dir . '/css/window-manager.css');
+        $this->assert("Feuille CSS window-manager.css intègre le style beos (Yellow Tab)", strpos($wm_css, '[data-wm-style="beos"]') !== false);
+        $this->assert("Feuille CSS window-manager.css intègre le style win9x", strpos($wm_css, '[data-wm-style="win9x"]') !== false);
+        $this->assert("Feuille CSS window-manager.css intègre le style macos-classic", strpos($wm_css, '[data-wm-style="macos-classic"]') !== false);
+        $this->assert("Feuille CSS window-manager.css intègre le style windowmaker", strpos($wm_css, '[data-wm-style="windowmaker"]') !== false);
+
+        $toolkit_code = @file_get_contents($this->base_dir . '/system/userland/ui/WebOSToolkit.js');
+        $this->assert("WebOSToolkit fournit la grille windowStyleGrid", strpos($toolkit_code, 'windowStyleGrid') !== false);
+
+        $settings_code = @file_get_contents($this->base_dir . '/apps/settings/settings.js');
+        $this->assert("SettingsApp supporte la sélection data-wm-style-id", strpos($settings_code, 'data-wm-style-id') !== false);
+
+        // 4. Category & Style Translations
         $fr_trans = load_locale_translations($this->base_dir, 'fr');
         $this->assert("Traduction FR de categories.productivity présente", !empty($fr_trans['categories.productivity']));
         $this->assert("Traduction FR de categories.games présente", !empty($fr_trans['categories.games']));
         $this->assert("Traduction FR de taskbar.show_desktop présente", !empty($fr_trans['taskbar.show_desktop']));
+        $this->assert("Traduction FR de settings.wm_style_title présente", !empty($fr_trans['settings.wm_style_title']));
     }
 
     /**

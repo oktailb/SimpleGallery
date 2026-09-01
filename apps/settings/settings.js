@@ -38,7 +38,8 @@
           testResults: null,
           isTesting: false,
           activeWallpaper: localStorage.getItem('sg_desktop_wallpaper') || 'nebula',
-          activeTheme: localStorage.getItem('sg_active_theme') || 'dark-glass'
+          activeTheme: localStorage.getItem('sg_active_theme') || 'dark-glass',
+          activeWmStyle: localStorage.getItem('sg_window_style') || 'macos'
         }
       });
 
@@ -53,9 +54,14 @@
           this.state.activeTheme = themeId;
           this.render();
         });
+        window.EventBus.on('wm:style:changed', ({ styleId }) => {
+          this.state.activeWmStyle = styleId;
+          this.render();
+        });
       }
       this.applySavedWallpaper();
       this.applySavedTheme();
+      this.applySavedWindowStyle();
     }
 
     onOpen() {
@@ -119,6 +125,11 @@
           const tId = card.dataset.themeId;
           this.setTheme(tId);
           container.querySelectorAll('[data-theme-id]').forEach(c => c.classList.toggle('active', c === card));
+        },
+        'click [data-wm-style-id]': (card) => {
+          const styleId = card.dataset.wmStyleId;
+          this.setWindowStyle(styleId);
+          container.querySelectorAll('[data-wm-style-id]').forEach(c => c.classList.toggle('active', c === card));
         },
         'click #settingsSaveAutostartBtn': () => this.saveAutostartConfig(container),
         'change #settingsLangListBox': (select) => {
@@ -406,6 +417,14 @@
         ${window.sys.ui.themeGrid({ themes, activeThemeId: this.state.activeTheme })}
       `;
 
+      const windowStyles = (window.WindowManager) ? window.WindowManager.getWindowStyles() : [];
+      const windowStyleContent = `
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+          ${this.t('settings.wm_style_desc') || 'Choisissez le style visuel des décorations, bordures et boutons de contrôle des fenêtres (macOS, Windows 9x, BeOS, AmigaOS, etc.).'}
+        </p>
+        ${window.sys.ui.windowStyleGrid({ styles: windowStyles, activeStyleId: this.state.activeWmStyle })}
+      `;
+
       return `
         ${window.sys.ui.card({
           title: 'settings.wallpaper_title',
@@ -417,6 +436,12 @@
           title: 'settings.theme_title',
           icon: '🎭',
           content: themeContent
+        })}
+
+        ${window.sys.ui.card({
+          title: 'settings.wm_style_title',
+          icon: '🪟',
+          content: windowStyleContent
         })}
       `;
     }
@@ -1063,6 +1088,25 @@
       const saved = localStorage.getItem('sg_active_theme');
       if (saved) {
         this.setTheme(saved);
+      }
+    }
+
+    setWindowStyle(styleId) {
+      this.state.activeWmStyle = styleId;
+      if (window.WindowManager && typeof window.WindowManager.setWindowStyle === 'function') {
+        window.WindowManager.setWindowStyle(styleId);
+      } else {
+        localStorage.setItem('sg_window_style', styleId);
+        document.documentElement.setAttribute('data-wm-style', styleId);
+      }
+      this.toast.info(this.t('settings.wm_style_applied') || 'Style de fenêtres appliqué !');
+      this.render();
+    }
+
+    applySavedWindowStyle() {
+      const saved = localStorage.getItem('sg_window_style');
+      if (saved) {
+        this.setWindowStyle(saved);
       }
     }
   }
