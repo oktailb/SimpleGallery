@@ -1,14 +1,12 @@
 /* Mac OS Classic (System 7 / Platinum) Window Manager Skin */
-.webos-window[data-wm-style="macos-classic"],
-:root[data-wm-style="macos-classic"] .webos-window:not([data-wm-style]) {
+[data-wm-style="macos-classic"].webos-window {
   border-radius: 2px;
   border: 2px outset #dfdfdf;
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0,0,0,0.5);
   background: #cecece;
 }
 
-.webos-window[data-wm-style="macos-classic"] .window-header,
-:root[data-wm-style="macos-classic"] .webos-window:not([data-wm-style]) .window-header {
+[data-wm-style="macos-classic"] > .window-header {
   background: repeating-linear-gradient(to bottom, #555555 0px, #555555 1px, #dcdcdc 1px, #dcdcdc 2px);
   padding: 3px 6px;
   height: 22px;
@@ -18,8 +16,7 @@
   justify-content: space-between;
 }
 
-.webos-window[data-wm-style="macos-classic"] .window-title-group,
-:root[data-wm-style="macos-classic"] .webos-window:not([data-wm-style]) .window-title-group {
+[data-wm-style="macos-classic"] > .window-header > .window-title-group {
   background: #cecece;
   padding: 0 8px;
   border: 1px solid #777777;
@@ -31,13 +28,15 @@
   border-radius: 1px;
 }
 
-.webos-window[data-wm-style="macos-classic"] .window-traffic-lights,
-:root[data-wm-style="macos-classic"] .webos-window:not([data-wm-style]) .window-traffic-lights {
+[data-wm-style="macos-classic"] > .window-header > .window-title-group > .window-title-text {
+  color: #000000;
+}
+
+[data-wm-style="macos-classic"] > .window-header > .window-traffic-lights {
   gap: 4px;
 }
 
-.webos-window[data-wm-style="macos-classic"] .win-btn,
-:root[data-wm-style="macos-classic"] .webos-window:not([data-wm-style]) .win-btn {
+[data-wm-style="macos-classic"] > .window-header > .window-traffic-lights > .win-btn {
   width: 13px;
   height: 13px;
   border-radius: 0;
@@ -48,8 +47,7 @@
   box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #888888;
 }
 
-.webos-window[data-wm-style="macos-classic"] .win-btn:active,
-:root[data-wm-style="macos-classic"] .webos-window:not([data-wm-style]) .win-btn:active {
+[data-wm-style="macos-classic"] > .window-header > .window-traffic-lights > .win-btn:active {
   box-shadow: inset 1px 1px 0 #444444;
   background: #888888;
 }

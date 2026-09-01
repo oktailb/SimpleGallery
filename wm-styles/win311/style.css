@@ -1,14 +1,12 @@
 /* Windows 3.11 (Classic Workgroups) Window Manager Skin */
-.webos-window[data-wm-style="win311"],
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) {
+[data-wm-style="win311"].webos-window {
   border-radius: 0;
   border: 4px outset #dfdfdf;
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.7);
   background: #c0c0c0;
 }
 
-.webos-window[data-wm-style="win311"] .window-header,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-header {
+[data-wm-style="win311"] > .window-header {
   background: #000080;
   color: #ffffff;
   padding: 2px;
@@ -19,8 +17,7 @@
   justify-content: space-between;
 }
 
-.webos-window[data-wm-style="win311"] .window-title-group,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-title-group {
+[data-wm-style="win311"] > .window-header > .window-title-group {
   color: #ffffff;
   font-family: "MS Sans Serif", "Tahoma", monospace, sans-serif;
   font-weight: 700;
@@ -29,19 +26,16 @@
   margin: 0 auto;
 }
 
-.webos-window[data-wm-style="win311"] .window-title-text,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-title-text {
+[data-wm-style="win311"] > .window-header > .window-title-group > .window-title-text {
   color: #ffffff;
 }
 
-.webos-window[data-wm-style="win311"] .window-traffic-lights,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .window-traffic-lights {
+[data-wm-style="win311"] > .window-header > .window-traffic-lights {
   order: 3;
   gap: 2px;
 }
 
-.webos-window[data-wm-style="win311"] .win-btn,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn {
+[data-wm-style="win311"] > .window-header > .window-traffic-lights > .win-btn {
   width: 18px;
   height: 18px;
   border-radius: 0;
@@ -52,17 +46,22 @@
   font-weight: 900;
 }
 
-.webos-window[data-wm-style="win311"] .win-btn.win-minimize,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn.win-minimize {
+[data-wm-style="win311"] > .window-header > .window-traffic-lights > .win-btn.win-minimize {
   order: 1;
 }
 
-.webos-window[data-wm-style="win311"] .win-btn.win-maximize,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn.win-maximize {
+[data-wm-style="win311"] > .window-header > .window-traffic-lights > .win-btn.win-minimize::after {
+  content: '▼';
+}
+
+[data-wm-style="win311"] > .window-header > .window-traffic-lights > .win-btn.win-maximize {
   order: 2;
 }
 
-.webos-window[data-wm-style="win311"] .win-btn.win-close,
-:root[data-wm-style="win311"] .webos-window:not([data-wm-style]) .win-btn.win-close {
+[data-wm-style="win311"] > .window-header > .window-traffic-lights > .win-btn.win-maximize::after {
+  content: '▲';
+}
+
+[data-wm-style="win311"] > .window-header > .window-traffic-lights > .win-btn.win-close {
   order: 3;
 }

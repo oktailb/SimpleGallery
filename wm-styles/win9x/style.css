@@ -1,14 +1,12 @@
 /* Windows 95 / 98 / 2000 (Win9x) Window Manager Skin */
-.webos-window[data-wm-style="win9x"],
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) {
+[data-wm-style="win9x"].webos-window {
   border-radius: 0;
   border: 3px outset #ffffff;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
   background: #c0c0c0;
 }
 
-.webos-window[data-wm-style="win9x"] .window-header,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .window-header {
+[data-wm-style="win9x"] > .window-header {
   background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
   color: #ffffff;
   padding: 3px 4px;
@@ -18,8 +16,7 @@
   align-items: center;
 }
 
-.webos-window[data-wm-style="win9x"] .window-title-group,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .window-title-group {
+[data-wm-style="win9x"] > .window-header > .window-title-group {
   order: 1;
   color: #ffffff;
   font-family: "Tahoma", "Segoe UI", sans-serif;
@@ -28,25 +25,21 @@
   margin-right: auto;
 }
 
-.webos-window[data-wm-style="win9x"] .window-title-text,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .window-title-text {
+[data-wm-style="win9x"] > .window-header > .window-title-group > .window-title-text {
   color: #ffffff;
 }
 
-.webos-window[data-wm-style="win9x"] .window-header-actions,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .window-header-actions {
+[data-wm-style="win9x"] > .window-header > .window-header-actions {
   order: 2;
   margin-right: 6px;
 }
 
-.webos-window[data-wm-style="win9x"] .window-traffic-lights,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .window-traffic-lights {
+[data-wm-style="win9x"] > .window-header > .window-traffic-lights {
   order: 3;
   gap: 2px;
 }
 
-.webos-window[data-wm-style="win9x"] .win-btn,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .win-btn {
+[data-wm-style="win9x"] > .window-header > .window-traffic-lights > .win-btn {
   width: 16px;
   height: 14px;
   border-radius: 0;
@@ -58,17 +51,13 @@
   box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
 }
 
-.webos-window[data-wm-style="win9x"] .win-btn.win-minimize,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .win-btn.win-minimize { order: 1; }
+[data-wm-style="win9x"] > .window-header > .window-traffic-lights > .win-btn.win-minimize { order: 1; }
 
-.webos-window[data-wm-style="win9x"] .win-btn.win-maximize,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .win-btn.win-maximize { order: 2; }
+[data-wm-style="win9x"] > .window-header > .window-traffic-lights > .win-btn.win-maximize { order: 2; }
 
-.webos-window[data-wm-style="win9x"] .win-btn.win-close,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .win-btn.win-close { order: 3; }
+[data-wm-style="win9x"] > .window-header > .window-traffic-lights > .win-btn.win-close { order: 3; }
 
-.webos-window[data-wm-style="win9x"] .win-btn:active,
-:root[data-wm-style="win9x"] .webos-window:not([data-wm-style]) .win-btn:active {
+[data-wm-style="win9x"] > .window-header > .window-traffic-lights > .win-btn:active {
   border-style: inset;
   box-shadow: inset 1px 1px 0 #808080;
 }

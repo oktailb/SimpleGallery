@@ -1,17 +1,15 @@
 /* BeOS / Haiku (Yellow Tab) Window Manager Skin */
-.webos-window[data-wm-style="beos"],
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) {
+[data-wm-style="beos"].webos-window {
   border-radius: 0;
   border: 1px solid #737373;
   box-shadow: 2px 2px 0 #000000, 0 12px 35px rgba(0,0,0,0.5);
   background: #d4d4d4;
 }
 
-.webos-window[data-wm-style="beos"] .window-header,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-header {
+[data-wm-style="beos"] > .window-header {
   background: #d4d4d4;
   border-bottom: 2px solid #737373;
-  height: 22px;
+  height: 24px;
   padding: 0;
   display: flex;
   align-items: stretch;
@@ -20,10 +18,9 @@
 }
 
 /* Yellow Tab Controls (Left part of tab) */
-.webos-window[data-wm-style="beos"] .window-traffic-lights,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-traffic-lights {
+[data-wm-style="beos"] > .window-header > .window-traffic-lights {
   background: #ffc800;
-  height: 22px;
+  height: 24px;
   display: flex;
   align-items: center;
   padding: 0 4px 0 6px;
@@ -35,10 +32,9 @@
 }
 
 /* Yellow Tab Title (Right part of tab) */
-.webos-window[data-wm-style="beos"] .window-title-group,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-title-group {
+[data-wm-style="beos"] > .window-header > .window-title-group {
   background: #ffc800;
-  height: 22px;
+  height: 24px;
   display: flex;
   align-items: center;
   padding: 0 12px 0 4px;
@@ -55,15 +51,13 @@
   box-shadow: 1px 0 0 #000000;
 }
 
-.webos-window[data-wm-style="beos"] .window-title-text,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .window-title-text {
+[data-wm-style="beos"] > .window-header > .window-title-group > .window-title-text {
   color: #000000;
   font-weight: 700;
 }
 
-/* BeOS close gadget (small square on left) */
-.webos-window[data-wm-style="beos"] .win-btn,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn {
+/* BeOS close and zoom gadgets */
+[data-wm-style="beos"] > .window-header > .window-traffic-lights > .win-btn {
   width: 12px;
   height: 12px;
   border-radius: 0;
@@ -75,23 +69,19 @@
   padding: 0;
 }
 
-.webos-window[data-wm-style="beos"] .win-btn.win-close,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn.win-close {
+[data-wm-style="beos"] > .window-header > .window-traffic-lights > .win-btn.win-close {
   order: 1;
 }
 
-.webos-window[data-wm-style="beos"] .win-btn.win-maximize,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn.win-maximize {
+[data-wm-style="beos"] > .window-header > .window-traffic-lights > .win-btn.win-maximize {
   order: 2;
 }
 
-.webos-window[data-wm-style="beos"] .win-btn.win-minimize,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn.win-minimize {
+[data-wm-style="beos"] > .window-header > .window-traffic-lights > .win-btn.win-minimize {
   display: none;
 }
 
-.webos-window[data-wm-style="beos"] .win-btn:active,
-:root[data-wm-style="beos"] .webos-window:not([data-wm-style]) .win-btn:active {
+[data-wm-style="beos"] > .window-header > .window-traffic-lights > .win-btn:active {
   box-shadow: inset 1px 1px 0 #333333;
   background: #333333;
 }

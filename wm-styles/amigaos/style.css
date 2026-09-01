@@ -1,14 +1,12 @@
 /* AmigaOS 3.x / Workbench Window Manager Skin */
-.webos-window[data-wm-style="amigaos"],
-:root[data-wm-style="amigaos"] .webos-window:not([data-wm-style]) {
+[data-wm-style="amigaos"].webos-window {
   border-radius: 0;
   border: 2px solid #ffaa00;
   box-shadow: 3px 3px 0 #0055aa;
   background: #a0a0a0;
 }
 
-.webos-window[data-wm-style="amigaos"] .window-header,
-:root[data-wm-style="amigaos"] .webos-window:not([data-wm-style]) .window-header {
+[data-wm-style="amigaos"] > .window-header {
   background: #0055aa;
   color: #ffaa00;
   padding: 2px 4px;
@@ -19,8 +17,7 @@
   justify-content: space-between;
 }
 
-.webos-window[data-wm-style="amigaos"] .window-title-group,
-:root[data-wm-style="amigaos"] .webos-window:not([data-wm-style]) .window-title-group {
+[data-wm-style="amigaos"] > .window-header > .window-title-group {
   color: #ffffff;
   font-family: "Topaz", "Courier New", monospace;
   font-weight: 700;
@@ -28,13 +25,11 @@
   letter-spacing: 1px;
 }
 
-.webos-window[data-wm-style="amigaos"] .window-title-text,
-:root[data-wm-style="amigaos"] .webos-window:not([data-wm-style]) .window-title-text {
+[data-wm-style="amigaos"] > .window-header > .window-title-group > .window-title-text {
   color: #ffffff;
 }
 
-.webos-window[data-wm-style="amigaos"] .win-btn,
-:root[data-wm-style="amigaos"] .webos-window:not([data-wm-style]) .win-btn {
+[data-wm-style="amigaos"] > .window-header > .window-traffic-lights > .win-btn {
   width: 14px;
   height: 14px;
   border-radius: 0;
