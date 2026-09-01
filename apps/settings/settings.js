@@ -69,7 +69,6 @@
       this.loadPermissions();
       this.loadSystemInfo();
       this.loadAutostartConfig();
-      this.loadDisabledApps();
       this.loadWindowStyles();
     }
 
