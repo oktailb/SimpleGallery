@@ -1,0 +1,56 @@
+/* BeOS / Haiku Window Manager Skin */
+[data-wm-style="beos"] .webos-window,
+.webos-window[data-wm-style="beos"] {
+  border-radius: 0;
+  border: 2px solid #888888;
+  box-shadow: 2px 2px 0 #000, 0 12px 35px rgba(0,0,0,0.6);
+  background: #d4d4d4;
+  padding-top: 0;
+}
+[data-wm-style="beos"] .webos-window .window-header,
+.webos-window[data-wm-style="beos"] .window-header {
+  background: transparent;
+  padding: 0;
+  height: 24px;
+  border-bottom: 2px solid #ffc800;
+  display: flex;
+  justify-content: flex-start;
+  position: relative;
+}
+[data-wm-style="beos"] .webos-window .window-title-group,
+.webos-window[data-wm-style="beos"] .window-title-group {
+  background: #ffc800;
+  color: #000000;
+  font-family: "DejaVu Sans", "Helvetica Neue", sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 3px 12px 3px 6px;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #a07d00;
+  border-radius: 4px 4px 0 0;
+  margin: 0;
+  max-width: 65%;
+  box-shadow: 1px 0 0 #000;
+}
+[data-wm-style="beos"] .webos-window .window-traffic-lights,
+.webos-window[data-wm-style="beos"] .window-traffic-lights {
+  position: absolute;
+  right: 6px;
+  top: 3px;
+  gap: 4px;
+}
+[data-wm-style="beos"] .webos-window .win-btn,
+.webos-window[data-wm-style="beos"] .win-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px solid #333;
+  background: #e8e8e8;
+  color: #000 !important;
+  box-shadow: inset 1px 1px 0 #fff;
+  font-size: 8px;
+}
+[data-wm-style="beos"] .webos-window .win-btn.win-close {
+  background: #ffaa00;
+}

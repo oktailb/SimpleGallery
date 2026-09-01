@@ -1,0 +1,50 @@
+/* Mac OS Classic (System 7 / Platinum) Window Manager Skin */
+[data-wm-style="macos-classic"] .webos-window,
+.webos-window[data-wm-style="macos-classic"] {
+  border-radius: 2px;
+  border: 2px outset #dfdfdf;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0,0,0,0.5);
+  background: #cecece;
+}
+[data-wm-style="macos-classic"] .webos-window .window-header,
+.webos-window[data-wm-style="macos-classic"] .window-header {
+  background: repeating-linear-gradient(to bottom, #555555 0px, #555555 1px, #dcdcdc 1px, #dcdcdc 2px);
+  padding: 3px 6px;
+  height: 22px;
+  border-bottom: 2px solid #555;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+[data-wm-style="macos-classic"] .webos-window .window-title-group,
+.webos-window[data-wm-style="macos-classic"] .window-title-group {
+  background: #cecece;
+  padding: 0 8px;
+  border: 1px solid #777;
+  color: #000000;
+  font-family: "Chicago", "Charcoal", "Geneva", -apple-system, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 auto;
+  border-radius: 1px;
+}
+[data-wm-style="macos-classic"] .webos-window .window-traffic-lights,
+.webos-window[data-wm-style="macos-classic"] .window-traffic-lights {
+  gap: 4px;
+}
+[data-wm-style="macos-classic"] .webos-window .win-btn,
+.webos-window[data-wm-style="macos-classic"] .win-btn {
+  width: 13px;
+  height: 13px;
+  border-radius: 0;
+  border: 1px solid #444;
+  background: #e0e0e0;
+  color: #000 !important;
+  font-size: 8px;
+  box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #888;
+}
+[data-wm-style="macos-classic"] .webos-window .win-btn:active,
+.webos-window[data-wm-style="macos-classic"] .win-btn:active {
+  box-shadow: inset 1px 1px 0 #444;
+  background: #888;
+}

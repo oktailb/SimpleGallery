@@ -14,27 +14,38 @@
       this.topZIndex = 100;
       this.desktop = null;
       this.taskbar = null;
+      this.stylesCache = [];
       this.currentWindowStyle = (typeof localStorage !== 'undefined' && localStorage.getItem('sg_window_style')) || 'macos';
     }
 
     getWindowStyles() {
-      return [
-        { id: 'macos', name: 'macOS Modern', category: 'modern', icon: '🍎', desc: 'Feux tricolores ronds, flou translucide et bordures douces.' },
-        { id: 'macos-classic', name: 'Mac OS Classic (System 7)', category: 'retro', icon: '🍏', desc: 'Rayures horizontales pinstripes, boîte carrée de fermeture et zoom.' },
-        { id: 'beos', name: 'BeOS / Haiku', category: 'retro', icon: '🟡', desc: 'Onglet jaune asymétrique portant le titre et boîte de zoom.' },
-        { id: 'win311', name: 'Windows 3.11', category: 'retro', icon: '🪟', desc: 'Bordures 3D biseautées épaisses, menu tiret et flèches ▲ ▼.' },
-        { id: 'win9x', name: 'Windows 95 / 98 / 2000', category: 'retro', icon: '💾', desc: 'Dégradé bleu classique, biseaux 3D gris et boutons carrés 🗕 🗖 🗙.' },
-        { id: 'win11', name: 'Windows 11 (Fluent)', category: 'modern', icon: '🔷', desc: 'Boutons rectangulaires modernes à droite et angles subtils.' },
-        { id: 'amigaos', name: 'AmigaOS 3.x', category: 'retro', icon: '🔴', desc: 'Barre bleue/ambre rétro, gadgets de fermeture et profondeur.' },
-        { id: 'windowmaker', name: 'Window Maker / NeXT', category: 'retro', icon: '⬛', desc: 'Dégradé sombre profond et boutons miniatures carrés en relief.' },
-        { id: 'aqua', name: 'Mac OS X Aqua', category: 'retro', icon: '💧', desc: 'Rayures métal brossé pinstripes et boutons effet gelée vitrée.' }
-      ];
+      if (window.SG_DISCOVERED_WM_STYLES && Array.isArray(window.SG_DISCOVERED_WM_STYLES) && window.SG_DISCOVERED_WM_STYLES.length > 0) {
+        return window.SG_DISCOVERED_WM_STYLES;
+      }
+      if (this.stylesCache && Array.isArray(this.stylesCache) && this.stylesCache.length > 0) {
+        return this.stylesCache;
+      }
+      return [];
+    }
+
+    async loadWindowStyles() {
+      try {
+        if (window.sys && window.sys.api && typeof window.sys.api.get === 'function') {
+          const res = await window.sys.api.get('get_wm_styles');
+          if (res && res.success && Array.isArray(res.styles)) {
+            this.stylesCache = res.styles;
+            window.SG_DISCOVERED_WM_STYLES = res.styles;
+            return this.stylesCache;
+          }
+        }
+      } catch (e) {}
+      return this.getWindowStyles();
     }
 
     setWindowStyle(styleId) {
       const styles = this.getWindowStyles();
       const match = styles.find(s => s.id === styleId);
-      this.currentWindowStyle = match ? match.id : 'macos';
+      this.currentWindowStyle = match ? match.id : styleId;
       try {
         localStorage.setItem('sg_window_style', this.currentWindowStyle);
       } catch (e) {}
@@ -60,6 +71,7 @@
     init() {
       this.desktop = document.getElementById('webosDesktop') || document.body;
       this.taskbar = document.getElementById('webosTaskbar');
+      this.loadWindowStyles();
 
       if (!this.taskbar) {
         this.taskbar = document.createElement('div');

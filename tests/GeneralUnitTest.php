@@ -622,23 +622,37 @@ class GeneralUnitTestSuite {
         $this->assert("Catégorie de 'explorer' vient du manifest ('view')", ($discovered['explorer']['category'] ?? '') === 'view');
         $this->assert("Catégorie de 'image-viewer' vient du manifest ('viewer')", ($discovered['image-viewer']['category'] ?? '') === 'viewer');
 
-        // 2. WindowManager Next-Gen Taskbar Elements & Skins
+        // 2. WindowManager Next-Gen Taskbar Elements & Dynamic Skins
         $wm_code = @file_get_contents($this->base_dir . '/system/userland/core/WindowManager.js');
         $this->assert("WindowManager implémente le conteneur d'applications taskbar-apps-container", strpos($wm_code, 'taskbarAppsContainer') !== false);
         $this->assert("WindowManager implémente le System Tray taskbar-tray-container", strpos($wm_code, 'taskbarTrayContainer') !== false);
         $this->assert("WindowManager implémente le bouton horloge taskbarCalendarBtn", strpos($wm_code, 'taskbarCalendarBtn') !== false);
         $this->assert("WindowManager implémente le bouton 'Afficher le Bureau' taskbarShowDesktopBtn", strpos($wm_code, 'taskbarShowDesktopBtn') !== false);
         $this->assert("WindowManager implémente la prévisualisation au survol taskbarPreviewCard", strpos($wm_code, 'taskbarPreviewCard') !== false);
-        $this->assert("WindowManager implémente le registre getWindowStyles()", strpos($wm_code, 'getWindowStyles') !== false);
+        $this->assert("WindowManager implémente le registre dynamique getWindowStyles()", strpos($wm_code, 'getWindowStyles') !== false);
         $this->assert("WindowManager implémente setWindowStyle()", strpos($wm_code, 'setWindowStyle') !== false);
-        $this->assert("WindowManager supporte les styles rétro et modernes (macos, win9x, beos, win311, amigaos)", strpos($wm_code, 'macos-classic') !== false && strpos($wm_code, 'win311') !== false && strpos($wm_code, 'amigaos') !== false);
+        $this->assert("WindowManager supporte la découverte dynamique sans liste en dur", strpos($wm_code, 'SG_DISCOVERED_WM_STYLES') !== false);
 
-        // 3. Window Manager Skins CSS & Toolkit
-        $wm_css = @file_get_contents($this->base_dir . '/css/window-manager.css');
-        $this->assert("Feuille CSS window-manager.css intègre le style beos (Yellow Tab)", strpos($wm_css, '[data-wm-style="beos"]') !== false);
-        $this->assert("Feuille CSS window-manager.css intègre le style win9x", strpos($wm_css, '[data-wm-style="win9x"]') !== false);
-        $this->assert("Feuille CSS window-manager.css intègre le style macos-classic", strpos($wm_css, '[data-wm-style="macos-classic"]') !== false);
-        $this->assert("Feuille CSS window-manager.css intègre le style windowmaker", strpos($wm_css, '[data-wm-style="windowmaker"]') !== false);
+        // 3. Modular Window Manager Skins Auto-Discovery (wm-styles/*)
+        $discovered_styles = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredWindowStyles($this->base_dir);
+        $this->assert("PluginDiscovery découvre au moins 9 styles de fenêtres", count($discovered_styles) >= 9);
+        $style_ids = array_column($discovered_styles, 'id');
+        $this->assert("Style modulaire 'beos' découvert avec style.json/css", in_array('beos', $style_ids, true));
+        $this->assert("Style modulaire 'win9x' découvert avec style.json/css", in_array('win9x', $style_ids, true));
+        $this->assert("Style modulaire 'macos-classic' découvert avec style.json/css", in_array('macos-classic', $style_ids, true));
+        $this->assert("Style modulaire 'windowmaker' découvert avec style.json/css", in_array('windowmaker', $style_ids, true));
+        $this->assert("Style modulaire 'amigaos' découvert avec style.json/css", in_array('amigaos', $style_ids, true));
+        $this->assert("Style modulaire 'aqua' découvert avec style.json/css", in_array('aqua', $style_ids, true));
+
+        // Vérification de l'existence des fichiers CSS pour chaque style découvert
+        $all_css_exist = true;
+        foreach ($discovered_styles as $s) {
+            if (empty($s['css_entry']) || !file_exists($this->base_dir . '/' . $s['css_entry'])) {
+                $all_css_exist = false;
+                break;
+            }
+        }
+        $this->assert("Tous les fichiers CSS des skins modulaires wm-styles/ existent", $all_css_exist);
 
         $toolkit_code = @file_get_contents($this->base_dir . '/system/userland/ui/WebOSToolkit.js');
         $this->assert("WebOSToolkit fournit la grille windowStyleGrid", strpos($toolkit_code, 'windowStyleGrid') !== false);

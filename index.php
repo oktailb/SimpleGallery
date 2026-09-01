@@ -126,9 +126,11 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   $discovered_apps = PluginDiscovery::getDiscoveredApps(__DIR__, false);
   $all_apps_manifests = PluginDiscovery::getDiscoveredApps(__DIR__, true);
   $discovered_views = PluginDiscovery::getDiscoveredViews(__DIR__);
+  $discovered_wm_styles = PluginDiscovery::getDiscoveredWindowStyles(__DIR__);
   ?>
   <script>
     window.SG_DISCOVERED_APPS = <?php echo json_encode($all_apps_manifests); ?>;
+    window.SG_DISCOVERED_WM_STYLES = <?php echo json_encode($discovered_wm_styles); ?>;
   </script>
 
   <!-- Auto-Discovered Explorer Views (apps/explorer/views/<name>/manifest.json) -->
@@ -138,6 +140,13 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <?php endif; ?>
     <?php if (!empty($view_info['js_entry'])): ?>
       <script src="<?php echo htmlspecialchars($view_info['js_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $view_info['js_entry']); ?>" defer></script>
+    <?php endif; ?>
+  <?php endforeach; ?>
+
+  <!-- Auto-Discovered Window Manager Skins (wm-styles/<name>/style.json) -->
+  <?php foreach ($discovered_wm_styles as $style_info): ?>
+    <?php if (!empty($style_info['css_entry'])): ?>
+      <link rel="stylesheet" href="<?php echo htmlspecialchars($style_info['css_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $style_info['css_entry']); ?>">
     <?php endif; ?>
   <?php endforeach; ?>
 

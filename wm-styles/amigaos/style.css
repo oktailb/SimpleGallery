@@ -1,0 +1,37 @@
+/* AmigaOS 3.x / Workbench Window Manager Skin */
+[data-wm-style="amigaos"] .webos-window,
+.webos-window[data-wm-style="amigaos"] {
+  border-radius: 0;
+  border: 2px solid #ffaa00;
+  box-shadow: 3px 3px 0 #0055aa;
+  background: #a0a0a0;
+}
+[data-wm-style="amigaos"] .webos-window .window-header,
+.webos-window[data-wm-style="amigaos"] .window-header {
+  background: #0055aa;
+  color: #ffaa00;
+  padding: 2px 4px;
+  height: 22px;
+  border-bottom: 2px solid #ffaa00;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+[data-wm-style="amigaos"] .webos-window .window-title-group,
+.webos-window[data-wm-style="amigaos"] .window-title-group {
+  color: #ffffff;
+  font-family: "Topaz", "Courier New", monospace;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+[data-wm-style="amigaos"] .webos-window .win-btn,
+.webos-window[data-wm-style="amigaos"] .win-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px solid #ffaa00;
+  background: #0055aa;
+  color: #ffaa00 !important;
+  font-size: 8px;
+}

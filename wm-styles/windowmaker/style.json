@@ -1,0 +1,8 @@
+{
+  "id": "windowmaker",
+  "name": "Window Maker / NeXT",
+  "category": "retro",
+  "icon": "⬛",
+  "desc": "Dégradé sombre profond et boutons miniatures carrés en relief.",
+  "css": "style.css"
+}

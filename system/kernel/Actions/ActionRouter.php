@@ -63,6 +63,7 @@ class ActionRouter {
         'get_desktop_shortcuts'   => SystemActions::class,
         'get_disabled_apps'       => SystemActions::class,
         'set_app_enabled'         => SystemActions::class,
+        'get_wm_styles'           => SystemActions::class,
 
         // Media & Search
         'search_media'            => MediaActions::class,

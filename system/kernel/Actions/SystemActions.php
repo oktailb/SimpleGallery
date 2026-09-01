@@ -216,6 +216,11 @@ class SystemActions {
             ]];
         }
 
+        if ($action === 'get_wm_styles') {
+            $styles = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredWindowStyles($base_dir);
+            return ['status' => 200, 'data' => ['success' => true, 'styles' => $styles]];
+        }
+
         return null;
     }
 }

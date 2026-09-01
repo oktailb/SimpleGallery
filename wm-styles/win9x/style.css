@@ -1,0 +1,56 @@
+/* Windows 95 / 98 / 2000 (Win9x) Window Manager Skin */
+[data-wm-style="win9x"] .webos-window,
+.webos-window[data-wm-style="win9x"] {
+  border-radius: 0;
+  border: 3px outset #ffffff;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+  background: #c0c0c0;
+}
+[data-wm-style="win9x"] .webos-window .window-header,
+.webos-window[data-wm-style="win9x"] .window-header {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: #ffffff;
+  padding: 3px 4px;
+  height: 24px;
+  border-bottom: 2px solid #808080;
+  display: flex;
+  align-items: center;
+}
+[data-wm-style="win9x"] .webos-window .window-title-group,
+.webos-window[data-wm-style="win9x"] .window-title-group {
+  order: 1;
+  color: #ffffff;
+  font-family: "Tahoma", "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-right: auto;
+}
+[data-wm-style="win9x"] .webos-window .window-header-actions,
+.webos-window[data-wm-style="win9x"] .window-header-actions {
+  order: 2;
+  margin-right: 6px;
+}
+[data-wm-style="win9x"] .webos-window .window-traffic-lights,
+.webos-window[data-wm-style="win9x"] .window-traffic-lights {
+  order: 3;
+  gap: 2px;
+}
+[data-wm-style="win9x"] .webos-window .win-btn,
+.webos-window[data-wm-style="win9x"] .win-btn {
+  width: 16px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px outset #ffffff;
+  background: #c0c0c0;
+  color: #000000 !important;
+  font-size: 9px;
+  font-weight: 900;
+  box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+}
+[data-wm-style="win9x"] .webos-window .win-btn.win-minimize { order: 1; }
+[data-wm-style="win9x"] .webos-window .win-btn.win-maximize { order: 2; }
+[data-wm-style="win9x"] .webos-window .win-btn.win-close { order: 3; }
+[data-wm-style="win9x"] .webos-window .win-btn:active {
+  border-style: inset;
+  box-shadow: inset 1px 1px 0 #808080;
+}

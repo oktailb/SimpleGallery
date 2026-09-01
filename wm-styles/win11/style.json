@@ -1,0 +1,8 @@
+{
+  "id": "win11",
+  "name": "Windows 11 (Fluent)",
+  "category": "modern",
+  "icon": "🔷",
+  "desc": "Boutons rectangulaires modernes à droite et angles subtils.",
+  "css": "style.css"
+}

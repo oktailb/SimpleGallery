@@ -1,0 +1,8 @@
+{
+  "id": "beos",
+  "name": "BeOS / Haiku",
+  "category": "retro",
+  "icon": "🟡",
+  "desc": "Onglet jaune asymétrique portant le titre et boîte de zoom.",
+  "css": "style.css"
+}

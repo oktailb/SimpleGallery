@@ -1,0 +1,8 @@
+{
+  "id": "amigaos",
+  "name": "AmigaOS 3.x",
+  "category": "retro",
+  "icon": "🔴",
+  "desc": "Barre bleue/ambre rétro, gadgets de fermeture et profondeur.",
+  "css": "style.css"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "win9x",
+  "name": "Windows 95 / 98 / 2000",
+  "category": "retro",
+  "icon": "💾",
+  "desc": "Dégradé bleu classique, biseaux 3D gris et boutons carrés 🗕 🗖 🗙.",
+  "css": "style.css"
+}

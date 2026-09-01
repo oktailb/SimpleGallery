@@ -278,6 +278,71 @@ class PluginDiscovery {
     }
 
     /**
+     * Discovers all modular Window Manager skins in wm-styles/<style_name>/
+     * @param string $project_root
+     * @return array List of discovered window style definitions
+     */
+    public static function getDiscoveredWindowStyles(string $project_root): array {
+        $styles_dir = $project_root . '/wm-styles';
+        $styles = [];
+        if (!is_dir($styles_dir)) {
+            return $styles;
+        }
+
+        $folders = @scandir($styles_dir) ?: [];
+        foreach ($folders as $folder) {
+            if ($folder[0] === '.') continue;
+            $style_path = $styles_dir . '/' . $folder;
+            if (!is_dir($style_path)) continue;
+
+            $json_file = null;
+            if (file_exists($style_path . '/style.json')) {
+                $json_file = $style_path . '/style.json';
+            } elseif (file_exists($style_path . '/manifest.json')) {
+                $json_file = $style_path . '/manifest.json';
+            }
+
+            $meta = [];
+            if ($json_file) {
+                $content = @file_get_contents($json_file);
+                $meta = @json_decode((string)$content, true) ?: [];
+            }
+
+            $id = $meta['id'] ?? $folder;
+            $name = $meta['name'] ?? ucfirst(str_replace(['-', '_'], ' ', $folder));
+            $nameKey = $meta['nameKey'] ?? ('wm_style.' . $id . '.name');
+            $desc = $meta['desc'] ?? '';
+            $descKey = $meta['descKey'] ?? ('wm_style.' . $id . '.desc');
+            $icon = $meta['icon'] ?? '🪟';
+            $category = $meta['category'] ?? 'retro';
+
+            // Find CSS file
+            $css_entry = null;
+            if (!empty($meta['css']) && file_exists($style_path . '/' . $meta['css'])) {
+                $css_entry = 'wm-styles/' . $folder . '/' . $meta['css'];
+            } elseif (file_exists($style_path . '/style.css')) {
+                $css_entry = 'wm-styles/' . $folder . '/style.css';
+            } elseif (file_exists($style_path . '/' . $folder . '.css')) {
+                $css_entry = 'wm-styles/' . $folder . '/' . $folder . '.css';
+            }
+
+            $styles[] = [
+                'id'        => $id,
+                'name'      => $name,
+                'nameKey'   => $nameKey,
+                'desc'      => $desc,
+                'descKey'   => $descKey,
+                'icon'      => $icon,
+                'category'  => $category,
+                'css_entry' => $css_entry,
+                'meta'      => $meta
+            ];
+        }
+
+        return $styles;
+    }
+
+    /**
      * Recursively flattens a nested array into dot-separated string keys
      */
     private static function flattenTranslations(array $array, string $prefix, array &$result): void {

@@ -1,0 +1,8 @@
+{
+  "id": "macos",
+  "name": "macOS Modern",
+  "category": "modern",
+  "icon": "🍎",
+  "desc": "Feux tricolores ronds, flou translucide et bordures douces.",
+  "css": "style.css"
+}

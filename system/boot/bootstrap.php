@@ -110,7 +110,7 @@ if ($resolved_storage !== false && is_dir($resolved_storage)) {
 }
 
 // 8. Files and folders to ignore during indexing
-$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'includes', 'css', 'js', 'locales', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh', 'system', 'config', 'storage', 'themes', 'apps', 'bin'];
+$ignore_list = ['.', '..', '.git', '.thumbnails', '.comment', '.admin_password_hash', 'index.php', 'api.php', 'thumb.php', 'config.php', 'functions.php', 'tests', 'includes', 'css', 'js', 'locales', 'LICENSE', 'README.md', 'set_admin_password.php', '.htaccess', '.user.ini', 'start.sh', 'system', 'config', 'storage', 'themes', 'apps', 'bin', 'wm-styles'];
 
 // 9. Start secure session
 if (php_sapi_name() !== 'cli') {

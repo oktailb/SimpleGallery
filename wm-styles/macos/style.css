@@ -1,0 +1,5 @@
+/* macOS Modern Window Manager Skin */
+[data-wm-style="macos"] .webos-window,
+.webos-window[data-wm-style="macos"] {
+  border-radius: 14px;
+}

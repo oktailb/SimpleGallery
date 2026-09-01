@@ -1,0 +1,54 @@
+/* Window Maker / NeXTSTEP Window Manager Skin */
+[data-wm-style="windowmaker"] .webos-window,
+.webos-window[data-wm-style="windowmaker"] {
+  border-radius: 0;
+  border: 1px solid #000000;
+  box-shadow: 0 0 0 1px #ffffff, 6px 6px 20px rgba(0,0,0,0.8);
+  background: #2b2b36;
+}
+[data-wm-style="windowmaker"] .webos-window .window-header,
+.webos-window[data-wm-style="windowmaker"] .window-header {
+  background: linear-gradient(180deg, #444455 0%, #1a1a24 100%);
+  color: #ffffff;
+  padding: 3px 4px;
+  height: 24px;
+  border-bottom: 1px solid #000;
+  display: flex;
+  align-items: center;
+}
+[data-wm-style="windowmaker"] .webos-window .window-title-group,
+.webos-window[data-wm-style="windowmaker"] .window-title-group {
+  order: 2;
+  margin: 0 auto;
+  font-family: "Helvetica Neue", "Arial", sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #ffffff;
+}
+[data-wm-style="windowmaker"] .webos-window .win-btn.win-minimize {
+  order: 1;
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
+  border: 2px outset #666;
+  background: #3a3a4c;
+  color: #fff !important;
+}
+[data-wm-style="windowmaker"] .webos-window .win-btn.win-close {
+  order: 3;
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
+  border: 2px outset #666;
+  background: #3a3a4c;
+  color: #ff5555 !important;
+}
+[data-wm-style="windowmaker"] .webos-window .win-btn.win-maximize {
+  order: 2;
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
+  border: 2px outset #666;
+  background: #3a3a4c;
+  color: #fff !important;
+}
