@@ -1,33 +1,115 @@
-/* Mac OS X Aqua Window Manager Skin */
+/* Mac OS X Aqua Window Manager Skin (Cheetah to Tiger) */
 [data-wm-style="aqua"].webos-window {
-  border-radius: 8px 8px 0 0;
-  border: 1px solid #999999;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-  background: #ededed;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.25);
+  background: #ececec;
+  color: #222222;
 }
 
 [data-wm-style="aqua"] > .window-header {
-  background: repeating-linear-gradient(180deg, #f0f0f0 0px, #f0f0f0 1px, #dcdcdc 2px, #dcdcdc 3px);
-  border-bottom: 1px solid #a0a0a0;
-  padding: 4px 10px;
-  height: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.1) 45%, rgba(0, 0, 0, 0.05) 50%, rgba(255, 255, 255, 0.2) 100%),
+              repeating-linear-gradient(180deg, #f7f7f7 0px, #f7f7f7 1px, #e3e3e3 1px, #e3e3e3 2px);
+  border-bottom: 1px solid #a8a8a8;
+  padding: 0 10px;
+  height: 25px;
+  min-height: 25px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  cursor: grab;
 }
 
+/* 1. Traffic Lights Container on the Left */
+[data-wm-style="aqua"] > .window-header > .window-traffic-lights {
+  order: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+}
+
+/* Authentic Aqua 3D Translucent Jelly Drop Buttons */
+[data-wm-style="aqua"] > .window-header .win-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.95), 0 1px 2px rgba(0, 0, 0, 0.25);
+  color: transparent !important;
+  font-size: 8px !important;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  transform: none !important;
+  transition: filter 0.15s ease, color 0.15s ease;
+}
+
+/* Close: Red Gelatin Drop */
+[data-wm-style="aqua"] > .window-header .win-btn.win-close {
+  background: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(255, 255, 255, 0) 65%),
+              linear-gradient(180deg, #ff635a 0%, #e0322a 100%);
+}
+
+/* Minimize: Yellow/Amber Gelatin Drop */
+[data-wm-style="aqua"] > .window-header .win-btn.win-minimize {
+  background: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(255, 255, 255, 0) 65%),
+              linear-gradient(180deg, #ffc233 0%, #e59905 100%);
+}
+
+/* Maximize: Green Gelatin Drop */
+[data-wm-style="aqua"] > .window-header .win-btn.win-maximize {
+  background: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(255, 255, 255, 0) 65%),
+              linear-gradient(180deg, #30d44a 0%, #179e2e 100%);
+}
+
+/* Hover over traffic lights reveals glyphs in dark charcoal */
+[data-wm-style="aqua"] > .window-header:hover .win-btn,
+[data-wm-style="aqua"] > .window-header .window-traffic-lights:hover .win-btn {
+  color: rgba(40, 20, 10, 0.65) !important;
+}
+
+[data-wm-style="aqua"] > .window-header .win-btn:active {
+  filter: brightness(0.85) contrast(1.2);
+}
+
+/* 2. Centered Lucida Grande Title with White Emboss Shadow */
 [data-wm-style="aqua"] > .window-header > .window-title-group {
-  color: #222222;
-  font-family: "Lucida Grande", sans-serif;
-  font-weight: 700;
-  font-size: 0.8rem;
+  order: 2;
   margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #222222;
+  font-family: "Lucida Grande", "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+  cursor: grab;
 }
 
 [data-wm-style="aqua"] > .window-header > .window-title-group > .window-title-text {
   color: #222222;
 }
 
-[data-wm-style="aqua"] > .window-header > .window-traffic-lights > .win-btn {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.3);
+/* 3. Window Actions */
+[data-wm-style="aqua"] > .window-header > .window-header-actions {
+  order: 3;
+}
+
+/* Aqua Window Body */
+[data-wm-style="aqua"] > .window-body {
+  background: #ffffff;
+  color: #222222;
+}
+
+[data-theme="dark-glass"][data-wm-style="aqua"] > .window-body,
+[data-theme="cyberpunk"][data-wm-style="aqua"] > .window-body {
+  background: #1e1e24;
+  color: #e2e8f0;
 }

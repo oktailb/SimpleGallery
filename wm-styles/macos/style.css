@@ -1,8 +1,97 @@
-/* macOS Modern Window Manager Skin */
+/* macOS Modern Window Manager Skin (Sonoma / Sequoia) */
 [data-wm-style="macos"].webos-window {
-  border-radius: 14px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 60px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 [data-wm-style="macos"] > .window-header {
-  border-radius: 14px 14px 0 0;
+  border-radius: 12px 12px 0 0;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  user-select: none;
+}
+
+/* 1. Traffic Lights Container on the Left */
+[data-wm-style="macos"] > .window-header > .window-traffic-lights {
+  order: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 14px;
+}
+
+/* Authentic 12px macOS Traffic Light Buttons */
+[data-wm-style="macos"] > .window-header .win-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent !important;
+  font-size: 8px !important;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: filter 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  transform: none;
+}
+
+[data-wm-style="macos"] > .window-header .win-btn.win-close {
+  background: #ff5f57;
+  border-color: #e0443e;
+}
+
+[data-wm-style="macos"] > .window-header .win-btn.win-minimize {
+  background: #febc2e;
+  border-color: #dea123;
+}
+
+[data-wm-style="macos"] > .window-header .win-btn.win-maximize {
+  background: #28c840;
+  border-color: #1aab29;
+}
+
+/* Synchronized revelation of glyphs on hover */
+[data-wm-style="macos"] > .window-header:hover .win-btn,
+[data-wm-style="macos"] > .window-header .window-traffic-lights:hover .win-btn {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-wm-style="macos"] > .window-header .win-btn:active {
+  filter: brightness(0.85);
+  transform: scale(0.96);
+}
+
+/* 2. Centered Window Title */
+[data-wm-style="macos"] > .window-header > .window-title-group {
+  order: 2;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+  opacity: 0.9;
+  letter-spacing: -0.1px;
+}
+
+[data-wm-style="macos"] > .window-header > .window-title-group > .window-title-text {
+  color: inherit;
+}
+
+/* 3. Window Actions */
+[data-wm-style="macos"] > .window-header > .window-header-actions {
+  order: 3;
 }

@@ -2,22 +2,34 @@
 [data-wm-style="win11"].webos-window {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
 }
 
 [data-wm-style="win11"] > .window-header {
   padding: 0 0 0 12px;
-  height: 34px;
+  height: 32px;
+  min-height: 32px;
   display: flex;
   align-items: center;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 [data-wm-style="win11"] > .window-header > .window-title-group {
   order: 1;
-  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Segoe UI Variable Display", "Segoe UI", -apple-system, sans-serif;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 12px;
   margin-right: auto;
+  color: var(--text-main, #f8fafc);
+}
+
+[data-wm-style="win11"] > .window-header > .window-title-group > .window-icon {
+  font-size: 14px;
 }
 
 [data-wm-style="win11"] > .window-header > .window-header-actions {
@@ -27,33 +39,94 @@
 
 [data-wm-style="win11"] > .window-header > .window-traffic-lights {
   order: 3;
+  display: flex;
+  align-items: stretch;
   gap: 0;
   height: 100%;
+  margin-left: auto;
 }
 
-[data-wm-style="win11"] > .window-header > .window-traffic-lights > .win-btn {
-  width: 44px;
-  height: 34px;
+/* Authentic Windows 11 46x32px Rectangular Caption Buttons */
+[data-wm-style="win11"] > .window-header .win-btn {
+  width: 46px;
+  height: 32px;
   border-radius: 0;
   border: none;
   background: transparent;
-  color: var(--text-main, #e2e8f0) !important;
-  font-size: 11px;
-  transition: background 0.15s ease;
+  color: transparent !important;
+  font-size: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.15s ease, color 0.15s ease;
+  transform: none !important;
+  filter: none !important;
+  cursor: default;
 }
 
-[data-wm-style="win11"] > .window-header > .window-traffic-lights > .win-btn.win-minimize { order: 1; }
-
-[data-wm-style="win11"] > .window-header > .window-traffic-lights > .win-btn.win-maximize { order: 2; }
-
-[data-wm-style="win11"] > .window-header > .window-traffic-lights > .win-btn.win-close { order: 3; }
-
-[data-wm-style="win11"] > .window-header > .window-traffic-lights > .win-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: none;
+[data-wm-style="win11"] > .window-header .win-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
 
-[data-wm-style="win11"] > .window-header > .window-traffic-lights > .win-btn.win-close:hover {
+[data-wm-style="win11"] > .window-header .win-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* 1. Minimize (10px horizontal line) */
+[data-wm-style="win11"] > .window-header .win-btn.win-minimize {
+  order: 1;
+}
+
+[data-wm-style="win11"] > .window-header .win-btn.win-minimize::after {
+  content: '';
+  width: 10px;
+  height: 1px;
+  background: var(--text-main, #e2e8f0);
+}
+
+/* 2. Maximize (10x10px square) */
+[data-wm-style="win11"] > .window-header .win-btn.win-maximize {
+  order: 2;
+}
+
+[data-wm-style="win11"] > .window-header .win-btn.win-maximize::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--text-main, #e2e8f0);
+  box-sizing: border-box;
+}
+
+/* Restore Icon when window is maximized */
+[data-wm-style="win11"].is-maximized > .window-header .win-btn.win-maximize::after {
+  width: 10px;
+  height: 10px;
+  border: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23e2e8f0' d='M2 0h8v8H8v2H0V2h2V0zm6 2H3v6h5V2zm1-1H3v1h5v5h1V1z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+/* 3. Close (10x10px crisp X with red hover) */
+[data-wm-style="win11"] > .window-header .win-btn.win-close {
+  order: 3;
+}
+
+[data-wm-style="win11"] > .window-header .win-btn.win-close::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23e2e8f0' d='M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4-4-4z'/%3E%3C/svg%3E") no-repeat center;
+  transition: filter 0.15s ease;
+}
+
+[data-wm-style="win11"] > .window-header .win-btn.win-close:hover {
   background: #e81123 !important;
-  color: #ffffff !important;
+}
+
+[data-wm-style="win11"] > .window-header .win-btn.win-close:hover::after {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23ffffff' d='M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4-4-4z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+[data-wm-style="win11"] > .window-header .win-btn.win-close:active {
+  background: #c4101e !important;
 }

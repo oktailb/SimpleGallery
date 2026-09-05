@@ -1,40 +1,187 @@
-/* AmigaOS 3.x / Workbench Window Manager Skin */
+/* AmigaOS 3.x / Workbench 3.1 Window Manager Skin */
 [data-wm-style="amigaos"].webos-window {
   border-radius: 0;
-  border: 2px solid #ffaa00;
-  box-shadow: 3px 3px 0 #0055aa;
+  border: 1px solid #000000;
+  box-shadow: inset 1px 1px 0 #ffffff, inset 2px 2px 0 #ffffff, inset -1px -1px 0 #000000, inset -2px -2px 0 #555555, 3px 3px 0 rgba(0, 0, 0, 0.6);
   background: #a0a0a0;
+  color: #000000;
 }
 
 [data-wm-style="amigaos"] > .window-header {
   background: #0055aa;
-  color: #ffaa00;
-  padding: 2px 4px;
-  height: 22px;
-  border-bottom: 2px solid #ffaa00;
+  color: #ffffff;
+  padding: 1px 2px;
+  height: 18px;
+  min-height: 18px;
+  border-bottom: 1px solid #000000;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  user-select: none;
+  cursor: default;
 }
 
+/* Inactive window: solid gray header */
+[data-wm-style="amigaos"].webos-window:not(.is-active) > .window-header {
+  background: #a0a0a0;
+  color: #000000;
+}
+
+/* Allow buttons inside .window-traffic-lights to split between Left and Right */
+[data-wm-style="amigaos"] > .window-header > .window-traffic-lights {
+  display: contents;
+}
+
+/* 1. Amiga Close Gadget (on the FAR LEFT) */
+[data-wm-style="amigaos"] > .window-header .win-btn.win-close {
+  order: 1;
+  width: 18px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px solid #000000;
+  background: #0055aa;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #000000;
+  color: transparent !important;
+  font-size: 0 !important;
+  padding: 0;
+  margin: 0 4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: none !important;
+  filter: none !important;
+  cursor: default;
+}
+
+[data-wm-style="amigaos"] > .window-header .win-btn.win-close::after {
+  content: '';
+  width: 8px;
+  height: 6px;
+  border: 1px solid #000000;
+  background: #a0a0a0;
+  box-shadow: inset 1px 1px 0 #000000, inset -1px -1px 0 #ffffff;
+  box-sizing: border-box;
+}
+
+[data-wm-style="amigaos"] > .window-header .win-btn.win-close:active {
+  box-shadow: inset 1px 1px 0 #000000, inset -1px -1px 0 #ffffff !important;
+}
+
+/* 2. Amiga Topaz Title (Left/Center) */
 [data-wm-style="amigaos"] > .window-header > .window-title-group {
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   color: #ffffff;
   font-family: "Topaz", "Courier New", monospace;
   font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 1px;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  margin-right: auto;
+  cursor: default;
 }
 
 [data-wm-style="amigaos"] > .window-header > .window-title-group > .window-title-text {
   color: #ffffff;
 }
 
-[data-wm-style="amigaos"] > .window-header > .window-traffic-lights > .win-btn {
-  width: 14px;
+[data-wm-style="amigaos"].webos-window:not(.is-active) > .window-header > .window-title-group > .window-title-text {
+  color: #000000;
+}
+
+/* 3. Window Actions */
+[data-wm-style="amigaos"] > .window-header > .window-header-actions {
+  order: 3;
+  margin-right: 4px;
+}
+
+/* 4. Amiga Zoom Gadget (on the FAR RIGHT) */
+[data-wm-style="amigaos"] > .window-header .win-btn.win-maximize {
+  order: 4;
+  width: 18px;
   height: 14px;
   border-radius: 0;
-  border: 1px solid #ffaa00;
+  border: 1px solid #000000;
   background: #0055aa;
-  color: #ffaa00 !important;
-  font-size: 8px;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #000000;
+  color: transparent !important;
+  font-size: 0 !important;
+  padding: 0;
+  margin: 0 2px 0 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: none !important;
+  filter: none !important;
+  cursor: default;
+}
+
+[data-wm-style="amigaos"] > .window-header .win-btn.win-maximize::after {
+  content: '';
+  width: 8px;
+  height: 6px;
+  border: 1px solid #ffffff;
+  box-sizing: border-box;
+}
+
+[data-wm-style="amigaos"] > .window-header .win-btn.win-maximize:active {
+  box-shadow: inset 1px 1px 0 #000000, inset -1px -1px 0 #ffffff !important;
+}
+
+/* 5. Amiga Depth / Push-to-Back Gadget (on the FAR RIGHT) */
+[data-wm-style="amigaos"] > .window-header .win-btn.win-minimize {
+  order: 5;
+  width: 18px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px solid #000000;
+  background: #0055aa;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #000000;
+  color: transparent !important;
+  font-size: 0 !important;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: none !important;
+  filter: none !important;
+  cursor: default;
+}
+
+/* Two overlapping rectangles (front and back depth gadget) */
+[data-wm-style="amigaos"] > .window-header .win-btn.win-minimize::after {
+  content: '';
+  width: 10px;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Crect x='0.5' y='2.5' width='6' height='5' fill='none' stroke='%23fff'/%3E%3Crect x='3.5' y='0.5' width='6' height='5' fill='none' stroke='%23fff'/%3E%3C/svg%3E") no-repeat center;
+}
+
+[data-wm-style="amigaos"] > .window-header .win-btn.win-minimize:active {
+  box-shadow: inset 1px 1px 0 #000000, inset -1px -1px 0 #ffffff !important;
+}
+
+/* AmigaOS Window Body */
+[data-wm-style="amigaos"] > .window-body {
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  margin: 2px;
+}
+
+[data-theme="dark-glass"][data-wm-style="amigaos"] > .window-body,
+[data-theme="cyberpunk"][data-wm-style="amigaos"] > .window-body {
+  background: #1e1e24;
+  color: #e2e8f0;
+}
+
+/* AmigaOS Bottom-Right Sizing Gadget with Diagonal Ridges */
+[data-wm-style="amigaos"] .win-resize-handle.res-se {
+  width: 16px;
+  height: 16px;
+  bottom: 1px;
+  right: 1px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M2 14L14 2M6 14L14 6M10 14L14 10' stroke='%23000' stroke-width='1.5' stroke-linecap='square'/%3E%3C/svg%3E") no-repeat center;
+  border: 1px solid #000000;
+  background-color: #a0a0a0;
 }

@@ -1105,8 +1105,8 @@
 
       return `
         <div class="theme-card wm-style-card ${isActive ? 'active' : ''}" data-wm-style-id="${this.escapeHtml(s.id)}" style="cursor: pointer; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color, rgba(255,255,255,0.12)); background: rgba(255,255,255,0.03); transition: all 0.2s ease;">
-          <div class="wm-style-preview-box webos-window" data-wm-style="${this.escapeHtml(s.id)}" style="position: relative; pointer-events: none; margin-bottom: 10px; height: 50px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-            <div class="window-header" style="height: 100%; box-sizing: border-box;">
+          <div class="wm-style-preview-box webos-window" data-wm-style="${this.escapeHtml(s.id)}" style="position: relative; pointer-events: none; margin-bottom: 10px; height: 54px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+            <div class="window-header" style="box-sizing: border-box;">
               <div class="window-traffic-lights">
                 <button type="button" class="win-btn win-close"></button>
                 <button type="button" class="win-btn win-minimize"></button>
@@ -1117,6 +1117,7 @@
                 <span class="window-title-text" style="font-size: 0.72rem;">${this.escapeHtml(name)}</span>
               </div>
             </div>
+            <div class="window-body" style="flex: 1; min-height: 20px;"></div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
             <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">${s.icon || '🗔'} ${this.escapeHtml(name)}</span>
