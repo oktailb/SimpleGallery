@@ -1,8 +1,10 @@
 {
   "id": "macos-classic",
   "name": "Mac OS Classic (System 7)",
+  "nameKey": "wm_style.macos-classic.name",
   "category": "retro",
   "icon": "🍏",
   "desc": "Rayures horizontales pinstripes, boîte carrée de fermeture et zoom.",
+  "descKey": "wm_style.macos-classic.desc",
   "css": "style.css"
 }

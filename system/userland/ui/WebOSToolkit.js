@@ -1098,10 +1098,11 @@
       const s = opts.style || {};
       const activeStyleId = opts.activeStyleId;
       const isActive = s.id === activeStyleId;
-      const translatedName = s.nameKey ? this.t(s.nameKey) : '';
-      const name = (translatedName && translatedName !== s.nameKey) ? translatedName : (s.name || s.id);
-      const translatedDesc = s.descKey ? this.t(s.descKey) : '';
-      const desc = (translatedDesc && translatedDesc !== s.descKey) ? translatedDesc : (s.desc || '');
+      const nameKey = s.nameKey || `wm_style.${s.id}.name`;
+      const descKey = s.descKey || `wm_style.${s.id}.desc`;
+      const name = this.t(nameKey);
+      const desc = this.t(descKey);
+      const activeLabel = this.t('wm_style.active');
 
       return `
         <div class="theme-card wm-style-card ${isActive ? 'active' : ''}" data-wm-style-id="${this.escapeHtml(s.id)}" style="cursor: pointer; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color, rgba(255,255,255,0.12)); background: rgba(255,255,255,0.03); transition: all 0.2s ease;">
@@ -1121,7 +1122,7 @@
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
             <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">${s.icon || '🗔'} ${this.escapeHtml(name)}</span>
-            ${isActive ? '<span class="theme-badge" style="font-size:0.7rem; background:var(--accent-primary, #6366f1); color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">Actif</span>' : ''}
+            ${isActive ? `<span class="theme-badge" style="font-size:0.7rem; background:var(--accent-primary, #6366f1); color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">${this.escapeHtml(activeLabel)}</span>` : ''}
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">${this.escapeHtml(desc)}</p>
         </div>

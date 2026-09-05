@@ -608,6 +608,25 @@
     "tribune.panel_title": "ツール & 設定",
     "settings.wm_style_title": "ウィンドウマネージャースタイル & スキン",
     "settings.wm_style_desc": "歴史的および現代のOSを再現したウィンドウ外観（macOS、Windows 9x、BeOS、AmigaOSなど）を切り替えます。",
-    "settings.wm_style_applied": "ウィンドウマネージャースタイルが適用されました！"
+    "settings.wm_style_applied": "ウィンドウマネージャースタイルが適用されました！",
+    "wm_style.active": "アクティブ",
+    "wm_style.beos.name": "BeOS / Haiku",
+    "wm_style.beos.desc": "タイトルとズームボックスを配した特徴的な非対称の黄色いタブ。",
+    "wm_style.win9x.name": "Windows 95 / 98 / 2000",
+    "wm_style.win9x.desc": "伝統的な青いグラデーション、グレーの立体ベゼル、角型ボタン 🗕 🗖 🗙。",
+    "wm_style.win311.name": "Windows 3.11",
+    "wm_style.win311.desc": "厚みのある立体枠、ダッシュ記号のシステムメニュー、上下矢印 ▲ ▼。",
+    "wm_style.macos-classic.name": "Mac OS Classic (System 7)",
+    "wm_style.macos-classic.desc": "水平ストライプのタイトルバー、四角いクローズボックスとズームボックス。",
+    "wm_style.aqua.name": "Mac OS X Aqua",
+    "wm_style.aqua.desc": "光沢感のある金属風ストライプと透明感あふれるゼリー状ボタン。",
+    "wm_style.windowmaker.name": "Window Maker / NeXT",
+    "wm_style.windowmaker.desc": "ダークな斜めグラデーションと立体感のある角型ミニチュアボタン。",
+    "wm_style.amigaos.name": "AmigaOS 3.x",
+    "wm_style.amigaos.desc": "レトロなロイヤルブルーのバー、クローズ＆深度ガジェット、Topazフォント。",
+    "wm_style.win11.name": "Windows 11 (Fluent)",
+    "wm_style.win11.desc": "右端に配置された長方形のキャプションボタンと繊細な角丸。",
+    "wm_style.macos.name": "macOS モダン",
+    "wm_style.macos.desc": "丸いトラフィックライト、半透明のガラスぼかし、なめらかな角丸。"
   }
 }

@@ -1,8 +1,10 @@
 {
   "id": "amigaos",
   "name": "AmigaOS 3.x",
+  "nameKey": "wm_style.amigaos.name",
   "category": "retro",
   "icon": "🔴",
-  "desc": "Barre bleue/ambre rétro, gadgets de fermeture et profondeur.",
+  "desc": "Barre bleue rétro, gadgets de fermeture et profondeur, police Topaz.",
+  "descKey": "wm_style.amigaos.desc",
   "css": "style.css"
 }

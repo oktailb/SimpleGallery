@@ -608,6 +608,25 @@
     "tribune.panel_title": "Tools & Settings",
     "settings.wm_style_title": "Window Manager Styles & Skins",
     "settings.wm_style_desc": "Switch between window appearances mimicking iconic historic and modern operating systems (macOS, Windows 9x, BeOS, AmigaOS, etc.).",
-    "settings.wm_style_applied": "Window manager style applied successfully!"
+    "settings.wm_style_applied": "Window manager style applied successfully!",
+    "wm_style.active": "Active",
+    "wm_style.beos.name": "BeOS / Haiku",
+    "wm_style.beos.desc": "Asymmetric yellow tab carrying the title and zoom box.",
+    "wm_style.win9x.name": "Windows 95 / 98 / 2000",
+    "wm_style.win9x.desc": "Classic blue gradient, gray 3D bevels, and square buttons 🗕 🗖 🗙.",
+    "wm_style.win311.name": "Windows 3.11",
+    "wm_style.win311.desc": "Thick beveled 3D borders, dash system menu, and ▲ ▼ arrows.",
+    "wm_style.macos-classic.name": "Mac OS Classic (System 7)",
+    "wm_style.macos-classic.desc": "Horizontal pinstripes, square go-away close box, and zoom box.",
+    "wm_style.aqua.name": "Mac OS X Aqua",
+    "wm_style.aqua.desc": "Brushed metal pinstripes and glossy gelatin drop buttons.",
+    "wm_style.windowmaker.name": "Window Maker / NeXT",
+    "wm_style.windowmaker.desc": "Deep dark gradient and relief beveled square miniature buttons.",
+    "wm_style.amigaos.name": "AmigaOS 3.x",
+    "wm_style.amigaos.desc": "Retro royal blue bar, close and depth gadgets, Topaz font.",
+    "wm_style.win11.name": "Windows 11 (Fluent)",
+    "wm_style.win11.desc": "Modern rectangular caption buttons on the right and subtle rounded corners.",
+    "wm_style.macos.name": "macOS Modern",
+    "wm_style.macos.desc": "Circular traffic lights, translucent glass blur, and smooth borders."
   }
 }

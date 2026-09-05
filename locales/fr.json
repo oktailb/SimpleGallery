@@ -608,6 +608,25 @@
     "tribune.panel_title": "Outils & Paramètres",
     "settings.wm_style_title": "Styles & Décorations de Fenêtres (Skins)",
     "settings.wm_style_desc": "Basculez entre des apparences de fenêtres mimant les systèmes historiques et modernes (macOS, Windows 9x, BeOS, AmigaOS, etc.).",
-    "settings.wm_style_applied": "Style de fenêtres appliqué avec succès !"
+    "settings.wm_style_applied": "Style de fenêtres appliqué avec succès !",
+    "wm_style.active": "Actif",
+    "wm_style.beos.name": "BeOS / Haiku",
+    "wm_style.beos.desc": "Onglet jaune asymétrique portant le titre et boîte de zoom.",
+    "wm_style.win9x.name": "Windows 95 / 98 / 2000",
+    "wm_style.win9x.desc": "Dégradé bleu classique, biseaux 3D gris et boutons carrés 🗕 🗖 🗙.",
+    "wm_style.win311.name": "Windows 3.11",
+    "wm_style.win311.desc": "Bordures 3D biseautées épaisses, menu tiret et flèches ▲ ▼.",
+    "wm_style.macos-classic.name": "Mac OS Classic (System 7)",
+    "wm_style.macos-classic.desc": "Rayures horizontales pinstripes, boîte carrée de fermeture et zoom.",
+    "wm_style.aqua.name": "Mac OS X Aqua",
+    "wm_style.aqua.desc": "Rayures métal brossé pinstripes et boutons effet gelée vitrée.",
+    "wm_style.windowmaker.name": "Window Maker / NeXT",
+    "wm_style.windowmaker.desc": "Dégradé sombre profond et boutons miniatures carrés en relief.",
+    "wm_style.amigaos.name": "AmigaOS 3.x",
+    "wm_style.amigaos.desc": "Barre bleue rétro, gadgets de fermeture et profondeur, police Topaz.",
+    "wm_style.win11.name": "Windows 11 (Fluent)",
+    "wm_style.win11.desc": "Boutons rectangulaires modernes à droite et angles subtils.",
+    "wm_style.macos.name": "macOS Moderne",
+    "wm_style.macos.desc": "Feux tricolores ronds, flou translucide et bordures douces."
   }
 }

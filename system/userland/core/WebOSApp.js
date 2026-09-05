@@ -376,6 +376,17 @@
       if (this.window && window.WindowManager) {
         window.WindowManager.setTitle(this.window.id, this.title);
       }
+      const nav = document.getElementById(`${this.id}TabNav`);
+      if (nav && this.tabs && this.tabs.length > 0) {
+        nav.querySelectorAll('.webos-tab-item').forEach(btn => {
+          const tabId = btn.dataset.tab;
+          const tabDef = this.tabs.find(t => t.id === tabId);
+          if (tabDef) {
+            const labelSpan = btn.querySelector('span:last-child');
+            if (labelSpan) labelSpan.textContent = this.t(tabDef.label);
+          }
+        });
+      }
       this.onLocaleChanged();
       this.render();
     }

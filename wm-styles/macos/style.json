@@ -1,8 +1,10 @@
 {
   "id": "macos",
   "name": "macOS Modern",
+  "nameKey": "wm_style.macos.name",
   "category": "modern",
   "icon": "🍎",
   "desc": "Feux tricolores ronds, flou translucide et bordures douces.",
+  "descKey": "wm_style.macos.desc",
   "css": "style.css"
 }

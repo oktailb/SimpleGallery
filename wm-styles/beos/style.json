@@ -1,8 +1,10 @@
 {
   "id": "beos",
   "name": "BeOS / Haiku",
+  "nameKey": "wm_style.beos.name",
   "category": "retro",
   "icon": "🟡",
   "desc": "Onglet jaune asymétrique portant le titre et boîte de zoom.",
+  "descKey": "wm_style.beos.desc",
   "css": "style.css"
 }

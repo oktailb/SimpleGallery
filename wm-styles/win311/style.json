@@ -1,8 +1,10 @@
 {
   "id": "win311",
   "name": "Windows 3.11",
+  "nameKey": "wm_style.win311.name",
   "category": "retro",
   "icon": "🪟",
   "desc": "Bordures 3D biseautées épaisses, menu tiret et flèches ▲ ▼.",
+  "descKey": "wm_style.win311.desc",
   "css": "style.css"
 }

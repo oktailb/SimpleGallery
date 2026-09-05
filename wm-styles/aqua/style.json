@@ -1,8 +1,10 @@
 {
   "id": "aqua",
   "name": "Mac OS X Aqua",
+  "nameKey": "wm_style.aqua.name",
   "category": "retro",
   "icon": "💧",
   "desc": "Rayures métal brossé pinstripes et boutons effet gelée vitrée.",
+  "descKey": "wm_style.aqua.desc",
   "css": "style.css"
 }

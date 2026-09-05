@@ -1,8 +1,10 @@
 {
   "id": "win11",
   "name": "Windows 11 (Fluent)",
+  "nameKey": "wm_style.win11.name",
   "category": "modern",
   "icon": "🔷",
   "desc": "Boutons rectangulaires modernes à droite et angles subtils.",
+  "descKey": "wm_style.win11.desc",
   "css": "style.css"
 }
