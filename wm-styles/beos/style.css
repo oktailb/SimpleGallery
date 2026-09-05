@@ -1,15 +1,20 @@
 /* BeOS R5 / Haiku (Iconic Yellow Tab) Window Manager Skin */
-[data-wm-style="beos"].webos-window {
+[data-wm-style="beos"].webos-window,
+[data-wm-style="beos"].webos-window.is-active {
   border-radius: 0;
-  border: 1px solid #333333;
-  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373, 2px 2px 0 rgba(0, 0, 0, 0.4), 0 14px 40px rgba(0, 0, 0, 0.5);
-  background: #d8d8d8;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   overflow: visible;
 }
 
 [data-wm-style="beos"] > .window-header {
-  background: #d8d8d8;
-  border-bottom: 1px solid #737373;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
   height: 22px;
   min-height: 22px;
   padding: 0;
@@ -19,6 +24,7 @@
   position: relative;
   overflow: visible;
   user-select: none;
+  pointer-events: none; /* Transparent area lets clicks pass right through */
 }
 
 /* Allow buttons inside .window-traffic-lights to participate directly in tab layout */
@@ -26,23 +32,42 @@
   display: contents;
 }
 
-/* BeOS Close Box (Left side of the Yellow Tab) */
+/* Tab components have pointer-events enabled and overlap window body top edge by 1px */
+[data-wm-style="beos"] > .window-header .win-btn.win-close,
+[data-wm-style="beos"] > .window-header > .window-title-group,
+[data-wm-style="beos"] > .window-header .win-btn.win-maximize {
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -1px;
+  background: #ffc400;
+  border-top: 1px solid #333333;
+  border-bottom: 1px solid #ffc400;
+}
+
+/* Inactive window tab: classic BeOS muted gold */
+[data-wm-style="beos"].webos-window:not(.is-active) > .window-header .win-btn.win-close,
+[data-wm-style="beos"].webos-window:not(.is-active) > .window-header > .window-title-group,
+[data-wm-style="beos"].webos-window:not(.is-active) > .window-header .win-btn.win-maximize {
+  background: #d0c490;
+  border-bottom-color: #d0c490;
+}
+
+/* 1. BeOS Close Box (Left side of the Yellow Tab) */
 [data-wm-style="beos"] > .window-header .win-btn.win-close {
   order: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ffc400;
   height: 22px;
   width: auto;
   min-width: 24px;
   margin: 0;
   padding: 0 4px 0 6px;
   border-radius: 0;
-  border: none;
-  border-top: 2px solid #ffffff;
-  border-left: 2px solid #ffffff;
-  box-shadow: none;
+  border-left: 1px solid #333333;
+  border-right: none;
+  box-shadow: inset 1px 1px 0 #ffffff;
   transform: none !important;
   filter: none !important;
   cursor: pointer;
@@ -53,7 +78,7 @@
   display: block;
   width: 12px;
   height: 12px;
-  background: #d8d8d8;
+  background: #cbcbcb;
   border: 1px solid #333333;
   box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373;
   box-sizing: border-box;
@@ -76,17 +101,18 @@
   background: #ffffff;
 }
 
-/* BeOS Title (Middle of the Yellow Tab) */
+/* 2. BeOS Title (Middle of the Yellow Tab) */
 [data-wm-style="beos"] > .window-header > .window-title-group {
   order: 2;
   display: flex;
   align-items: center;
   gap: 5px;
-  background: #ffc400;
   height: 22px;
   margin: 0;
   padding: 0 6px;
-  border-top: 2px solid #ffffff;
+  border-left: none;
+  border-right: none;
+  box-shadow: inset 0 1px 0 #ffffff;
   color: #000000;
   font-family: "DejaVu Sans", "Lucida Sans", "Segoe UI", Arial, sans-serif;
   font-weight: 700;
@@ -101,27 +127,29 @@
   font-weight: 700;
 }
 
+[data-wm-style="beos"].webos-window:not(.is-active) > .window-header > .window-title-group > .window-title-text {
+  color: #333333;
+}
+
 [data-wm-style="beos"] > .window-header > .window-title-group > .window-icon {
   font-size: 12px;
 }
 
-/* BeOS Zoom Gadget (Right side of the Yellow Tab) */
+/* 3. BeOS Zoom Gadget (Right side of the Yellow Tab) */
 [data-wm-style="beos"] > .window-header .win-btn.win-maximize {
   order: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ffc400;
   height: 22px;
   width: auto;
   min-width: 24px;
   margin: 0;
   padding: 0 6px 0 4px;
   border-radius: 0;
-  border: none;
-  border-top: 2px solid #ffffff;
-  border-right: 2px solid #555555;
-  box-shadow: 1px 0 0 #000000;
+  border-left: none;
+  border-right: 1px solid #333333;
+  box-shadow: inset 0 1px 0 #ffffff, inset -1px 0 0 #8a6c00;
   transform: none !important;
   filter: none !important;
   cursor: pointer;
@@ -132,7 +160,7 @@
   display: block;
   width: 12px;
   height: 12px;
-  background: #d8d8d8;
+  background: #cbcbcb;
   border: 1px solid #333333;
   box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373;
   box-sizing: border-box;
@@ -156,14 +184,26 @@
   border-color: #ffffff;
 }
 
-/* BeOS window actions in title bar */
-[data-wm-style="beos"] > .window-header > .window-header-actions {
+/* 4. BeOS Window Actions (Floating toolbar in top right if actions present) */
+[data-wm-style="beos"] > .window-header > .window-header-actions:not(:empty) {
   order: 4;
   margin-left: auto;
-  padding-right: 8px;
+  margin-right: 6px;
+  pointer-events: auto;
+  background: #d8d8d8;
+  border: 1px solid #333333;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373;
+  padding: 0 6px;
+  height: 20px;
+  display: flex;
+  align-items: center;
 }
 
-/* BeOS minimize is hidden from the tab bar (double clicking the tab collapses/shades the window in BeOS) */
+[data-wm-style="beos"] > .window-header > .window-header-actions:empty {
+  display: none;
+}
+
+/* BeOS minimize is hidden from the tab bar (double clicking tab collapses/shades in BeOS) */
 [data-wm-style="beos"] > .window-header .win-btn.win-minimize {
   display: none;
 }
@@ -174,11 +214,18 @@
   font-size: 0 !important;
 }
 
-/* BeOS Window Body with inner 3D border */
+/* BeOS Window Body — The Main Window Frame with 3D Border */
 [data-wm-style="beos"] > .window-body {
-  border-top: 1px solid #737373;
-  background: #ffffff;
-  color: #111111;
+  border: 1px solid #333333;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373, 2px 2px 0 rgba(0, 0, 0, 0.4), 0 14px 40px rgba(0, 0, 0, 0.5);
+  background: var(--window-bg, #ffffff);
+  color: var(--text-main, #111111);
+  position: relative;
+  z-index: 1;
+}
+
+[data-wm-style="beos"].webos-window.is-active > .window-body {
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #737373, 2px 2px 0 rgba(0, 0, 0, 0.5), 0 18px 45px rgba(0, 0, 0, 0.65);
 }
 
 [data-theme="dark-glass"][data-wm-style="beos"] > .window-body,
@@ -196,4 +243,5 @@
   background: repeating-linear-gradient(-45deg, #737373 0, #737373 1px, transparent 1px, transparent 3px);
   border-left: 1px solid #737373;
   border-top: 1px solid #737373;
+  z-index: 10;
 }
