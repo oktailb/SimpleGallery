@@ -101,12 +101,24 @@ if ($resolved_storage !== false && is_dir($resolved_storage)) {
     $real_base_dir = str_replace('\\', '/', $resolved_storage);
     $storage_status['active_path'] = $real_base_dir;
     $storage_status['is_fallback'] = false;
-} else {
-    // Fallback to project root if configured storage directory is missing or unreadable
-    $real_base_dir = $project_root;
+    // Attempt to create target media directory or safe isolated sandbox
+    $fallback_dir = $storage_base_dir . '/media';
+    if (!file_exists($fallback_dir)) {
+        @mkdir($fallback_dir, 0755, true);
+    }
+    $resolved_fallback = realpath($fallback_dir);
+    if ($resolved_fallback !== false && is_dir($resolved_fallback)) {
+        $real_base_dir = str_replace('\\', '/', $resolved_fallback);
+    } else {
+        $sandbox_dir = $storage_base_dir . '/.empty_sandbox';
+        if (!file_exists($sandbox_dir)) {
+            @mkdir($sandbox_dir, 0755, true);
+        }
+        $real_base_dir = str_replace('\\', '/', realpath($sandbox_dir) ?: $sandbox_dir);
+    }
     $storage_status['active_path'] = $real_base_dir;
     $storage_status['is_fallback'] = true;
-    $storage_status['reason'] = "Le dossier de stockage configuré '$target_media_path' est introuvable ou inaccessible en lecture. La galerie a basculé automatiquement sur la racine du projet.";
+    $storage_status['reason'] = "Le dossier de stockage configuré '$target_media_path' est introuvable ou inaccessible en lecture. La galerie a été isolée dans un bac à sable sécurisé.";
 }
 
 // 8. Files and folders to ignore during indexing

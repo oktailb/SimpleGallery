@@ -78,11 +78,11 @@
               if (pseudoInput && data.login) pseudoInput.value = data.login;
               const oauthStatus = this.container.querySelector('#identityOAuthStatus');
               if (oauthStatus) {
-                oauthStatus.innerHTML = '✓ ' + (this.t('tribune.oauth_connected') || 'Token API / OAuth Actif');
+                oauthStatus.innerHTML = '✓ ' + this.t('tribune.oauth_connected');
                 oauthStatus.style.color = '#34d399';
               }
             }
-            alert((this.t('tribune.oauth_success') || 'Connexion OAuth2 réussie avec ') + (this.boards[targetBoard]?.name || targetBoard) + ' ! 🔑');
+            alert(this.t('tribune.oauth_success') + (this.boards[targetBoard]?.name || targetBoard) + ' ! 🔑');
           }
         });
         window._tribuneOauthListenerBound = true;
@@ -358,7 +358,7 @@
 
           if (listView && listView.style.display !== 'none') {
             if (count === 0) {
-              listView.innerHTML = `<div style="color:var(--text-muted, #94a3b8); font-size:0.75rem; text-align:center; padding:8px;">${this.t('tribune.scheduled_empty') || 'Aucun message programmé en attente.'}</div>`;
+              listView.innerHTML = `<div style="color:var(--text-muted, #94a3b8); font-size:0.75rem; text-align:center; padding:8px;">${this.t('tribune.scheduled_empty')}</div>`;
             } else {
               listView.innerHTML = data.scheduled.map(item => {
                 const dt = new Date((item.scheduled_at || 0) * 1000);
@@ -369,7 +369,7 @@
                       <strong>[${this.escapeHtml(item.board || 'local')}]</strong> ${this.escapeHtml(item.message)}
                       <div style="font-size:0.7rem; color:#c084fc;">⏰ ${timeStr}</div>
                     </div>
-                    <button type="button" class="scheduled-cancel-btn" data-id="${item.id}" title="${this.t('tribune.cancel') || 'Annuler'}">✖</button>
+                    <button type="button" class="scheduled-cancel-btn" data-id="${item.id}" title="${this.t('tribune.cancel')}">✖</button>
                   </div>
                 `;
               }).join('');
@@ -429,7 +429,7 @@
 
     renderBAKList() {
       if (!this.bakLogins || this.bakLogins.size === 0) {
-        return `<div style="color:var(--text-muted, #94a3b8); font-size:0.78rem; text-align:center; padding:12px;">${this.t('tribune.bak_empty') || 'Aucun login bloqué dans la Boîte à Con (BAK). Saisissez un pseudo ci-dessus pour le bloquer.'}</div>`;
+        return `<div style="color:var(--text-muted, #94a3b8); font-size:0.78rem; text-align:center; padding:12px;">${this.t('tribune.bak_empty')}</div>`;
       }
 
       return Array.from(this.bakLogins).map(login => `
@@ -582,7 +582,7 @@
       const currentUa = auth.user_agent || navigator.userAgent || 'Mozilla/5.0 (SimpleGallery Tribune)';
       const currentCookie = auth.cookie || '';
       const currentBoardConfig = this.boards[this.currentBoard] || {};
-      const cookieHelpText = currentBoardConfig.cookie_help || (this.currentBoard === 'local' ? (this.t('tribune.session_local') || 'Session locale SimpleGallery.') : (this.t('tribune.cookie_help') || 'Collez le cookie de la tribune.'));
+      const cookieHelpText = currentBoardConfig.cookie_help || (this.currentBoard === 'local' ? this.t('tribune.session_local') : this.t('tribune.cookie_help'));
 
       const renderBoardTabs = () => {
         return Object.keys(this.boards).map(key => {
@@ -601,18 +601,18 @@
           <div class="tribune-header">
             <div class="tribune-header-title">
               <span>🦆</span>
-              <span>${this.t('tribune.title') || 'Tribune Libre'}</span>
+              <span>${this.t('tribune.title')}</span>
             </div>
             <div class="tribune-board-tabs" id="tribuneBoardTabs">
               ${renderBoardTabs()}
             </div>
             <div class="tribune-actions-group">
               <button class="tribune-icon-btn ${this.bakEnabled ? 'active' : ''}" id="tribuneBakToggle" title="Filtrage BAK (Boîte à Con) : ${this.bakEnabled ? 'Activé (posts masqués)' : 'Désactivé (posts visibles)'}" style="font-size:0.8rem; width:auto; padding:0 8px; font-weight:700;">🚫 BAK ${this.bakEnabled ? 'ON' : 'OFF'}</button>
-              <button class="tribune-icon-btn ${this.nsfwEnabled ? 'active' : ''}" id="tribuneNsfwToggle" title="${this.t('tribune.nsfw_toggle') || 'Mode 🔞 NSFW'}">🔞</button>
-              <button class="tribune-icon-btn ${this.soundEnabled ? 'active' : ''}" id="tribuneSoundToggle" title="${this.t('tribune.sound_toggle') || 'Audio Coincoin'}">🔊</button>
-              <button class="tribune-icon-btn" id="tribuneAddBoardBtn" title="${this.t('tribune.add_board') || 'Ajouter une Tribune'}">➕</button>
-              <button class="tribune-icon-btn" id="tribuneRefreshBtn" title="${this.t('tribune.refresh') || 'Rafraîchir'}">🔄</button>
-              <button class="tribune-icon-btn ${this.sidePanelOpen ? 'active' : ''}" id="tribuneSidePanelToggle" data-i18n-title="tribune.toggle_panel" title="${this.t('tribune.toggle_panel') || 'Panneau latéral (Outils & Paramètres)'}">🎛️</button>
+              <button class="tribune-icon-btn ${this.nsfwEnabled ? 'active' : ''}" id="tribuneNsfwToggle" title="${this.t('tribune.nsfw_toggle')}">🔞</button>
+              <button class="tribune-icon-btn ${this.soundEnabled ? 'active' : ''}" id="tribuneSoundToggle" title="${this.t('tribune.sound_toggle')}">🔊</button>
+              <button class="tribune-icon-btn" id="tribuneAddBoardBtn" title="${this.t('tribune.add_board')}">➕</button>
+              <button class="tribune-icon-btn" id="tribuneRefreshBtn" title="${this.t('tribune.refresh')}">🔄</button>
+              <button class="tribune-icon-btn ${this.sidePanelOpen ? 'active' : ''}" id="tribuneSidePanelToggle" data-i18n-title="tribune.toggle_panel" title="${this.t('tribune.toggle_panel')}">🎛️</button>
             </div>
           </div>
 
@@ -630,44 +630,44 @@
               <div class="tribune-side-panel-header">
                 <span style="font-weight:700; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
                   <span>🎛️</span>
-                  <span data-i18n="tribune.panel_title">${this.t('tribune.panel_title') || 'Outils & Paramètres'}</span>
+                  <span data-i18n="tribune.panel_title">${this.t('tribune.panel_title')}</span>
                 </span>
-                <button type="button" class="tribune-panel-close-btn" id="tribunePanelCloseBtn" data-i18n-title="common.close" title="${this.t('common.close') || 'Fermer'}">✕</button>
+                <button type="button" class="tribune-panel-close-btn" id="tribunePanelCloseBtn" data-i18n-title="common.close" title="${this.t('common.close')}">✕</button>
               </div>
 
               <!-- Inline Identity & Auth Card -->
               <div class="tribune-panel-card">
                 <div class="tribune-panel-title">
-                  <span>👤 ${this.t('tribune.identity_title') || 'Identité & Bouchot Auth'}</span>
+                  <span>👤 ${this.t('tribune.identity_title')}</span>
                 </div>
                 <div class="identity-info-box">
                   <div class="identity-field-group">
-                    <span class="identity-field-label">${this.t('tribune.pseudo') || 'Pseudo'} :</span>
-                    <input type="text" class="identity-input-field" id="identityPseudoInput" value="${this.escapeHtml(userLogin)}" placeholder="${this.t('tribune.pseudo') || 'Pseudo'}..." />
+                    <span class="identity-field-label">${this.t('tribune.pseudo')} :</span>
+                    <input type="text" class="identity-input-field" id="identityPseudoInput" value="${this.escapeHtml(userLogin)}" placeholder="${this.t('tribune.pseudo')}..." />
                   </div>
                   <div class="identity-field-group">
-                    <span class="identity-field-label">${this.t('tribune.user_agent') || 'User-Agent Éditable'} :</span>
+                    <span class="identity-field-label">${this.t('tribune.user_agent')} :</span>
                     <input type="text" class="identity-input-field" id="identityUaInput" value="${this.escapeHtml(currentUa)}" placeholder="Mozilla/5.0..." />
                   </div>
                   ${(currentBoardConfig.auth_type === 'cookie') ? `
                     <div class="identity-field-group">
-                      <span class="identity-field-label">${this.t('tribune.cookie') || 'Cookie Bouchot'} :</span>
+                      <span class="identity-field-label">${this.t('tribune.cookie')} :</span>
                       <input type="text" class="identity-input-field" id="identityCookieInput" value="${this.escapeHtml(currentCookie)}" placeholder="remember_account_token=xyz..." />
                       <span style="font-size:0.7rem; color:#64748b; margin-top:2px;">
                         ${cookieHelpText}
                       </span>
                     </div>
                     <button class="identity-auto-cookie-btn" id="identityAutoCookieBtn" title="Détecter automatiquement le cookie WebOS local (127.0.0.1)">
-                      ⚡ ${this.t('tribune.load_local_cookie') || 'Charger Cookie WebOS Local'}
+                      ⚡ ${this.t('tribune.load_local_cookie')}
                     </button>
                   ` : ''}
                   ${(currentBoardConfig.oauth || currentBoardConfig.auth_type === 'oauth2') ? `
                     <div class="identity-oauth-box" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
                       <button class="identity-oauth-btn" id="identityOAuthBtn" style="width:100%; padding:8px 12px; font-weight:600; border-radius:6px; background:linear-gradient(135deg, #3b82f6, #2563eb); color:#ffffff; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s ease;">
-                        🔑 <span>${this.t('tribune.oauth_login_btn') || ('Se connecter avec ' + (currentBoardConfig.name || 'OAuth2'))}</span>
+                        🔑 <span>${this.t('tribune.oauth_login_btn')}</span>
                       </button>
                       <div id="identityOAuthStatus" style="font-size:0.75rem; margin-top:4px; text-align:center; color:${currentCookie ? '#34d399' : '#94a3b8'}; font-weight:600;">
-                        ${currentCookie ? '✓ ' + (this.t('tribune.oauth_connected') || 'Token API / OAuth Actif') : '❌ ' + (this.t('tribune.oauth_disconnected') || 'Non connecté via OAuth')}
+                        ${currentCookie ? '✓ ' + this.t('tribune.oauth_connected') : '❌ ' + this.t('tribune.oauth_disconnected')}
                       </div>
                       <div class="identity-field-group" style="margin-top:8px;">
                         <span class="identity-field-label">Jeton d'accès API (Bearer token) :</span>
@@ -681,12 +681,12 @@
               <!-- 24h Telemetry & Analytics Dashboard (System-Monitor Inspired) -->
               <div class="tribune-panel-card">
                 <div class="tribune-panel-title" style="display:flex; justify-content:space-between; align-items:center;">
-                  <span>📊 ${this.t('tribune.stats_title') || 'Télémétrie & Stats 24h'}</span>
+                  <span>📊 ${this.t('tribune.stats_title')}</span>
                   <select class="tribune-stat-metric-select" id="tribuneMetricSelect" style="font-size:0.75rem; background:rgba(255,255,255,0.08); color:var(--text-main, #f8fafc); border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:2px 6px; cursor:pointer;">
-                    <option value="posts" ${this.activeTelemetryMetric === 'posts' ? 'selected' : ''}>${this.t('tribune.metric_posts') || '📊 Posts / h'}</option>
-                    <option value="logins" ${this.activeTelemetryMetric === 'logins' ? 'selected' : ''}>${this.t('tribune.metric_logins') || '👥 Logins / h'}</option>
-                    <option value="totoz" ${this.activeTelemetryMetric === 'totoz' ? 'selected' : ''}>${this.t('tribune.metric_totoz') || '🎭 Totoz / h'}</option>
-                    <option value="troll" ${this.activeTelemetryMetric === 'troll' ? 'selected' : ''}>${this.t('tribune.metric_troll') || '💥 Indice Troll %'}</option>
+                    <option value="posts" ${this.activeTelemetryMetric === 'posts' ? 'selected' : ''}>${this.t('tribune.metric_posts')}</option>
+                    <option value="logins" ${this.activeTelemetryMetric === 'logins' ? 'selected' : ''}>${this.t('tribune.metric_logins')}</option>
+                    <option value="totoz" ${this.activeTelemetryMetric === 'totoz' ? 'selected' : ''}>${this.t('tribune.metric_totoz')}</option>
+                    <option value="troll" ${this.activeTelemetryMetric === 'troll' ? 'selected' : ''}>${this.t('tribune.metric_troll')}</option>
                   </select>
                 </div>
                 <div class="tribune-telemetry-summary" id="tribuneTelemetrySummary"></div>
@@ -700,12 +700,12 @@
               <!-- BAK (Boîte à Con) Panel -->
               <div class="tribune-panel-card" style="flex:1; display:flex; flex-direction:column;">
                 <div class="tribune-panel-title">
-                  <span>🚫 ${this.t('tribune.bak') || 'Boîte à Con (BAK)'}</span>
+                  <span>🚫 ${this.t('tribune.bak')}</span>
                   <span style="font-size:0.75rem; color:#64748b;" id="bakCountBadge">(${this.bakLogins.size})</span>
                 </div>
                 <div class="bak-add-box" style="display:flex; gap:6px; margin-bottom:8px;">
-                  <input type="text" class="identity-input-field" id="bakAddInput" placeholder="${this.t('tribune.bak_add_placeholder') || 'Bloquer un login...'}" style="font-size:0.8rem; flex:1;" />
-                  <button class="identity-auto-cookie-btn" id="bakAddBtn" style="padding:4px 10px; font-size:0.8rem; width:auto; margin-top:0;">+ ${this.t('tribune.bak_block_btn') || 'Bloquer'}</button>
+                  <input type="text" class="identity-input-field" id="bakAddInput" placeholder="${this.t('tribune.bak_add_placeholder')}" style="font-size:0.8rem; flex:1;" />
+                  <button class="identity-auto-cookie-btn" id="bakAddBtn" style="padding:4px 10px; font-size:0.8rem; width:auto; margin-top:0;">+ ${this.t('tribune.bak_block_btn')}</button>
                 </div>
                 <div class="bak-item-list" id="bakItemList" style="flex:1; overflow-y:auto;">
                   ${this.renderBAKList()}
@@ -718,7 +718,7 @@
           <div class="clock-preview-popover" id="clockPreviewPopover" style="display: none;"></div>
           <div class="url-preview-popover" id="urlPreviewPopover" style="display: none;"></div>
           <button class="tribune-new-posts-badge" id="tribuneNewPostsBadge" style="display: none;">
-            ${this.t('tribune.new_posts') || 'Nouveaux messages ⬇️'}
+            ${this.t('tribune.new_posts')}
           </button>
 
           <!-- Totoz Autocomplete Popover -->
@@ -727,41 +727,41 @@
           <!-- Bottom Post Input Area -->
           <div class="tribune-footer">
             <div class="tribune-input-row">
-              <input type="text" class="tribune-login-input" id="tribuneLoginInput" placeholder="${this.t('tribune.pseudo') || 'Pseudo'}" value="${this.escapeHtml(userLogin)}" />
-              <input type="text" class="tribune-message-input" id="tribuneMsgInput" placeholder="${this.t('tribune.post_placeholder') || this.t('tribune.placeholder') || 'Entrez votre message... (ex: [:totoz], horloges 14:25:30)'}" autocomplete="off" />
+              <input type="text" class="tribune-login-input" id="tribuneLoginInput" placeholder="${this.t('tribune.pseudo')}" value="${this.escapeHtml(userLogin)}" />
+              <input type="text" class="tribune-message-input" id="tribuneMsgInput" placeholder="${this.t('tribune.post_placeholder')}" autocomplete="off" />
               <input type="file" id="tribuneFileInput" style="display: none;" />
-              <button type="button" class="tribune-upload-btn" id="tribuneUploadBtn" title="${this.t('tribune.upload_file') || 'Joindre un fichier (upload temporaire)'}">
+              <button type="button" class="tribune-upload-btn" id="tribuneUploadBtn" title="${this.t('tribune.upload_file')}">
                 <span>📎</span>
               </button>
-              <button type="button" class="tribune-schedule-btn" id="tribuneScheduleBtn" title="${this.t('tribune.schedule_btn') || 'Programmer l\'envoi...'}">
+              <button type="button" class="tribune-schedule-btn" id="tribuneScheduleBtn" title="${this.t('tribune.schedule_btn')}">
                 <span>⏰</span>
                 <span class="schedule-badge-count" id="tribuneScheduleBadgeCount" style="display:none;">0</span>
               </button>
               <button class="tribune-send-btn" id="tribuneSendBtn">
                 <span>🦆</span>
-                <span>${this.t('tribune.send') || 'Coincoin !'}</span>
+                <span>${this.t('tribune.send')}</span>
               </button>
             </div>
 
             <!-- Schedule Popover -->
             <div class="schedule-popover" id="tribuneSchedulePopover" style="display: none;">
               <div class="schedule-popover-title">
-                <span>⏰ ${this.t('tribune.schedule_title') || 'Action Programmée'}</span>
+                <span>⏰ ${this.t('tribune.schedule_title')}</span>
                 <button type="button" id="schedulePopoverClose" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1rem;">✖</button>
               </div>
               <input type="datetime-local" class="schedule-datetime-input" id="tribuneScheduleDatetime" step="1" />
               <div class="schedule-tz-box" id="tribuneScheduleTzBox">
                 <div class="schedule-tz-row">
-                  <span>🏠 ${this.t('tribune.your_time') || 'Votre heure (Locale)'} :</span>
+                  <span>🏠 ${this.t('tribune.your_time')} :</span>
                   <b id="tzUserTime">--:--:--</b>
                 </div>
                 <div class="schedule-tz-row">
-                  <span>🥐 ${this.t('tribune.paris_time') || 'Heure de France (Paris)'} :</span>
+                  <span>🥐 ${this.t('tribune.paris_time')} :</span>
                   <b id="tzParisTime">--:--:--</b>
                 </div>
               </div>
               <div class="schedule-actions-row">
-                <button type="button" class="schedule-confirm-btn" id="tribuneScheduleConfirmBtn">⏰ ${this.t('tribune.schedule_confirm') || 'Programmer l\'envoi'}</button>
+                <button type="button" class="schedule-confirm-btn" id="tribuneScheduleConfirmBtn">⏰ ${this.t('tribune.schedule_confirm')}</button>
                 <button type="button" class="schedule-list-toggle-btn" id="tribuneScheduleListBtn">📋</button>
               </div>
               <div id="tribuneScheduleListView" style="display:none; margin-top:10px; max-height:150px; overflow-y:auto;"></div>
@@ -854,7 +854,7 @@
             this.saveBoardAuth();
             if (cookieInput) cookieInput.value = cookies;
           } else {
-            alert(this.t('tribune.no_cookie_found') || 'Aucun cookie de navigateur trouvé sur cette origine.');
+            alert(this.t('tribune.no_cookie_found'));
           }
         });
       }
@@ -1041,10 +1041,10 @@
                 msgInput.focus();
               }
             } else {
-              alert(resData?.error || (this.t('tribune.upload_error') || 'Erreur lors du téléversement du fichier.'));
+              alert(resData?.error || this.t('tribune.upload_error'));
             }
           } catch (err) {
-            alert(this.t('tribune.upload_error') || 'Erreur lors du téléversement du fichier.');
+            alert(this.t('tribune.upload_error'));
           } finally {
             uploadBtn.disabled = false;
             uploadBtn.innerHTML = origHtml;
@@ -1094,21 +1094,21 @@
         scheduleConfirmBtn.addEventListener('click', async () => {
           const msg = msgInput.value.trim();
           if (!msg) {
-            alert(this.t('tribune.schedule_empty_msg') || 'Veuillez d\'abord saisir un message à programmer.');
+            alert(this.t('tribune.schedule_empty_msg'));
             msgInput.focus();
             return;
           }
 
           const val = scheduleDatetime.value;
           if (!val) {
-            alert(this.t('tribune.schedule_select_datetime') || 'Veuillez sélectionner une date et une heure de programmation.');
+            alert(this.t('tribune.schedule_select_datetime'));
             return;
           }
 
           const dt = this.parseLocalDateTime(val);
           const unixTs = dt ? Math.floor(dt.getTime() / 1000) : 0;
           if (isNaN(unixTs) || unixTs <= (Math.floor(Date.now() / 1000) - 30)) {
-            alert(this.t('tribune.schedule_future_required') || 'L\'heure programmée doit être située dans le futur.');
+            alert(this.t('tribune.schedule_future_required'));
             return;
           }
 
@@ -1140,10 +1140,10 @@
               schedulePopover.style.display = 'none';
               this.refreshScheduledList();
             } else {
-              alert(data.error || (this.t('tribune.schedule_error') || 'Erreur lors de la programmation.'));
+              alert(data.error || this.t('tribune.schedule_error'));
             }
           } catch (e) {
-            alert(this.t('tribune.schedule_error') || 'Erreur réseau lors de la programmation.');
+            alert(this.t('tribune.schedule_error'));
           }
         });
       }
@@ -1959,11 +1959,11 @@
           if (this.soundEnabled) this.playCoincoinSound();
           return true;
         } else {
-          alert((this.t('tribune.post_error') || 'Erreur lors du post : ') + (data.error || 'Impossible de poster.'));
+          alert(this.t('tribune.post_error') + (data.error || ''));
           return false;
         }
       } catch (err) {
-        alert((this.t('tribune.post_network_error') || 'Erreur de connexion au serveur lors du post : ') + err.message);
+        alert(this.t('tribune.post_network_error') + err.message);
         return false;
       }
     }
@@ -2131,7 +2131,7 @@
         return `
           <div class="${rowClasses}" data-id="${p.id}" data-clock="${p.clockDisplay}" data-clean-clock="${p.cleanClock}" data-clock-index="${p.subIndex}" data-time-id="${p.time}">
             <span class="tribune-clock" data-clock="${p.clockDisplay}" data-clean-clock="${p.cleanClock}" data-clock-index="${p.subIndex}">${p.clockDisplay}</span>
-            <span class="tribune-login-container" title="${this.t('tribune.login_tooltip') || 'Cliquer pour interpeller (bigorno)'}">
+            <span class="tribune-login-container" title="${this.t('tribune.login_tooltip')}">
               <span class="tribune-login ${p.is_admin ? 'is-admin' : ''} ${isMe ? 'my-pseudo' : ''}">${this.escapeHtml(p.login)}</span>
               <span class="tribune-login-colon">:</span>
             </span>

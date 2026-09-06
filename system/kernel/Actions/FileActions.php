@@ -681,6 +681,11 @@ class FileActions {
                 return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_invalid_path')]];
             }
 
+            $filename = basename($file_full);
+            if ($filename === '' || $filename[0] === '.' || in_array(strtolower($filename), ['user.ini', '.user.ini', 'htaccess', '.htaccess', '.env', '.admin_password_hash'], true)) {
+                return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_forbidden_file_type')]];
+            }
+
             $ext = strtolower(pathinfo($file_full, PATHINFO_EXTENSION));
             $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc', 'sh', 'bash', 'bat', 'cmd', 'exe', 'cgi', 'pl', 'py', 'htaccess', 'user.ini', 'admin_password_hash'];
             if (in_array($ext, $forbidden_exts, true)) {
@@ -688,6 +693,9 @@ class FileActions {
             }
 
             if (@file_put_contents($file_full, (string)$content, LOCK_EX) !== false) {
+                if ($ext === 'svg') {
+                    SecurityManager::sanitizeSvgContent($file_full);
+                }
                 CacheManager::invalidateDirCache(dirname($file_full), $base_dir, $thumb_dir_name);
                 return ['status' => 200, 'data' => ['success' => true, 'message' => __t('api.msg_file_saved')]];
             }

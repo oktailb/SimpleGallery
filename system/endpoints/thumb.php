@@ -360,6 +360,21 @@ if (!is_dir_accessible(dirname($file_path), $real_base_dir)) {
 
 // Direct original raw media streaming (photos, videos, music, documents)
 if (!empty($_GET['raw'])) {
+    $can_download = false;
+    if (\SimpleGallery\Kernel\Auth\AuthManager::isAdminLoggedIn()) {
+        $can_download = true;
+    } else {
+        $allow_cfg = isset($allow_direct_download) ? (bool)$allow_direct_download : true;
+        $can_perm = \SimpleGallery\Kernel\FS\PermissionsManager::hasPermission('can_download_item', $real_base_dir);
+        $can_download = ($allow_cfg && $can_perm);
+    }
+
+    if (!$can_download) {
+        http_response_code(403);
+        echo "403 Forbidden: Direct download is restricted.";
+        exit;
+    }
+
     serve_raw_file($file_path, $ext);
 }
 

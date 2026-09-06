@@ -98,6 +98,79 @@ class TribuneActions {
         ];
     }
 
+    public static function isSafePublicUrl(string $url): bool {
+        if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        $scheme = strtolower($parts['scheme'] ?? '');
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = $parts['host'] ?? '';
+        if (empty($host)) {
+            return false;
+        }
+
+        // Strip IPv6 brackets
+        $host = trim($host, '[]');
+        $host_lower = strtolower($host);
+
+        // Immediate blocklist for localhost / loopback / wildcard
+        if (in_array($host_lower, ['localhost', '127.0.0.1', '0.0.0.0', '::1', '::', '169.254.169.254', 'metadata.google.internal'], true)) {
+            return false;
+        }
+
+        // Block local TLDs
+        if (preg_match('/\.(local|internal|lan|home|corp|localdomain)$/i', $host_lower)) {
+            return false;
+        }
+
+        // Direct IP address check
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+            if (strpos($host, '127.') === 0 || strpos($host, '169.254.') === 0 || strpos($host, '0.') === 0) {
+                return false;
+            }
+            return true;
+        }
+
+        // Domain name: resolve DNS
+        $resolved_ips = [];
+        $ips = @dns_get_record($host, DNS_A + (defined('DNS_AAAA') ? DNS_AAAA : 0));
+        if (!empty($ips)) {
+            foreach ($ips as $record) {
+                if (!empty($record['ip'])) $resolved_ips[] = $record['ip'];
+                if (!empty($record['ipv6'])) $resolved_ips[] = $record['ipv6'];
+            }
+        }
+        if (empty($resolved_ips)) {
+            $ip = @gethostbyname($host);
+            if ($ip && $ip !== $host) {
+                $resolved_ips[] = $ip;
+            }
+        }
+
+        if (empty($resolved_ips)) {
+            return false;
+        }
+
+        foreach ($resolved_ips as $rip) {
+            if (!filter_var($rip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+            if (strpos($rip, '127.') === 0 || strpos($rip, '169.254.') === 0 || strpos($rip, '0.') === 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static function httpRequestProxy(string $url, string $method = 'GET', array $headers = [], ?string $post_data = null, int $timeout = 6): array {
         $is_post = (strtoupper($method) === 'POST');
         $header_lines = [];
@@ -114,8 +187,8 @@ class TribuneActions {
             curl_setopt($ch, CURLOPT_HEADER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
             curl_setopt($ch, CURLOPT_TIMEOUT, max(2, min($timeout, 6)));
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
             curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $header_lines);
 
@@ -126,6 +199,9 @@ class TribuneActions {
                 curl_setopt($ch, CURLOPT_HTTPGET, true);
                 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
                 curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+                if (defined('CURLPROTO_HTTP') && defined('CURLPROTO_HTTPS')) {
+                    curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+                }
             }
 
             $response = curl_exec($ch);
@@ -163,7 +239,7 @@ class TribuneActions {
                 'header'          => $header_str,
                 'content'         => $post_data
             ],
-            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]
+            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true]
         ];
 
         $context = stream_context_create($opts);
@@ -667,6 +743,10 @@ class TribuneActions {
                 return ['status' => 400, 'data' => ['success' => false, 'error' => 'Seuls les protocole HTTP et HTTPS sont autorisés.']];
             }
 
+            if (!self::isSafePublicUrl($remote_url)) {
+                return ['status' => 403, 'data' => ['success' => false, 'error' => 'Accès refusé : adresse IP ou réseau privé non autorisé (anti-SSRF).']];
+            }
+
             $headers = ["User-Agent: {$user_agent}", "Accept: application/xml, text/xml, text/plain, application/json, */*"];
             if (!empty($cookie_hdr)) $headers[] = "Cookie: {$cookie_hdr}";
 
@@ -733,6 +813,10 @@ class TribuneActions {
 
             if (empty($post_url) || !filter_var($post_url, FILTER_VALIDATE_URL)) {
                 return ['status' => 400, 'data' => ['success' => false, 'error' => 'URL de soumission distante invalide.']];
+            }
+
+            if (!self::isSafePublicUrl($post_url)) {
+                return ['status' => 403, 'data' => ['success' => false, 'error' => 'Accès refusé : destination réseau privée non autorisée (anti-SSRF).']];
             }
 
             $parsed_post_url = parse_url($post_url);
@@ -907,7 +991,7 @@ class TribuneActions {
 
             $orig_name = basename($file['name']);
             $ext = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
-            $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phps', 'cgi', 'pl', 'py', 'sh', 'exe', 'bat', 'cmd', 'vbs', 'msi', 'phar'];
+            $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phps', 'cgi', 'pl', 'py', 'sh', 'exe', 'bat', 'cmd', 'vbs', 'msi', 'phar', 'htaccess', 'user.ini', 'ini'];
             if (in_array($ext, $forbidden_exts, true)) {
                 return ['status' => 400, 'data' => ['success' => false, 'error' => 'Type de fichier exécutable interdit pour des raisons de sécurité.']];
             }
@@ -946,51 +1030,46 @@ class TribuneActions {
                 'ext'           => $ext
             ];
 
-            file_put_contents($meta_path, json_encode($meta_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
-            $relative_url = 'system/endpoints/api.php?action=tribune_file_get&token=' . $token;
+            @file_put_contents($meta_path, json_encode($meta_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 
             return ['status' => 200, 'data' => [
-                'success'   => true,
-                'token'     => $token,
-                'url'       => $relative_url,
-                'filename'  => $orig_name,
-                'mime_type' => $mime_type
+                'success'       => true,
+                'token'         => $token,
+                'original_name' => $orig_name,
+                'size'          => $file['size'],
+                'mime_type'     => $mime_type,
+                'url'           => 'system/endpoints/api.php?action=tribune_file_get&token=' . $token
             ]];
         }
 
         if ($action === 'tribune_file_get') {
-            $token = $_GET['token'] ?? '';
-            if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
-                return ['status' => 400, 'data' => ['success' => false, 'error' => 'Jeton de fichier invalide.']];
+            @session_write_close();
+            $token = trim($_GET['token'] ?? $raw_body['token'] ?? '');
+            $token = preg_replace('/[^a-f0-9]/i', '', $token);
+
+            if (empty($token) || strlen($token) !== 32) {
+                http_response_code(400);
+                echo "Jeton de fichier invalide.";
+                exit;
             }
 
             $upload_dir = $base_dir . '/storage/tribune_uploads';
             $bin_path = $upload_dir . '/' . $token . '.bin';
             $meta_path = $upload_dir . '/' . $token . '.json';
 
-            if (!is_file($bin_path) || !is_file($meta_path)) {
-                return ['status' => 404, 'data' => ['success' => false, 'error' => 'Fichier introuvable ou expiré.']];
+            if (!file_exists($bin_path) || !file_exists($meta_path)) {
+                http_response_code(404);
+                echo "Fichier temporaire introuvable ou expiré.";
+                exit;
             }
 
-            $meta = json_decode(file_get_contents($meta_path), true) ?: [];
-            $mime_type = strtolower($meta['mime_type'] ?? 'application/octet-stream');
-            $orig_name = $meta['original_name'] ?? ('file_' . $token);
-
-            $safe_inline_mimes = [
-                'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
-                'video/mp4', 'video/webm', 'video/ogg',
-                'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/flac',
-                'application/pdf', 'text/plain'
-            ];
-
-            $disposition = in_array($mime_type, $safe_inline_mimes, true) ? 'inline' : 'attachment';
-            if (ob_get_level()) @ob_end_clean();
+            $meta = @json_decode(@file_get_contents($meta_path), true);
+            $mime_type = $meta['mime_type'] ?? 'application/octet-stream';
+            $orig_name = $meta['original_name'] ?? ('tribune_' . $token . '.bin');
 
             header('Content-Type: ' . $mime_type);
+            header('Content-Disposition: inline; filename="' . rawurlencode($orig_name) . '"');
             header('Content-Length: ' . filesize($bin_path));
-            header('Content-Disposition: ' . $disposition . '; filename="' . rawurlencode($orig_name) . '"');
-            header('X-Content-Type-Options: nosniff');
-            header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'");
             header('Cache-Control: public, max-age=86400');
 
             readfile($bin_path);
@@ -1006,7 +1085,7 @@ class TribuneActions {
             $remote_url = "https://totoz.eu/img/" . rawurlencode($name);
             $opts = [
                 'http' => ['method' => 'GET', 'timeout' => 5, 'follow_location' => 1, 'max_redirects' => 5, 'header' => "User-Agent: Mozilla/5.0\r\n"],
-                'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false]
+                'ssl'  => ['verify_peer' => true, 'verify_peer_name' => true]
             ];
             $img_data = @file_get_contents($remote_url, false, stream_context_create($opts));
 
@@ -1052,8 +1131,7 @@ class TribuneActions {
                 return ['status' => 400, 'data' => ['success' => false, 'error' => 'URL invalide']];
             }
 
-            $parsed_host = parse_url($url, PHP_URL_HOST);
-            if (!$parsed_host || in_array(strtolower($parsed_host), ['localhost', '127.0.0.1', '::1', '0.0.0.0'])) {
+            if (!self::isSafePublicUrl($url)) {
                 return ['status' => 200, 'data' => ['success' => false, 'error' => 'Accès restreint']];
             }
 

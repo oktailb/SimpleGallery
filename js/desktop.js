@@ -9,13 +9,6 @@
 (function(window) {
   'use strict';
 
-  // Automatically keep browser address bar URL clean (hide ?dir= and query parameters)
-  try {
-    if (typeof window !== 'undefined' && window.history && window.history.replaceState && window.location.search) {
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-  } catch (e) {}
-
   class WebOSDesktop {
     constructor() {
       this.state = {

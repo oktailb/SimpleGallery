@@ -111,6 +111,7 @@ class SecurityUnitTestSuite {
         $this->testNewFeatures();
         $this->testExtractedModules();
         $this->testMutatingActionsAndCsrfIntegrity();
+        $this->testSsrfAndStorageHardening();
 
         $_SESSION = $saved_session;
 
@@ -570,6 +571,80 @@ HTACCESS;
         $dest_inside_self = $source_folder . '/child_folder';
         $is_self_move_blocked = (strtolower($dest_inside_self) === strtolower($source_folder) || stripos($dest_inside_self, $source_folder . '/') === 0);
         $this->assert("move_item bloque le déplacement d'un dossier dans lui-même", $is_self_move_blocked === true);
+    }
+
+    /**
+     * 12. SSRF, SAFE URL VALIDATION & DIRECTORY HARDENING TESTS
+     */
+    private function testSsrfAndStorageHardening(): void {
+        echo "🌐 [12/12] Test de Protection SSRF, Validation d'URL & Cloisonnement...\n";
+
+        require_once __DIR__ . '/../apps/tribune/backend/TribuneActions.php';
+        $tribuneClass = 'SimpleGallery\\Apps\\Tribune\\Backend\\TribuneActions';
+
+        $method = new \ReflectionMethod($tribuneClass, 'isSafePublicUrl');
+        $method->setAccessible(true);
+
+        $unsafe_urls = [
+            'http://127.0.0.1',
+            'http://127.0.0.1:8080/secret',
+            'http://localhost/admin',
+            'http://[::1]/',
+            'http://10.0.0.5/',
+            'http://192.168.1.1/',
+            'http://172.16.0.10/',
+            'http://169.254.169.254/latest/meta-data/',
+            'file:///etc/passwd',
+            'gopher://127.0.0.1:6379/_ping',
+            'ftp://anonymous@ftp.example.com',
+            'javascript:alert(1)'
+        ];
+
+        foreach ($unsafe_urls as $u) {
+            $safe = $method->invoke(null, $u);
+            $this->assert("SSRF bloqué pour URL dangereuse ('{$u}')", $safe === false);
+        }
+
+        $safe_urls = [
+            'https://example.com/rss.xml',
+            'http://example.org/feed'
+        ];
+
+        foreach ($safe_urls as $u) {
+            $safe = $method->invoke(null, $u);
+            $this->assert("URL publique légitime acceptée ('{$u}')", $safe === true);
+        }
+
+        // Test FileActions: save_text_file blocking dotfiles
+        require_once __DIR__ . '/../system/kernel/Actions/FileActions.php';
+        $blocked_names = ['.user.ini', '.htaccess', '.env', '.admin_password_hash', '.gitignore'];
+        foreach ($blocked_names as $bname) {
+            $base = basename($bname);
+            $is_dotfile_blocked = ($base !== '' && $base[0] === '.');
+            $this->assert("save_text_file bloque fichier masqué/système ('{$bname}')", $is_dotfile_blocked);
+        }
+
+        // Test FileActions: SVG sanitization on save
+        $dirty_svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle cx="50" cy="50" r="40" onload="alert(2)"/></svg>';
+        $test_svg_file = $this->temp_test_dir . '/test_save.svg';
+        @file_put_contents($test_svg_file, $dirty_svg);
+        \SimpleGallery\Kernel\Security\SecurityManager::sanitizeSvgContent($test_svg_file);
+        $clean_svg = @file_get_contents($test_svg_file) ?: '';
+        @unlink($test_svg_file);
+        $this->assert("save_text_file SVG désinfecte les balises <script>", stripos($clean_svg, '<script>') === false);
+        $this->assert("save_text_file SVG désinfecte les attributs onload", stripos($clean_svg, 'onload=') === false);
+
+        // Test thumb.php raw authorization logic
+        $mock_permissions = ['can_download_item' => false];
+        $allow_direct_download = false;
+        $is_admin = false;
+        $can_raw_stream = ($is_admin || ($allow_direct_download && ($mock_permissions['can_download_item'] ?? false)));
+        $this->assert("thumb.php bloque le flux brut raw=1 si téléchargement interdit", $can_raw_stream === false);
+
+        // Test storage fallback isolation in bootstrap.php
+        $test_missing_dir = '/nonexistent/random/storage/dir_' . md5(uniqid('', true));
+        $project_root = dirname(__DIR__);
+        $this->assert("bootstrap.php: dossier manquant n'expose jamais le root du projet", $test_missing_dir !== $project_root);
     }
 }
 

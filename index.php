@@ -130,7 +130,6 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   $discovered_wm_styles = PluginDiscovery::getDiscoveredWindowStyles(__DIR__);
   ?>
   <script>
-    window.SG_DISCOVERED_APPS = <?php echo json_encode($all_apps_manifests); ?>;
     window.SG_DISCOVERED_WM_STYLES = <?php echo json_encode($discovered_wm_styles); ?>;
   </script>
 
