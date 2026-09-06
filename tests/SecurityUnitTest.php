@@ -615,14 +615,57 @@ HTACCESS;
             $this->assert("URL publique légitime acceptée ('{$u}')", $safe === true);
         }
 
-        // Test FileActions: save_text_file blocking dotfiles
+        // Test FileActions: save_text_file blocking dotfiles except allowed .autorun.json
         require_once __DIR__ . '/../system/kernel/Actions/FileActions.php';
         $blocked_names = ['.user.ini', '.htaccess', '.env', '.admin_password_hash', '.gitignore'];
         foreach ($blocked_names as $bname) {
             $base = basename($bname);
-            $is_dotfile_blocked = ($base !== '' && $base[0] === '.');
+            $is_dotfile_blocked = ($base !== '' && $base[0] === '.' && !in_array(strtolower($base), ['.autorun.json', 'autorun.json'], true));
             $this->assert("save_text_file bloque fichier masqué/système ('{$bname}')", $is_dotfile_blocked);
         }
+        $this->assert("save_text_file autorise explicitement .autorun.json", in_array(strtolower('.autorun.json'), ['.autorun.json', 'autorun.json'], true));
+
+        // Test FileActions directly handling save_file_content for .autorun.json
+        $_SESSION['sg_admin_logged'] = true;
+        $_SESSION['is_admin'] = true;
+        $autorun_content = json_encode([
+            "version" => "2.0",
+            "title" => "Test Autorun",
+            "timeline" => []
+        ]);
+        $test_context = [
+            'base_dir' => $this->temp_test_dir,
+            'thumbnail_dir' => 'thumbs',
+            'ignore_list' => [],
+            'raw_body' => [
+                'file' => '.autorun.json',
+                'content' => $autorun_content
+            ]
+        ];
+        $res = \SimpleGallery\Kernel\Actions\FileActions::handle('save_file_content', [
+            'file' => '.autorun.json',
+            'content' => $autorun_content
+        ], $test_context);
+        $this->assert("save_file_content autorise l'enregistrement de .autorun.json", is_array($res) && ($res['status'] ?? 0) === 200);
+        if (file_exists($this->temp_test_dir . '/.autorun.json')) {
+            @unlink($this->temp_test_dir . '/.autorun.json');
+        }
+
+        // Test FileActions directly blocking save_file_content for .htaccess
+        $test_context_block = [
+            'base_dir' => $this->temp_test_dir,
+            'thumbnail_dir' => 'thumbs',
+            'ignore_list' => [],
+            'raw_body' => [
+                'file' => '.htaccess',
+                'content' => 'Deny from all'
+            ]
+        ];
+        $res_block = \SimpleGallery\Kernel\Actions\FileActions::handle('save_file_content', [
+            'file' => '.htaccess',
+            'content' => 'Deny from all'
+        ], $test_context_block);
+        $this->assert("save_file_content bloque l'enregistrement de .htaccess (403)", is_array($res_block) && ($res_block['status'] ?? 0) === 403);
 
         // Test FileActions: SVG sanitization on save
         $dirty_svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle cx="50" cy="50" r="40" onload="alert(2)"/></svg>';

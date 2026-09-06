@@ -682,7 +682,8 @@ class FileActions {
             }
 
             $filename = basename($file_full);
-            if ($filename === '' || $filename[0] === '.' || in_array(strtolower($filename), ['user.ini', '.user.ini', 'htaccess', '.htaccess', '.env', '.admin_password_hash'], true)) {
+            $is_allowed_dotfile = in_array(strtolower($filename), ['.autorun.json', 'autorun.json'], true);
+            if ($filename === '' || ($filename[0] === '.' && !$is_allowed_dotfile) || in_array(strtolower($filename), ['user.ini', '.user.ini', 'htaccess', '.htaccess', '.env', '.admin_password_hash'], true)) {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_forbidden_file_type')]];
             }
 
@@ -690,6 +691,13 @@ class FileActions {
             $forbidden_exts = ['php', 'phtml', 'php3', 'php4', 'php5', 'phps', 'phar', 'inc', 'sh', 'bash', 'bat', 'cmd', 'exe', 'cgi', 'pl', 'py', 'htaccess', 'user.ini', 'admin_password_hash'];
             if (in_array($ext, $forbidden_exts, true)) {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_forbidden_file_type')]];
+            }
+
+            if ($is_allowed_dotfile) {
+                $decoded = @json_decode((string)$content, true);
+                if (!is_array($decoded)) {
+                    return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_invalid_data')]];
+                }
             }
 
             if (@file_put_contents($file_full, (string)$content, LOCK_EX) !== false) {
