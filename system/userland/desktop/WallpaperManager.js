@@ -43,21 +43,23 @@
     apply(val) {
       this.currentWallpaper = val;
       const desktopSurface = document.getElementById('desktopSurface') || document.getElementById('webosDesktop') || document.body;
-      if (!desktopSurface) return;
+      const targets = [desktopSurface, document.body].filter(Boolean);
 
-      if (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('system/') || val.startsWith('data:') || val.includes('.jpg') || val.includes('.png') || val.includes('.webp')) {
-        desktopSurface.style.backgroundImage = `url("${val}")`;
-        desktopSurface.style.backgroundSize = 'cover';
-        desktopSurface.style.backgroundPosition = 'center';
-        desktopSurface.style.backgroundRepeat = 'no-repeat';
-      } else if (val.includes('gradient') || val.includes('#') || val.startsWith('rgb')) {
-        desktopSurface.style.backgroundImage = val.includes('gradient') ? val : 'none';
-        desktopSurface.style.backgroundColor = val.includes('gradient') ? '' : val;
-        desktopSurface.style.backgroundSize = '';
-        desktopSurface.style.backgroundPosition = '';
-      } else {
-        desktopSurface.style.backgroundImage = val;
-      }
+      targets.forEach(target => {
+        if (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('system/') || val.startsWith('data:') || val.includes('.jpg') || val.includes('.png') || val.includes('.webp')) {
+          target.style.backgroundImage = `url("${val}")`;
+          target.style.backgroundSize = 'cover';
+          target.style.backgroundPosition = 'center';
+          target.style.backgroundRepeat = 'no-repeat';
+        } else if (val.includes('gradient') || val.includes('#') || val.startsWith('rgb')) {
+          target.style.backgroundImage = val.includes('gradient') ? val : 'none';
+          target.style.backgroundColor = val.includes('gradient') ? '' : val;
+          target.style.backgroundSize = '';
+          target.style.backgroundPosition = '';
+        } else {
+          target.style.backgroundImage = val;
+        }
+      });
     }
 
     getPresets() {

@@ -49,9 +49,10 @@ body {
   background-attachment: fixed;
   color: var(--text-main);
   font-family: var(--font-body);
+  height: 100vh;
   min-height: 100vh;
   line-height: 1.5;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* Folder Description Banner (.desc / .description dotfiles) */
@@ -3313,7 +3314,7 @@ body.no-direct-download audio {
  * 12. APP FOOTER & PRIVACY / COOKIES LINK
  * ------------------------------------------------------------- */
 .app-footer {
-  margin-top: 3rem;
+  margin: 0;
   padding: 1.5rem 1.25rem 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-muted);
@@ -4289,6 +4290,7 @@ body.no-direct-download audio {
   bottom: 0;
   left: 0;
   right: 0;
+  margin: 0;
   background: var(--bg-card, rgba(15, 23, 42, 0.92));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
