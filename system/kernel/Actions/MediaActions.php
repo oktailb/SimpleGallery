@@ -103,7 +103,7 @@ class MediaActions {
             }
         }
 
-        if ($action === 'search') {
+        if ($action === 'search' || $action === 'search_media') {
             $req_dir = $raw_body['dir'] ?? $_GET['dir'] ?? '';
             $start_dir = PathValidator::sanitizeDirectory($req_dir, $base_dir) ?: $base_dir;
 

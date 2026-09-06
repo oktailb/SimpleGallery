@@ -127,6 +127,16 @@
     }
 
     destroy() {
+      if (this._onDocDragStart) document.removeEventListener('dragstart', this._onDocDragStart);
+      if (this._onDocMouseMove) document.removeEventListener('mousemove', this._onDocMouseMove);
+      if (this._onDocMouseUp) document.removeEventListener('mouseup', this._onDocMouseUp);
+      if (this._marqueeEl && this._marqueeEl.parentNode) {
+        this._marqueeEl.parentNode.removeChild(this._marqueeEl);
+      }
+      if (this.leafletMap) {
+        try { this.leafletMap.remove(); } catch (e) { }
+        this.leafletMap = null;
+      }
       if (this.containerEl && this.containerEl.parentNode) {
         this.containerEl.parentNode.removeChild(this.containerEl);
       }
@@ -424,7 +434,7 @@
 
       if (this.el.folderDescBanner) {
         if (overrides && overrides.description) {
-          this.el.folderDescBanner.innerHTML = overrides.description;
+          this.el.folderDescBanner.innerHTML = this.escapeHtml(overrides.description).replace(/\n/g, '<br/>');
           this.el.folderDescBanner.style.display = 'block';
         } else {
           this.el.folderDescBanner.style.display = 'none';
@@ -974,10 +984,20 @@
             if (!this.state.selectedPaths.has(file.path)) {
               this.clearSelection();
               this.openMedia(file, index);
+            } else if (this.state.selectedPaths.size === 1) {
+              this.openMedia(file, index);
             }
             return;
           }
 
+          this.openMedia(file, index);
+        };
+
+        card.ondblclick = (e) => {
+          if (e.target.closest('button, input, a, .edit-media-comment-btn, .gps-badge, .favorite-btn, .pip-card-btn, .delete-item-btn')) {
+            return;
+          }
+          e.preventDefault();
           this.openMedia(file, index);
         };
       });
@@ -1241,12 +1261,12 @@
         }
       });
 
-      document.addEventListener('dragstart', () => {
+      this._onDocDragStart = () => {
         isSelecting = false;
         if (marqueeEl) marqueeEl.style.display = 'none';
-      });
+      };
 
-      document.addEventListener('mousemove', (e) => {
+      this._onDocMouseMove = (e) => {
         if (!isSelecting || !marqueeEl) return;
 
         const currentX = e.pageX;
@@ -1283,14 +1303,19 @@
           this.state.selectedPaths = currentSelection;
           this.updateSelectionUI();
         }
-      });
+      };
 
-      document.addEventListener('mouseup', () => {
+      this._onDocMouseUp = () => {
         if (isSelecting) {
           isSelecting = false;
           if (marqueeEl) marqueeEl.style.display = 'none';
         }
-      });
+      };
+
+      this._marqueeEl = marqueeEl;
+      document.addEventListener('dragstart', this._onDocDragStart);
+      document.addEventListener('mousemove', this._onDocMouseMove);
+      document.addEventListener('mouseup', this._onDocMouseUp);
     }
 
     // -------------------------------------------------------------
@@ -1380,7 +1405,7 @@
         const marker = window.L.marker([item.lat, item.lng]);
         marker.bindPopup(`
           <div style="text-align:center;font-size:0.85rem;">
-            <img src="${item.file.thumb_url}" style="width:120px;height:80px;object-fit:cover;border-radius:4px;margin-bottom:4px;" />
+            <img src="${this.escapeHtml(item.file.thumb_url)}" style="width:120px;height:80px;object-fit:cover;border-radius:4px;margin-bottom:4px;" />
             <div style="font-weight:600;">${this.escapeHtml(item.file.name)}</div>
           </div>
         `);
@@ -1802,27 +1827,31 @@
         this.showToast(`Téléversement de ${files.length} fichier(s)...`, 'info');
       }
 
-      const json = await window.sys.api.upload('upload_file', formData, (percent) => {
-        if (progressBar) {
-          progressBar.style.width = `${percent}%`;
-          progressBar.textContent = `${percent}%`;
-        }
-      });
+      try {
+        const json = await window.sys.api.upload('upload_file', formData, (percent) => {
+          if (progressBar) {
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${percent}%`;
+          }
+        });
 
-      if (progressModal) {
-        progressModal.style.display = 'none';
-        progressModal.classList.remove('open');
-      }
-
-      if (json.success) {
-        this.showToast(json.message || 'Fichiers téléversés avec succès', 'success');
-        if (window.EventBus) {
-          window.EventBus.emit('fs:changed', { action: 'upload', dir: destination });
+        if (json && json.success) {
+          this.showToast(json.message || this.t('api.success_uploaded', { count: files.length }), 'success');
+          if (window.EventBus) {
+            window.EventBus.emit('fs:changed', { action: 'upload', dir: destination });
+          } else {
+            await this.loadDirectory(this.state.currentPath);
+          }
         } else {
-          await this.loadDirectory(this.state.currentPath);
+          this.showToast('⚠️ ' + ((json && json.error) || this.t('api.err_upload_failed')), 'error');
         }
-      } else {
-        this.showToast('⚠️ ' + (json.error || 'Erreur lors du téléversement'), 'error');
+      } catch (err) {
+        this.showToast(`⚠️ ${err.message}`, 'error');
+      } finally {
+        if (progressModal) {
+          progressModal.style.display = 'none';
+          progressModal.classList.remove('open');
+        }
       }
     }
 
@@ -1900,6 +1929,7 @@
 
       const dest = this.state.currentPath;
       let successCount = 0;
+      let lastError = null;
 
       for (const item of clip.data) {
         const sourcePath = item.path || item;
@@ -1907,14 +1937,18 @@
           if (clip.op === 'cut') {
             const res = await window.sys.api.fs.moveItem(sourcePath, dest);
             if (res && res.success) successCount++;
+            else if (res && res.error) lastError = res.error;
           } else {
             const res = await window.sys.api.fs.copyItem(sourcePath, dest);
             if (res && res.success) successCount++;
+            else if (res && res.error) lastError = res.error;
           }
-        } catch (e) {}
+        } catch (e) {
+          lastError = e.message;
+        }
       }
 
-      if (clip.op === 'cut') {
+      if (clip.op === 'cut' && successCount > 0) {
         window.sys.clipboard.clear();
       }
 
@@ -1925,6 +1959,8 @@
         } else {
           await this.loadDirectory(this.state.currentPath);
         }
+      } else if (lastError) {
+        this.showToast(`⚠️ ${lastError}`, 'error');
       }
     }
 
@@ -2133,13 +2169,89 @@
       if (this.el.selectionClearBtn) this.el.selectionClearBtn.onclick = () => this.clearSelection();
 
       if (this.el.searchModalCloseBtn) this.el.searchModalCloseBtn.onclick = () => this.closeSearchModal();
-      if (this.el.searchAdvancedForm) {
-        this.el.searchAdvancedForm.onsubmit = (e) => {
-          e.preventDefault();
-          const name = this.el.advSearchName ? this.el.advSearchName.value : '';
-          this.state.searchQuery = name.toLowerCase();
+
+      if (this.el.advSearchTiming) {
+        this.el.advSearchTiming.onchange = () => {
+          if (this.el.advSearchCustomDateRow) {
+            this.el.advSearchCustomDateRow.style.display = (this.el.advSearchTiming.value === 'custom') ? 'flex' : 'none';
+          }
+        };
+      }
+
+      if (this.el.advSearchResetBtn) {
+        this.el.advSearchResetBtn.onclick = () => {
+          if (this.el.searchAdvancedForm) this.el.searchAdvancedForm.reset();
+          if (this.el.advSearchCustomDateRow) this.el.advSearchCustomDateRow.style.display = 'none';
+          this.exitSearch();
           this.closeSearchModal();
-          this.applyFilterAndRender();
+        };
+      }
+
+      if (this.el.exitSearchBtn) {
+        this.el.exitSearchBtn.onclick = () => this.exitSearch();
+      }
+
+      if (this.el.searchAdvancedForm) {
+        this.el.searchAdvancedForm.onsubmit = async (e) => {
+          e.preventDefault();
+          const name = this.el.advSearchName ? this.el.advSearchName.value.trim() : '';
+          const words = this.el.advSearchWords ? this.el.advSearchWords.value.trim() : '';
+          const category = this.el.advSearchCategory ? this.el.advSearchCategory.value : 'all';
+          const location = this.el.advSearchLocation ? this.el.advSearchLocation.value : 'current';
+          const timing = this.el.advSearchTiming ? this.el.advSearchTiming.value : 'all';
+          const dateFrom = this.el.advSearchDateFrom ? this.el.advSearchDateFrom.value : '';
+          const dateTo = this.el.advSearchDateTo ? this.el.advSearchDateTo.value : '';
+          const sizeRange = this.el.advSearchSize ? this.el.advSearchSize.value : 'all';
+          const gpsOnly = this.el.advSearchGpsOnly ? this.el.advSearchGpsOnly.checked : false;
+          const favOnly = this.el.advSearchFavOnly ? this.el.advSearchFavOnly.checked : false;
+
+          this.closeSearchModal();
+          this.showLoading(true);
+
+          try {
+            const params = {
+              dir: this.state.currentPath,
+              name: name,
+              words: words,
+              category: category,
+              timing: timing,
+              date_from: dateFrom,
+              date_to: dateTo,
+              size_range: sizeRange,
+              gps_only: gpsOnly ? 1 : 0,
+              recursive: location === 'everywhere' ? 1 : 0
+            };
+
+            const json = await window.sys.api.get('search_media', params);
+            if (json && json.success && Array.isArray(json.results)) {
+              let results = json.results;
+              if (favOnly) {
+                results = results.filter(f => (this.state.favorites || []).includes(f.path));
+              }
+
+              this.state.isSearchActive = true;
+              this.state.searchQuery = '';
+              this.state.files = results;
+              this.state.directories = [];
+
+              if (this.el.folderSection) this.el.folderSection.style.display = 'none';
+              if (this.el.searchResultsBanner) {
+                this.el.searchResultsBanner.style.display = 'flex';
+                if (this.el.searchResultsCountText) {
+                  this.el.searchResultsCountText.textContent = `${results.length} ${this.t('search.results_found')}`;
+                }
+              }
+
+              this.applyFilterAndRender();
+              this.showToast(`${results.length} ${this.t('search.results_found')}`, 'info');
+            } else {
+              this.showToast(this.t('search.results_found') + ': 0', 'info');
+            }
+          } catch (err) {
+            this.showToast(`⚠️ ${err.message}`, 'error');
+          } finally {
+            this.showLoading(false);
+          }
         };
       }
 
@@ -2774,7 +2886,7 @@
 
       menu.innerHTML = views.map(v => `
         <button type="button" class="view-option-btn ${currentMode === v.id ? 'active' : ''}" data-view-mode="${v.id}">
-          <span>${v.icon || '🖼️'}</span> <span>${this.escapeHtml(this.t(v.nameKey) || v.name || v.id)}</span>
+          <span>${v.icon || '🖼️'}</span> <span>${this.escapeHtml(this.t(v.nameKey))}</span>
         </button>
       `).join('');
 
@@ -2805,7 +2917,7 @@
 
     getViewModeLabel(mode) {
       const plugin = window.GalleryViewRegistry && window.GalleryViewRegistry.get(mode);
-      if (plugin && plugin.nameKey) return this.t(plugin.nameKey) || plugin.name || plugin.id;
+      if (plugin && plugin.nameKey) return this.t(plugin.nameKey);
       return mode;
     }
 

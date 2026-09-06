@@ -41,9 +41,9 @@
       const isFav = ctx.favorites && ctx.favorites.includes(file.path);
 
       const deleteBtnHtml = canDelete
-        ? `<button class="delete-item-btn" data-path="${file.path}" data-name="${ctx.escapeHtml(file.name)}" data-type="file" title="${ctx.escapeHtml(ctx.t('card.delete_item'))}">🗑️</button>`
+        ? `<button class="delete-item-btn" data-path="${ctx.escapeHtml(file.path)}" data-name="${ctx.escapeHtml(file.name)}" data-type="file" title="${ctx.escapeHtml(ctx.t('card.delete_item'))}">🗑️</button>`
         : '';
-      const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${file.path}" title="${ctx.escapeHtml(isFav ? ctx.t('lightbox.favorite_remove') : ctx.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
+      const favBtnHtml = `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" data-path="${ctx.escapeHtml(file.path)}" title="${ctx.escapeHtml(isFav ? ctx.t('lightbox.favorite_remove') : ctx.t('lightbox.favorite_add'))}" onclick="event.stopPropagation()">${isFav ? '❤️' : '🤍'}</button>`;
       const pipCardBtn = ['video', 'audio'].includes(file.category)
         ? `<button class="pip-card-btn" data-index="${idx}" title="${ctx.escapeHtml(ctx.t('card.pip_mode'))}" onclick="event.stopPropagation()">🗗</button>`
         : '';
@@ -52,7 +52,7 @@
         <div class="${mosaicCardClass} ${ctx.handleClass || ''}" data-index="${idx}" draggable="${ctx.isDraggable || 'false'}">
           ${deleteBtnHtml}
           <div class="mosaic-img-wrapper">
-            <img src="${file.thumb_url}" alt="${ctx.escapeHtml(file.name)}" loading="lazy" draggable="false" />
+            <img src="${ctx.escapeHtml(file.thumb_url)}" alt="${ctx.escapeHtml(file.name)}" loading="lazy" draggable="false" />
             ${favBtnHtml}
             ${pipCardBtn}
             ${overlayHtml}

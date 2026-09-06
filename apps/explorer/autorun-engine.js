@@ -420,12 +420,16 @@
         `;
 
         if (highlightSelector) {
-          const target = bodyEl.querySelector(highlightSelector);
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            target.style.transition = 'background 0.3s ease';
-            target.style.background = 'rgba(99, 102, 241, 0.2)';
-            setTimeout(() => { target.style.background = ''; }, 2000);
+          try {
+            const target = bodyEl.querySelector(highlightSelector);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              target.style.transition = 'background 0.3s ease';
+              target.style.background = 'rgba(99, 102, 241, 0.2)';
+              setTimeout(() => { target.style.background = ''; }, 2000);
+            }
+          } catch (selErr) {
+            console.warn('[Autorun] Invalid highlight selector:', highlightSelector);
           }
         }
       } catch (e) {
@@ -453,15 +457,25 @@
       `;
     }
 
+    sanitizeHtml(raw) {
+      if (!raw) return '';
+      return String(raw)
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/\bon[a-zA-Z0-9_-]+\s*=\s*(["'][^"']*["']|[^\s>]+)/gi, '')
+        .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
+    }
+
     renderCustomContentInCompanion(session, html, title) {
       if (!session.companionWin || !session.companionWin.element) return;
       const bodyEl = session.companionWin.element.querySelector('#autorunCompanionBody');
       if (!bodyEl) return;
 
+      const safeHtml = this.sanitizeHtml(html);
       bodyEl.innerHTML = `
         <div style="animation:fadeIn 0.25s ease;">
           ${title ? `<h3 style="margin-bottom:1rem;color:var(--accent-primary,#6366f1);">${this.escapeHtml(title)}</h3>` : ''}
-          ${html}
+          ${safeHtml}
         </div>
       `;
     }

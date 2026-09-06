@@ -67,6 +67,7 @@ class ActionRouter {
         'get_wm_styles'           => SystemActions::class,
 
         // Media & Search
+        'search'                  => MediaActions::class,
         'search_media'            => MediaActions::class,
         'view_file'               => MediaActions::class,
         'raw_file'                => MediaActions::class,

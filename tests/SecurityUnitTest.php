@@ -645,6 +645,20 @@ HTACCESS;
         $test_missing_dir = '/nonexistent/random/storage/dir_' . md5(uniqid('', true));
         $project_root = dirname(__DIR__);
         $this->assert("bootstrap.php: dossier manquant n'expose jamais le root du projet", $test_missing_dir !== $project_root);
+
+        // Test Explorer Search Routes & MediaActions
+        require_once __DIR__ . '/../system/kernel/Actions/ActionRouter.php';
+        $ref_router = new ReflectionClass(\SimpleGallery\Kernel\Actions\ActionRouter::class);
+        $routes = $ref_router->getConstant('ACTION_MAP');
+        $this->assert("ActionRouter associe 'search' à MediaActions", isset($routes['search']) && $routes['search'] === \SimpleGallery\Kernel\Actions\MediaActions::class);
+        $this->assert("ActionRouter associe 'search_media' à MediaActions", isset($routes['search_media']) && $routes['search_media'] === \SimpleGallery\Kernel\Actions\MediaActions::class);
+
+        // Test Autorun / Explorer XSS sanitization patterns
+        $raw_malicious_script = '<script>alert(1)</script><img src="x" onerror="alert(2)">';
+        $sanitized_pattern = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $raw_malicious_script);
+        $sanitized_pattern = preg_replace('/\bon\w+\s*=\s*(["\']?).*?\1/is', '', $sanitized_pattern);
+        $this->assert("Autorun sanitization élimine balises script", stripos($sanitized_pattern, '<script>') === false);
+        $this->assert("Autorun sanitization élimine attributs d'événement onerror", stripos($sanitized_pattern, 'onerror') === false);
     }
 }
 
