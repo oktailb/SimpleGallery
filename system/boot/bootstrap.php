@@ -101,6 +101,7 @@ if ($resolved_storage !== false && is_dir($resolved_storage)) {
     $real_base_dir = str_replace('\\', '/', $resolved_storage);
     $storage_status['active_path'] = $real_base_dir;
     $storage_status['is_fallback'] = false;
+} else {
     // Attempt to create target media directory or safe isolated sandbox
     $fallback_dir = $storage_base_dir . '/media';
     if (!file_exists($fallback_dir)) {
