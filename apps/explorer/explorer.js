@@ -2351,7 +2351,7 @@
           parsed.window_layout = this.el.autorunEditLayout.value;
         }
       } catch (err) {
-        this.showToast(`Syntaxe JSON invalide : ${err.message}`, 'error');
+        this.showToast(this.t('autorun.json_invalid', { error: err.message }), 'error');
         return;
       }
 
@@ -2359,33 +2359,34 @@
         const savePath = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
         const res = await window.sys.api.post('save_file_content', {
           path: savePath,
+          file: savePath,
           content: JSON.stringify(parsed, null, 2),
           csrf_token: this.state.csrfToken || window.CSRF_TOKEN
         });
         if (res && res.success) {
           this.closeAutorunEditorModal();
-          this.showToast('Présentation autorun.json enregistrée avec succès !', 'success');
+          this.showToast(this.t('autorun.saved'), 'success');
           await this.loadDirectory(this.state.currentPath);
         } else {
-          this.showToast(`Erreur : ${(res && res.error) || 'Impossible d\'enregistrer'}`, 'error');
+          this.showToast((res && res.error) || this.t('autorun.save_error'), 'error');
         }
       } catch (err) {
-        this.showToast(`Erreur réseau : ${err.message}`, 'error');
+        this.showToast(err.message, 'error');
       }
     }
 
     async deleteAutorunConfig() {
-      if (!confirm('Supprimer définitivement la configuration autorun.json de ce dossier ?')) return;
+      if (!confirm(this.t('autorun.delete_confirm'))) return;
       try {
         const path1 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
         const path2 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + 'autorun.json';
         await window.sys.api.fs.deleteItem(path1);
         await window.sys.api.fs.deleteItem(path2);
         this.closeAutorunEditorModal();
-        this.showToast('Autorun supprimé', 'info');
+        this.showToast(this.t('autorun.deleted'), 'info');
         await this.loadDirectory(this.state.currentPath);
       } catch (err) {
-        this.showToast(`Erreur : ${err.message}`, 'error');
+        this.showToast(err.message, 'error');
       }
     }
 

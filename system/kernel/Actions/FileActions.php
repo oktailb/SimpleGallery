@@ -668,12 +668,12 @@ class FileActions {
             return ['status' => 500, 'data' => ['success' => false, 'error' => __t('api.err_file_write_failed')]];
         }
 
-        if ($action === 'save_text_file') {
-            if (!PermissionsManager::hasPermission('can_upload', $base_dir)) {
+        if ($action === 'save_text_file' || $action === 'save_file_content') {
+            if (!PermissionsManager::hasPermission('can_upload', $base_dir) && !AuthManager::isAdminLoggedIn()) {
                 return ['status' => 403, 'data' => ['success' => false, 'error' => __t('api.err_save_denied')]];
             }
 
-            $file_param = $raw_body['file'] ?? $_POST['file'] ?? '';
+            $file_param = $raw_body['file'] ?? $raw_body['path'] ?? $_POST['file'] ?? $_POST['path'] ?? '';
             $content    = $raw_body['content'] ?? $_POST['content'] ?? '';
 
             $file_full = PathValidator::canonicalizeAndValidate($file_param, $base_dir, false, false);
