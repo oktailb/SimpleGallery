@@ -181,6 +181,13 @@ class AppManager {
     }
 
     /**
+     * Check whether an application is disabled
+     */
+    isAppDisabled(appId) {
+        return !this.isAppEnabled(appId);
+    }
+
+    /**
      * Enable or disable an application by ID
      */
     setAppEnabled(appId, enabled) {

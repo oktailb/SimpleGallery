@@ -42,10 +42,16 @@
     initAutostartApps() {
       // Boot default system taskbar if not disabled
       const appMgr = window.sys && window.sys.appManager;
-      if (appMgr && !appMgr.isAppDisabled('taskbar')) {
+      const isTaskbarDisabled = appMgr && typeof appMgr.isAppDisabled === 'function'
+        ? appMgr.isAppDisabled('taskbar')
+        : (appMgr && typeof appMgr.isAppEnabled === 'function'
+          ? !appMgr.isAppEnabled('taskbar')
+          : (Array.isArray(window.SG_DISABLED_APPS) && window.SG_DISABLED_APPS.includes('taskbar')));
+
+      if (!isTaskbarDisabled) {
         if (window.TaskbarApp && typeof window.TaskbarApp.open === 'function') {
           window.TaskbarApp.open();
-        } else {
+        } else if (appMgr && typeof appMgr.launchApp === 'function') {
           appMgr.launchApp('taskbar');
         }
       }

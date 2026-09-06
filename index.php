@@ -70,7 +70,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="system/userland/core/WindowManager.js" defer></script>
   <script src="system/userland/core/GalleryViewRegistry.js" defer></script>
   <script src="system/userland/core/MediaViewerRegistry.js" defer></script>
-  <script src="system/userland/core/AppManager.js" defer></script>
+  <script src="system/userland/core/AppManager.js?v=<?php echo filemtime(__DIR__ . '/system/userland/core/AppManager.js'); ?>" defer></script>
   <script src="system/userland/i18n/I18nEngine.js" defer></script>
   <script src="system/userland/theme/ThemeEngine.js" defer></script>
   <script src="system/userland/ui/WebOSToolkit.js" defer></script>
