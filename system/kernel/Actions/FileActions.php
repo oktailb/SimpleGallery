@@ -704,6 +704,14 @@ class FileActions {
                 if ($ext === 'svg') {
                     SecurityManager::sanitizeSvgContent($file_full);
                 }
+                if ($is_allowed_dotfile) {
+                    $dir = dirname($file_full);
+                    $alt_name = (strtolower($filename) === '.autorun.json') ? 'autorun.json' : '.autorun.json';
+                    $alt_path = $dir . '/' . $alt_name;
+                    if (file_exists($alt_path)) {
+                        @file_put_contents($alt_path, (string)$content, LOCK_EX);
+                    }
+                }
                 CacheManager::invalidateDirCache(dirname($file_full), $base_dir, $thumb_dir_name);
                 return ['status' => 200, 'data' => ['success' => true, 'message' => __t('api.msg_file_saved')]];
             }

@@ -212,15 +212,24 @@ class DotfileManager {
             }
         }
 
-        $autorun_file = file_exists($dir_path . '/autorun.json') 
-            ? $dir_path . '/autorun.json' 
-            : (file_exists($dir_path . '/.autorun.json') ? $dir_path . '/.autorun.json' : null);
+        $autorun_file = null;
+        $f_plain = $dir_path . '/autorun.json';
+        $f_dot   = $dir_path . '/.autorun.json';
+        if (file_exists($f_plain) && file_exists($f_dot)) {
+            $autorun_file = (filemtime($f_dot) >= filemtime($f_plain)) ? $f_dot : $f_plain;
+        } elseif (file_exists($f_plain)) {
+            $autorun_file = $f_plain;
+        } elseif (file_exists($f_dot)) {
+            $autorun_file = $f_dot;
+        }
+
         if ($autorun_file && is_readable($autorun_file)) {
             $raw_autorun = @file_get_contents($autorun_file);
             $parsed_autorun = @json_decode((string)$raw_autorun, true);
             if (is_array($parsed_autorun)) {
                 $overrides['has_autorun'] = true;
                 $overrides['autorun'] = $parsed_autorun;
+                $overrides['autorun_filename'] = basename($autorun_file);
             }
         }
 

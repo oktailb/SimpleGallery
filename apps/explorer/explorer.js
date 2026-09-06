@@ -2595,13 +2595,16 @@
             file: lead.file || '',
             duration: config.duration || '120'
           };
+        } else if (!config.master.file && (config.lead_media || config.primary)) {
+          const lead = config.lead_media || config.primary || {};
+          if (lead.file) config.master.file = lead.file;
         }
-        if (!config.timeline && Array.isArray(config.steps)) {
+        if ((!config.timeline || config.timeline.length === 0) && Array.isArray(config.steps) && config.steps.length > 0) {
           config.timeline = config.steps.map(s => ({
             time: s.time || "00:00",
             title: s.title || s.chapter || "",
             action: s.action || "open_app",
-            app: s.app || (s.action === 'set_doc' ? 'doc-viewer' : (s.action === 'show_image' ? 'image-viewer' : '')),
+            app: (s.app === 'viewer-video' ? 'video-player' : (s.app === 'viewer-text' ? 'doc-viewer' : (s.app || (s.action === 'set_doc' ? 'doc-viewer' : (s.action === 'show_image' ? 'image-viewer' : 'video-player'))))),
             file: s.file || '',
             params: s.params || (s.file ? { file: s.file } : {})
           }));
@@ -2652,11 +2655,16 @@
       const mediaFiles = files.filter(f => f.category === 'video' || f.category === 'audio' || f.name.match(/\.(mp4|webm|mov|mkv|mp3|wav|ogg|flac|m4a)$/i));
 
       let html = `<option value="">${this.escapeHtml(this.t('autorun.no_file'))}</option>`;
+      let found = false;
       mediaFiles.forEach(f => {
+        if (f.name === selectedFileName || f.path === selectedFileName) found = true;
         const isSel = (f.name === selectedFileName || f.path === selectedFileName) ? 'selected' : '';
         const icon = f.category === 'video' ? '🎬' : '🎵';
         html += `<option value="${this.escapeHtml(f.name)}" ${isSel}>${icon} ${this.escapeHtml(f.name)}</option>`;
       });
+      if (selectedFileName && !found) {
+        html += `<option value="${this.escapeHtml(selectedFileName)}" selected>🎬 ${this.escapeHtml(selectedFileName)}</option>`;
+      }
 
       this.el.autorunEditMasterFile.innerHTML = html;
     }
@@ -2810,10 +2818,15 @@
       const buildFileOptions = (selectedVal, allowedList) => {
         let optHtml = `<option value="">${this.escapeHtml(this.t('autorun.no_file'))}</option>`;
         const list = allowedList.length > 0 ? allowedList : files;
+        let found = false;
         list.forEach(f => {
+          if (f.name === selectedVal || f.path === selectedVal) found = true;
           const isSel = (f.name === selectedVal || f.path === selectedVal) ? 'selected' : '';
           optHtml += `<option value="${this.escapeHtml(f.name)}" ${isSel}>${this.escapeHtml(f.name)}</option>`;
         });
+        if (selectedVal && !found) {
+          optHtml += `<option value="${this.escapeHtml(selectedVal)}" selected>${this.escapeHtml(selectedVal)}</option>`;
+        }
         return optHtml;
       };
 
@@ -3051,7 +3064,9 @@
 
     async saveAutorunConfig() {
       let finalConfig = null;
-      if (this.autorunActiveTab === 'visual') {
+      const isJsonActive = (this.autorunActiveTab === 'json') || 
+                           (this.el.autorunJsonTabContent && this.el.autorunJsonTabContent.style.display !== 'none');
+      if (!isJsonActive) {
         this.syncVisualToConfig();
         finalConfig = this.autorunEditorConfig;
       } else {
@@ -3065,7 +3080,10 @@
       }
 
       try {
-        const savePath = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
+        const targetFilename = (this.state.overrides && this.state.overrides.autorun_filename) 
+          ? this.state.overrides.autorun_filename 
+          : 'autorun.json';
+        const savePath = (this.state.currentPath ? `${this.state.currentPath}/` : '') + targetFilename;
         const res = await window.sys.api.post('save_file_content', {
           path: savePath,
           file: savePath,
@@ -3089,8 +3107,13 @@
       try {
         const path1 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
         const path2 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + 'autorun.json';
-        await window.sys.api.fs.deleteItem(path1);
-        await window.sys.api.fs.deleteItem(path2);
+        if (window.sys.api && window.sys.api.fs && typeof window.sys.api.fs.deleteItem === 'function') {
+          await window.sys.api.fs.deleteItem(path1);
+          await window.sys.api.fs.deleteItem(path2);
+        } else {
+          await window.sys.api.post('delete_item', { target: path1 });
+          await window.sys.api.post('delete_item', { target: path2 });
+        }
         this.closeAutorunEditorModal();
         this.showToast(this.t('autorun.deleted'), 'info');
         await this.loadDirectory(this.state.currentPath);

@@ -47,7 +47,7 @@ class CacheManager {
             return false;
         }
 
-        $dotfiles = ['.title', '.desc', '.description', '.comment', '.theme', '.bg', '.private', '.password', '.public'];
+        $dotfiles = ['.title', '.desc', '.description', '.comment', '.theme', '.bg', '.private', '.password', '.public', '.autorun.json', 'autorun.json'];
         foreach ($dotfiles as $df) {
             $df_path = $dir_path . '/' . $df;
             if (file_exists($df_path) && filemtime($df_path) > $cache_mtime) {
