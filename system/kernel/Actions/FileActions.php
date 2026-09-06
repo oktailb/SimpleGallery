@@ -373,34 +373,101 @@ class FileActions {
             $target_dir_param = $_POST['target_dir'] ?? $raw_body['target_dir'] ?? '';
             $new_name_param = isset($_POST['new_name']) ? trim($_POST['new_name']) : (isset($raw_body['new_name']) ? trim($raw_body['new_name']) : null);
 
-            $source_full = PathValidator::canonicalizeAndValidate($source_param, $base_dir, true, false);
             $target_dir_full = PathValidator::sanitizeDirectory($target_dir_param, $base_dir);
-
-            if ($source_full === null || $target_dir_full === null || !file_exists($source_full) || !is_dir($target_dir_full)) {
+            if ($target_dir_full === null || !is_dir($target_dir_full)) {
                 return ['status' => 404, 'data' => ['success' => false, 'error' => __t('api.err_source_or_dest_invalid')]];
             }
 
-            if (is_dir($source_full) && ($source_full === $target_dir_full || strpos($target_dir_full . '/', $source_full . '/') === 0)) {
-                return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_move_into_self')]];
+            // Single item string path (preserves exact legacy contract & HTTP status codes)
+            if (!is_array($source_param)) {
+                $source_full = PathValidator::canonicalizeAndValidate((string)$source_param, $base_dir, true, false);
+                if ($source_full === null || !file_exists($source_full)) {
+                    return ['status' => 404, 'data' => ['success' => false, 'error' => __t('api.err_source_or_dest_invalid')]];
+                }
+
+                if (is_dir($source_full) && ($source_full === $target_dir_full || strpos($target_dir_full . '/', $source_full . '/') === 0)) {
+                    return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_move_into_self')]];
+                }
+
+                $dest_name = $new_name_param !== null ? basename($new_name_param) : basename($source_full);
+                if (empty($dest_name) || $dest_name[0] === '.' || preg_match('/[\/\\\\:\*\?"<>\|]/', $dest_name)) {
+                    return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_invalid_name')]];
+                }
+
+                $destination = $target_dir_full . '/' . $dest_name;
+                if ($destination === $source_full) {
+                    return ['status' => 200, 'data' => ['success' => true, 'message' => __t('api.msg_item_moved')]];
+                }
+                if (file_exists($destination)) {
+                    return ['status' => 409, 'data' => ['success' => false, 'error' => __t('api.err_destination_exists')]];
+                }
+
+                if (@rename($source_full, $destination)) {
+                    CacheManager::invalidateDirCache(dirname($source_full), $base_dir, $thumb_dir_name);
+                    CacheManager::invalidateDirCache($target_dir_full, $base_dir, $thumb_dir_name);
+                    return ['status' => 200, 'data' => ['success' => true, 'message' => __t('api.msg_item_moved')]];
+                }
+
+                return ['status' => 500, 'data' => ['success' => false, 'error' => __t('api.err_move_failed')]];
             }
 
-            $dest_name = $new_name_param !== null ? basename($new_name_param) : basename($source_full);
-            if (empty($dest_name) || $dest_name[0] === '.' || preg_match('/[\/\\\\:\*\?"<>\|]/', $dest_name)) {
-                return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_invalid_name')]];
+            // Batch array path (cross-window & multi-selection drag & drop)
+            $sources = $source_param;
+            if (empty($sources)) {
+                return ['status' => 400, 'data' => ['success' => false, 'error' => __t('api.err_source_or_dest_invalid')]];
             }
 
-            $destination = $target_dir_full . '/' . $dest_name;
-            if (file_exists($destination) && $destination !== $source_full) {
-                return ['status' => 409, 'data' => ['success' => false, 'error' => __t('api.err_destination_exists')]];
+            $moved_count = 0;
+            $errors = [];
+
+            foreach ($sources as $src_item) {
+                if (!is_string($src_item) || trim($src_item) === '') continue;
+                $source_full = PathValidator::canonicalizeAndValidate(trim($src_item), $base_dir, true, false);
+                if ($source_full === null || !file_exists($source_full)) {
+                    $errors[] = basename($src_item) . ' introuvable';
+                    continue;
+                }
+                if (is_dir($source_full) && ($source_full === $target_dir_full || strpos($target_dir_full . '/', $source_full . '/') === 0)) {
+                    $errors[] = basename($src_item) . ' (déplacement dans lui-même interdit)';
+                    continue;
+                }
+                $dest_name = basename($source_full);
+                if (empty($dest_name) || $dest_name[0] === '.' || preg_match('/[\/\\\\:\*\?"<>\|]/', $dest_name)) {
+                    $errors[] = basename($src_item) . ' (nom invalide)';
+                    continue;
+                }
+                $destination = $target_dir_full . '/' . $dest_name;
+                if ($destination === $source_full) {
+                    $moved_count++;
+                    continue;
+                }
+                if (file_exists($destination)) {
+                    $errors[] = basename($src_item) . ' (existe déjà dans la destination)';
+                    continue;
+                }
+                if (@rename($source_full, $destination)) {
+                    CacheManager::invalidateDirCache(dirname($source_full), $base_dir, $thumb_dir_name);
+                    $moved_count++;
+                } else {
+                    $errors[] = basename($src_item) . ' (échec du déplacement)';
+                }
             }
 
-            if (@rename($source_full, $destination)) {
-                CacheManager::invalidateDirCache(dirname($source_full), $base_dir, $thumb_dir_name);
-                CacheManager::invalidateDirCache($target_dir_full, $base_dir, $thumb_dir_name);
-                return ['status' => 200, 'data' => ['success' => true, 'message' => __t('api.msg_item_moved')]];
+            CacheManager::invalidateDirCache($target_dir_full, $base_dir, $thumb_dir_name);
+
+            if ($moved_count > 0) {
+                return ['status' => 200, 'data' => [
+                    'success' => true,
+                    'message' => __t('api.msg_item_moved'),
+                    'moved_count' => $moved_count,
+                    'errors' => $errors
+                ]];
             }
 
-            return ['status' => 500, 'data' => ['success' => false, 'error' => __t('api.err_move_failed')]];
+            return ['status' => 400, 'data' => [
+                'success' => false,
+                'error' => !empty($errors) ? implode(', ', $errors) : __t('api.err_move_failed')
+            ]];
         }
 
         if ($action === 'copy_item') {

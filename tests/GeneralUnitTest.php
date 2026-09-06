@@ -841,6 +841,38 @@ class GeneralUnitTestSuite {
         $this->assert("Explorer implémente copySelection", strpos($explorer_js, 'copySelection') !== false);
         $this->assert("Explorer implémente cutSelection", strpos($explorer_js, 'cutSelection') !== false);
         $this->assert("Explorer implémente pasteClipboard", strpos($explorer_js, 'pasteClipboard') !== false);
+        $this->assert("Explorer implémente moveItems", strpos($explorer_js, 'moveItems') !== false);
+
+        // 5. Test move_item action with single string and with array (drag & drop)
+        $move_src1 = $this->test_dir . '/sample_for_move_1.txt';
+        $move_src2 = $this->test_dir . '/sample_for_move_2.txt';
+        $subfolder_target = $this->test_dir . '/move_target_dir';
+        @mkdir($subfolder_target, 0777, true);
+        file_put_contents($move_src1, 'move content 1');
+        file_put_contents($move_src2, 'move content 2');
+
+        $rel_src1 = ltrim(str_replace($this->base_dir, '', $move_src1), '/');
+        $rel_src2 = ltrim(str_replace($this->base_dir, '', $move_src2), '/');
+        $rel_sub_target = ltrim(str_replace($this->base_dir, '', $subfolder_target), '/');
+
+        $_SESSION['sg_admin_logged'] = true;
+        // Test single move
+        $move_res1 = \SimpleGallery\Kernel\Actions\FileActions::handle('move_item', [
+            'source'     => $rel_src1,
+            'target_dir' => $rel_sub_target
+        ], ['base_dir' => $this->base_dir]);
+        $this->assert("FileActions::move_item supporte une source sous forme de chaîne unique", ($move_res1['status'] ?? 0) === 200);
+        $this->assert("Le fichier 1 a bien été déplacé dans le dossier cible", file_exists($subfolder_target . '/sample_for_move_1.txt'));
+
+        // Test batch array move
+        $move_res2 = \SimpleGallery\Kernel\Actions\FileActions::handle('move_item', [
+            'source'     => [$rel_src2],
+            'target_dir' => $rel_sub_target
+        ], ['base_dir' => $this->base_dir]);
+        unset($_SESSION['sg_admin_logged']);
+
+        $this->assert("FileActions::move_item supporte un tableau de sources (drag & drop)", ($move_res2['status'] ?? 0) === 200);
+        $this->assert("Le fichier 2 a bien été déplacé dans le dossier cible via tableau", file_exists($subfolder_target . '/sample_for_move_2.txt'));
     }
 
     private function testAutorunAndExplorerEnhancements(): void {

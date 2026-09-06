@@ -528,7 +528,7 @@
           e.preventDefault();
           e.stopPropagation();
           btn.classList.remove('drag-over');
-          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0 && !window.SG_DRAGGING_PATHS) {
             this.handleUploadFiles(e.dataTransfer.files, destPath);
             return;
           }
@@ -539,8 +539,11 @@
               if (text) paths = JSON.parse(text);
             } catch (err) { }
           }
-          if (paths && paths.length > 0) {
-            await this.moveItems(paths, destPath);
+          if (paths) {
+            const arr = Array.isArray(paths) ? paths : [paths];
+            if (arr.length > 0) {
+              await this.moveItems(arr, destPath);
+            }
           }
         };
       });
@@ -652,9 +655,11 @@
         card.ondragend = () => {
           this.state.draggingPaths = null;
           this.state.draggingItemPath = null;
-          window.SG_DRAGGING_PATHS = null;
-          window.SG_DRAG_SOURCE_INSTANCE = null;
-          window.SG_DRAGGING_ITEM_DATA = null;
+          setTimeout(() => {
+            window.SG_DRAGGING_PATHS = null;
+            window.SG_DRAG_SOURCE_INSTANCE = null;
+            window.SG_DRAGGING_ITEM_DATA = null;
+          }, 300);
           document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
           document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
         };
@@ -676,7 +681,7 @@
           e.stopPropagation();
           card.classList.remove('drag-over');
 
-          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0 && !window.SG_DRAGGING_PATHS) {
             this.handleUploadFiles(e.dataTransfer.files, folderPath);
             return;
           }
@@ -689,8 +694,11 @@
             } catch (err) { }
           }
 
-          if (pathsToMove && pathsToMove.length > 0) {
-            await this.moveItems(pathsToMove, folderPath);
+          if (pathsToMove) {
+            const arr = Array.isArray(pathsToMove) ? pathsToMove : [pathsToMove];
+            if (arr.length > 0) {
+              await this.moveItems(arr, folderPath);
+            }
           }
         };
       });
@@ -920,9 +928,11 @@
           card.ondragend = () => {
             this.state.draggingPaths = null;
             this.state.draggingItemPath = null;
-            window.SG_DRAGGING_PATHS = null;
-            window.SG_DRAG_SOURCE_INSTANCE = null;
-            window.SG_DRAGGING_ITEM_DATA = null;
+            setTimeout(() => {
+              window.SG_DRAGGING_PATHS = null;
+              window.SG_DRAG_SOURCE_INSTANCE = null;
+              window.SG_DRAGGING_ITEM_DATA = null;
+            }, 300);
             document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
             document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
           };
@@ -974,7 +984,9 @@
     }
 
     async moveItems(sourcePaths, targetDir) {
-      if (!sourcePaths || sourcePaths.length === 0) return;
+      const paths = Array.isArray(sourcePaths) ? sourcePaths : [sourcePaths];
+      const validPaths = paths.filter(p => typeof p === 'string' && p.trim().length > 0);
+      if (validPaths.length === 0) return;
       if (typeof targetDir !== 'string') return;
 
       const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
@@ -983,24 +995,76 @@
         return;
       }
 
+      const cleanTarget = (targetDir === '.' || !targetDir) ? '' : String(targetDir).replace(/\/+$/, '').trim();
+
+      // Don't attempt to move items into their current folder
+      const itemsToMove = validPaths.filter(p => {
+        const cleanP = String(p).replace(/\/+$/, '').trim();
+        const parts = cleanP.split('/');
+        parts.pop();
+        const parentDir = parts.join('/');
+        return parentDir !== cleanTarget;
+      });
+
+      if (itemsToMove.length === 0) {
+        return;
+      }
+
       try {
-        const json = await window.sys.api.fs.moveItem(sourcePaths, targetDir);
-        if (json.success) {
+        let success = false;
+        let errMsg = null;
+        let movedCount = itemsToMove.length;
+
+        // If single item, send as single string for universal backend compatibility
+        if (itemsToMove.length === 1) {
+          const json = await window.sys.api.fs.moveItem(itemsToMove[0], cleanTarget);
+          if (json && json.success) {
+            success = true;
+          } else {
+            errMsg = json ? json.error : null;
+          }
+        } else {
+          // Try batch move first
+          const json = await window.sys.api.fs.moveItem(itemsToMove, cleanTarget);
+          if (json && json.success) {
+            success = true;
+            movedCount = json.moved_count || itemsToMove.length;
+          } else {
+            // Fallback: move item-by-item
+            let count = 0;
+            for (const item of itemsToMove) {
+              try {
+                const res = await window.sys.api.fs.moveItem(item, cleanTarget);
+                if (res && res.success) count++;
+                else if (res && res.error) errMsg = res.error;
+              } catch (e) {
+                errMsg = e.message;
+              }
+            }
+            if (count > 0) {
+              success = true;
+              movedCount = count;
+            }
+          }
+        }
+
+        if (success) {
           this.clearSelection();
-          const targetName = targetDir ? targetDir.split('/').pop() : 'la racine';
-          this.showToast(json.message || `${sourcePaths.length} élément(s) déplacé(s) vers « ${targetName} »`, 'success');
+          const targetName = cleanTarget ? cleanTarget.split('/').pop() : this.t('nav.root');
+          this.showToast(this.t('clipboard.items_pasted', { count: movedCount }), 'success');
 
           // Notify all open instances (source, destination and others) in real time
           if (window.EventBus && typeof window.EventBus.emit === 'function') {
-            window.EventBus.emit('fs:changed', { sourcePaths, targetDir });
-          }
-          if (this.manager && this.manager.instances) {
-            this.manager.instances.forEach(inst => {
-              inst.loadDirectory(inst.state.currentPath);
-            });
+            window.EventBus.emit('fs:changed', { action: 'move', sourcePaths: itemsToMove, targetDir: cleanTarget });
+          } else {
+            if (this.manager && this.manager.instances) {
+              this.manager.instances.forEach(inst => {
+                inst.loadDirectory(inst.state.currentPath);
+              });
+            }
           }
         } else {
-          this.showToast('⚠️ ' + (json.error || 'Erreur lors du déplacement'), 'error');
+          this.showToast('⚠️ ' + (errMsg || this.t('api.err_save_failed')), 'error');
         }
       } catch (err) {
         this.showToast(`⚠️ Erreur réseau : ${err.message}`, 'error');
@@ -2041,8 +2105,11 @@
           } catch (err) { }
         }
 
-        if (pathsToMove && pathsToMove.length > 0) {
-          await this.moveItems(pathsToMove, this.state.currentPath);
+        if (pathsToMove) {
+          const arr = Array.isArray(pathsToMove) ? pathsToMove : [pathsToMove];
+          if (arr.length > 0) {
+            await this.moveItems(arr, this.state.currentPath);
+          }
         }
       });
 
