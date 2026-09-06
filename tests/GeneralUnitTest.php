@@ -901,6 +901,17 @@ class GeneralUnitTestSuite {
         $this->assert("Traduction JA présente pour autorun.badge", isset($ja_json['translations']['autorun.badge']));
         $this->assert("Traduction FR présente pour explorer.quick_search_ph", isset($fr_json['translations']['explorer.quick_search_ph']));
         $this->assert("Traduction FR présente pour explorer.details", isset($fr_json['translations']['explorer.details']));
+
+        // 6. PluginDiscovery auxiliary scripts discovery & template syntax verification
+        $discovered = \SimpleGallery\Kernel\PluginDiscovery::getDiscoveredApps($this->base_dir, true);
+        $this->assert("PluginDiscovery découvre l'app explorer", isset($discovered['explorer']));
+        $this->assert("PluginDiscovery découvre autorun-engine.js dans scripts de explorer", in_array('apps/explorer/autorun-engine.js', $discovered['explorer']['scripts'] ?? []));
+
+        foreach (glob($this->base_dir . '/apps/*/template.php') as $tpl) {
+            $cmd = 'php -l ' . escapeshellarg($tpl) . ' 2>&1';
+            $lint_out = shell_exec($cmd);
+            $this->assert("Syntaxe PHP valide pour " . basename(dirname($tpl)) . "/template.php", strpos($lint_out, 'No syntax errors') !== false);
+        }
     }
 }
 

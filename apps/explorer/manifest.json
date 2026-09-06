@@ -23,6 +23,9 @@
     "css": "explorer.css",
     "template": "template.php"
   },
+  "scripts": [
+    "autorun-engine.js"
+  ],
   "capabilities": [
     "multi-views",
     "advanced-search",

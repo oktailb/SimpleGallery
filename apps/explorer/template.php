@@ -3,7 +3,7 @@
  * SimpleGallery 2026 - Explorer App UI Template & Modals
  * Injected automatically by the Kernel into the workspace.
  */
-<script src="apps/explorer/autorun-engine.js?v=<?php echo file_exists(__DIR__ . '/autorun-engine.js') ? filemtime(__DIR__ . '/autorun-engine.js') : 1; ?>" defer></script>
+?>
 <template id="explorerAppTemplate">
   <!-- Explorer Application Workspace (Mounted inside WebOS Window) -->
   <div class="webos-explorer-container">

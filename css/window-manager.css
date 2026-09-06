@@ -624,7 +624,6 @@
 }
 
 .webos-window.app-explorer .window-body {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   height: 100%;
 }

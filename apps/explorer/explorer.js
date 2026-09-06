@@ -62,15 +62,28 @@
 
     initContainer() {
       const template = document.getElementById('explorerAppTemplate');
-      if (template && template.content) {
+      if (template && template.content && template.content.firstElementChild) {
         this.containerEl = template.content.cloneNode(true).firstElementChild;
       } else {
         const existing = document.getElementById('explorerAppContainer');
         if (existing) {
           this.containerEl = existing.cloneNode(true);
         } else {
+          console.error('[Explorer] Template #explorerAppTemplate not found in DOM! Ensure apps/explorer/template.php is rendered by the Kernel.');
           this.containerEl = document.createElement('div');
           this.containerEl.className = 'webos-explorer-container';
+          this.containerEl.innerHTML = `
+            <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-main, #e2e8f0); font-family: system-ui, sans-serif;">
+              <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">⚠️</div>
+              <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Template de l'Explorateur introuvable</h3>
+              <p style="color: var(--text-muted, #94a3b8); font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.5rem auto;">
+                L'élément &lt;template id="explorerAppTemplate"&gt; est absent du DOM. Vérifiez la syntaxe de apps/explorer/template.php.
+              </p>
+              <button type="button" onclick="location.reload()" style="padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(99,102,241,0.2); color: #fff; cursor: pointer;">
+                Rafraîchir la page
+              </button>
+            </div>
+          `;
         }
       }
       this.containerEl.id = `explorer-container-${this.id}`;

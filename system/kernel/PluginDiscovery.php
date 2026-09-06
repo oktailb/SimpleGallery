@@ -119,6 +119,16 @@ class PluginDiscovery {
                 $cat = dirname($rel_key);
             }
 
+            // Find additional auxiliary JS scripts if defined in manifest
+            $scripts = [];
+            if (!empty($manifest['scripts']) && is_array($manifest['scripts'])) {
+                foreach ($manifest['scripts'] as $s) {
+                    if (file_exists($app_path . '/' . $s)) {
+                        $scripts[] = 'apps/' . $rel_key . '/' . $s;
+                    }
+                }
+            }
+
             $apps[$app_id] = [
                 'id'             => $app_id,
                 'name'           => $manifest['name'] ?? ucfirst($folder),
@@ -129,6 +139,7 @@ class PluginDiscovery {
                 'manifest'       => $manifest,
                 'locales'        => $manifest['locales'] ?? [],
                 'js_entry'       => $js_entry,
+                'scripts'        => $scripts,
                 'css_entry'      => $css_entry,
                 'template_entry' => $template_entry,
                 'enabled'        => $is_enabled

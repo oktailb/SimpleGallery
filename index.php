@@ -156,6 +156,11 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     <?php if (!empty($app_info['css_entry'])): ?>
       <link rel="stylesheet" href="<?php echo htmlspecialchars($app_info['css_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $app_info['css_entry']); ?>">
     <?php endif; ?>
+    <?php if (!empty($app_info['scripts'])): ?>
+      <?php foreach ($app_info['scripts'] as $aux_script): ?>
+        <script src="<?php echo htmlspecialchars($aux_script, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $aux_script); ?>" defer></script>
+      <?php endforeach; ?>
+    <?php endif; ?>
     <?php if (!empty($app_info['js_entry'])): ?>
       <script src="<?php echo htmlspecialchars($app_info['js_entry'], ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo filemtime(__DIR__ . '/' . $app_info['js_entry']); ?>" defer></script>
     <?php endif; ?>

@@ -515,6 +515,7 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  height: 100%;
   position: relative;
   overflow: hidden;
 }
@@ -522,6 +523,7 @@
 .explorer-workspace-split > .gallery-container {
   flex: 1;
   min-width: 0;
+  height: 100%;
   overflow-y: auto;
 }
 
