@@ -78,6 +78,7 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
   <script src="system/userland/services/ClipboardService.js" defer></script>
   <script src="system/userland/core/ShortcutManager.js" defer></script>
   <script src="system/userland/services/FilePickerService.js" defer></script>
+  <script src="system/userland/services/TaskbarService.js?v=<?php echo filemtime(__DIR__ . '/system/userland/services/TaskbarService.js'); ?>" defer></script>
   <script src="system/userland/desktop/WallpaperManager.js?v=<?php echo filemtime(__DIR__ . '/system/userland/desktop/WallpaperManager.js'); ?>" defer></script>
   <script src="system/userland/desktop/TaskbarClock.js" defer></script>
   <script src="system/userland/desktop/DesktopShortcuts.js" defer></script>
@@ -310,53 +311,13 @@ $initial_translations = load_locale_translations($real_base_dir, $default_locale
     </div>
   </div>
 
-  <!-- Auto-Discovered Modular Application UI Templates & Modals (apps/<name>/template.php) -->
+  </div><!-- /#webosDesktop -->
+
+  <!-- Auto-Discovered Modular Application UI Templates & Shell Components (apps/<name>/template.php) -->
   <?php foreach ($discovered_apps as $app_info): ?>
     <?php if (!empty($app_info['template_entry']) && file_exists(__DIR__ . '/' . $app_info['template_entry'])): ?>
       <?php include __DIR__ . '/' . $app_info['template_entry']; ?>
     <?php endif; ?>
   <?php endforeach; ?>
-
-  </div><!-- /#webosDesktop -->
-
-  <!-- WebOS Integrated Bottom Taskbar & Footer -->
-  <footer id="webosTaskbar" class="webos-taskbar app-footer">
-    <!-- Left: Brand info & Cookie Settings -->
-    <div class="taskbar-left-zone">
-      <a href="https://github.com/oktailb/SimpleGallery" target="_blank" rel="noopener noreferrer" class="taskbar-brand-link" title="SimpleGallery on GitHub">
-        📸 <strong><?php echo htmlspecialchars($gallery_title, ENT_QUOTES, 'UTF-8'); ?></strong>
-      </a>
-      <span class="taskbar-tech">PHP &amp; JS</span>
-      <span class="taskbar-separator">•</span>
-      <button type="button" id="openCookieSettingsBtn" class="taskbar-cookie-btn" title="Gérer vos préférences de confidentialité et cookies" data-i18n-title="cookie.footer_link" data-i18n="cookie.footer_link">
-        🍪 Cookies
-      </button>
-      <div id="cookieConsentBanner" style="display:none;"></div>
-    </div>
-
-    <!-- Center: Running Applications & Pinned Apps -->
-    <div class="taskbar-apps-container" id="taskbarAppsContainer"></div>
-
-    <!-- Right: System Tray (Telemetry, Clock, Show Desktop) -->
-    <div class="taskbar-tray-container" id="taskbarTrayContainer">
-      <button type="button" class="taskbar-tray-btn" id="taskbarSysmonBtn" title="Moniteur Système (Télémétrie)">
-        <span class="taskbar-tray-icon">📊</span>
-        <span id="taskbarFpsPill" class="taskbar-tray-pill">60 FPS</span>
-      </button>
-
-      <button type="button" class="taskbar-clock-btn" id="taskbarCalendarBtn" title="Calendrier &amp; Horloge">
-        <span id="taskbarClockTime" class="taskbar-clock-time">--:--</span>
-        <span id="taskbarClockDate" class="taskbar-clock-date">--/--</span>
-      </button>
-
-      <button type="button" class="taskbar-show-desktop" id="taskbarShowDesktopBtn" title="Afficher le Bureau"></button>
-    </div>
-  </footer>
-
-  <!-- Floating Hover Preview Card (Window Peeking) -->
-  <div id="taskbarPreviewCard" class="taskbar-preview-card" style="display: none;"></div>
-
-  <!-- Mini Calendar Popover -->
-  <div id="taskbarCalendarPopover" class="taskbar-calendar-popover" style="display: none;"></div>
 </body>
 </html>

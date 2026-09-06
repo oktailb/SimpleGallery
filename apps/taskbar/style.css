@@ -1,0 +1,50 @@
+/**
+ * SimpleGallery WebOS - Taskbar Application Styles (apps/taskbar/style.css)
+ * Modular styles for the independent WebOS Taskbar application.
+ */
+
+/* Frameless Taskbar App Root (Bottom-Docked Shell) */
+.webos-taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0.75rem;
+  margin: 0;
+  background: var(--menu-bar-bg, rgba(15, 23, 42, 0.92));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: 0;
+  box-shadow: none;
+  z-index: 10000;
+  user-select: none;
+}
+
+/* Ensure Desktop adapts if taskbar is disabled */
+body.no-taskbar #webosDesktop {
+  height: calc(100vh - 52px);
+  min-height: calc(100vh - 52px);
+}
+
+/* Animations for window pills in taskbar */
+.taskbar-item {
+  animation: taskbarItemPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes taskbarItemPop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

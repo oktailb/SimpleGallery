@@ -14,6 +14,7 @@
       this.topZIndex = 100;
       this.desktop = null;
       this.taskbar = null;
+      this.taskbarProvider = null;
       this.stylesCache = [];
       this.currentWindowStyle = (typeof localStorage !== 'undefined' && localStorage.getItem('sg_window_style')) || 'macos';
     }
@@ -86,16 +87,12 @@
       this.taskbar = document.getElementById('webosTaskbar');
       this.loadWindowStyles();
 
-      if (!this.taskbar) {
-        this.taskbar = document.createElement('div');
-        this.taskbar.id = 'webosTaskbar';
-        this.taskbar.className = 'webos-taskbar';
-        document.body.appendChild(this.taskbar);
+      if (this.taskbar && !this.taskbarProvider) {
+        this.initTaskbarDOM();
+        this.startClock();
       }
 
       this.applyWindowStyle(this.currentWindowStyle);
-      this.initTaskbarDOM();
-      this.startClock();
 
       // Close on Escape or click outside handlers
       window.addEventListener('keydown', (e) => {
@@ -359,7 +356,42 @@
       if (preview) preview.style.display = 'none';
     }
 
+    /**
+     * Registers a modular taskbar provider (e.g. apps/taskbar or third-party dock)
+     * @param {Object} provider
+     */
+    registerTaskbarProvider(provider) {
+      this.taskbarProvider = provider;
+      if (provider && typeof provider.init === 'function') {
+        try {
+          provider.init(this);
+        } catch (e) {
+          console.error('[WindowManager] Error initializing taskbar provider:', e);
+        }
+      }
+      this.updateTaskbar();
+    }
+
     updateTaskbar() {
+      // Fire change event to EventBus for any listening taskbar/dock
+      if (window.EventBus) {
+        window.EventBus.emit('windows:change', { windows: this.windows, activeWindowId: this.activeWindowId });
+      }
+      if (window.sys && window.sys.events) {
+        window.sys.events.emit('windows:change', { windows: this.windows, activeWindowId: this.activeWindowId });
+      }
+
+      // Delegate to registered taskbar provider if available
+      if (this.taskbarProvider && typeof this.taskbarProvider.updateWindows === 'function') {
+        try {
+          this.taskbarProvider.updateWindows(this.windows, this.activeWindowId);
+          return;
+        } catch (e) {
+          console.warn('[WindowManager] Error in taskbarProvider.updateWindows:', e);
+        }
+      }
+
+      this.taskbar = document.getElementById('webosTaskbar');
       if (!this.taskbar) return;
       let appsContainer = document.getElementById('taskbarAppsContainer');
       if (!appsContainer) {

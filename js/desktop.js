@@ -40,6 +40,16 @@
     }
 
     initAutostartApps() {
+      // Boot default system taskbar if not disabled
+      const appMgr = window.sys && window.sys.appManager;
+      if (appMgr && !appMgr.isAppDisabled('taskbar')) {
+        if (window.TaskbarApp && typeof window.TaskbarApp.open === 'function') {
+          window.TaskbarApp.open();
+        } else {
+          appMgr.launchApp('taskbar');
+        }
+      }
+
       const cfg = window.SG_AUTOSTART_CONFIG || { enabled: true, apps: [{ appId: 'explorer', state: 'maximized', enabled: true }] };
       if (cfg.enabled === false) return;
       const apps = cfg.apps || [];

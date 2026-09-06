@@ -1,0 +1,34 @@
+{
+  "id": "taskbar",
+  "name": "Barre des Tâches",
+  "version": "1.0.0",
+  "description": "Barre des tâches système modulaire : gestion des fenêtres actives, menu des applications, horloge/calendrier et télémétrie",
+  "icon": "📌",
+  "category": "system",
+  "autostartCapable": true,
+  "entry": {
+    "js": "app.js",
+    "css": "style.css",
+    "template": "template.php"
+  },
+  "window": {
+    "frameless": true,
+    "decorations": false,
+    "alwaysOnTop": true,
+    "position": "fixed-bottom"
+  },
+  "locales": {
+    "fr": {
+      "title": "Barre des Tâches",
+      "description": "Barre des tâches système et lanceur d'applications"
+    },
+    "en": {
+      "title": "Taskbar",
+      "description": "System taskbar and application launcher"
+    },
+    "ja": {
+      "title": "タスクバー",
+      "description": "システムタスクバーとアプリケーションランチャー"
+    }
+  }
+}

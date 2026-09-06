@@ -477,6 +477,8 @@
     "doc_editor.wysiwyg_mode": "WYSIWYG",
     "doc_editor.markdown_mode": "Markdown",
 
+    "apps.taskbar.title": "タスクバー",
+    "apps.taskbar.description": "システムタスクバー、ウィンドウ切り替えおよびアプリケーションランチャー",
     "apps.system-monitor.title": "システムモニター",
     "apps.system-monitor.description": "WebOSタスクマネージャー、PHPサーバーテレメトリ、メモリ使用量、ストレージ診断およびキャッシュ消去",
     "sysmon.tab_processes": "プロセスとウィンドウ",

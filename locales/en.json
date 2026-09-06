@@ -477,6 +477,8 @@
     "doc_editor.wysiwyg_mode": "WYSIWYG",
     "doc_editor.markdown_mode": "Markdown",
 
+    "apps.taskbar.title": "Taskbar",
+    "apps.taskbar.description": "System taskbar, window manager companion and application launcher",
     "apps.system-monitor.title": "System Monitor",
     "apps.system-monitor.description": "WebOS task manager, live PHP server telemetry, memory usage, storage diagnostics and cache cleaner",
     "sysmon.tab_processes": "Processes & Windows",

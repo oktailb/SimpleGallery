@@ -477,6 +477,8 @@
     "doc_editor.wysiwyg_mode": "WYSIWYG",
     "doc_editor.markdown_mode": "Markdown",
 
+    "apps.taskbar.title": "Barre des Tâches",
+    "apps.taskbar.description": "Barre des tâches système, gestionnaire de fenêtres et lanceur d'applications",
     "apps.system-monitor.title": "Moniteur Système",
     "apps.system-monitor.description": "Gestionnaire des tâches WebOS, télémétrie serveur PHP, consommation mémoire, stockage et purge des caches",
     "sysmon.tab_processes": "Processus & Fenêtres",
