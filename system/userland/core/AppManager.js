@@ -431,6 +431,269 @@ class AppManager {
         }
     }
 
+    /**
+     * Registers or updates controllable commands for an application
+     * @param {string} appId
+     * @param {Object} commands Map of commandName -> { label, params, description, handler }
+     */
+    registerAppCommands(appId, commands) {
+        if (!appId || !commands || typeof commands !== 'object') return;
+        const entry = this.apps.get(appId) || { manifest: { id: appId }, instance: null, running: false };
+        entry.commands = { ...(entry.commands || {}), ...commands };
+        this.apps.set(appId, entry);
+    }
+
+    /**
+     * Returns the controllable commands for a specific application
+     * Combines registered JS commands, manifest.json commands, and instance commands
+     * @param {string} appId
+     * @returns {Object} Map of commandName -> commandDefinition
+     */
+    getAppCommands(appId) {
+        if (!appId) return {};
+        if (this.apps.size === 0) this.initDefaultApps();
+
+        const entry = this.apps.get(appId);
+        const manifestCmds = (entry && entry.manifest && entry.manifest.commands) || {};
+        const registeredCmds = (entry && entry.commands) || {};
+        const instanceCmds = (entry && entry.instance && typeof entry.instance.getCommands === 'function')
+            ? entry.instance.getCommands()
+            : ((entry && entry.instance && entry.instance.commands) || {});
+
+        // Built-in fallback command definitions for standard apps
+        const builtinDefaults = this.getBuiltinAppCommands(appId);
+
+        return {
+            ...builtinDefaults,
+            ...manifestCmds,
+            ...registeredCmds,
+            ...instanceCmds
+        };
+    }
+
+    /**
+     * Built-in fallback commands for system apps if not explicitly defined in manifest
+     */
+    getBuiltinAppCommands(appId) {
+        switch (appId) {
+            case 'maps':
+                return {
+                    flyTo: {
+                        label: 'Déplacer la vue (flyTo)',
+                        description: 'Anime la caméra vers les coordonnées GPS spécifiées',
+                        params: {
+                            lat: { type: 'number', label: 'Latitude', default: 48.8566 },
+                            lng: { type: 'number', label: 'Longitude', default: 2.3522 },
+                            zoom: { type: 'number', label: 'Zoom', default: 14 }
+                        }
+                    },
+                    zoomIn: { label: 'Zoomer avant (+)', params: {} },
+                    zoomOut: { label: 'Zoomer arrière (-)', params: {} },
+                    setView: {
+                        label: 'Centrer la carte (sans animation)',
+                        params: {
+                            lat: { type: 'number', label: 'Latitude', default: 48.8566 },
+                            lng: { type: 'number', label: 'Longitude', default: 2.3522 },
+                            zoom: { type: 'number', label: 'Zoom', default: 13 }
+                        }
+                    }
+                };
+            case 'image-viewer':
+                return {
+                    showImage: {
+                        label: "Changer d'image",
+                        params: {
+                            file: { type: 'file', category: 'image', label: 'Fichier image' }
+                        }
+                    },
+                    next: { label: 'Image suivante', params: {} },
+                    prev: { label: 'Image précédente', params: {} },
+                    rotate: { label: 'Pivoter 90°', params: {} },
+                    zoomIn: { label: 'Zoomer avant (+)', params: {} },
+                    zoomOut: { label: 'Zoomer arrière (-)', params: {} },
+                    resetZoom: { label: 'Réinitialiser le zoom', params: {} }
+                };
+            case 'doc-viewer':
+                return {
+                    scroll: {
+                        label: 'Faire défiler vers ancre / section',
+                        params: {
+                            highlight: { type: 'text', label: 'Ancre / Sélecteur', placeholder: '#chapitre-1' }
+                        }
+                    },
+                    nextPage: { label: 'Page suivante', params: {} },
+                    prevPage: { label: 'Page précédente', params: {} },
+                    toggleEdit: { label: 'Basculer mode édition (WYSIWYG)', params: {} }
+                };
+            case 'video-player':
+                return {
+                    play: { label: 'Lecture', params: {} },
+                    pause: { label: 'Pause', params: {} },
+                    seek: {
+                        label: 'Aller à un temps précis',
+                        params: {
+                            time: { type: 'time', label: 'Instant (MM:SS ou sec)', default: '00:00' }
+                        }
+                    },
+                    setVolume: {
+                        label: 'Régler le volume',
+                        params: {
+                            volume: { type: 'number', min: 0, max: 1, step: 0.1, label: 'Volume (0.0 - 1.0)', default: 1 }
+                        }
+                    }
+                };
+            case 'audio-player':
+                return {
+                    play: { label: 'Lecture', params: {} },
+                    pause: { label: 'Pause', params: {} },
+                    seek: {
+                        label: 'Aller à un temps précis',
+                        params: {
+                            time: { type: 'time', label: 'Instant (MM:SS ou sec)', default: '00:00' }
+                        }
+                    }
+                };
+            default:
+                return {};
+        }
+    }
+
+    /**
+     * Returns all applications that have controllable commands
+     * @returns {Array<Object>} List of { id, name, icon, commands }
+     */
+    getAllControllableApps() {
+        if (this.apps.size === 0) this.initDefaultApps();
+        const appsList = this.getAllApps(false);
+        const controllable = [];
+
+        appsList.forEach(app => {
+            const cmds = this.getAppCommands(app.id);
+            if (cmds && Object.keys(cmds).length > 0) {
+                controllable.push({
+                    id: app.id,
+                    name: app.name,
+                    icon: app.icon,
+                    commands: cmds
+                });
+            }
+        });
+
+        return controllable;
+    }
+
+    /**
+     * Universally dispatches a command to an application instance or window
+     * @param {string} appId Target app identifier
+     * @param {string} command Name of the command to execute
+     * @param {Object} params Parameters for the command
+     * @param {string} [winId] Optional specific window ID
+     * @returns {boolean} True if handled
+     */
+    dispatchCommand(appId, command, params = {}, winId = null) {
+        if (!appId || !command) return false;
+
+        const entry = this.apps.get(appId);
+        const wm = window.WindowManager;
+
+        // 1. Try instance handleCommand method
+        if (entry && entry.instance && typeof entry.instance.handleCommand === 'function') {
+            try {
+                const result = entry.instance.handleCommand(command, params, winId);
+                if (result !== false) return true;
+            } catch (e) {
+                console.warn(`[AppManager] Error in ${appId}.handleCommand:`, e);
+            }
+        }
+
+        // 2. Try direct instance[command] method
+        if (entry && entry.instance && typeof entry.instance[command] === 'function') {
+            try {
+                entry.instance[command](params, winId);
+                return true;
+            } catch (e) {
+                console.warn(`[AppManager] Error calling ${appId}.${command}:`, e);
+            }
+        }
+
+        // 3. Fallback: app specific global instances (mapsApp, DocViewerApp, ImageViewerPlugin)
+        if (appId === 'maps') {
+            const mapApp = window.mapsApp;
+            const instance = (mapApp && mapApp.activeInstance);
+            if (instance && instance.leafletMap) {
+                if (command === 'flyTo' || command === 'setView') {
+                    const lat = parseFloat(params.lat);
+                    const lng = parseFloat(params.lng);
+                    const zoom = parseInt(params.zoom, 10) || 14;
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        if (command === 'flyTo' && typeof instance.leafletMap.flyTo === 'function') {
+                            instance.leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
+                        } else {
+                            instance.leafletMap.setView([lat, lng], zoom);
+                        }
+                        return true;
+                    }
+                } else if (command === 'zoomIn') {
+                    instance.leafletMap.zoomIn();
+                    return true;
+                } else if (command === 'zoomOut') {
+                    instance.leafletMap.zoomOut();
+                    return true;
+                }
+            }
+        } else if (appId === 'doc-viewer') {
+            const highlight = params.highlight || params.selector;
+            if (command === 'scroll' && highlight) {
+                const win = winId && wm ? wm.windows.get(winId) : null;
+                const container = (win && win.element) || document.querySelector('.webos-doc-window');
+                if (container) {
+                    try {
+                        const target = container.querySelector(highlight);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            target.style.transition = 'background 0.3s ease';
+                            target.style.background = 'rgba(99, 102, 241, 0.25)';
+                            setTimeout(() => { target.style.background = ''; }, 2200);
+                            return true;
+                        }
+                    } catch (e) {}
+                }
+            }
+        } else if (appId === 'image-viewer') {
+            if (command === 'showImage' && params.file) {
+                if (window.ImageViewerPlugin && typeof window.ImageViewerPlugin.open === 'function') {
+                    window.ImageViewerPlugin.open(params.file, {});
+                    return true;
+                }
+            } else if (window.ImageViewerPlugin && typeof window.ImageViewerPlugin.handleCommand === 'function') {
+                return window.ImageViewerPlugin.handleCommand(command, params, winId);
+            }
+        } else if (appId === 'video-player') {
+            const videoEl = (winId && document.querySelector(`video[data-win-id="${winId}"]`)) || 
+                            document.querySelector('.webos-window.is-active video') || 
+                            document.querySelector('video');
+            if (videoEl) {
+                if (command === 'play') videoEl.play();
+                else if (command === 'pause') videoEl.pause();
+                else if (command === 'seek' && params.time != null) {
+                    const sec = typeof params.time === 'number' ? params.time : parseFloat(params.time) || 0;
+                    videoEl.currentTime = sec;
+                } else if (command === 'setVolume' && params.volume != null) {
+                    videoEl.volume = Math.max(0, Math.min(1, parseFloat(params.volume) || 1));
+                }
+                return true;
+            }
+        }
+
+        // 4. Emit event on window and EventBus
+        if (window.EventBus) {
+            window.EventBus.emit(`app:${appId}:command`, { command, params, winId });
+            window.EventBus.emit('app:command', { app: appId, command, params, winId });
+        }
+
+        return true;
+    }
+
     escapeHtml(str) {
         if (!str) return '';
         return String(str)

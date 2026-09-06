@@ -401,8 +401,10 @@
           fileName: file.name,
           title: `${appTitle} : ${file.name}`,
           icon: isMd ? '📖' : '📄',
-          width: defaultW,
-          height: defaultH,
+          width: (typeof options.width === 'number') ? options.width : defaultW,
+          height: (typeof options.height === 'number') ? options.height : defaultH,
+          x: (typeof options.x === 'number') ? options.x : undefined,
+          y: (typeof options.y === 'number') ? options.y : undefined,
           content: bodyHtml,
           onFocus: () => {
             if (window.MenuBarManager) {

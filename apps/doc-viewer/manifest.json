@@ -62,5 +62,25 @@
     "text-reader",
     "clipboard-copy",
     "fullscreen"
-  ]
+  ],
+  "commands": {
+    "scroll": {
+      "label": "Faire défiler vers ancre / section",
+      "params": {
+        "highlight": { "type": "text", "label": "Ancre / Sélecteur", "placeholder": "#chapitre-1" }
+      }
+    },
+    "nextPage": {
+      "label": "Page suivante",
+      "params": {}
+    },
+    "prevPage": {
+      "label": "Page précédente",
+      "params": {}
+    },
+    "toggleEdit": {
+      "label": "Basculer mode édition (WYSIWYG)",
+      "params": {}
+    }
+  }
 }

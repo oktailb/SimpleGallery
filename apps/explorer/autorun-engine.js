@@ -48,21 +48,80 @@
     }
 
     /**
+     * Resolves window placement geometry based on preset name or coordinates
+     * @param {string|Object} posKey - Preset (left-half, right-half, top-left, top-right, bottom-left, bottom-right, center, fullscreen) or {x, y, width, height}
+     * @param {string} fallback - Fallback preset
+     * @returns {Object} { x, y, width, height }
+     */
+    computePositionBounds(posKey, fallback = 'right-half') {
+      const topBarH = 52;
+      const taskbarH = 44;
+      const margin = 10;
+      const availableW = window.innerWidth || 1280;
+      const availableH = (window.innerHeight || 800) - topBarH - taskbarH;
+      const halfW = Math.max(360, Math.floor((availableW - (margin * 3)) / 2));
+      const halfH = Math.max(240, Math.floor((availableH - (margin * 3)) / 2));
+
+      if (posKey && typeof posKey === 'object') {
+        return {
+          x: typeof posKey.x === 'number' ? posKey.x : margin,
+          y: typeof posKey.y === 'number' ? posKey.y : (topBarH + margin),
+          width: typeof posKey.width === 'number' ? posKey.width : halfW,
+          height: typeof posKey.height === 'number' ? posKey.height : (availableH - (margin * 2))
+        };
+      }
+
+      const key = (typeof posKey === 'string' && posKey && posKey !== 'auto') ? posKey : fallback;
+
+      switch (key) {
+        case 'left':
+        case 'left-half':
+        case 'split-horizontal':
+          return { x: margin, y: topBarH + margin, width: halfW, height: availableH - (margin * 2) };
+        case 'right':
+        case 'right-half':
+          return { x: halfW + (margin * 2), y: topBarH + margin, width: halfW, height: availableH - (margin * 2) };
+        case 'top-left':
+          return { x: margin, y: topBarH + margin, width: halfW, height: halfH };
+        case 'top-right':
+          return { x: halfW + (margin * 2), y: topBarH + margin, width: halfW, height: halfH };
+        case 'bottom-left':
+          return { x: margin, y: topBarH + halfH + (margin * 2), width: halfW, height: halfH };
+        case 'bottom-right':
+          return { x: halfW + (margin * 2), y: topBarH + halfH + (margin * 2), width: halfW, height: halfH };
+        case 'center':
+          return {
+            x: Math.round(availableW * 0.15),
+            y: topBarH + margin + Math.round(availableH * 0.08),
+            width: Math.round(availableW * 0.70),
+            height: Math.round(availableH * 0.80)
+          };
+        case 'fullscreen':
+          return { x: margin, y: topBarH + margin, width: availableW - (margin * 2), height: availableH - (margin * 2) };
+        default:
+          return { x: halfW + (margin * 2), y: topBarH + margin, width: halfW, height: availableH - (margin * 2) };
+      }
+    }
+
+    /**
      * Launches a synchronized multimodal presentation from autorun.json configuration
-     * @param {Object} config - The parsed autorun.json object
+     * @param {Object} rawConfig - The parsed autorun.json object
      * @param {string} folderPath - Current folder path
      * @param {Object} ctx - Explorer instance context with files list
      */
-    async launch(config, folderPath, ctx) {
+    async launch(rawConfig, folderPath, ctx) {
       if (this.activeSession) {
         this.stop();
       }
 
-      if (!config) return;
+      if (!rawConfig) return;
+
+      // Deep clone configuration so playback mutations cannot corrupt the source state in memory
+      const config = JSON.parse(JSON.stringify(rawConfig));
 
       const files = (ctx && ctx.state && ctx.state.files) || [];
       const findFile = (filename) => {
-        if (!filename) return null;
+        if (!filename || typeof filename !== 'string' || filename === '[object Object]') return null;
         return files.find(f => f.name === filename || f.path === filename || f.path.endsWith('/' + filename));
       };
 
@@ -95,31 +154,9 @@
       const maxStepTime = timeline.length > 0 ? timeline[timeline.length - 1].timeSec : 0;
       const totalDuration = this.parseTime(masterCfg.duration) || (maxStepTime > 0 ? maxStepTime + 20 : 120);
 
-      // 3. Compute layout geometry (Split-Screen Tiling)
-      const topBarH = 52;
-      const taskbarH = 44;
-      const margin = 10;
-      const availableW = window.innerWidth;
-      const availableH = window.innerHeight - topBarH - taskbarH;
-
-      const layout = config.layout || config.window_layout || 'split-horizontal';
-      let mediaBounds, companionBounds;
-
-      if (layout === 'split-horizontal') {
-        const leftW = Math.max(480, Math.round(availableW * 0.52));
-        const rightW = availableW - leftW - (margin * 3);
-        mediaBounds = { x: margin, y: topBarH + margin, width: leftW, height: availableH - (margin * 2) };
-        companionBounds = { x: leftW + (margin * 2), y: topBarH + margin, width: rightW, height: availableH - (margin * 2) };
-      } else if (layout === 'split-vertical') {
-        const topH = Math.round(availableH * 0.50);
-        const btmH = availableH - topH - (margin * 3);
-        mediaBounds = { x: margin, y: topBarH + margin, width: availableW - (margin * 2), height: topH };
-        companionBounds = { x: margin, y: topBarH + topH + (margin * 2), width: availableW - (margin * 2), height: btmH };
-      } else {
-        // Floating / Cascade layout
-        mediaBounds = { x: margin + 20, y: topBarH + margin + 20, width: Math.round(availableW * 0.55), height: Math.round(availableH * 0.75) };
-        companionBounds = { x: Math.round(availableW * 0.42), y: topBarH + margin + 60, width: Math.round(availableW * 0.54), height: Math.round(availableH * 0.78) };
-      }
+      // 3. Compute master window bounds
+      const masterPos = masterCfg.position || config.layout || 'left-half';
+      const mediaBounds = this.computePositionBounds(masterPos, 'left-half');
 
       // 4. Create session state with tracked window registry
       const session = {
@@ -139,7 +176,6 @@
         companionWin: null,
         trackedWindows: new Map(), // appId -> { winId, app, instance }
         hudEl: null,
-        companionBounds,
         findFile
       };
       this.activeSession = session;
@@ -147,21 +183,15 @@
       // 5. Open Master Window (Video, Audio, or Timer)
       await this.openMasterWindow(session, mediaBounds);
 
-      // 6. Check if presentation has companion config or doc/image steps
-      const hasCompanionDocs = timeline.some(s => s.action === 'set_doc' || s.action === 'show_image' || s.file);
-      if (hasCompanionDocs || config.companion || config.companion_app) {
-        await this.openCompanionWindow(session, companionBounds, findFile);
-      }
-
-      // 7. Mount Interactive Synchronized HUD
+      // 6. Mount Interactive Synchronized HUD (Bottom Bubble)
       this.mountSyncHUD(session);
 
-      // 8. Start playback timer if virtual timer mode
+      // 7. Start playback timer if virtual timer mode
       if (masterType === 'timer') {
         this.startVirtualTimer(session);
       }
 
-      // 9. Execute initial step (t = 0)
+      // 8. Execute initial step (t = 0)
       this.syncStep(session, 0);
     }
 
@@ -557,46 +587,36 @@
 
       this.updateHudPill(session, step.index);
 
-      // Update Companion Window header if companion exists
-      if (session.companionWin && session.companionWin.element) {
-        const titleEl = session.companionWin.element.querySelector('#autorunStepTitle .step-text');
-        const timeEl = session.companionWin.element.querySelector('#autorunStepTime');
-        if (titleEl) titleEl.textContent = step.title;
-        if (timeEl) timeEl.textContent = this.formatTime(step.timeSec);
-      }
-
       const files = (session.ctx && session.ctx.state && session.ctx.state.files) || [];
-      const targetFile = files.find(f => f.name === step.file || f.path === step.file || f.path.endsWith('/' + step.file));
+
+      // Safely extract string filename/path - NEVER mutate step or permit "[object Object]"
+      const rawFile = step.file || (step.params && step.params.file);
+      let fileStr = '';
+      if (typeof rawFile === 'object' && rawFile !== null) {
+        fileStr = rawFile.path || rawFile.name || '';
+      } else if (typeof rawFile === 'string' && rawFile && rawFile !== '[object Object]') {
+        fileStr = rawFile;
+      }
+      const targetFile = fileStr ? files.find(f => f.name === fileStr || f.path === fileStr || f.path.endsWith('/' + fileStr)) : null;
+      const targetFilePath = (targetFile ? (targetFile.path || targetFile.name) : fileStr) || '';
+
       const action = step.action || 'set_doc';
 
       switch (action) {
         case 'set_doc':
-          if (session.companionWin) {
-            if (targetFile) {
-              await this.displayDocumentInCompanion(session, targetFile, step.highlight);
-            } else if (step.content) {
-              this.renderCustomContentInCompanion(session, step.content, step.title);
-            }
-          } else {
-            // Open full doc-viewer application
-            await this.openAppAction(session, 'doc-viewer', { file: targetFile || step.file, highlight: step.highlight }, step);
-          }
+          await this.openAppAction(session, 'doc-viewer', { file: targetFilePath, highlight: step.highlight }, step);
           break;
 
         case 'show_image':
-          if (session.companionWin) {
-            if (targetFile) {
-              this.displayImageInCompanion(session, targetFile, step.title);
-            }
-          } else {
-            // Open full image-viewer application
-            await this.openAppAction(session, 'image-viewer', { file: targetFile || step.file }, step);
-          }
+          await this.openAppAction(session, 'image-viewer', { file: targetFilePath }, step);
           break;
 
-        case 'open_app':
-          await this.openAppAction(session, step.app, step.params || {}, step);
+        case 'open_app': {
+          const p = { ...(step.params || {}) };
+          if (targetFilePath && !p.file) p.file = targetFilePath;
+          await this.openAppAction(session, step.app, p, step);
           break;
+        }
 
         case 'close_app':
           this.closeTrackedApp(session, step.app || step.targetWinId);
@@ -622,16 +642,25 @@
 
       const wm = window.WindowManager;
       const appMgr = window.sys && window.sys.appManager;
-
-      // Handle custom file resolution if params.file is a filename string
       const files = (session.ctx && session.ctx.state && session.ctx.state.files) || [];
-      if (typeof params.file === 'string') {
-        const found = files.find(f => f.name === params.file || f.path === params.file || f.path.endsWith('/' + params.file));
-        if (found) params.file = found;
+
+      // Safe clone of parameters - DO NOT mutate step.params or caller's object
+      const appParams = { ...(params || {}) };
+
+      // Resolve file object if file param is provided
+      let resolvedFileObj = null;
+      let resolvedFilePath = '';
+      if (typeof appParams.file === 'object' && appParams.file !== null) {
+        resolvedFileObj = appParams.file;
+        resolvedFilePath = appParams.file.path || appParams.file.name || '';
+      } else if (typeof appParams.file === 'string' && appParams.file && appParams.file !== '[object Object]') {
+        resolvedFilePath = appParams.file;
+        resolvedFileObj = files.find(f => f.name === resolvedFilePath || f.path === resolvedFilePath || f.path.endsWith('/' + resolvedFilePath)) || null;
       }
 
-      // Default positioning based on companion layout if not specified
-      const position = step.position || session.companionBounds;
+      // Compute window placement bounds
+      const posSetting = step.position || appParams.position || (step.x != null ? { x: step.x, y: step.y, width: step.width, height: step.height } : null);
+      const bounds = this.computePositionBounds(posSetting, 'right-half');
 
       let createdWin = null;
 
@@ -639,7 +668,8 @@
       if (appId === 'maps') {
         if (window.mapsApp && typeof window.mapsApp.open === 'function') {
           const instance = window.mapsApp.open({
-            ...params,
+            ...appParams,
+            ...bounds,
             files,
             currentPath: session.folderPath,
             newWindow: true
@@ -649,49 +679,50 @@
             createdWin = wm ? wm.windows.get(instance.winId) : null;
           }
         } else if (appMgr) {
-          appMgr.launchApp('maps', params);
+          appMgr.launchApp('maps', { ...appParams, ...bounds });
         }
       }
       // 2. Document Viewer application
       else if (appId === 'doc-viewer') {
         if (window.DocViewerApp && typeof window.DocViewerApp.open === 'function') {
-          window.DocViewerApp.open(params.file, params, session.ctx);
-          const cleanId = params.file && params.file.path ? encodeURIComponent(params.file.path).replace(/%/g, '_') : 'doc';
+          const effectiveFile = resolvedFileObj || { name: (resolvedFilePath.split('/').pop() || 'document.txt'), path: resolvedFilePath, file_url: resolvedFilePath };
+          window.DocViewerApp.open(effectiveFile, { ...appParams, ...bounds }, session.ctx);
+          const cleanId = encodeURIComponent(effectiveFile.path || effectiveFile.name).replace(/%/g, '_');
           const winId = `doc-${cleanId}`;
           session.trackedWindows.set('doc-viewer', { winId, app: 'doc-viewer' });
           createdWin = wm ? wm.windows.get(winId) : null;
         } else if (appMgr) {
-          appMgr.launchApp('doc-viewer', params);
+          appMgr.launchApp('doc-viewer', { ...appParams, ...bounds });
         }
       }
       // 3. Image Viewer application
       else if (appId === 'image-viewer') {
         if (window.ImageViewerPlugin && typeof window.ImageViewerPlugin.open === 'function') {
-          window.ImageViewerPlugin.open(params.file, params, session.ctx);
-          const cleanId = params.file && params.file.path ? encodeURIComponent(params.file.path).replace(/%/g, '_') : 'image';
+          const effectiveFile = resolvedFileObj || { name: (resolvedFilePath.split('/').pop() || 'image.jpg'), path: resolvedFilePath, file_url: resolvedFilePath };
+          window.ImageViewerPlugin.open(effectiveFile, { ...appParams, ...bounds }, session.ctx);
+          const cleanId = encodeURIComponent(effectiveFile.path || effectiveFile.name).replace(/%/g, '_');
           const winId = `image-${cleanId}`;
           session.trackedWindows.set('image-viewer', { winId, app: 'image-viewer' });
           createdWin = wm ? wm.windows.get(winId) : null;
         } else if (appMgr) {
-          appMgr.launchApp('image-viewer', params);
+          appMgr.launchApp('image-viewer', { ...appParams, ...bounds });
         }
       }
       // 4. Generic AppManager launch
       else if (appMgr) {
-        appMgr.launchApp(appId, params);
-        // Track the top active window created
+        appMgr.launchApp(appId, { ...appParams, ...bounds });
         if (wm && wm.activeWindowId) {
           session.trackedWindows.set(appId, { winId: wm.activeWindowId, app: appId });
           createdWin = wm.windows.get(wm.activeWindowId);
         }
       }
 
-      // Apply geometry position if window created and position provided
-      if (createdWin && position) {
-        if (typeof position.x === 'number') createdWin.x = position.x;
-        if (typeof position.y === 'number') createdWin.y = position.y;
-        if (typeof position.width === 'number') createdWin.width = position.width;
-        if (typeof position.height === 'number') createdWin.height = position.height;
+      // Apply geometry position if window created and bounds provided
+      if (createdWin && bounds) {
+        if (typeof bounds.x === 'number') createdWin.x = bounds.x;
+        if (typeof bounds.y === 'number') createdWin.y = bounds.y;
+        if (typeof bounds.width === 'number') createdWin.width = bounds.width;
+        if (typeof bounds.height === 'number') createdWin.height = bounds.height;
         if (createdWin.element) {
           createdWin.element.style.left = `${createdWin.x}px`;
           createdWin.element.style.top = `${createdWin.y}px`;
@@ -737,58 +768,62 @@
     }
 
     /**
-     * Controls an already open application (flyTo, scroll, zoom, change image)
+     * Controls an already open application (flyTo, scroll, zoom, change image, etc.)
+     * Uses centralized AppManager command dispatching with fallback
      */
     controlAppAction(session, appId, command, params = {}) {
       if (!session || !appId) return;
 
-      // 1. Maps flyTo / setView control
-      if (appId === 'maps') {
-        const tracked = session.trackedWindows.get('maps');
-        const instance = (tracked && tracked.instance) || (window.mapsApp && window.mapsApp.activeInstance);
-        const lat = parseFloat(params.lat);
-        const lng = parseFloat(params.lng);
-        const zoom = parseInt(params.zoom, 10) || 14;
+      const tracked = session.trackedWindows ? session.trackedWindows.get(appId) : null;
+      const winId = tracked ? tracked.winId : null;
 
-        if (instance && instance.leafletMap && !isNaN(lat) && !isNaN(lng)) {
-          if (typeof instance.leafletMap.flyTo === 'function') {
-            instance.leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
-          } else {
-            instance.leafletMap.setView([lat, lng], zoom);
+      // 1. Delegate to centralized AppManager command dispatcher if available
+      let handled = false;
+      if (window.sys && window.sys.appManager && typeof window.sys.appManager.dispatchCommand === 'function') {
+        handled = window.sys.appManager.dispatchCommand(appId, command, params, winId);
+      }
+
+      // 2. Fallback to direct handling if not handled
+      if (!handled) {
+        if (appId === 'maps') {
+          const instance = (tracked && tracked.instance) || (window.mapsApp && window.mapsApp.activeInstance);
+          const lat = parseFloat(params.lat);
+          const lng = parseFloat(params.lng);
+          const zoom = parseInt(params.zoom, 10) || 14;
+
+          if (instance && instance.leafletMap && !isNaN(lat) && !isNaN(lng)) {
+            if (command === 'flyTo' && typeof instance.leafletMap.flyTo === 'function') {
+              instance.leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
+            } else {
+              instance.leafletMap.setView([lat, lng], zoom);
+            }
+          }
+        } else if (appId === 'doc-viewer') {
+          const highlightSelector = params.highlight || params.selector;
+          if (highlightSelector) {
+            const win = tracked && window.WindowManager ? window.WindowManager.windows.get(tracked.winId) : null;
+            const container = win ? win.element : document.querySelector('.webos-doc-window');
+            if (container) {
+              try {
+                const target = container.querySelector(highlightSelector);
+                if (target) {
+                  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  target.style.transition = 'background 0.3s ease';
+                  target.style.background = 'rgba(99, 102, 241, 0.25)';
+                  setTimeout(() => { target.style.background = ''; }, 2200);
+                }
+              } catch (e) {}
+            }
+          }
+        } else if (appId === 'image-viewer') {
+          const targetFile = params.file;
+          if (targetFile && window.ImageViewerPlugin) {
+            window.ImageViewerPlugin.open(targetFile, {}, session.ctx);
           }
         }
       }
 
-      // 2. Document Viewer scroll / highlight control
-      else if (appId === 'doc-viewer') {
-        const highlightSelector = params.highlight || params.selector;
-        if (highlightSelector) {
-          const tracked = session.trackedWindows.get('doc-viewer');
-          const win = tracked && window.WindowManager ? window.WindowManager.windows.get(tracked.winId) : null;
-          const container = win ? win.element : document.querySelector('.webos-doc-window');
-          if (container) {
-            try {
-              const target = container.querySelector(highlightSelector);
-              if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                target.style.transition = 'background 0.3s ease';
-                target.style.background = 'rgba(99, 102, 241, 0.25)';
-                setTimeout(() => { target.style.background = ''; }, 2200);
-              }
-            } catch (e) {}
-          }
-        }
-      }
-
-      // 3. Image Viewer change photo
-      else if (appId === 'image-viewer') {
-        const targetFile = params.file;
-        if (targetFile && window.ImageViewerPlugin) {
-          window.ImageViewerPlugin.open(targetFile, {}, session.ctx);
-        }
-      }
-
-      // 4. Global EventBus announcement
+      // 3. Global EventBus announcement
       if (window.EventBus) {
         window.EventBus.emit('autorun:command', { app: appId, command, params });
       }

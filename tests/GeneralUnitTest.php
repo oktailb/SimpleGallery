@@ -936,9 +936,13 @@ class GeneralUnitTestSuite {
         $fr_json = json_decode(file_get_contents($this->base_dir . '/locales/fr.json'), true);
         $en_json = json_decode(file_get_contents($this->base_dir . '/locales/en.json'), true);
         $ja_json = json_decode(file_get_contents($this->base_dir . '/locales/ja.json'), true);
+        $this->assert("AutorunSyncEngine implémente computePositionBounds", strpos($engine_js, 'computePositionBounds') !== false);
         $this->assert("Traduction FR présente pour autorun.badge", isset($fr_json['translations']['autorun.badge']));
         $this->assert("Traduction EN présente pour autorun.badge", isset($en_json['translations']['autorun.badge']));
         $this->assert("Traduction JA présente pour autorun.badge", isset($ja_json['translations']['autorun.badge']));
+        $this->assert("Traduction FR présente pour autorun.step_pos", isset($fr_json['translations']['autorun.step_pos']));
+        $this->assert("Traduction EN présente pour autorun.step_pos", isset($en_json['translations']['autorun.step_pos']));
+        $this->assert("Traduction JA présente pour autorun.step_pos", isset($ja_json['translations']['autorun.step_pos']));
         $this->assert("Traduction FR présente pour autorun.toolbar_btn", isset($fr_json['translations']['autorun.toolbar_btn']));
         $this->assert("Traduction FR présente pour autorun.editor_tab_visual", isset($fr_json['translations']['autorun.editor_tab_visual']));
         $this->assert("Traduction FR présente pour explorer.quick_search_ph", isset($fr_json['translations']['explorer.quick_search_ph']));
@@ -954,6 +958,24 @@ class GeneralUnitTestSuite {
             $lint_out = shell_exec($cmd);
             $this->assert("Syntaxe PHP valide pour " . basename(dirname($tpl)) . "/template.php", strpos($lint_out, 'No syntax errors') !== false);
         }
+
+        // 7. App Controllable Commands Discovery & Manifests
+        $maps_manifest = json_decode(file_get_contents($this->base_dir . '/apps/maps/manifest.json'), true);
+        $img_manifest = json_decode(file_get_contents($this->base_dir . '/apps/image-viewer/manifest.json'), true);
+        $doc_manifest = json_decode(file_get_contents($this->base_dir . '/apps/doc-viewer/manifest.json'), true);
+        $vid_manifest = json_decode(file_get_contents($this->base_dir . '/apps/video-player/manifest.json'), true);
+
+        $this->assert("Manifest de maps déclare la commande flyTo", isset($maps_manifest['commands']['flyTo']));
+        $this->assert("Manifest de image-viewer déclare la commande showImage", isset($img_manifest['commands']['showImage']));
+        $this->assert("Manifest de doc-viewer déclare la commande scroll", isset($doc_manifest['commands']['scroll']));
+        $this->assert("Manifest de video-player déclare la commande play", isset($vid_manifest['commands']['play']));
+
+        $app_manager_js = file_get_contents($this->base_dir . '/system/userland/core/AppManager.js');
+        $this->assert("AppManager implémente registerAppCommands", strpos($app_manager_js, 'registerAppCommands') !== false);
+        $this->assert("AppManager implémente getAppCommands", strpos($app_manager_js, 'getAppCommands') !== false);
+        $this->assert("AppManager implémente getAllControllableApps", strpos($app_manager_js, 'getAllControllableApps') !== false);
+        $this->assert("AppManager implémente dispatchCommand", strpos($app_manager_js, 'dispatchCommand') !== false);
+        $this->assert("autorun-engine.js délègue à dispatchCommand", strpos($engine_js, 'dispatchCommand') !== false);
     }
 }
 

@@ -103,8 +103,10 @@
           fileName: file.name,
           title: `${appTitle} : ${file.name}`,
           icon: '🖼️',
-          width: defaultW,
-          height: defaultH,
+          width: (typeof options.width === 'number') ? options.width : defaultW,
+          height: (typeof options.height === 'number') ? options.height : defaultH,
+          x: (typeof options.x === 'number') ? options.x : undefined,
+          y: (typeof options.y === 'number') ? options.y : undefined,
           content: `
             <div class="webos-image-window-content" id="imgWinContent-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--window-bg, var(--bg-main, #090a0f));">
               <div class="image-viewer-container" id="imageViewerContainer-${cleanPathId}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:grab;">

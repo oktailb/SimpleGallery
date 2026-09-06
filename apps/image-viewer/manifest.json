@@ -46,5 +46,37 @@
     "fullscreen",
     "image-editor",
     "exif-viewer"
-  ]
+  ],
+  "commands": {
+    "showImage": {
+      "label": "Changer d'image",
+      "params": {
+        "file": { "type": "file", "category": "image", "label": "Fichier image" }
+      }
+    },
+    "next": {
+      "label": "Image suivante",
+      "params": {}
+    },
+    "prev": {
+      "label": "Image précédente",
+      "params": {}
+    },
+    "rotate": {
+      "label": "Pivoter 90°",
+      "params": {}
+    },
+    "zoomIn": {
+      "label": "Zoomer avant (+)",
+      "params": {}
+    },
+    "zoomOut": {
+      "label": "Zoomer arrière (-)",
+      "params": {}
+    },
+    "resetZoom": {
+      "label": "Réinitialiser le zoom",
+      "params": {}
+    }
+  }
 }

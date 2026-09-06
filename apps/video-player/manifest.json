@@ -40,5 +40,27 @@
     "pip",
     "video-wall-sync",
     "multi-video"
-  ]
+  ],
+  "commands": {
+    "play": {
+      "label": "Lecture",
+      "params": {}
+    },
+    "pause": {
+      "label": "Pause",
+      "params": {}
+    },
+    "seek": {
+      "label": "Aller à un temps précis",
+      "params": {
+        "time": { "type": "time", "label": "Instant (MM:SS ou sec)", "default": "00:00" }
+      }
+    },
+    "setVolume": {
+      "label": "Régler le volume",
+      "params": {
+        "volume": { "type": "number", "min": 0, "max": 1, "step": 0.1, "label": "Volume (0.0 - 1.0)", "default": 1 }
+      }
+    }
+  }
 }

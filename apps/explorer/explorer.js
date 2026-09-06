@@ -2531,8 +2531,14 @@
     launchAutorun(autorunConfig) {
       const config = autorunConfig || (this.state.overrides && this.state.overrides.autorun);
       if (!config) return;
+      let cleanConfig = config;
+      try {
+        cleanConfig = JSON.parse(JSON.stringify(config));
+      } catch (e) {
+        cleanConfig = config;
+      }
       if (window.sys && window.sys.autorun && typeof window.sys.autorun.launch === 'function') {
-        window.sys.autorun.launch(config, this.state.currentPath, this);
+        window.sys.autorun.launch(cleanConfig, this.state.currentPath, this);
       } else {
         this.showToast('Moteur autorun non disponible', 'error');
       }
@@ -2743,7 +2749,9 @@
           const title = card.querySelector('.step-title-input')?.value || '';
           const action = card.querySelector('.step-action-select')?.value || 'open_app';
           const app = card.querySelector('.step-app-select')?.value || '';
-          const file = card.querySelector('.step-file-select')?.value || '';
+          let file = card.querySelector('.step-file-select')?.value || '';
+          if (file === '[object Object]') file = '';
+          const pos = card.querySelector('.step-pos-select')?.value || 'auto';
           const command = card.querySelector('.step-cmd-select')?.value || '';
           const lat = card.querySelector('.step-lat-input')?.value;
           const lng = card.querySelector('.step-lng-input')?.value;
@@ -2752,10 +2760,14 @@
           const message = card.querySelector('.step-msg-input')?.value;
 
           const stepObj = { time, title, action };
+          if (pos && pos !== 'auto') {
+            stepObj.position = pos;
+          }
           if (action === 'open_app') {
             stepObj.app = app;
             stepObj.params = {};
             if (file) stepObj.params.file = file;
+            if (pos && pos !== 'auto') stepObj.params.position = pos;
             if (app === 'maps') {
               if (lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
               if (lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
@@ -2767,14 +2779,30 @@
             stepObj.app = app;
             stepObj.command = command;
             stepObj.params = {};
-            if (app === 'maps' && command === 'flyTo') {
-              if (lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
-              if (lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
-              if (zoom != null && zoom !== '') stepObj.params.zoom = parseInt(zoom, 10);
+
+            // Collect dynamic parameters if present
+            const paramInputs = card.querySelectorAll('.step-param-input');
+            if (paramInputs && paramInputs.length > 0) {
+              paramInputs.forEach(inp => {
+                const pName = inp.dataset.paramName;
+                if (!pName) return;
+                let pVal = inp.value;
+                if (inp.type === 'number') {
+                  pVal = (pVal !== '' && !isNaN(Number(pVal))) ? parseFloat(pVal) : pVal;
+                }
+                stepObj.params[pName] = pVal;
+              });
+            }
+
+            // Fallback for legacy / manually placed inputs
+            if (app === 'maps' && (command === 'flyTo' || command === 'setView')) {
+              if (stepObj.params.lat == null && lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
+              if (stepObj.params.lng == null && lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
+              if (stepObj.params.zoom == null && zoom != null && zoom !== '') stepObj.params.zoom = parseInt(zoom, 10);
             } else if (app === 'doc-viewer') {
-              if (highlight) stepObj.params.highlight = highlight;
+              if (stepObj.params.highlight == null && highlight) stepObj.params.highlight = highlight;
             } else if (app === 'image-viewer') {
-              if (file) stepObj.params.file = file;
+              if (stepObj.params.file == null && file) stepObj.params.file = file;
             }
           } else if (action === 'set_doc') {
             stepObj.action = 'set_doc';
@@ -2815,17 +2843,43 @@
       const docFiles = files.filter(f => f.category === 'doc' || f.name.match(/\.(md|markdown|txt|pdf)$/i));
       const imgFiles = files.filter(f => f.category === 'image');
 
+      const controllableApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAllControllableApps === 'function')
+        ? window.sys.appManager.getAllControllableApps()
+        : [
+            { id: 'maps', name: 'Maps', icon: '🗺️' },
+            { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
+            { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' },
+            { id: 'video-player', name: 'Video Player', icon: '🎬' }
+          ];
+
+      const allApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAllApps === 'function')
+        ? window.sys.appManager.getAllApps(false)
+        : [
+            { id: 'maps', name: 'Maps', icon: '🗺️' },
+            { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' },
+            { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
+            { id: 'video-player', name: 'Video Player', icon: '🎬' },
+            { id: 'audio-player', name: 'Audio Player', icon: '🎵' },
+            { id: 'system-monitor', name: 'System Monitor', icon: '📊' }
+          ];
+
       const buildFileOptions = (selectedVal, allowedList) => {
+        let cleanVal = selectedVal;
+        if (typeof cleanVal === 'object' && cleanVal !== null) {
+          cleanVal = cleanVal.name || cleanVal.path || '';
+        }
+        if (cleanVal === '[object Object]') cleanVal = '';
+
         let optHtml = `<option value="">${this.escapeHtml(this.t('autorun.no_file'))}</option>`;
         const list = allowedList.length > 0 ? allowedList : files;
         let found = false;
         list.forEach(f => {
-          if (f.name === selectedVal || f.path === selectedVal) found = true;
-          const isSel = (f.name === selectedVal || f.path === selectedVal) ? 'selected' : '';
+          if (f.name === cleanVal || f.path === cleanVal) found = true;
+          const isSel = (f.name === cleanVal || f.path === cleanVal) ? 'selected' : '';
           optHtml += `<option value="${this.escapeHtml(f.name)}" ${isSel}>${this.escapeHtml(f.name)}</option>`;
         });
-        if (selectedVal && !found) {
-          optHtml += `<option value="${this.escapeHtml(selectedVal)}" selected>${this.escapeHtml(selectedVal)}</option>`;
+        if (cleanVal && !found) {
+          optHtml += `<option value="${this.escapeHtml(cleanVal)}" selected>${this.escapeHtml(cleanVal)}</option>`;
         }
         return optHtml;
       };
@@ -2836,7 +2890,12 @@
         const title = step.title || '';
         const action = step.action || 'open_app';
         const app = step.app || (action === 'set_doc' ? 'doc-viewer' : (action === 'show_image' ? 'image-viewer' : 'maps'));
-        const file = step.file || (step.params && step.params.file) || '';
+        let file = step.file || (step.params && step.params.file) || '';
+        if (typeof file === 'object' && file !== null) {
+          file = file.path || file.name || '';
+        }
+        if (file === '[object Object]') file = '';
+        const pos = step.position || (step.params && step.params.position) || 'auto';
         const command = step.command || (app === 'maps' ? 'flyTo' : 'scroll');
         const lat = (step.params && step.params.lat != null) ? step.params.lat : (step.lat != null ? step.lat : '');
         const lng = (step.params && step.params.lng != null) ? step.params.lng : (step.lng != null ? step.lng : '');
@@ -2880,28 +2939,137 @@
                 <div class="step-field-group">
                   <label>${this.escapeHtml(this.t('autorun.target_app'))}</label>
                   <select class="step-app-select autorun-select" data-step-index="${idx}">
-                    <option value="maps" ${app === 'maps' ? 'selected' : ''}>🗺️ maps</option>
-                    <option value="doc-viewer" ${app === 'doc-viewer' ? 'selected' : ''}>📄 doc-viewer</option>
-                    <option value="image-viewer" ${app === 'image-viewer' ? 'selected' : ''}>🖼️ image-viewer</option>
-                    <option value="video-player" ${app === 'video-player' ? 'selected' : ''}>🎬 video-player</option>
-                    <option value="audio-player" ${app === 'audio-player' ? 'selected' : ''}>🎵 audio-player</option>
-                    <option value="system-monitor" ${app === 'system-monitor' ? 'selected' : ''}>📊 system-monitor</option>
+                    ${(() => {
+                      const list = (action === 'control_app' && controllableApps.length > 0) ? controllableApps : allApps;
+                      let opts = '';
+                      list.forEach(a => {
+                        const isSel = (a.id === app) ? 'selected' : '';
+                        const icon = a.icon || '📱';
+                        opts += `<option value="${this.escapeHtml(a.id)}" ${isSel}>${icon} ${this.escapeHtml(a.name || a.id)}</option>`;
+                      });
+                      if (app && !list.some(a => a.id === app)) {
+                        opts += `<option value="${this.escapeHtml(app)}" selected>📱 ${this.escapeHtml(app)}</option>`;
+                      }
+                      return opts;
+                    })()}
                   </select>
                 </div>
               ` : ''}
 
-              ${(action === 'control_app') ? `
+              ${(action === 'open_app' || action === 'set_doc' || action === 'show_image') ? `
                 <div class="step-field-group">
-                  <label>${this.escapeHtml(this.t('autorun.command'))}</label>
-                  <select class="step-cmd-select autorun-select" data-step-index="${idx}">
-                    ${app === 'maps' ? `<option value="flyTo" selected>${this.escapeHtml(this.t('autorun.cmd_flyto'))}</option>` : ''}
-                    ${app === 'doc-viewer' ? `<option value="scroll" selected>${this.escapeHtml(this.t('autorun.cmd_scroll'))}</option>` : ''}
-                    ${app === 'image-viewer' ? `<option value="showImage" selected>${this.escapeHtml(this.t('autorun.cmd_show_img'))}</option>` : ''}
+                  <label>${this.escapeHtml(this.t('autorun.step_pos'))}</label>
+                  <select class="step-pos-select autorun-select" data-step-index="${idx}">
+                    <option value="auto" ${(!pos || pos === 'auto') ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_auto'))}</option>
+                    <option value="right-half" ${pos === 'right-half' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_right_half'))}</option>
+                    <option value="left-half" ${pos === 'left-half' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_left_half'))}</option>
+                    <option value="top-right" ${pos === 'top-right' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_top_right'))}</option>
+                    <option value="bottom-right" ${pos === 'bottom-right' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_bottom_right'))}</option>
+                    <option value="top-left" ${pos === 'top-left' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_top_left'))}</option>
+                    <option value="bottom-left" ${pos === 'bottom-left' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_bottom_left'))}</option>
+                    <option value="center" ${pos === 'center' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_center'))}</option>
+                    <option value="fullscreen" ${pos === 'fullscreen' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_fullscreen'))}</option>
                   </select>
                 </div>
               ` : ''}
 
-              ${(app === 'maps' && (action === 'open_app' || action === 'control_app')) ? `
+              ${(action === 'control_app') ? (() => {
+                const appCommands = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAppCommands === 'function')
+                  ? window.sys.appManager.getAppCommands(app)
+                  : {};
+                const cmdKeys = Object.keys(appCommands);
+                const activeCommand = step.command || (cmdKeys.length > 0 ? cmdKeys[0] : '');
+                const activeCmdDef = appCommands[activeCommand] || {};
+                const paramsDef = activeCmdDef.params || {};
+                const paramKeys = Object.keys(paramsDef);
+
+                let cmdOptions = '';
+                cmdKeys.forEach(ck => {
+                  const def = appCommands[ck];
+                  const label = (def && def.label) ? def.label : ck;
+                  const isSel = (ck === activeCommand) ? 'selected' : '';
+                  cmdOptions += `<option value="${this.escapeHtml(ck)}" ${isSel}>${this.escapeHtml(label)}</option>`;
+                });
+                if (activeCommand && !cmdKeys.includes(activeCommand)) {
+                  cmdOptions += `<option value="${this.escapeHtml(activeCommand)}" selected>${this.escapeHtml(activeCommand)}</option>`;
+                }
+
+                let dynamicParamsHtml = '';
+                if (paramKeys.length > 0) {
+                  let innerFields = '';
+                  paramKeys.forEach(pKey => {
+                    const pDef = paramsDef[pKey] || {};
+                    const pType = pDef.type || 'text';
+                    const pLabel = pDef.label || pKey;
+                    const pVal = (step.params && step.params[pKey] != null)
+                      ? step.params[pKey]
+                      : ((step[pKey] != null) ? step[pKey] : (pDef.default ?? ''));
+
+                    if (pType === 'file') {
+                      const fileCategory = pDef.category;
+                      const fileList = (fileCategory === 'image') ? imgFiles : ((fileCategory === 'doc') ? docFiles : files);
+                      innerFields += `
+                        <div class="step-field-group">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <select class="step-param-input step-file-select autorun-select" data-param-name="${this.escapeHtml(pKey)}">
+                            ${buildFileOptions(pVal, fileList)}
+                          </select>
+                        </div>
+                      `;
+                    } else if (pType === 'number') {
+                      innerFields += `
+                        <div class="step-mini-col">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <input type="number" step="${pDef.step || 'any'}" ${pDef.min != null ? `min="${pDef.min}"` : ''} ${pDef.max != null ? `max="${pDef.max}"` : ''} class="step-param-input autorun-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.default ?? '')}">
+                        </div>
+                      `;
+                    } else if (pType === 'time') {
+                      innerFields += `
+                        <div class="step-field-group">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <input type="text" class="step-param-input autorun-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.placeholder || '00:00')}">
+                        </div>
+                      `;
+                    } else if (pType === 'select') {
+                      let sOpts = '';
+                      (pDef.options || []).forEach(opt => {
+                        const v = typeof opt === 'object' ? opt.value : opt;
+                        const l = typeof opt === 'object' ? opt.label : opt;
+                        sOpts += `<option value="${this.escapeHtml(v)}" ${v == pVal ? 'selected' : ''}>${this.escapeHtml(l)}</option>`;
+                      });
+                      innerFields += `
+                        <div class="step-field-group">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <select class="step-param-input autorun-select" data-param-name="${this.escapeHtml(pKey)}">
+                            ${sOpts}
+                          </select>
+                        </div>
+                      `;
+                    } else {
+                      innerFields += `
+                        <div class="step-field-group">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <input type="text" class="step-param-input autorun-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.placeholder || '')}">
+                        </div>
+                      `;
+                    }
+                  });
+
+                  dynamicParamsHtml = `<div class="step-field-group-inline" style="display:flex;flex-wrap:wrap;gap:0.5rem;width:100%;margin-top:0.35rem;">${innerFields}</div>`;
+                }
+
+                return `
+                  <div class="step-field-group">
+                    <label>${this.escapeHtml(this.t('autorun.command'))}</label>
+                    <select class="step-cmd-select autorun-select" data-step-index="${idx}">
+                      ${cmdOptions}
+                    </select>
+                  </div>
+                  ${dynamicParamsHtml}
+                `;
+              })() : ''}
+
+              ${(app === 'maps' && action === 'open_app') ? `
                 <div class="step-field-group-inline">
                   <div class="step-mini-col">
                     <label>${this.escapeHtml(this.t('autorun.lat'))}</label>
@@ -2931,7 +3099,7 @@
                 </div>
               ` : ''}
 
-              ${(action === 'show_image' || (action === 'open_app' && app === 'image-viewer') || (action === 'control_app' && app === 'image-viewer')) ? `
+              ${(action === 'show_image' || (action === 'open_app' && app === 'image-viewer')) ? `
                 <div class="step-field-group">
                   <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
                   <select class="step-file-select autorun-select">
@@ -2962,6 +3130,13 @@
       });
 
       this.el.autorunTimelineList.querySelectorAll('.step-app-select').forEach(sel => {
+        sel.onchange = () => {
+          this.syncVisualToConfig();
+          this.renderAutorunVisualTimeline();
+        };
+      });
+
+      this.el.autorunTimelineList.querySelectorAll('.step-cmd-select').forEach(sel => {
         sel.onchange = () => {
           this.syncVisualToConfig();
           this.renderAutorunVisualTimeline();
@@ -3059,6 +3234,7 @@
           return;
         }
       }
+      this.closeAutorunEditorModal();
       this.launchAutorun(this.autorunEditorConfig);
     }
 
