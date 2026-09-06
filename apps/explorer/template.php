@@ -3,7 +3,7 @@
  * SimpleGallery 2026 - Explorer App UI Template & Modals
  * Injected automatically by the Kernel into the workspace.
  */
-?>
+<script src="apps/explorer/autorun-engine.js?v=<?php echo file_exists(__DIR__ . '/autorun-engine.js') ? filemtime(__DIR__ . '/autorun-engine.js') : 1; ?>" defer></script>
 <template id="explorerAppTemplate">
   <!-- Explorer Application Workspace (Mounted inside WebOS Window) -->
   <div class="webos-explorer-container">
@@ -14,8 +14,39 @@
       </nav>
     </div>
 
-    <!-- Filter Pills Bar -->
+    <!-- Multimodal Autorun / VLog Presentation Banner -->
+    <div class="explorer-autorun-banner" style="display: none;">
+      <div class="autorun-banner-glow"></div>
+      <div class="autorun-banner-content">
+        <div class="autorun-badge">
+          <span class="autorun-badge-dot"></span>
+          <span class="autorun-badge-text" data-i18n="autorun.badge">VLog / Présentation</span>
+        </div>
+        <div class="autorun-info">
+          <h3 class="autorun-title"></h3>
+          <p class="autorun-description"></p>
+        </div>
+        <div class="autorun-actions">
+          <button type="button" class="autorun-play-btn" data-i18n-title="autorun.play">
+            <span class="autorun-play-icon">▶️</span>
+            <span class="autorun-play-label" data-i18n="autorun.launch">Lancer la présentation</span>
+          </button>
+          <button type="button" class="autorun-edit-btn" style="display: none;" data-i18n-title="autorun.edit">
+            ⚙️ <span data-i18n="autorun.settings">Autorun</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Pills & Quick Toolbar Bar -->
     <div class="filter-bar">
+      <!-- Quick Live Filter Search -->
+      <div class="explorer-quick-search-wrapper">
+        <span class="explorer-quick-search-icon" aria-hidden="true">🔍</span>
+        <input type="search" class="explorer-quick-search-input" placeholder="Filtrer..." data-i18n-placeholder="explorer.quick_search_ph">
+        <button type="button" class="explorer-quick-search-clear" style="display: none;" title="Effacer" data-i18n-title="nav.search_clear">✕</button>
+      </div>
+
       <div class="filter-pills">
         <button class="pill-btn active" data-category="all" data-i18n="view.filter_all"><?php echo htmlspecialchars(__t('view.filter_all'), ENT_QUOTES, 'UTF-8'); ?></button>
         <button class="pill-btn" data-category="image" data-i18n="view.filter_images"><?php echo htmlspecialchars(__t('view.filter_images'), ENT_QUOTES, 'UTF-8'); ?></button>
@@ -25,14 +56,29 @@
         <button class="pill-btn" data-category="archive" data-i18n="view.filter_archives"><?php echo htmlspecialchars(__t('view.filter_archives'), ENT_QUOTES, 'UTF-8'); ?></button>
       </div>
 
+      <!-- Quick View Switcher Buttons -->
+      <div class="explorer-view-switcher">
+        <button type="button" class="view-mode-btn" data-view="polaroid" title="Polaroid" data-i18n-title="view.polaroid">🖼️</button>
+        <button type="button" class="view-mode-btn" data-view="grid" title="Grille" data-i18n-title="view.grid">▦</button>
+        <button type="button" class="view-mode-btn" data-view="mosaic" title="Mosaïque" data-i18n-title="view.mosaic">☷</button>
+        <button type="button" class="view-mode-btn" data-view="list" title="Liste" data-i18n-title="view.list">☰</button>
+      </div>
+
       <div class="gallery-stats" data-i18n="stats.loading"><?php echo htmlspecialchars(__t('stats.loading'), ENT_QUOTES, 'UTF-8'); ?></div>
+
+      <!-- Inspector Panel Toggle Button -->
+      <button type="button" class="explorer-inspector-toggle-btn" title="Détails de l'élément" data-i18n-title="explorer.toggle_inspector">
+        ℹ️ <span class="inspector-btn-text" data-i18n="explorer.details">Détails</span>
+      </button>
+
       <button type="button" class="folder-map-btn" style="display: none;" data-i18n-title="nav.map">
         🗺️ <span data-i18n="nav.map"><?php echo htmlspecialchars(__t('nav.map'), ENT_QUOTES, 'UTF-8'); ?></span>
       </button>
     </div>
 
-    <!-- Main Workspace -->
-    <main class="gallery-container">
+    <!-- Main Workspace with Split Inspector Drawer -->
+    <div class="explorer-workspace-split">
+      <main class="gallery-container">
 
       <?php if (!empty($storage_status['is_fallback'])): ?>
         <!-- Storage Diagnostic Warning Banner -->
@@ -97,6 +143,66 @@
         </div>
       </div>
     </main>
+
+      <!-- Side Inspector Drawer Panel -->
+      <aside class="explorer-inspector-drawer" style="display: none;">
+        <div class="inspector-header">
+          <div class="inspector-title-row">
+            <span class="inspector-badge">ℹ️ <span data-i18n="explorer.inspector_title">Inspecteur</span></span>
+            <button type="button" class="inspector-close-btn" title="Fermer le panneau" data-i18n-title="lightbox.close">✕</button>
+          </div>
+        </div>
+
+        <div class="inspector-content">
+          <!-- Empty Inspector State -->
+          <div class="inspector-empty-state">
+            <span class="inspector-empty-icon">👆</span>
+            <p data-i18n="explorer.inspector_empty">Sélectionnez un élément pour afficher ses propriétés détaillées.</p>
+          </div>
+
+          <!-- Populated Inspector State -->
+          <div class="inspector-details" style="display: none;">
+            <div class="inspector-preview-box">
+              <img class="inspector-preview-img" src="" alt="Aperçu" style="display: none;">
+              <div class="inspector-preview-icon" style="display: none;">📄</div>
+            </div>
+            <div class="inspector-filename-badge"></div>
+
+            <div class="inspector-actions-row">
+              <button type="button" class="inspector-action-btn inspector-open-btn" title="Ouvrir le fichier" data-i18n-title="explorer.open_item">
+                ▶️ <span data-i18n="explorer.open">Ouvrir</span>
+              </button>
+              <button type="button" class="inspector-action-btn inspector-quicklook-btn" title="Aperçu rapide (Espace)" data-i18n-title="explorer.quicklook">
+                👁️ <span data-i18n="explorer.preview">Aperçu</span>
+              </button>
+            </div>
+
+            <dl class="inspector-meta-list">
+              <dt data-i18n="meta.filename">Nom</dt>
+              <dd class="inspector-meta-name"></dd>
+
+              <dt data-i18n="meta.filesize">Taille</dt>
+              <dd class="inspector-meta-size"></dd>
+
+              <dt data-i18n="meta.dimensions">Dimensions</dt>
+              <dd class="inspector-meta-dim">-</dd>
+
+              <dt data-i18n="meta.mtime">Modifié le</dt>
+              <dd class="inspector-meta-date"></dd>
+
+              <dt data-i18n="comment.title">Légende</dt>
+              <dd class="inspector-meta-comment">-</dd>
+
+              <dt data-i18n="meta.exif_title">EXIF / Appareil</dt>
+              <dd class="inspector-meta-camera">-</dd>
+
+              <dt data-i18n="nav.map">GPS</dt>
+              <dd class="inspector-meta-gps">-</dd>
+            </dl>
+          </div>
+        </div>
+      </aside>
+    </div><!-- /.explorer-workspace-split -->
 
     <!-- Floating Multi-Selection Action Toolbar -->
     <div class="selection-toolbar" style="display: none;">
@@ -251,6 +357,48 @@
           </div>
         </div>
         <div class="gallery-leaflet-map map-canvas"></div>
+      </div>
+    </div>
+
+    <!-- Autorun / VLog Presentation Editor Modal -->
+    <div class="autorun-editor-modal autorun-editor-backdrop" style="display: none;">
+      <div class="autorun-editor-card">
+        <div class="autorun-editor-header">
+          <h3 class="autorun-editor-title">🎬 <span data-i18n="autorun.editor_title">Configuration de la Présentation / VLog (autorun.json)</span></h3>
+          <button type="button" class="autorun-editor-close-btn" data-i18n-title="lightbox.close">✕</button>
+        </div>
+
+        <form class="autorun-editor-form">
+          <div class="autorun-form-row">
+            <label data-i18n="autorun.prop_title">Titre de la présentation</label>
+            <input type="text" class="autorun-edit-title autorun-input" placeholder="ex: Mon voyage à Kyoto">
+          </div>
+
+          <div class="autorun-form-row">
+            <label data-i18n="autorun.prop_desc">Description / Introduction</label>
+            <textarea class="autorun-edit-desc autorun-textarea" rows="2" placeholder="Brève présentation du sujet"></textarea>
+          </div>
+
+          <div class="autorun-form-row">
+            <label data-i18n="autorun.prop_layout">Disposition des fenêtres</label>
+            <select class="autorun-edit-layout autorun-select">
+              <option value="split-horizontal" data-i18n="autorun.layout_split_h">Divisé Côte à Côte (Vidéo Gauche / Document Droite)</option>
+              <option value="split-vertical" data-i18n="autorun.layout_split_v">Divisé Haut / Bas</option>
+              <option value="overlay" data-i18n="autorun.layout_overlay">Flottant / Cascade</option>
+            </select>
+          </div>
+
+          <div class="autorun-form-row">
+            <label data-i18n="autorun.json_source">Édition directe JSON (Timeline & Chapitres)</label>
+            <textarea class="autorun-edit-json autorun-textarea autorun-code" rows="10" spellcheck="false"></textarea>
+          </div>
+
+          <div class="autorun-editor-footer">
+            <button type="button" class="autorun-editor-delete-btn" style="display: none;" data-i18n="autorun.delete">Supprimer l'autorun</button>
+            <button type="button" class="autorun-editor-cancel-btn" data-i18n="common.cancel">Annuler</button>
+            <button type="submit" class="autorun-editor-save-btn autorun-btn-primary" data-i18n="common.save">Enregistrer</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

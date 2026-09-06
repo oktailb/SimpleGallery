@@ -128,6 +128,7 @@ class GeneralUnitTestSuite {
         $this->testAutostartConfiguration();
         $this->testDisabledAppsFilteringAndTribuneStandalone();
         $this->testClipboardAndKeyboardShortcuts();
+        $this->testAutorunAndExplorerEnhancements();
 
         $_SESSION = $saved_session;
 
@@ -842,6 +843,65 @@ class GeneralUnitTestSuite {
         $this->assert("Explorer implémente pasteClipboard", strpos($explorer_js, 'pasteClipboard') !== false);
     }
 
+    private function testAutorunAndExplorerEnhancements(): void {
+        echo "\n🎬 [18/18] Test du Moteur Multimodal Autorun (autorun.json) & Améliorations Explorer...\n";
+
+        // 1. AutorunSyncEngine script presence and class definition
+        $engine_path = $this->base_dir . '/apps/explorer/autorun-engine.js';
+        $this->assert("Fichier apps/explorer/autorun-engine.js présent", file_exists($engine_path));
+        $engine_js = file_get_contents($engine_path);
+        $this->assert("AutorunSyncEngine déclare parseTimecode", strpos($engine_js, 'parseTimecode') !== false);
+        $this->assert("AutorunSyncEngine gère layout split-horizontal", strpos($engine_js, 'split-horizontal') !== false);
+        $this->assert("AutorunSyncEngine implémente set_doc", strpos($engine_js, 'set_doc') !== false);
+        $this->assert("AutorunSyncEngine implémente show_image", strpos($engine_js, 'show_image') !== false);
+        $this->assert("AutorunSyncEngine implémente un HUD interactif", strpos($engine_js, 'autorun-sync-hud') !== false);
+
+        // 2. DotfileManager autorun detection & parsing
+        $test_autorun_folder = $this->test_dir . '/test_autorun_sub';
+        @mkdir($test_autorun_folder, 0755, true);
+        $sample_autorun = [
+            'version' => '1.0',
+            'title' => 'Mon VLog Test',
+            'description' => 'Test de synchronisation autorun',
+            'window_layout' => 'split-horizontal',
+            'lead_media' => ['app' => 'viewer-video', 'file' => 'clip.mp4'],
+            'steps' => [
+                ['time' => '00:00', 'action' => 'open_app', 'app' => 'viewer-video', 'file' => 'clip.mp4'],
+                ['time' => '00:05', 'action' => 'set_doc', 'app' => 'viewer-text', 'file' => 'doc.md', 'chapter' => 'Intro']
+            ]
+        ];
+        file_put_contents($test_autorun_folder . '/autorun.json', json_encode($sample_autorun));
+
+        $overrides = \SimpleGallery\Kernel\FS\DotfileManager::loadFolderOverrides($test_autorun_folder, $this->test_dir);
+        $this->assert("DotfileManager détecte has_autorun = true", ($overrides['has_autorun'] ?? false) === true);
+        $this->assert("DotfileManager extrait le titre de l'autorun", ($overrides['autorun']['title'] ?? '') === 'Mon VLog Test');
+        $this->assert("DotfileManager extrait les étapes de l'autorun", count($overrides['autorun']['steps'] ?? []) === 2);
+
+        // 3. Explorer template UI components
+        $template_php = file_get_contents($this->base_dir . '/apps/explorer/template.php');
+        $this->assert("template.php contient la bannière autorun .explorer-autorun-banner", strpos($template_php, 'explorer-autorun-banner') !== false);
+        $this->assert("template.php contient la recherche rapide .explorer-quick-search-input", strpos($template_php, 'explorer-quick-search-input') !== false);
+        $this->assert("template.php contient les boutons de changement de vue .view-mode-btn", strpos($template_php, 'view-mode-btn') !== false);
+        $this->assert("template.php contient le tiroir d'inspection .explorer-inspector-drawer", strpos($template_php, 'explorer-inspector-drawer') !== false);
+        $this->assert("template.php contient le modal éditeur autorun .autorun-editor-modal", strpos($template_php, 'autorun-editor-modal') !== false);
+
+        // 4. Explorer JavaScript features
+        $explorer_js = file_get_contents($this->base_dir . '/apps/explorer/explorer.js');
+        $this->assert("explorer.js implémente launchAutorun", strpos($explorer_js, 'launchAutorun') !== false);
+        $this->assert("explorer.js implémente toggleInspector", strpos($explorer_js, 'toggleInspector') !== false);
+        $this->assert("explorer.js implémente updateInspectorUI", strpos($explorer_js, 'updateInspectorUI') !== false);
+        $this->assert("explorer.js supporte la navigation au clavier (Flèches & Espace)", strpos($explorer_js, 'ArrowRight') !== false);
+
+        // 5. Translations in fr, en, ja
+        $fr_json = json_decode(file_get_contents($this->base_dir . '/locales/fr.json'), true);
+        $en_json = json_decode(file_get_contents($this->base_dir . '/locales/en.json'), true);
+        $ja_json = json_decode(file_get_contents($this->base_dir . '/locales/ja.json'), true);
+        $this->assert("Traduction FR présente pour autorun.badge", isset($fr_json['translations']['autorun.badge']));
+        $this->assert("Traduction EN présente pour autorun.badge", isset($en_json['translations']['autorun.badge']));
+        $this->assert("Traduction JA présente pour autorun.badge", isset($ja_json['translations']['autorun.badge']));
+        $this->assert("Traduction FR présente pour explorer.quick_search_ph", isset($fr_json['translations']['explorer.quick_search_ph']));
+        $this->assert("Traduction FR présente pour explorer.details", isset($fr_json['translations']['explorer.details']));
+    }
 }
 
 

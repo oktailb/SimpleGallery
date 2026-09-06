@@ -202,7 +202,45 @@
         dotfileAccessModeSelect: document.getElementById('dotfileAccessModeSelect'),
         folderPasswordGroup: document.getElementById('folderPasswordGroup'),
         dotfilePasswordInput: document.getElementById('dotfilePasswordInput'),
-        folderDescBanner: document.getElementById('folderDescBanner')
+        folderDescBanner: document.getElementById('folderDescBanner'),
+        // Multimodal Autorun Banner & Editor
+        autorunBanner: root.querySelector('.explorer-autorun-banner'),
+        autorunTitle: root.querySelector('.autorun-title'),
+        autorunDescription: root.querySelector('.autorun-description'),
+        autorunPlayBtn: root.querySelector('.autorun-play-btn'),
+        autorunEditBtn: root.querySelector('.autorun-edit-btn'),
+        autorunEditorModal: root.querySelector('.autorun-editor-modal'),
+        autorunEditorCloseBtn: root.querySelector('.autorun-editor-close-btn'),
+        autorunEditorCancelBtn: root.querySelector('.autorun-editor-cancel-btn'),
+        autorunEditorSaveBtn: root.querySelector('.autorun-editor-save-btn'),
+        autorunEditorDeleteBtn: root.querySelector('.autorun-editor-delete-btn'),
+        autorunEditorForm: root.querySelector('.autorun-editor-form'),
+        autorunEditTitle: root.querySelector('.autorun-edit-title'),
+        autorunEditDesc: root.querySelector('.autorun-edit-desc'),
+        autorunEditLayout: root.querySelector('.autorun-edit-layout'),
+        autorunEditJson: root.querySelector('.autorun-edit-json'),
+        // Quick Live Search & View Switcher
+        quickSearchInput: root.querySelector('.explorer-quick-search-input'),
+        quickSearchClearBtn: root.querySelector('.explorer-quick-search-clear'),
+        viewModeBtns: root.querySelectorAll('.view-mode-btn'),
+        // Inspector Drawer
+        inspectorToggleBtn: root.querySelector('.explorer-inspector-toggle-btn'),
+        inspectorDrawer: root.querySelector('.explorer-inspector-drawer'),
+        inspectorCloseBtn: root.querySelector('.inspector-close-btn'),
+        inspectorEmptyState: root.querySelector('.inspector-empty-state'),
+        inspectorDetails: root.querySelector('.inspector-details'),
+        inspectorPreviewImg: root.querySelector('.inspector-preview-img'),
+        inspectorPreviewIcon: root.querySelector('.inspector-preview-icon'),
+        inspectorFilenameBadge: root.querySelector('.inspector-filename-badge'),
+        inspectorOpenBtn: root.querySelector('.inspector-open-btn'),
+        inspectorQuicklookBtn: root.querySelector('.inspector-quicklook-btn'),
+        inspectorMetaName: root.querySelector('.inspector-meta-name'),
+        inspectorMetaSize: root.querySelector('.inspector-meta-size'),
+        inspectorMetaDim: root.querySelector('.inspector-meta-dim'),
+        inspectorMetaDate: root.querySelector('.inspector-meta-date'),
+        inspectorMetaComment: root.querySelector('.inspector-meta-comment'),
+        inspectorMetaCamera: root.querySelector('.inspector-meta-camera'),
+        inspectorMetaGps: root.querySelector('.inspector-meta-gps')
       };
     }
 
@@ -376,6 +414,36 @@
           this.el.folderDescBanner.style.display = 'block';
         } else {
           this.el.folderDescBanner.style.display = 'none';
+        }
+      }
+
+      // Handle Autorun / VLog Presentation Banner
+      if (this.el.autorunBanner) {
+        if (overrides && overrides.has_autorun && overrides.autorun) {
+          const ar = overrides.autorun;
+          if (this.el.autorunTitle) {
+            this.el.autorunTitle.textContent = ar.title || this.t('autorun.badge');
+          }
+          if (this.el.autorunDescription) {
+            this.el.autorunDescription.textContent = ar.description || '';
+          }
+          if (this.el.autorunPlayBtn) {
+            this.el.autorunPlayBtn.onclick = (e) => {
+              e.preventDefault();
+              this.launchAutorun(ar);
+            };
+          }
+          if (this.el.autorunEditBtn) {
+            const canEdit = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_edit);
+            this.el.autorunEditBtn.style.display = canEdit ? 'inline-flex' : 'none';
+            this.el.autorunEditBtn.onclick = (e) => {
+              e.preventDefault();
+              this.openAutorunEditorModal(ar);
+            };
+          }
+          this.el.autorunBanner.style.display = 'block';
+        } else {
+          this.el.autorunBanner.style.display = 'none';
         }
       }
     }
@@ -1025,6 +1093,7 @@
           }
         });
       }
+      this.updateInspectorUI();
     }
 
     initMarqueeSelection() {
@@ -1828,6 +1897,34 @@
               }
             }
           }
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (this.state.filteredFiles && this.state.filteredFiles.length > 0) {
+            e.preventDefault();
+            let currentIndex = this.state.lastSelectedIndex !== null ? this.state.lastSelectedIndex : -1;
+            let nextIndex = currentIndex;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+              nextIndex = Math.min(this.state.filteredFiles.length - 1, currentIndex + 1);
+            } else {
+              nextIndex = Math.max(0, currentIndex - 1);
+            }
+            if (nextIndex >= 0 && nextIndex < this.state.filteredFiles.length) {
+              const targetFile = this.state.filteredFiles[nextIndex];
+              this.state.selectedPaths.clear();
+              this.state.selectedPaths.add(targetFile.path);
+              this.state.lastSelectedIndex = nextIndex;
+              this.updateSelectionUI();
+              // Scroll card into view
+              const card = this.el.mediaGrid.querySelector(`[data-index="${nextIndex}"]`);
+              if (card && typeof card.scrollIntoView === 'function') {
+                card.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+              }
+            }
+          }
+        } else if (e.key === 'i' || e.key === 'I') {
+          if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            this.toggleInspector();
+          }
         }
       });
 
@@ -1904,7 +2001,253 @@
           this.applyFilterAndRender();
         };
       }
+
+      // Quick Live Filter Search Input
+      if (this.el.quickSearchInput) {
+        this.el.quickSearchInput.oninput = (e) => {
+          const val = (e.target.value || '').trim().toLowerCase();
+          this.state.searchQuery = val;
+          if (this.el.quickSearchClearBtn) {
+            this.el.quickSearchClearBtn.style.display = val ? 'block' : 'none';
+          }
+          this.applyFilterAndRender();
+        };
+        this.el.quickSearchInput.onkeydown = (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            this.el.quickSearchInput.value = '';
+            this.state.searchQuery = '';
+            if (this.el.quickSearchClearBtn) this.el.quickSearchClearBtn.style.display = 'none';
+            this.applyFilterAndRender();
+          }
+        };
+      }
+      if (this.el.quickSearchClearBtn) {
+        this.el.quickSearchClearBtn.onclick = () => {
+          if (this.el.quickSearchInput) this.el.quickSearchInput.value = '';
+          this.state.searchQuery = '';
+          this.el.quickSearchClearBtn.style.display = 'none';
+          this.applyFilterAndRender();
+        };
+      }
+
+      // Quick View Switcher Buttons
+      if (this.el.viewModeBtns) {
+        this.el.viewModeBtns.forEach(btn => {
+          btn.onclick = () => {
+            const mode = btn.dataset.view;
+            if (mode) this.setViewMode(mode);
+          };
+        });
+      }
+
+      // Inspector Drawer Toggle
+      if (this.el.inspectorToggleBtn) {
+        this.el.inspectorToggleBtn.onclick = () => this.toggleInspector();
+      }
+      if (this.el.inspectorCloseBtn) {
+        this.el.inspectorCloseBtn.onclick = () => this.toggleInspector(false);
+      }
+      if (this.el.inspectorOpenBtn) {
+        this.el.inspectorOpenBtn.onclick = () => {
+          const first = Array.from(this.state.selectedPaths)[0];
+          const file = (this.state.files || []).find(f => f.path === first);
+          if (file && window.sys && window.sys.openFile) window.sys.openFile(file);
+        };
+      }
+      if (this.el.inspectorQuicklookBtn) {
+        this.el.inspectorQuicklookBtn.onclick = () => {
+          const first = Array.from(this.state.selectedPaths)[0];
+          const file = (this.state.files || []).find(f => f.path === first);
+          if (file && window.sys && window.sys.openFile) window.sys.openFile(file);
+        };
+      }
+
+      // Autorun Editor Modal Form
+      if (this.el.autorunEditorCloseBtn) {
+        this.el.autorunEditorCloseBtn.onclick = () => this.closeAutorunEditorModal();
+      }
+      if (this.el.autorunEditorCancelBtn) {
+        this.el.autorunEditorCancelBtn.onclick = () => this.closeAutorunEditorModal();
+      }
+      if (this.el.autorunEditorDeleteBtn) {
+        this.el.autorunEditorDeleteBtn.onclick = () => this.deleteAutorunConfig();
+      }
+      if (this.el.autorunEditorForm) {
+        this.el.autorunEditorForm.onsubmit = (e) => {
+          e.preventDefault();
+          this.saveAutorunConfig();
+        };
+      }
     }
+
+    // -------------------------------------------------------------
+    // INSPECTOR DRAWER LOGIC
+    // -------------------------------------------------------------
+    toggleInspector(forceState) {
+      if (!this.el.inspectorDrawer) return;
+      const isVisible = (this.el.inspectorDrawer.style.display !== 'none');
+      const newState = (forceState !== undefined) ? forceState : !isVisible;
+      this.el.inspectorDrawer.style.display = newState ? 'flex' : 'none';
+      if (this.el.inspectorToggleBtn) {
+        this.el.inspectorToggleBtn.classList.toggle('active', newState);
+      }
+      if (newState) {
+        this.updateInspectorUI();
+      }
+    }
+
+    updateInspectorUI() {
+      if (!this.el.inspectorDrawer || this.el.inspectorDrawer.style.display === 'none') return;
+      const selected = Array.from(this.state.selectedPaths);
+      if (selected.length === 0) {
+        if (this.el.inspectorEmptyState) this.el.inspectorEmptyState.style.display = 'block';
+        if (this.el.inspectorDetails) this.el.inspectorDetails.style.display = 'none';
+        return;
+      }
+
+      const firstPath = selected[0];
+      const file = (this.state.files || []).find(f => f.path === firstPath);
+      if (!file) {
+        if (this.el.inspectorEmptyState) this.el.inspectorEmptyState.style.display = 'block';
+        if (this.el.inspectorDetails) this.el.inspectorDetails.style.display = 'none';
+        return;
+      }
+
+      if (this.el.inspectorEmptyState) this.el.inspectorEmptyState.style.display = 'none';
+      if (this.el.inspectorDetails) this.el.inspectorDetails.style.display = 'block';
+
+      if (this.el.inspectorFilenameBadge) this.el.inspectorFilenameBadge.textContent = file.name;
+      if (this.el.inspectorMetaName) this.el.inspectorMetaName.textContent = file.name;
+      if (this.el.inspectorMetaSize) this.el.inspectorMetaSize.textContent = file.size_formatted || `${file.size || 0} octets`;
+      if (this.el.inspectorMetaDim) this.el.inspectorMetaDim.textContent = file.dimensions || '-';
+      if (this.el.inspectorMetaDate) {
+        const d = new Date((file.effective_mtime || file.mtime || Date.now() / 1000) * 1000);
+        this.el.inspectorMetaDate.textContent = d.toLocaleString();
+      }
+      if (this.el.inspectorMetaComment) this.el.inspectorMetaComment.textContent = file.comment || '-';
+      if (this.el.inspectorMetaCamera) {
+        const exif = file.exif || {};
+        const cam = [exif.make, exif.model].filter(Boolean).join(' ');
+        this.el.inspectorMetaCamera.textContent = cam || '-';
+      }
+      if (this.el.inspectorMetaGps) {
+        const gps = (file.exif && file.exif.gps) ? `${file.exif.gps.lat.toFixed(4)}, ${file.exif.gps.lng.toFixed(4)}` : '-';
+        this.el.inspectorMetaGps.textContent = gps;
+      }
+
+      // Preview rendering
+      if (this.el.inspectorPreviewImg && this.el.inspectorPreviewIcon) {
+        if (file.category === 'image' || file.thumb_url) {
+          this.el.inspectorPreviewImg.src = file.thumb_url || file.file_url;
+          this.el.inspectorPreviewImg.style.display = 'block';
+          this.el.inspectorPreviewIcon.style.display = 'none';
+        } else {
+          this.el.inspectorPreviewImg.style.display = 'none';
+          this.el.inspectorPreviewIcon.style.display = 'block';
+          this.el.inspectorPreviewIcon.textContent = window.IconHelper ? window.IconHelper.getFileIcon(file) : '📄';
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // AUTORUN & VLOG PRESENTATION LAUNCHER & CONFIG
+    // -------------------------------------------------------------
+    launchAutorun(autorunConfig) {
+      const config = autorunConfig || (this.state.overrides && this.state.overrides.autorun);
+      if (!config) return;
+      if (window.sys && window.sys.autorun && typeof window.sys.autorun.launch === 'function') {
+        window.sys.autorun.launch(config, this.state.currentPath, this);
+      } else {
+        this.showToast('Moteur autorun non disponible', 'error');
+      }
+    }
+
+    openAutorunEditorModal(existingConfig = null) {
+      if (!this.el.autorunEditorModal) return;
+      const config = existingConfig || (this.state.overrides && this.state.overrides.autorun) || {
+        version: "1.0",
+        title: this.state.currentPath ? this.state.currentPath.split('/').pop() : "Présentation VLog",
+        description: "Présentation synchronisée multimédia",
+        window_layout: "split-horizontal",
+        lead_media: { app: "viewer-video", file: "" },
+        companion_app: { app: "viewer-text", file: "" },
+        steps: [
+          { time: "00:00", action: "open_app", app: "viewer-video", file: "" },
+          { time: "00:10", action: "set_doc", app: "viewer-text", file: "", chapter: "Introduction" }
+        ]
+      };
+
+      if (this.el.autorunEditTitle) this.el.autorunEditTitle.value = config.title || '';
+      if (this.el.autorunEditDesc) this.el.autorunEditDesc.value = config.description || '';
+      if (this.el.autorunEditLayout) this.el.autorunEditLayout.value = config.window_layout || 'split-horizontal';
+      if (this.el.autorunEditJson) this.el.autorunEditJson.value = JSON.stringify(config, null, 2);
+      if (this.el.autorunEditorDeleteBtn) {
+        this.el.autorunEditorDeleteBtn.style.display = (this.state.overrides && this.state.overrides.has_autorun) ? 'inline-block' : 'none';
+      }
+
+      this.el.autorunEditorModal.style.display = 'flex';
+    }
+
+    closeAutorunEditorModal() {
+      if (this.el.autorunEditorModal) {
+        this.el.autorunEditorModal.style.display = 'none';
+      }
+    }
+
+    async saveAutorunConfig() {
+      if (!this.el.autorunEditJson) return;
+      let parsed;
+      try {
+        parsed = JSON.parse(this.el.autorunEditJson.value);
+        if (this.el.autorunEditTitle && this.el.autorunEditTitle.value) {
+          parsed.title = this.el.autorunEditTitle.value;
+        }
+        if (this.el.autorunEditDesc && this.el.autorunEditDesc.value) {
+          parsed.description = this.el.autorunEditDesc.value;
+        }
+        if (this.el.autorunEditLayout && this.el.autorunEditLayout.value) {
+          parsed.window_layout = this.el.autorunEditLayout.value;
+        }
+      } catch (err) {
+        this.showToast(`Syntaxe JSON invalide : ${err.message}`, 'error');
+        return;
+      }
+
+      try {
+        const savePath = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
+        const res = await window.sys.api.post('save_file_content', {
+          path: savePath,
+          content: JSON.stringify(parsed, null, 2),
+          csrf_token: this.state.csrfToken || window.CSRF_TOKEN
+        });
+        if (res && res.success) {
+          this.closeAutorunEditorModal();
+          this.showToast('Présentation autorun.json enregistrée avec succès !', 'success');
+          await this.loadDirectory(this.state.currentPath);
+        } else {
+          this.showToast(`Erreur : ${(res && res.error) || 'Impossible d\'enregistrer'}`, 'error');
+        }
+      } catch (err) {
+        this.showToast(`Erreur réseau : ${err.message}`, 'error');
+      }
+    }
+
+    async deleteAutorunConfig() {
+      if (!confirm('Supprimer définitivement la configuration autorun.json de ce dossier ?')) return;
+      try {
+        const path1 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
+        const path2 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + 'autorun.json';
+        await window.sys.api.fs.deleteItem(path1);
+        await window.sys.api.fs.deleteItem(path2);
+        this.closeAutorunEditorModal();
+        this.showToast('Autorun supprimé', 'info');
+        await this.loadDirectory(this.state.currentPath);
+      } catch (err) {
+        this.showToast(`Erreur : ${err.message}`, 'error');
+      }
+    }
+
   }
 
   // -------------------------------------------------------------
