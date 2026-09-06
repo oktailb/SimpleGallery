@@ -71,6 +71,11 @@
         ℹ️ <span class="inspector-btn-text" data-i18n="explorer.details">Détails</span>
       </button>
 
+      <!-- Folder Settings Button directly in Explorer toolbar -->
+      <button type="button" class="explorer-folder-settings-btn" style="display: none;" title="<?php echo htmlspecialchars(__t('folder_settings.title'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-title="folder_settings.title">
+        ⚙️ <span data-i18n="folder_settings.title"><?php echo htmlspecialchars(__t('folder_settings.title'), ENT_QUOTES, 'UTF-8'); ?></span>
+      </button>
+
       <button type="button" class="folder-map-btn" style="display: none;" data-i18n-title="nav.map">
         🗺️ <span data-i18n="nav.map"><?php echo htmlspecialchars(__t('nav.map'), ENT_QUOTES, 'UTF-8'); ?></span>
       </button>
@@ -403,3 +408,137 @@
     </div>
   </div>
 </template>
+
+<!-- =============================================================
+     SHARED APPLICATION MODALS (Mounted into WebOS Desktop Shell)
+     ============================================================= -->
+
+<!-- Folder Settings Modal (Admin Only) -->
+<div id="folderSettingsModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="admin-modal-content">
+    <div class="admin-modal-header">
+      <h3 data-i18n="folder_settings.title">📁 <?php echo htmlspecialchars(__t('folder_settings.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+      <button type="button" id="folderSettingsCloseBtn" class="lightbox-btn" title="<?php echo htmlspecialchars(__t('common.close'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-title="common.close">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <form id="folderSettingsForm">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_title"><?php echo htmlspecialchars(__t('folder_settings.dotfile_title'), ENT_QUOTES, 'UTF-8'); ?></label>
+          <input type="text" id="dotfileTitleInput" class="admin-input" placeholder="<?php echo htmlspecialchars(__t('folder_settings.dotfile_title'), ENT_QUOTES, 'UTF-8'); ?>" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_desc"><?php echo htmlspecialchars(__t('folder_settings.dotfile_desc'), ENT_QUOTES, 'UTF-8'); ?></label>
+          <textarea id="dotfileDescInput" class="admin-input" rows="3" placeholder="<?php echo htmlspecialchars(__t('folder_settings.dotfile_desc'), ENT_QUOTES, 'UTF-8'); ?>" style="resize: vertical;"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_access"><?php echo htmlspecialchars(__t('folder_settings.dotfile_access'), ENT_QUOTES, 'UTF-8'); ?></label>
+          <select id="dotfileAccessModeSelect" class="sort-select" style="width: 100%;">
+            <option value="public" data-i18n="folder_settings.access_public">🌐 <?php echo htmlspecialchars(__t('folder_settings.access_public'), ENT_QUOTES, 'UTF-8'); ?></option>
+            <option value="private" data-i18n="folder_settings.access_private">👁️‍🗨️ <?php echo htmlspecialchars(__t('folder_settings.access_private'), ENT_QUOTES, 'UTF-8'); ?></option>
+            <option value="password" data-i18n="folder_settings.access_password">🔒 <?php echo htmlspecialchars(__t('folder_settings.access_password'), ENT_QUOTES, 'UTF-8'); ?></option>
+          </select>
+        </div>
+
+        <div id="folderPasswordGroup" class="form-group" style="margin-bottom: 1rem; display: none;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.password_label"><?php echo htmlspecialchars(__t('folder_settings.password_label'), ENT_QUOTES, 'UTF-8'); ?></label>
+          <input type="password" id="dotfilePasswordInput" class="admin-input" placeholder="<?php echo htmlspecialchars(__t('folder_settings.password_label'), ENT_QUOTES, 'UTF-8'); ?>" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;" data-i18n="folder_settings.dotfile_bg"><?php echo htmlspecialchars(__t('folder_settings.dotfile_bg'), ENT_QUOTES, 'UTF-8'); ?></label>
+          <input type="text" id="dotfileBgInput" class="admin-input" placeholder="ex: #0f172a ou bg.jpg" />
+        </div>
+
+        <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;" data-i18n="common.save">
+          <?php echo htmlspecialchars(__t('common.save'), ENT_QUOTES, 'UTF-8'); ?>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Create Folder Modal -->
+<div id="createFolderModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="admin-modal-content" style="max-width: 420px;">
+    <div class="admin-modal-header">
+      <h3 data-i18n="create_folder.title">📁 <?php echo htmlspecialchars(__t('create_folder.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+      <button type="button" id="createFolderCloseBtn" class="lightbox-btn" title="<?php echo htmlspecialchars(__t('common.close'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-title="common.close">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <form id="createFolderForm">
+        <label for="createFolderNameInput" class="admin-label" data-i18n="create_folder.placeholder" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;"><?php echo htmlspecialchars(__t('create_folder.placeholder'), ENT_QUOTES, 'UTF-8'); ?> :</label>
+        <input type="text" id="createFolderNameInput" class="admin-input" placeholder="ex: Vacances 2026, Événements..." data-i18n-placeholder="create_folder.placeholder" required />
+        <div id="createFolderError" class="admin-error-msg" style="display: none;"></div>
+        <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;" data-i18n="create_folder.submit">
+          <?php echo htmlspecialchars(__t('create_folder.submit'), ENT_QUOTES, 'UTF-8'); ?>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="admin-modal-content" style="max-width: 440px; text-align: center;">
+    <div class="admin-modal-header">
+      <h3 style="color: #ef4444; width: 100%;" data-i18n="delete_confirm.title">🗑️ <?php echo htmlspecialchars(__t('delete_confirm.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+      <button type="button" id="deleteConfirmCloseBtn" class="lightbox-btn" title="<?php echo htmlspecialchars(__t('common.close'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-title="common.close">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <p id="deleteConfirmMessage" style="font-size: 0.95rem; margin: 1rem 0; color: var(--text-main); line-height: 1.5;"></p>
+      <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
+        <button type="button" id="deleteCancelBtn" class="btn-toggle" style="flex: 1; justify-content: center;" data-i18n="common.cancel"><?php echo htmlspecialchars(__t('common.cancel'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="button" id="deleteConfirmActionBtn" class="pill-btn active" style="flex: 1; background: #ef4444; color: white; justify-content: center; font-weight: 700;" data-i18n="common.delete">
+          🗑️ <?php echo htmlspecialchars(__t('common.delete'), ENT_QUOTES, 'UTF-8'); ?>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Visitor Folder Password Unlock Modal -->
+<div id="folderUnlockModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="admin-modal-content">
+    <div class="admin-modal-header">
+      <h3 data-i18n="stats.folder_locked">🔒 <?php echo htmlspecialchars(__t('stats.folder_locked'), ENT_QUOTES, 'UTF-8'); ?></h3>
+      <button type="button" id="folderUnlockCloseBtn" class="lightbox-btn" title="<?php echo htmlspecialchars(__t('common.close'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-title="common.close">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;" data-i18n="stats.folder_locked_desc">
+        <?php echo htmlspecialchars(__t('stats.folder_locked_desc'), ENT_QUOTES, 'UTF-8'); ?>
+      </p>
+      <form id="folderUnlockForm">
+        <input type="hidden" id="folderUnlockPath" />
+        <input type="password" id="folderPasswordInput" class="admin-input" placeholder="<?php echo htmlspecialchars(__t('folder_settings.password_label'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-placeholder="folder_settings.password_label" required />
+        <div id="folderUnlockError" class="admin-error-msg" style="display: none;"></div>
+        <button type="submit" class="pill-btn active" style="width: 100%; margin-top: 1rem; justify-content: center;" data-i18n="stats.folder_unlock_action">
+          <?php echo htmlspecialchars(__t('stats.folder_unlock_action'), ENT_QUOTES, 'UTF-8'); ?>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Media Legend Modal (Admin Only) -->
+<div id="mediaCommentModal" class="admin-modal" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="admin-modal-content">
+    <div class="admin-modal-header">
+      <h3 id="mediaCommentModalTitle" data-i18n="comment.title">💬 <?php echo htmlspecialchars(__t('comment.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+      <button type="button" id="mediaCommentCloseBtn" class="lightbox-btn" title="<?php echo htmlspecialchars(__t('common.close'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-title="common.close">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <form id="mediaCommentForm">
+        <input type="hidden" id="mediaCommentFilename" />
+        <div id="mediaCommentFilenameBadge" style="margin-bottom: 0.75rem; font-weight: 600; font-size: 0.9rem; color: var(--text-main);"></div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <input type="text" id="mediaCommentInput" class="admin-input" placeholder="<?php echo htmlspecialchars(__t('comment.placeholder'), ENT_QUOTES, 'UTF-8'); ?>" data-i18n-placeholder="comment.placeholder" />
+        </div>
+        <button type="submit" class="pill-btn active" style="width: 100%; justify-content: center;" data-i18n="common.save">
+          <?php echo htmlspecialchars(__t('common.save'), ENT_QUOTES, 'UTF-8'); ?>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

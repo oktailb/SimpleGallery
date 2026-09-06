@@ -147,6 +147,7 @@
         filterPills: root.querySelector('.filter-pills'),
         galleryStats: root.querySelector('.gallery-stats'),
         folderMapBtn: root.querySelector('.folder-map-btn'),
+        folderSettingsBtn: root.querySelector('.explorer-folder-settings-btn'),
         searchResultsBanner: root.querySelector('.search-results-banner'),
         searchResultsCountText: root.querySelector('.search-results-count-text'),
         exitSearchBtn: root.querySelector('.exit-search-btn'),
@@ -459,6 +460,10 @@
           this.el.autorunBanner.style.display = 'none';
         }
       }
+
+      if (this.el.folderSettingsBtn) {
+        this.el.folderSettingsBtn.style.display = this.state.isAdmin ? 'inline-flex' : 'none';
+      }
     }
 
     renderBreadcrumbs(crumbs) {
@@ -466,7 +471,7 @@
       const nav = this.el.breadcrumbs;
       if (!nav) return;
 
-      const rootLabel = this.t('nav.root') || 'Stockage';
+      const rootLabel = this.t('nav.root');
 
       nav.innerHTML = crumbs.map((crumb, idx) => {
         const isLast = idx === crumbs.length - 1;
@@ -566,10 +571,12 @@
         const badge = folder.is_protected ? '<span class="folder-badge lock-badge">🔒</span>' : '';
         const handleClass = canMove ? 'drag-handle' : '';
         const deleteBtnHtml = this.state.isAdmin ? `<button class="delete-item-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" data-type="folder" title="${this.escapeHtml(this.t('folder.delete_title'))}">🗑️</button>` : '';
+        const settingsBtnHtml = this.state.isAdmin ? `<button type="button" class="folder-settings-btn" data-path="${folder.path}" data-name="${this.escapeHtml(folder.name)}" title="${this.escapeHtml(this.t('nav.folder_settings'))}">⚙️</button>` : '';
 
         return `
           <div class="folder-card ${handleClass} ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? 'protected-card' : ''}" data-path="${folder.path}" data-protected="${folder.is_protected ? '1' : '0'}" data-unlocked="${folder.is_unlocked ? '1' : '0'}" draggable="true" role="button" tabindex="0">
             ${deleteBtnHtml}
+            ${settingsBtnHtml}
             ${badge}
             <div class="folder-icon-wrapper">
               ${folder.is_protected && !folder.is_unlocked && !this.state.isAdmin ? '<div class="folder-lock-icon">🔒</div>' : (folder.cover ? `<img src="${folder.cover}" alt="${this.escapeHtml(folder.name)}" class="folder-cover-img" loading="lazy" draggable="false" />` : '📁')}
@@ -590,6 +597,7 @@
         const folderCover = folderObj.cover || folderObj.cover_url || '';
 
         card.onclick = (e) => {
+          if (e.target.closest('.delete-item-btn, .folder-settings-btn')) return;
           e.preventDefault();
           const isProtected = card.dataset.protected === '1';
           const isUnlocked = card.dataset.unlocked === '1';
@@ -606,6 +614,15 @@
             e.preventDefault();
             e.stopPropagation();
             this.openDeleteConfirmModal(delBtn.dataset.path, delBtn.dataset.name, 'folder');
+          };
+        }
+
+        const settingsBtn = card.querySelector('.folder-settings-btn');
+        if (settingsBtn) {
+          settingsBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.openFolderSettingsModal(folderPath);
           };
         }
 
@@ -1028,10 +1045,10 @@
       const idx = this.state.favorites.indexOf(filePath);
       if (idx !== -1) {
         this.state.favorites.splice(idx, 1);
-        this.showToast(this.t('lightbox.favorite_removed') || 'Retiré des favoris', 'info');
+        this.showToast(this.t('lightbox.favorite_removed'), 'info');
       } else {
         this.state.favorites.push(filePath);
-        this.showToast(this.t('lightbox.favorite_added') || 'Ajouté aux favoris', 'success');
+        this.showToast(this.t('lightbox.favorite_added'), 'success');
       }
       try {
         localStorage.setItem('sg_favorites', JSON.stringify(this.state.favorites));
@@ -1243,7 +1260,7 @@
         if (count === 0) {
           this.el.folderMapBtn.style.display = 'none';
         } else {
-          this.el.folderMapBtn.innerHTML = `🗺️ ${this.escapeHtml(this.t('nav.map') || 'Carte GPS')} (${count})`;
+          this.el.folderMapBtn.innerHTML = `🗺️ ${this.escapeHtml(this.t('nav.map'))} (${count})`;
           this.el.folderMapBtn.style.display = 'inline-flex';
         }
       }
@@ -1349,22 +1366,22 @@
 
       if (window.sys && window.sys.dialog && typeof window.sys.dialog.prompt === 'function') {
         window.sys.dialog.prompt(
-          this.t('folder.new_name_placeholder') || 'Nom du nouveau dossier :',
-          this.t('nav.create_folder') || 'Créer un sous-dossier',
+          this.t('folder.new_name_placeholder'),
+          this.t('nav.create_folder'),
           ''
         ).then(async name => {
           if (name && name.trim()) {
             try {
               const json = await window.sys.api.fs.createFolder(this.state.currentPath, name.trim());
               if (json.success) {
-                this.showToast(this.t('folder.create_success') || 'Dossier créé avec succès', 'success');
+                this.showToast(this.t('folder.create_success'), 'success');
                 if (window.EventBus) {
                   window.EventBus.emit('fs:changed', { action: 'create_folder', dir: this.state.currentPath });
                 } else {
                   await this.loadDirectory(this.state.currentPath);
                 }
               } else {
-                this.showToast('⚠️ ' + (json.error || 'Erreur lors de la création'), 'error');
+                this.showToast('⚠️ ' + (json.error || this.t('api.err_save_failed')), 'error');
               }
             } catch (err) {
               this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
@@ -1375,10 +1392,15 @@
       }
 
       this.manager.activeModalInstance = this;
-      if (!this.el.createFolderModal) return;
+      const modal = this.el.createFolderModal || document.getElementById('createFolderModal');
+      if (!modal) return;
+      this.el.createFolderModal = modal;
+      this.el.newFolderNameInput = this.el.newFolderNameInput || document.getElementById('createFolderNameInput') || document.getElementById('newFolderNameInput');
+      this.el.createFolderError = this.el.createFolderError || document.getElementById('createFolderError');
+
       if (this.el.createFolderError) this.el.createFolderError.style.display = 'none';
-      this.el.createFolderModal.style.display = 'flex';
-      this.el.createFolderModal.classList.add('open');
+      modal.style.display = 'flex';
+      modal.classList.add('open');
       if (this.el.newFolderNameInput) {
         this.el.newFolderNameInput.value = '';
         setTimeout(() => this.el.newFolderNameInput.focus(), 50);
@@ -1386,9 +1408,10 @@
     }
 
     closeCreateFolderModal() {
-      if (!this.el.createFolderModal) return;
-      this.el.createFolderModal.style.display = 'none';
-      this.el.createFolderModal.classList.remove('open');
+      const modal = this.el.createFolderModal || document.getElementById('createFolderModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      modal.classList.remove('open');
     }
 
     async createFolder() {
@@ -1400,7 +1423,7 @@
         const json = await window.sys.api.fs.createFolder(this.state.currentPath, name);
         if (json.success) {
           this.closeCreateFolderModal();
-          this.showToast(this.t('folder.create_success') || 'Dossier créé avec succès', 'success');
+          this.showToast(this.t('folder.create_success'), 'success');
           if (window.EventBus) {
             window.EventBus.emit('fs:changed', { action: 'create_folder', dir: this.state.currentPath });
           } else {
@@ -1603,31 +1626,68 @@
       }
     }
 
-    openFolderSettingsModal() {
+    async openFolderSettingsModal(targetDir = null) {
       this.manager.activeModalInstance = this;
-      if (!this.state.isAdmin || !this.el.folderSettingsModal) return;
-      const overrides = this.state.overrides || {};
+      const modal = this.el.folderSettingsModal || document.getElementById('folderSettingsModal');
+      if (!this.state.isAdmin || !modal) return;
+      this.el.folderSettingsModal = modal;
+
+      this.el.dotfileTitleInput = this.el.dotfileTitleInput || document.getElementById('dotfileTitleInput');
+      this.el.dotfileDescInput = this.el.dotfileDescInput || document.getElementById('dotfileDescInput');
+      this.el.dotfileBgInput = this.el.dotfileBgInput || document.getElementById('dotfileBgInput');
+      this.el.dotfileAccessModeSelect = this.el.dotfileAccessModeSelect || document.getElementById('dotfileAccessModeSelect');
+      this.el.folderPasswordGroup = this.el.folderPasswordGroup || document.getElementById('folderPasswordGroup');
+      this.el.dotfilePasswordInput = this.el.dotfilePasswordInput || document.getElementById('dotfilePasswordInput');
+
+      const target = (typeof targetDir === 'string') ? targetDir : (this.state.currentPath || '');
+      this.modalFolderSettingsDir = target;
+
+      let overrides = this.state.overrides || {};
+      if (target !== (this.state.currentPath || '')) {
+        try {
+          const res = await window.sys.api.get('get_gallery', { dir: target, _t: Date.now() });
+          if (res && res.success && res.overrides) {
+            overrides = res.overrides;
+          }
+        } catch (e) {
+          console.warn('[Explorer] Could not fetch overrides for folder:', target, e);
+        }
+      }
+
       if (this.el.dotfileTitleInput) this.el.dotfileTitleInput.value = overrides.title || '';
       if (this.el.dotfileDescInput) this.el.dotfileDescInput.value = overrides.description || '';
       if (this.el.dotfileBgInput) this.el.dotfileBgInput.value = overrides.background || '';
-      if (this.el.dotfileAccessModeSelect) this.el.dotfileAccessModeSelect.value = overrides.access_mode || 'public';
+      if (this.el.dotfileAccessModeSelect) {
+        this.el.dotfileAccessModeSelect.value = overrides.access_mode || 'public';
+        this.el.dotfileAccessModeSelect.onchange = () => {
+          if (this.el.folderPasswordGroup) {
+            this.el.folderPasswordGroup.style.display = (this.el.dotfileAccessModeSelect.value === 'password') ? 'block' : 'none';
+          }
+        };
+      }
+      if (this.el.dotfilePasswordInput) this.el.dotfilePasswordInput.value = '';
       if (this.el.folderPasswordGroup) {
         this.el.folderPasswordGroup.style.display = (overrides.access_mode === 'password') ? 'block' : 'none';
       }
-      this.el.folderSettingsModal.style.display = 'flex';
-      this.el.folderSettingsModal.classList.add('open');
+      modal.style.display = 'flex';
+      modal.classList.add('open');
     }
 
     closeFolderSettingsModal() {
-      if (!this.el.folderSettingsModal) return;
-      this.el.folderSettingsModal.style.display = 'none';
-      this.el.folderSettingsModal.classList.remove('open');
+      const modal = this.el.folderSettingsModal || document.getElementById('folderSettingsModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      modal.classList.remove('open');
     }
 
     async saveFolderSettings() {
       try {
+        const targetDir = (this.modalFolderSettingsDir !== undefined && this.modalFolderSettingsDir !== null)
+          ? this.modalFolderSettingsDir
+          : (this.state.currentPath || '');
+
         const json = await window.sys.api.fs.saveFolderSettings({
-          dir: this.state.currentPath,
+          dir: targetDir,
           title: this.el.dotfileTitleInput ? this.el.dotfileTitleInput.value.trim() : '',
           description: this.el.dotfileDescInput ? this.el.dotfileDescInput.value.trim() : '',
           background: this.el.dotfileBgInput ? this.el.dotfileBgInput.value.trim() : '',
@@ -1636,14 +1696,14 @@
         });
         if (json.success) {
           this.closeFolderSettingsModal();
-          this.showToast(json.message || 'Paramètres du dossier enregistrés', 'success');
+          this.showToast(json.message || this.t('api.msg_folder_settings_saved'), 'success');
           if (window.EventBus) {
-            window.EventBus.emit('fs:changed', { action: 'save_folder_settings', dir: this.state.currentPath });
+            window.EventBus.emit('fs:changed', { action: 'save_folder_settings', dir: targetDir });
           } else {
             await this.loadDirectory(this.state.currentPath);
           }
         } else {
-          this.showToast('⚠️ ' + (json.error || 'Erreur d\'enregistrement'), 'error');
+          this.showToast('⚠️ ' + (json.error || this.t('api.err_save_failed')), 'error');
         }
       } catch (err) {
         this.showToast(`⚠️ Erreur: ${err.message}`, 'error');
@@ -1996,6 +2056,7 @@
       }
 
       if (this.el.folderMapBtn) this.el.folderMapBtn.onclick = () => this.openMapModal();
+      if (this.el.folderSettingsBtn) this.el.folderSettingsBtn.onclick = () => this.openFolderSettingsModal();
       if (this.el.mapModalCloseBtn) this.el.mapModalCloseBtn.onclick = () => this.closeMapModal();
       if (this.el.exitSearchBtn) this.el.exitSearchBtn.onclick = () => this.exitSearch();
       if (this.el.selectionCopyBtn) this.el.selectionCopyBtn.onclick = () => this.copySelection();
@@ -2403,9 +2464,9 @@
             <!-- Search Box -->
             <div class="search-box">
               <span class="search-icon">🔍</span>
-              <input type="text" id="searchInput" class="search-input" placeholder="${this.escapeHtml(this.t('nav.search_placeholder') || 'Rechercher des médias...')}" value="${this.escapeHtml(activeState.searchQuery || '')}" aria-label="Rechercher des médias">
-              <button type="button" id="searchClearBtn" class="search-clear-btn" title="${this.escapeHtml(this.t('nav.search_clear') || 'Effacer la recherche')}" style="${activeState.searchQuery ? 'display:inline-flex;' : 'display:none;'}">✕</button>
-              <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="${this.escapeHtml(this.t('nav.search_advanced') || 'Options de recherche avancée')}">
+              <input type="text" id="searchInput" class="search-input" placeholder="${this.escapeHtml(this.t('nav.search_placeholder'))}" value="${this.escapeHtml(activeState.searchQuery || '')}" aria-label="Rechercher des médias">
+              <button type="button" id="searchClearBtn" class="search-clear-btn" title="${this.escapeHtml(this.t('nav.search_clear'))}" style="${activeState.searchQuery ? 'display:inline-flex;' : 'display:none;'}">✕</button>
+              <button type="button" id="advancedSearchBtn" class="search-filter-btn" title="${this.escapeHtml(this.t('nav.search_advanced'))}">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
                   <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
@@ -2418,29 +2479,29 @@
             <!-- Sort Group -->
             <div class="sort-group">
               <select id="sortSelect" class="sort-select" aria-label="Sort options">
-                <option value="name" ${activeState.sortBy === 'name' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.name') || 'Nom')}</option>
-                <option value="exif_date" ${activeState.sortBy === 'exif_date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.date') || 'Date prise de vue 📷')}</option>
-                <option value="date" ${activeState.sortBy === 'date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.mtime') || 'Date modif')}</option>
-                <option value="size" ${activeState.sortBy === 'size' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.size') || 'Taille')}</option>
+                <option value="name" ${activeState.sortBy === 'name' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.name'))}</option>
+                <option value="exif_date" ${activeState.sortBy === 'exif_date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.date'))}</option>
+                <option value="date" ${activeState.sortBy === 'date' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.mtime'))}</option>
+                <option value="size" ${activeState.sortBy === 'size' ? 'selected' : ''}>${this.escapeHtml(this.t('sort.size'))}</option>
               </select>
-              <button id="sortOrderBtn" class="btn-toggle" title="${this.escapeHtml(this.t('sort.order_asc') || 'Inverser l\'ordre')}">
+              <button id="sortOrderBtn" class="btn-toggle" title="${this.escapeHtml(this.t('sort.order_asc'))}">
                 <span id="sortOrderIcon" style="font-size:1.1rem;font-weight:bold;">${activeState.sortOrder === 'asc' ? '⇧' : '⇩'}</span>
               </button>
             </div>
 
             <!-- Favorites Toggle -->
-            <button id="toggleFavoritesBtn" class="btn-toggle ${activeState.showFavoritesOnly ? 'active' : ''}" title="${this.escapeHtml(this.t('nav.favorites') || 'Favoris')}">
+            <button id="toggleFavoritesBtn" class="btn-toggle ${activeState.showFavoritesOnly ? 'active' : ''}" title="${this.escapeHtml(this.t('nav.favorites'))}">
               <span>❤️</span><span id="favCountBadge" class="fav-count-badge" style="${(activeState.favorites && activeState.favorites.length > 0) ? 'display:inline-flex;' : 'display:none;'}">${(activeState.favorites && activeState.favorites.length) || 0}</span>
             </button>
 
             <!-- GPS Map Button -->
-            <button type="button" id="menuFolderMapBtn" class="btn-toggle" style="display: none;" title="${this.escapeHtml(this.t('nav.map') || 'Carte GPS')}">
+            <button type="button" id="menuFolderMapBtn" class="btn-toggle" style="display: none;" title="${this.escapeHtml(this.t('nav.map'))}">
               <span>🗺️</span>
             </button>
 
             <!-- Archive Dropdown -->
             <div class="archive-dropdown-container" id="archiveDropdownContainer" style="${(activeState.userRights && activeState.userRights.can_download_archive === false && !activeState.isAdmin) ? 'display:none;' : 'display:inline-flex;'}">
-              <button id="downloadArchiveBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.download_archive') || 'Télécharger archive')}">
+              <button id="downloadArchiveBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.download_archive'))}">
                 <span>⇲</span> ▾
               </button>
               <div id="archiveMenu" class="archive-dropdown-menu"></div>
@@ -2448,7 +2509,7 @@
 
             <!-- View Mode Selector Dropdown -->
             <div class="view-selector-container" id="viewSelectorContainer">
-              <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="${this.escapeHtml(this.t('view.switch_mode') || 'Mode d\'affichage')}">
+              <button type="button" id="viewSelectorBtn" class="btn-toggle view-btn" title="${this.escapeHtml(this.t('view.switch_mode'))}">
                 <span id="currentViewIcon">${this.getViewModeIcon(activeState.viewMode || 'polaroid')}</span>
                 <span id="currentViewLabel">${this.getViewModeLabel(activeState.viewMode || 'polaroid')}</span>
                 <span class="view-dropdown-arrow">▾</span>
@@ -2462,14 +2523,14 @@
             </button>
 
             <!-- Folder & Upload Actions -->
-            <button id="createFolderBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.create_folder') || 'Créer un nouveau sous-dossier')}" style="${(activeState.isAdmin || (activeState.userRights && activeState.userRights.can_create_folder)) ? 'display:inline-flex;' : 'display:none;'}">
+            <button id="createFolderBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.create_folder'))}" style="${(activeState.isAdmin || (activeState.userRights && activeState.userRights.can_create_folder)) ? 'display:inline-flex;' : 'display:none;'}">
               <span>📁+</span>
             </button>
-            <button id="uploadMediaBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.upload_media') || 'Uploader des médias')}" style="${(activeState.isAdmin || (activeState.userRights && activeState.userRights.can_upload)) ? 'display:inline-flex;' : 'display:none;'}">
+            <button id="uploadMediaBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.upload_media'))}" style="${(activeState.isAdmin || (activeState.userRights && activeState.userRights.can_upload)) ? 'display:inline-flex;' : 'display:none;'}">
               <span>📤</span>
             </button>
             <input type="file" id="uploadFileInput" multiple style="display: none;" />
-            <button id="folderSettingsBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.folder_settings') || 'Paramètres du dossier')}" style="${activeState.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
+            <button id="folderSettingsBtn" class="btn-toggle" title="${this.escapeHtml(this.t('nav.folder_settings'))}" style="${activeState.isAdmin ? 'display:inline-flex;' : 'display:none;'}">
               <span>⚙</span>
             </button>
           </div>

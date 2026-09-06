@@ -484,7 +484,8 @@
   color: #ffffff;
 }
 
-.explorer-inspector-toggle-btn {
+.explorer-inspector-toggle-btn,
+.explorer-folder-settings-btn {
   background: var(--bg-card, rgba(255, 255, 255, 0.08));
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   color: var(--text-main, #f8fafc);
@@ -498,7 +499,8 @@
   transition: all 0.2s ease;
 }
 
-.explorer-inspector-toggle-btn:hover {
+.explorer-inspector-toggle-btn:hover,
+.explorer-folder-settings-btn:hover {
   background: var(--border-color-hover, rgba(99, 102, 241, 0.2));
 }
 
@@ -506,6 +508,31 @@
   background: var(--accent-primary, #6366f1);
   border-color: var(--accent-primary, #6366f1);
   color: #ffffff;
+}
+
+.folder-card .folder-settings-btn {
+  position: absolute;
+  top: 10px;
+  right: 40px;
+  z-index: 5;
+  background: var(--menu-bar-bg, rgba(15, 23, 42, 0.6));
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 6px;
+  color: var(--text-main, #ffffff);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.folder-card .folder-settings-btn:hover {
+  background: var(--accent-primary, #6366f1);
+  color: #ffffff;
+  transform: scale(1.1);
 }
 
 /* -------------------------------------------------------------

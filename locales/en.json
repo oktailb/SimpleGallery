@@ -606,6 +606,8 @@
     "api.err_pwd_save": "Error saving password.",
     "api.msg_permissions_saved": "Permissions saved successfully.",
     "api.err_permissions_save": "Error saving permissions.",
+    "api.msg_folder_settings_saved": "Folder settings saved successfully.",
+    "api.err_save_failed": "Error while saving.",
     "tribune.toggle_panel": "Side Panel (Tools & Settings)",
     "tribune.panel_title": "Tools & Settings",
     "settings.wm_style_title": "Window Manager Styles & Skins",

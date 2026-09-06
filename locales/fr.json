@@ -606,6 +606,8 @@
     "api.err_pwd_save": "Erreur lors de l'enregistrement du mot de passe.",
     "api.msg_permissions_saved": "Permissions enregistrées avec succès.",
     "api.err_permissions_save": "Erreur lors de l'enregistrement des permissions.",
+    "api.msg_folder_settings_saved": "Paramètres du dossier enregistrés avec succès.",
+    "api.err_save_failed": "Erreur lors de l'enregistrement.",
     "tribune.toggle_panel": "Panneau latéral (Outils & Paramètres)",
     "tribune.panel_title": "Outils & Paramètres",
     "settings.wm_style_title": "Styles & Décorations de Fenêtres (Skins)",

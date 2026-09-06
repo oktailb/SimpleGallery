@@ -606,6 +606,8 @@
     "api.err_pwd_save": "パスワードの保存エラー。",
     "api.msg_permissions_saved": "権限が正常に保存されました。",
     "api.err_permissions_save": "権限の保存エラー。",
+    "api.msg_folder_settings_saved": "フォルダ設定が正常に保存されました。",
+    "api.err_save_failed": "保存中にエラーが発生しました。",
     "tribune.toggle_panel": "サイドパネル (ツール & 設定)",
     "tribune.panel_title": "ツール & 設定",
     "settings.wm_style_title": "ウィンドウマネージャースタイル & スキン",
