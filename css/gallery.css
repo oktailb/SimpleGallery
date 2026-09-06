@@ -2468,10 +2468,10 @@ kbd {
   width: 580px;
   max-width: calc(100vw - 24px);
   background: var(--window-bg, var(--bg-card, #182030));
-  background-image: linear-gradient(180deg, var(--bg-card, #1c263a) 0%, var(--bg-main, #131a28) 100%);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+  color: var(--text-main, #f8fafc);
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--border-color, rgba(255, 255, 255, 0.08));
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
@@ -2480,40 +2480,46 @@ kbd {
   overflow-y: auto;
   z-index: 99999;
   box-sizing: border-box;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .gdrive-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.15));
 }
 
 .gdrive-modal-title {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #f8fafc;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .gdrive-modal-close {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: #94a3b8;
-  width: 32px;
-  height: 32px;
+  background: var(--bg-card, rgba(128, 128, 128, 0.12));
+  border: 1px solid var(--border-color, transparent);
+  color: var(--text-muted, #94a3b8);
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .gdrive-modal-close:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  background: var(--border-color-hover, rgba(99, 102, 241, 0.25));
+  color: var(--text-main, #ffffff);
 }
 
 .gdrive-search-form {
@@ -2538,8 +2544,9 @@ kbd {
 
 .gdrive-form-label {
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #cbd5e1;
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+  opacity: 0.85;
 }
 
 .gdrive-form-control {
@@ -2548,39 +2555,40 @@ kbd {
 
 .gdrive-input, .gdrive-select {
   width: 100%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--bg-card, rgba(128, 128, 128, 0.08));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   border-radius: 8px;
   padding: 9px 14px;
   font-size: 0.875rem;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   outline: none;
   transition: all 0.2s ease;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .gdrive-select {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
 }
 
 .gdrive-select option {
-  background: #182030;
-  color: #f8fafc;
+  background: var(--window-bg, var(--bg-main, #182030));
+  color: var(--text-main, #f8fafc);
 }
 
 .gdrive-input:focus, .gdrive-select:focus {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
 .gdrive-input::placeholder {
-  color: #64748b;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.7;
 }
 
 .gdrive-date-range {
@@ -2591,7 +2599,8 @@ kbd {
 
 .gdrive-date-label {
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 500;
 }
 
 .gdrive-date-input {
@@ -2609,14 +2618,14 @@ kbd {
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
-  color: #e2e8f0;
+  color: var(--text-main, #f8fafc);
   cursor: pointer;
 }
 
 .gdrive-checkbox {
   width: 17px;
   height: 17px;
-  accent-color: #6366f1;
+  accent-color: var(--accent-primary, #6366f1);
   cursor: pointer;
 }
 
@@ -2627,13 +2636,13 @@ kbd {
   gap: 12px;
   padding-top: 14px;
   margin-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.15));
 }
 
 .gdrive-btn-text {
   background: transparent;
-  border: none;
-  color: #94a3b8;
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+  color: var(--text-muted, #94a3b8);
   font-size: 0.875rem;
   font-weight: 600;
   padding: 8px 16px;
@@ -2643,13 +2652,13 @@ kbd {
 }
 
 .gdrive-btn-text:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--bg-card, rgba(128, 128, 128, 0.1));
+  color: var(--text-main, #f8fafc);
 }
 
 .gdrive-btn-primary {
-  background: #2563eb;
-  background-image: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: var(--accent-primary, #2563eb);
+  background-image: linear-gradient(135deg, var(--accent-primary, #3b82f6) 0%, #1d4ed8 100%);
   border: none;
   color: #ffffff;
   font-size: 0.875rem;
@@ -2658,11 +2667,11 @@ kbd {
   border-radius: 24px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .gdrive-btn-primary:hover {
-  background-image: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  filter: brightness(1.1);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5);
   transform: translateY(-1px);
 }
