@@ -916,13 +916,21 @@ class GeneralUnitTestSuite {
         $this->assert("template.php contient les boutons de changement de vue .view-mode-btn", strpos($template_php, 'view-mode-btn') !== false);
         $this->assert("template.php contient le tiroir d'inspection .explorer-inspector-drawer", strpos($template_php, 'explorer-inspector-drawer') !== false);
         $this->assert("template.php contient le modal éditeur autorun .autorun-editor-modal", strpos($template_php, 'autorun-editor-modal') !== false);
+        $this->assert("template.php contient le bouton barre d'outils .explorer-autorun-btn", strpos($template_php, 'explorer-autorun-btn') !== false);
+        $this->assert("template.php contient les onglets de l'éditeur autorun", strpos($template_php, 'autorunTabVisualBtn') !== false);
 
-        // 4. Explorer JavaScript features
+        // 4. Explorer JavaScript & Multimodal Features
         $explorer_js = file_get_contents($this->base_dir . '/apps/explorer/explorer.js');
         $this->assert("explorer.js implémente launchAutorun", strpos($explorer_js, 'launchAutorun') !== false);
         $this->assert("explorer.js implémente toggleInspector", strpos($explorer_js, 'toggleInspector') !== false);
         $this->assert("explorer.js implémente updateInspectorUI", strpos($explorer_js, 'updateInspectorUI') !== false);
         $this->assert("explorer.js supporte la navigation au clavier (Flèches & Espace)", strpos($explorer_js, 'ArrowRight') !== false);
+        $this->assert("explorer.js implémente renderAutorunVisualTimeline", strpos($explorer_js, 'renderAutorunVisualTimeline') !== false);
+        $this->assert("explorer.js implémente addAutorunStep", strpos($explorer_js, 'addAutorunStep') !== false);
+        $this->assert("explorer.js implémente previewCurrentAutorun", strpos($explorer_js, 'previewCurrentAutorun') !== false);
+        $this->assert("AutorunSyncEngine implémente close_app", strpos($engine_js, 'close_app') !== false);
+        $this->assert("AutorunSyncEngine implémente control_app", strpos($engine_js, 'control_app') !== false);
+        $this->assert("AutorunSyncEngine implémente la réconciliation au scrub", strpos($engine_js, 'reconcileStateAtTime') !== false);
 
         // 5. Translations in fr, en, ja
         $fr_json = json_decode(file_get_contents($this->base_dir . '/locales/fr.json'), true);
@@ -931,6 +939,8 @@ class GeneralUnitTestSuite {
         $this->assert("Traduction FR présente pour autorun.badge", isset($fr_json['translations']['autorun.badge']));
         $this->assert("Traduction EN présente pour autorun.badge", isset($en_json['translations']['autorun.badge']));
         $this->assert("Traduction JA présente pour autorun.badge", isset($ja_json['translations']['autorun.badge']));
+        $this->assert("Traduction FR présente pour autorun.toolbar_btn", isset($fr_json['translations']['autorun.toolbar_btn']));
+        $this->assert("Traduction FR présente pour autorun.editor_tab_visual", isset($fr_json['translations']['autorun.editor_tab_visual']));
         $this->assert("Traduction FR présente pour explorer.quick_search_ph", isset($fr_json['translations']['explorer.quick_search_ph']));
         $this->assert("Traduction FR présente pour explorer.details", isset($fr_json['translations']['explorer.details']));
 
