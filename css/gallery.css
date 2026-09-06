@@ -2444,7 +2444,7 @@ kbd {
 }
 
 /* -------------------------------------------------------------
- * 4. GOOGLE DRIVE STYLE ADVANCED SEARCH MODAL
+ * 4. GOOGLE DRIVE STYLE ADVANCED SEARCH MODAL / POPOVER
  * ------------------------------------------------------------- */
 .search-modal-backdrop {
   position: fixed;
@@ -2452,35 +2452,34 @@ kbd {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  z-index: 1050;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 99998;
+  display: block;
 }
 
 .search-modal-backdrop.open {
-  opacity: 1;
+  display: block;
 }
 
 .search-modal-card {
-  width: 100%;
-  max-width: 620px;
-  background: #182030;
-  background-image: linear-gradient(180deg, #1c263a 0%, #131a28 100%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 20px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.1);
-  padding: 24px 28px;
+  position: fixed;
+  width: 580px;
+  max-width: calc(100vw - 24px);
+  background: var(--window-bg, var(--bg-card, #182030));
+  background-image: linear-gradient(180deg, var(--bg-card, #1c263a) 0%, var(--bg-main, #131a28) 100%);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.1);
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  max-height: 90vh;
+  gap: 16px;
+  max-height: calc(100vh - 70px);
   overflow-y: auto;
+  z-index: 99999;
+  box-sizing: border-box;
 }
 
 .gdrive-modal-header {

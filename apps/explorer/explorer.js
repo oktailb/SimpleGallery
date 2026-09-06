@@ -137,6 +137,11 @@
         try { this.leafletMap.remove(); } catch (e) { }
         this.leafletMap = null;
       }
+      if (this._onSearchModalKeyDown) document.removeEventListener('keydown', this._onSearchModalKeyDown);
+      if (this._onSearchModalResize) window.removeEventListener('resize', this._onSearchModalResize);
+      if (this.el && this.el.searchModal && this.el.searchModal.parentElement) {
+        this.el.searchModal.parentElement.removeChild(this.el.searchModal);
+      }
       if (this.containerEl && this.containerEl.parentNode) {
         this.containerEl.parentNode.removeChild(this.containerEl);
       }
@@ -180,6 +185,7 @@
         mapFitBoundsBtn: root.querySelector('.map-fit-bounds-btn'),
         galleryLeafletMap: root.querySelector('.gallery-leaflet-map'),
         searchModal: root.querySelector('.search-modal'),
+        searchModalCard: root.querySelector('.search-modal-card'),
         searchModalCloseBtn: root.querySelector('.search-modal-close-btn'),
         searchAdvancedForm: root.querySelector('.search-advanced-form'),
         advSearchTiming: root.querySelector('.adv-search-timing'),
@@ -1421,18 +1427,73 @@
     }
 
     // -------------------------------------------------------------
-    // ADVANCED SEARCH MODAL
+    // ADVANCED SEARCH MODAL (GOOGLE DRIVE STYLE POPOVER)
     // -------------------------------------------------------------
     openSearchModal() {
       if (!this.el.searchModal) return;
-      this.el.searchModal.style.display = 'flex';
+      // Teleport modal to document.body so it is never clipped or trapped by window CSS transforms
+      if (this.el.searchModal.parentElement !== document.body) {
+        document.body.appendChild(this.el.searchModal);
+      }
+      this.el.searchModal.style.display = 'block';
       this.el.searchModal.classList.add('open');
+      this.isSearchModalOpen = true;
+
+      this.positionSearchModal();
+      requestAnimationFrame(() => {
+        this.positionSearchModal();
+      });
+
+      setTimeout(() => {
+        if (this.el.advSearchName) this.el.advSearchName.focus();
+      }, 50);
     }
 
     closeSearchModal() {
       if (!this.el.searchModal) return;
       this.el.searchModal.style.display = 'none';
       this.el.searchModal.classList.remove('open');
+      this.isSearchModalOpen = false;
+    }
+
+    positionSearchModal() {
+      if (!this.el.searchModal) return;
+      const card = this.el.searchModalCard || this.el.searchModal.querySelector('.search-modal-card');
+      if (!card) return;
+
+      const advBtn = document.getElementById('advancedSearchBtn');
+      const searchBox = (advBtn && advBtn.closest('.search-box'))
+                     || document.getElementById('searchInput')
+                     || (this.el && this.el.quickSearchInput)
+                     || (this.containerEl && this.containerEl.querySelector('.explorer-quick-search-wrapper'));
+
+      let top = 48;
+      let left = 20;
+      const cardWidth = Math.min(580, window.innerWidth - 24);
+
+      if (searchBox) {
+        const rect = searchBox.getBoundingClientRect();
+        top = rect.bottom + 6;
+        left = rect.left;
+
+        if (left + cardWidth > window.innerWidth - 12) {
+          left = window.innerWidth - cardWidth - 12;
+        }
+        if (left < 12) left = 12;
+
+        const estimatedHeight = card.offsetHeight || 440;
+        if (top + estimatedHeight > window.innerHeight - 12 && rect.top > estimatedHeight + 12) {
+          top = Math.max(12, rect.top - estimatedHeight - 6);
+        }
+      } else {
+        left = Math.max(12, (window.innerWidth - cardWidth) / 2);
+        top = Math.max(20, (window.innerHeight - 450) / 2);
+      }
+
+      card.style.position = 'fixed';
+      card.style.top = `${Math.round(top)}px`;
+      card.style.left = `${Math.round(left)}px`;
+      card.style.width = `${cardWidth}px`;
     }
 
     exitSearch() {
@@ -2170,6 +2231,28 @@
 
       if (this.el.searchModalCloseBtn) this.el.searchModalCloseBtn.onclick = () => this.closeSearchModal();
 
+      if (this.el.searchModal) {
+        this.el.searchModal.onclick = (e) => {
+          if (e.target === this.el.searchModal) {
+            this.closeSearchModal();
+          }
+        };
+      }
+
+      this._onSearchModalKeyDown = (e) => {
+        if (e.key === 'Escape' && this.isSearchModalOpen) {
+          this.closeSearchModal();
+        }
+      };
+      document.addEventListener('keydown', this._onSearchModalKeyDown);
+
+      this._onSearchModalResize = () => {
+        if (this.isSearchModalOpen) {
+          this.positionSearchModal();
+        }
+      };
+      window.addEventListener('resize', this._onSearchModalResize);
+
       if (this.el.advSearchTiming) {
         this.el.advSearchTiming.onchange = () => {
           if (this.el.advSearchCustomDateRow) {
@@ -2758,9 +2841,16 @@
       }
 
       if (advSearchBtn) {
-        advSearchBtn.onclick = () => {
+        advSearchBtn.onclick = (e) => {
+          if (e) e.stopPropagation();
           const active = this.getActiveInstance();
-          if (active) active.openSearchModal();
+          if (active) {
+            if (active.isSearchModalOpen) {
+              active.closeSearchModal();
+            } else {
+              active.openSearchModal();
+            }
+          }
         };
       }
 
