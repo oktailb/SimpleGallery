@@ -666,20 +666,45 @@
 
       // 1. Maps Application special handling
       if (appId === 'maps') {
+        const lat = (appParams.lat !== undefined && appParams.lat !== null && appParams.lat !== '')
+          ? appParams.lat
+          : (step.lat !== undefined && step.lat !== null && step.lat !== '' ? step.lat : undefined);
+        const rawLng = (appParams.lng !== undefined && appParams.lng !== null && appParams.lng !== '')
+          ? appParams.lng
+          : (appParams.lon !== undefined && appParams.lon !== null && appParams.lon !== ''
+            ? appParams.lon
+            : (step.lng !== undefined && step.lng !== null && step.lng !== ''
+              ? step.lng
+              : (step.lon !== undefined && step.lon !== null && step.lon !== '' ? step.lon : undefined)));
+        const zoom = (appParams.zoom !== undefined && appParams.zoom !== null && appParams.zoom !== '')
+          ? appParams.zoom
+          : (step.zoom !== undefined && step.zoom !== null && step.zoom !== '' ? step.zoom : undefined);
+
+        const mapOptions = {
+          ...appParams,
+          ...bounds,
+          files,
+          currentPath: session.folderPath,
+          newWindow: true
+        };
+        if (lat !== undefined && !isNaN(Number(lat))) mapOptions.lat = Number(lat);
+        if (rawLng !== undefined && !isNaN(Number(rawLng))) {
+          mapOptions.lng = Number(rawLng);
+          mapOptions.lon = Number(rawLng);
+        }
+        if (zoom !== undefined && !isNaN(Number(zoom))) mapOptions.zoom = Number(zoom);
+
         if (window.mapsApp && typeof window.mapsApp.open === 'function') {
-          const instance = window.mapsApp.open({
-            ...appParams,
-            ...bounds,
-            files,
-            currentPath: session.folderPath,
-            newWindow: true
-          });
+          const instance = window.mapsApp.open(mapOptions);
           if (instance && instance.winId) {
             session.trackedWindows.set('maps', { winId: instance.winId, app: 'maps', instance });
             createdWin = wm ? wm.windows.get(instance.winId) : null;
+            if (mapOptions.lat !== undefined && mapOptions.lng !== undefined && typeof instance.moveTo === 'function') {
+              instance.moveTo({ lat: mapOptions.lat, lng: mapOptions.lng, zoom: mapOptions.zoom, animate: false });
+            }
           }
         } else if (appMgr) {
-          appMgr.launchApp('maps', { ...appParams, ...bounds });
+          appMgr.launchApp('maps', mapOptions);
         }
       }
       // 2. Document Viewer application

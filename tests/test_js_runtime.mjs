@@ -352,6 +352,56 @@ assert("maps maps.js implémente whereIam() dans MapsInstance", mapsJs.includes(
 assert("maps maps.js implémente whereIam(winId) dans WebOSMapsApp", mapsJs.includes('whereIam(winId = null)'));
 assert("maps maps.js implémente moveTo(params, winId) dans WebOSMapsApp", mapsJs.includes('moveTo(params = {}, winId = null)'));
 assert("maps maps.js implémente handleCommand dans WebOSMapsApp", mapsJs.includes('handleCommand(command, params = {}, winId = null)'));
+assert("maps maps.js extrait et stocke initialCenter depuis options.lat/lng/zoom", mapsJs.includes('this.initialCenter ='));
+assert("maps maps.js préserve initialCenter dans renderMapContent sans être écrasé par recenterMap", mapsJs.includes('if (this.initialCenter) {'));
+
+// Test d'exécution MapsInstance avec coordonnées initiales
+try {
+  let createdMapCenter = null;
+  let createdMapZoom = null;
+  const fakeL = {
+    tileLayer: () => ({ addTo: () => {} }),
+    map: (container, opts) => {
+      createdMapCenter = opts.center;
+      createdMapZoom = opts.zoom;
+      return {
+        addLayer: () => {},
+        setView: (c, z) => { createdMapCenter = c; createdMapZoom = z; },
+        remove: () => {},
+        invalidateSize: () => {}
+      };
+    },
+    markerClusterGroup: () => ({ addLayer: () => {}, clearLayers: () => {}, getBounds: () => null })
+  };
+  const fakeWinMaps = {
+    document: {
+      getElementById: () => ({ querySelectorAll: () => [], querySelector: () => null }),
+      querySelector: () => null,
+      querySelectorAll: () => []
+    },
+    L: fakeL,
+    WebOSApp: class {
+      constructor(manifest) { this.manifest = manifest; }
+      t(k) { return k; }
+      escapeHtml(s) { return String(s || ''); }
+    },
+    WindowManager: { createWindow: (w) => w, focusWindow: () => {}, setTitle: () => {} },
+    sys: {
+      appManager: { getAppTitle: () => 'Maps', registerInstance: () => {} },
+      api: { get: async () => ({ success: true, files: [] }) }
+    }
+  };
+  const mapsFunc = new Function('window', mapsJs + '\nreturn window.mapsApp;');
+  const appInstance = mapsFunc(fakeWinMaps);
+  const inst = appInstance.open({ files: [], lat: 48.8566, lng: 2.3522, zoom: 12 });
+  assert("maps open() avec lat/lng initialise initialCenter correctement", inst.initialCenter && inst.initialCenter.lat === 48.8566 && inst.initialCenter.lng === 2.3522 && inst.initialCenter.zoom === 12);
+  inst.initMapCanvas();
+  assert("maps initMapCanvas() utilise les coordonnées initiales spécifiées", createdMapCenter && createdMapCenter[0] === 48.8566 && createdMapCenter[1] === 2.3522 && createdMapZoom === 12);
+  inst.renderMapContent();
+  assert("maps renderMapContent() respecte initialCenter sans l'écraser", createdMapCenter && createdMapCenter[0] === 48.8566 && createdMapCenter[1] === 2.3522);
+} catch (e) {
+  assert("maps exécution avec coordonnées initiales", false, e.stack);
+}
 
 // 3. Image-Viewer
 const imgViewerManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'image-viewer', 'manifest.json'), 'utf8'));
@@ -369,8 +419,10 @@ assert("audio-player manifest déclare seekTo et playbackRate", !!audioManifest.
 
 // 5. AppManager & Autorun Engine
 const appManagerJs = fs.readFileSync(path.join(rootDir, 'system', 'userland', 'core', 'AppManager.js'), 'utf8');
+const autorunEngineJs = fs.readFileSync(path.join(rootDir, 'apps', 'explorer', 'autorun-engine.js'), 'utf8');
 assert("AppManager dispatchCommand gère whereIam et moveTo pour maps", appManagerJs.includes("command === 'whereIam'") && appManagerJs.includes("command === 'moveTo'"));
 assert("AppManager dispatchCommand gère seekTo et playbackRate pour audio/vidéo", appManagerJs.includes("command === 'seekTo'") && appManagerJs.includes("command === 'playbackRate'"));
+assert("autorun-engine transmet lat, lng, zoom lors de openApp maps", autorunEngineJs.includes('mapOptions.lat = Number(lat)') && autorunEngineJs.includes('mapOptions.lng = Number(rawLng)'));
 
 // 6. Autorun Studio Capture Maps
 assert("Autorun Studio intègre le bouton 'Capturer depuis Maps'", autorunEditorJs.includes('data-step-capture-map'));

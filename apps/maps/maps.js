@@ -5,6 +5,7 @@
  */
 (function (window) {
   'use strict';
+  const document = window.document;
 
   class MapsInstance {
     constructor(app, id, options = {}) {
@@ -18,6 +19,19 @@
       this.focusPath = options.focusPath || (options.file ? options.file.path : null);
       this.mode = (options.singleItem === true || (!!options.file && !options.files)) ? 'single' : 'folder';
       this.singleFile = options.file || (this.focusPath ? this.currentFiles.find(f => f.path === this.focusPath) : null);
+
+      const optLat = (options.lat !== undefined && options.lat !== null && options.lat !== '') ? Number(options.lat) : undefined;
+      const rawLng = (options.lng !== undefined && options.lng !== null && options.lng !== '')
+        ? options.lng
+        : ((options.lon !== undefined && options.lon !== null && options.lon !== '') ? options.lon : undefined);
+      const optLng = rawLng !== undefined ? Number(rawLng) : undefined;
+      const optZoom = (options.zoom !== undefined && options.zoom !== null && options.zoom !== '' && !isNaN(Number(options.zoom)))
+        ? Number(options.zoom)
+        : undefined;
+
+      this.initialCenter = (optLat !== undefined && optLng !== undefined && !isNaN(optLat) && !isNaN(optLng))
+        ? { lat: optLat, lng: optLng, zoom: (optZoom !== undefined ? optZoom : 13) }
+        : null;
 
       this.isSmartGpsEnabled = true;
       this.isRouteVisible = true;
@@ -219,10 +233,16 @@
       };
 
       const initialLayer = this.tileLayers[this.currentLayer] || this.tileLayers.streets;
+      const defaultCenter = this.initialCenter
+        ? [this.initialCenter.lat, this.initialCenter.lng]
+        : [46.603354, 1.888334];
+      const defaultZoom = this.initialCenter
+        ? this.initialCenter.zoom
+        : 5;
 
       this.leafletMap = window.L.map(container, {
-        center: [46.603354, 1.888334],
-        zoom: 5,
+        center: defaultCenter,
+        zoom: defaultZoom,
         layers: [initialLayer],
         zoomControl: true
       });
@@ -281,6 +301,8 @@
       const bounds = this.markersLayer.getBounds();
       if (bounds && bounds.isValid()) {
         this.leafletMap.fitBounds(bounds, { padding: [40, 40] });
+      } else if (this.initialCenter) {
+        this.leafletMap.setView([this.initialCenter.lat, this.initialCenter.lng], this.initialCenter.zoom);
       }
     }
 
@@ -474,7 +496,14 @@
       }
 
       // Center view and automatically open billboard/popup
-      if (focusMarker) {
+      if (this.initialCenter) {
+        this.leafletMap.setView([this.initialCenter.lat, this.initialCenter.lng], this.initialCenter.zoom);
+        if (focusMarker) {
+          setTimeout(() => {
+            focusMarker.openPopup();
+          }, 150);
+        }
+      } else if (focusMarker) {
         this.leafletMap.setView(focusMarker.getLatLng(), 16);
         setTimeout(() => {
           focusMarker.openPopup();
@@ -746,6 +775,18 @@
               window.WindowManager.restoreWindow(inst.winId);
             }
             window.WindowManager.focusWindow(inst.winId);
+            const optLat = (options.lat !== undefined && options.lat !== null && options.lat !== '') ? Number(options.lat) : undefined;
+            const rawLng = (options.lng !== undefined && options.lng !== null && options.lng !== '')
+              ? options.lng
+              : ((options.lon !== undefined && options.lon !== null && options.lon !== '') ? options.lon : undefined);
+            const optLng = rawLng !== undefined ? Number(rawLng) : undefined;
+            if (optLat !== undefined && optLng !== undefined && !isNaN(optLat) && !isNaN(optLng)) {
+              const optZoom = (options.zoom !== undefined && options.zoom !== null && options.zoom !== '' && !isNaN(Number(options.zoom)))
+                ? Number(options.zoom)
+                : (inst.initialCenter?.zoom || 13);
+              inst.initialCenter = { lat: optLat, lng: optLng, zoom: optZoom };
+              inst.moveTo({ lat: optLat, lng: optLng, zoom: optZoom, animate: options.animate !== false });
+            }
             return inst;
           }
         }
