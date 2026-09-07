@@ -580,9 +580,6 @@
     "taskbar.quick_sysmon": "System Monitor (Telemetry)",
     "nav.search_apps": "Search applications...",
 
-    "apps.sim-maintenance.title": "Sim Maintenance",
-    "apps.sim-maintenance.subtitle": "Technical Checklists, Environmental Telemetry & Compliance for EC135 FFS",
-
     "desktop.open": "Open",
     "desktop.delete_shortcut": "Remove from desktop",
     "explorer.new_window": "Open new Explorer window",

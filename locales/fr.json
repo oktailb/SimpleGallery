@@ -580,9 +580,6 @@
     "taskbar.quick_sysmon": "Moniteur Système (Télémétrie)",
     "nav.search_apps": "Rechercher une application...",
 
-    "apps.sim-maintenance.title": "Sim Maintenance",
-    "apps.sim-maintenance.subtitle": "Supervision technique, checklists réglementaires et télémétrie du simulateur EC135",
-
     "desktop.open": "Ouvrir",
     "desktop.delete_shortcut": "Supprimer du bureau",
     "explorer.new_window": "Ouvrir une nouvelle fenêtre d'Explorateur",

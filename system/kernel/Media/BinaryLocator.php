@@ -13,6 +13,15 @@ class BinaryLocator {
             return $bin_cache[$binary_name];
         }
 
+        // 1. Direct runtime detection for PHP binary
+        $normalized = strtolower(rtrim($binary_name, '.exe'));
+        if (in_array($normalized, ['php', 'php8', 'php7', 'php74', 'php80', 'php81', 'php82', 'php83', 'php84'], true)) {
+            if (defined('PHP_BINARY') && !empty(PHP_BINARY) && file_exists(PHP_BINARY) && !is_dir(PHP_BINARY)) {
+                $bin_cache[$binary_name] = PHP_BINARY;
+                return PHP_BINARY;
+            }
+        }
+
         $is_windows = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
         $extensions = $is_windows ? ['.exe', '.bat', '.cmd', ''] : [''];
 
@@ -34,6 +43,9 @@ class BinaryLocator {
 
         // Common default directories
         $common_paths = $is_windows ? [
+            'C:\\php\\' . $binary_name . '.exe',
+            'C:\\tools\\php\\' . $binary_name . '.exe',
+            'C:\\xampp\\php\\' . $binary_name . '.exe',
             'C:\\ffmpeg\\bin\\' . $binary_name . '.exe',
             'C:\\Program Files\\7-Zip\\' . $binary_name . '.exe',
             'C:\\Program Files (x86)\\7-Zip\\' . $binary_name . '.exe'

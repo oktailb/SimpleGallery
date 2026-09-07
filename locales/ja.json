@@ -580,9 +580,6 @@
     "taskbar.quick_sysmon": "システムモニター（テレメトリ）",
     "nav.search_apps": "アプリケーションを検索...",
 
-    "apps.sim-maintenance.title": "Sim Maintenance",
-    "apps.sim-maintenance.subtitle": "技術チェックリスト、環境テレメトリ、EC135 FFSのコンプライアンス",
-
     "desktop.open": "開く",
     "desktop.delete_shortcut": "デスクトップから削除",
     "explorer.new_window": "新しいエクスプローラーウィンドウを開く",

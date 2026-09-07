@@ -160,7 +160,6 @@ class AppManager {
 
     /**
      * Get list of disabled application IDs
-     * Default disabled apps: sim-maintenance, sim-logbook
      */
     getDisabledAppIds() {
         if (Array.isArray(window.SG_DISABLED_APPS)) {
@@ -170,7 +169,7 @@ class AppManager {
             const stored = localStorage.getItem('sg_disabled_apps');
             if (stored) return JSON.parse(stored);
         } catch (e) {}
-        return ['sim-maintenance', 'sim-logbook'];
+        return [];
     }
 
     /**

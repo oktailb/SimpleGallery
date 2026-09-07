@@ -13,7 +13,7 @@ class AppEndpoint {
     /**
      * Run an app API action handler with standard boilerplate handling
      * 
-     * @param string $app_id Application identifier (e.g. 'tribune', 'sim-maintenance')
+     * @param string $app_id Application identifier (e.g. 'tribune', 'explorer')
      * @param callable $handler Function signature: fn(string $action, array $params, array $context): ?array
      * @param array $options Configuration options (e.g. ['mutating_actions' => [...], 'require_admin' => [...]])
      */

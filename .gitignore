@@ -1,11 +1,27 @@
-
+# Caches & Stockage dynamique
 /.thumbnails
 /storage/session/*
 /storage/.thumbnails/*
-/storage/session/
 /storage/media/*
+/storage/tribune_uploads/*
+scratch/
+# Fichiers sensibles & authentification
 .admin_password_hash
 .permissions.json
-apps/ffs-apps
-apps/sim-maintenance/tiles
-apps/sim-maintenance/lib
+# Extensions métier / modules privés
+apps/ffs-apps/
+apps/sim-*/
+apps/ffs/
+# Archives & gros binaires (sécurité anti-fuite)
+*.7z
+*.zip
+*.tar.gz
+*.tgz
+*.pcap
+*.tmp
+*.bak
+*~
+# Fichiers système OS
+Thumbs.db
+.DS_Store
+desktop.ini

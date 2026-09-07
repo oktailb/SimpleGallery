@@ -8,7 +8,7 @@ namespace SimpleGallery\Kernel;
 class PluginDiscovery {
 
     /**
-     * Get list of disabled application IDs from storage or configuration
+     * Get list of disabled application IDs from storage, configuration, or manifest declarations
      */
     public static function getDisabledAppIds(string $project_root): array {
         $storage_file = $project_root . '/storage/disabled_apps.json';
@@ -23,7 +23,64 @@ class PluginDiscovery {
         if (isset($disabled_apps) && is_array($disabled_apps)) {
             return $disabled_apps;
         }
-        return ['sim-maintenance', 'sim-logbook'];
+
+        $config_file = $project_root . '/config/disabled_apps.json';
+        if (file_exists($config_file)) {
+            $content = @file_get_contents($config_file);
+            $decoded = @json_decode($content, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return self::getManifestDeclaredDisabledAppIds($project_root);
+    }
+
+    /**
+     * Inspects discovered app manifests for declarative disabled status ("enabled": false or "enabled_by_default": false)
+     */
+    public static function getManifestDeclaredDisabledAppIds(string $project_root): array {
+        $apps_dir = $project_root . '/apps';
+        if (!is_dir($apps_dir)) {
+            return [];
+        }
+
+        $disabled = [];
+        $folders = @scandir($apps_dir) ?: [];
+        $manifest_files = [];
+
+        foreach ($folders as $folder) {
+            if ($folder[0] === '.') continue;
+            $p = $apps_dir . '/' . $folder;
+            if (!is_dir($p)) continue;
+
+            if (file_exists($p . '/manifest.json')) {
+                $manifest_files[] = $p . '/manifest.json';
+            } else {
+                $sub_folders = @scandir($p) ?: [];
+                foreach ($sub_folders as $sub) {
+                    if ($sub[0] === '.') continue;
+                    $sp = $p . '/' . $sub;
+                    if (is_dir($sp) && file_exists($sp . '/manifest.json')) {
+                        $manifest_files[] = $sp . '/manifest.json';
+                    }
+                }
+            }
+        }
+
+        foreach ($manifest_files as $m_file) {
+            $content = @file_get_contents($m_file);
+            $manifest = @json_decode($content, true);
+            if (is_array($manifest)) {
+                $app_id = $manifest['id'] ?? basename(dirname($m_file));
+                $enabled_decl = $manifest['enabled'] ?? $manifest['enabled_by_default'] ?? null;
+                if ($enabled_decl === false) {
+                    $disabled[] = (string)$app_id;
+                }
+            }
+        }
+
+        return array_values(array_unique($disabled));
     }
 
     /**
