@@ -305,6 +305,44 @@ assert("doc-viewer viewer.js implémente prevPage(params, winId)", docViewerJs.i
 assert("doc-viewer viewer.js implémente setTheme(params, winId)", docViewerJs.includes('setTheme(params = {}, winId = null)'));
 assert("doc-viewer viewer.js implémente handleCommand", docViewerJs.includes('handleCommand(command, params = {}, winId = null)'));
 
+// Test runtime execution of DocViewerPlugin.open
+try {
+  const origDoc = global.document;
+  global.document = {
+    getElementById: () => null,
+    createElement: () => ({ style: {} }),
+    head: { appendChild: () => {} },
+    createTreeWalker: () => ({ nextNode: () => null })
+  };
+  const fakeWindow = {
+    sys: {
+      appManager: { 
+        getAppTitle: () => 'Doc Viewer',
+        registerInstance: () => {}
+      },
+      api: { fs: { saveTextFile: async () => ({ success: true }) } }
+    },
+    WindowManager: {
+      createWindow: (opts) => ({ id: opts.id, element: {} }),
+      windows: new Map()
+    },
+    MenuBarManager: { registerAppMenu: () => {}, setActiveApp: () => {} },
+    MediaViewerRegistry: { register: () => {} },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  };
+  const docFunc = new Function('window', docViewerJs + '\nreturn window.DocViewerApp;');
+  const docPlugin = docFunc(fakeWindow);
+  await docPlugin.open({ path: 'test.md', name: 'test.md', extension: 'md', file_url: 'test.md' }, {}, {
+    state: { filteredFiles: [], files: [], isAdmin: true },
+    t: (k) => k,
+    escapeHtml: (s) => s
+  });
+  assert("doc-viewer viewer.js open() s'exécute sans ReferenceError ou TDZ", true);
+} catch (e) {
+  assert("doc-viewer viewer.js open() s'exécute sans ReferenceError ou TDZ", false, e.stack);
+}
+
 // 2. Maps
 const mapsManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'maps', 'manifest.json'), 'utf8'));
 const mapsJs = fs.readFileSync(path.join(rootDir, 'apps', 'maps', 'maps.js'), 'utf8');

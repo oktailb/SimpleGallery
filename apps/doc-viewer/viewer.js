@@ -396,62 +396,6 @@
           }
         };
 
-        const win = window.WindowManager.createWindow({
-          id: winId,
-          appId: 'doc-viewer',
-          appName: appTitle,
-          fileName: file.name,
-          title: `${appTitle} : ${file.name}`,
-          icon: isMd ? '📖' : '📄',
-          width: (typeof options.width === 'number') ? options.width : defaultW,
-          height: (typeof options.height === 'number') ? options.height : defaultH,
-          x: (typeof options.x === 'number') ? options.x : undefined,
-          y: (typeof options.y === 'number') ? options.y : undefined,
-          content: bodyHtml,
-          onFocus: () => {
-            if (window.MenuBarManager) {
-              window.MenuBarManager.registerAppMenu('doc-viewer', (container) => {
-                container.innerHTML = `
-                  <div class="app-menu-left">
-                    <span class="app-menu-pill active" style="font-weight:600;">${isMd ? '📖' : '📄'} ${effectiveCtx.escapeHtml(file.name)}</span>
-                    <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${effectiveCtx.escapeHtml(effectiveCtx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
-                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${effectiveCtx.escapeHtml(effectiveCtx.t('doc_editor.edit_btn') || 'Éditer (WYSIWYG)')}</button>` : ''}
-                    ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
-                    <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
-                  </div>
-                  <div class="app-menu-right">
-                    <button type="button" class="app-menu-pill" id="menuDocFsBtn">⛶ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
-                  </div>
-                `;
-                const info = container.querySelector('#menuDocInfoBtn');
-                const fs = container.querySelector('#menuDocFsBtn');
-                const menuEdit = container.querySelector('#menuDocEditBtn');
-
-                if (info) info.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
-                if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
-                if (menuEdit) menuEdit.onclick = () => toggleEditor();
-              });
-              window.MenuBarManager.setActiveApp('doc-viewer');
-            }
-          },
-          onClose: () => {
-            DocViewerPlugin.instances.delete(winId);
-          }
-        });
-
-        DocViewerPlugin.instances.set(winId, {
-          winId,
-          cleanPathId,
-          file,
-          isPdf,
-          isMd,
-          isText,
-          currentPage: 1,
-          toggleEditor,
-          getContainer: () => document.getElementById(`docWinTextBody-${cleanPathId}`) || document.getElementById(`docWinTextContainer-${cleanPathId}`),
-          getPdfEmbed: () => document.getElementById(`docPdfEmbed-${cleanPathId}`) || (win.element ? win.element.querySelector('object, iframe') : null)
-        });
-
         // Function to perform file saving
         const saveDocument = async () => {
           if (!activeEditorInstance) return;
@@ -553,6 +497,62 @@
             updateReaderDisplay();
           }
         };
+
+        const win = window.WindowManager.createWindow({
+          id: winId,
+          appId: 'doc-viewer',
+          appName: appTitle,
+          fileName: file.name,
+          title: `${appTitle} : ${file.name}`,
+          icon: isMd ? '📖' : '📄',
+          width: (typeof options.width === 'number') ? options.width : defaultW,
+          height: (typeof options.height === 'number') ? options.height : defaultH,
+          x: (typeof options.x === 'number') ? options.x : undefined,
+          y: (typeof options.y === 'number') ? options.y : undefined,
+          content: bodyHtml,
+          onFocus: () => {
+            if (window.MenuBarManager) {
+              window.MenuBarManager.registerAppMenu('doc-viewer', (container) => {
+                container.innerHTML = `
+                  <div class="app-menu-left">
+                    <span class="app-menu-pill active" style="font-weight:600;">${isMd ? '📖' : '📄'} ${effectiveCtx.escapeHtml(file.name)}</span>
+                    <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${effectiveCtx.escapeHtml(effectiveCtx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
+                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${effectiveCtx.escapeHtml(effectiveCtx.t('doc_editor.edit_btn') || 'Éditer (WYSIWYG)')}</button>` : ''}
+                    ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
+                    <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
+                  </div>
+                  <div class="app-menu-right">
+                    <button type="button" class="app-menu-pill" id="menuDocFsBtn">⛶ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.fullscreen') || 'Plein Écran')}</button>
+                  </div>
+                `;
+                const info = container.querySelector('#menuDocInfoBtn');
+                const fs = container.querySelector('#menuDocFsBtn');
+                const menuEdit = container.querySelector('#menuDocEditBtn');
+
+                if (info) info.onclick = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
+                if (fs) fs.onclick = () => { if (window.WindowManager) window.WindowManager.toggleMaximize(winId); };
+                if (menuEdit) menuEdit.onclick = () => toggleEditor();
+              });
+              window.MenuBarManager.setActiveApp('doc-viewer');
+            }
+          },
+          onClose: () => {
+            DocViewerPlugin.instances.delete(winId);
+          }
+        });
+
+        DocViewerPlugin.instances.set(winId, {
+          winId,
+          cleanPathId,
+          file,
+          isPdf,
+          isMd,
+          isText,
+          currentPage: 1,
+          toggleEditor: (forceState) => toggleEditor(forceState),
+          getContainer: () => document.getElementById(`docWinTextBody-${cleanPathId}`) || document.getElementById(`docWinTextContainer-${cleanPathId}`),
+          getPdfEmbed: () => document.getElementById(`docPdfEmbed-${cleanPathId}`) || (win.element ? win.element.querySelector('object, iframe') : null)
+        });
 
         // Bind in-window info & action buttons
         setTimeout(() => {
