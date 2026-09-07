@@ -372,6 +372,24 @@
       this.onRender(scope);
     }
 
+    /**
+     * Set or replace the window body content directly (Element or HTML string)
+     * @param {string|Node} content
+     */
+    setContent(content) {
+      const bodyEl = document.getElementById(`${this.id}BodyContent`) || 
+                     (this.window && this.window.bodyEl);
+      if (!bodyEl) return;
+      if (typeof content === 'string') {
+        bodyEl.innerHTML = content;
+      } else if (content instanceof Node) {
+        if (bodyEl !== content.parentNode) {
+          bodyEl.innerHTML = '';
+          bodyEl.appendChild(content);
+        }
+      }
+    }
+
     _handleLocaleChange() {
       if (this.window && window.WindowManager) {
         window.WindowManager.setTitle(this.window.id, this.title);

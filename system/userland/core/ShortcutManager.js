@@ -68,6 +68,7 @@
     }
 
     _getEventCombo(e) {
+      if (!e || typeof e.key !== 'string') return '';
       const parts = [];
       if (e.ctrlKey) parts.push('ctrl');
       if (e.altKey) parts.push('alt');

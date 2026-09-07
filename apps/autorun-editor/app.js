@@ -27,8 +27,20 @@
       window.AutorunStudio = this;
     }
 
-    onInit() {
-      // Template is registered via <template id="autorunEditorAppTemplate">
+    renderShell() {
+      const template = document.getElementById('autorunEditorAppTemplate');
+      const innerHtml = template && template.innerHTML ? template.innerHTML : '';
+      return `
+        <div class="webos-app-shell autorun-studio-shell" id="${this.id}AppContainer" style="display:flex; flex-direction:column; height:100%; width:100%; padding:0; margin:0; box-sizing:border-box; overflow:hidden;">
+          <div class="webos-app-body" id="${this.id}BodyContent" style="flex:1; height:100%; width:100%; display:flex; flex-direction:column; overflow:hidden;">
+            ${innerHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    render() {
+      // Retain custom UI state and prevent template being overwritten by base WebOSApp render()
     }
 
     onOpen(params = {}) {
@@ -39,53 +51,72 @@
     }
 
     initUI() {
-      const template = document.getElementById('autorunEditorAppTemplate');
-      if (!template || !template.content) return;
+      const winEl = (this.window && this.window.element) || document.getElementById(`${this.id}AppContainer`) || document;
+      let root = winEl.querySelector('.autorun-studio-container');
 
-      const clone = template.content.cloneNode(true).firstElementChild;
+      // If template markup was not yet rendered into container, clone and mount it
+      if (!root) {
+        const template = document.getElementById('autorunEditorAppTemplate');
+        if (template && template.content) {
+          const clone = template.content.cloneNode(true).firstElementChild;
+          const bodyEl = document.getElementById(`${this.id}BodyContent`) || (this.window && this.window.bodyEl);
+          if (bodyEl && clone) {
+            bodyEl.innerHTML = '';
+            bodyEl.appendChild(clone);
+            root = clone;
+          }
+        }
+      }
+
+      if (!root) return;
+
       this.el = {
-        container: clone,
-        folderBadge: clone.querySelector('[data-folder-badge]'),
-        tabVisualBtn: clone.querySelector('[data-tab="visual"]'),
-        tabJsonBtn: clone.querySelector('[data-tab="json"]'),
-        visualView: clone.querySelector('[data-visual-view]'),
-        jsonView: clone.querySelector('[data-json-view]'),
-        metaTitle: clone.querySelector('[data-meta-title]'),
-        metaLayout: clone.querySelector('[data-meta-layout]'),
-        metaDesc: clone.querySelector('[data-meta-desc]'),
-        masterType: clone.querySelector('[data-master-type]'),
-        masterFile: clone.querySelector('[data-master-file]'),
-        masterFileField: clone.querySelector('[data-master-file-field]'),
-        masterDuration: clone.querySelector('[data-master-duration]'),
-        masterDurationField: clone.querySelector('[data-master-duration-field]'),
-        addStepBtn: clone.querySelector('[data-add-step-btn]'),
-        timelineList: clone.querySelector('[data-timeline-list]'),
-        rawJson: clone.querySelector('[data-raw-json]'),
-        deleteBtn: clone.querySelector('[data-delete-btn]'),
-        previewBtn: clone.querySelector('[data-preview-btn]'),
-        saveBtn: clone.querySelector('[data-save-btn]')
+        container: root,
+        folderBadge: root.querySelector('[data-folder-badge]'),
+        tabVisualBtn: root.querySelector('[data-tab="visual"]'),
+        tabJsonBtn: root.querySelector('[data-tab="json"]'),
+        visualView: root.querySelector('[data-visual-view]'),
+        jsonView: root.querySelector('[data-json-view]'),
+        metaTitle: root.querySelector('[data-meta-title]'),
+        metaLayout: root.querySelector('[data-meta-layout]'),
+        metaDesc: root.querySelector('[data-meta-desc]'),
+        masterType: root.querySelector('[data-master-type]'),
+        masterFile: root.querySelector('[data-master-file]'),
+        masterFileField: root.querySelector('[data-master-file-field]'),
+        masterDuration: root.querySelector('[data-master-duration]'),
+        masterDurationField: root.querySelector('[data-master-duration-field]'),
+        addStepBtn: root.querySelector('[data-add-step-btn]'),
+        timelineList: root.querySelector('[data-timeline-list]'),
+        rawJson: root.querySelector('[data-raw-json]'),
+        deleteBtn: root.querySelector('[data-delete-btn]'),
+        previewBtn: root.querySelector('[data-preview-btn]'),
+        saveBtn: root.querySelector('[data-save-btn]')
       };
 
       // Tab switching
-      this.el.tabVisualBtn.onclick = () => this.switchTab('visual');
-      this.el.tabJsonBtn.onclick = () => this.switchTab('json');
+      if (this.el.tabVisualBtn) this.el.tabVisualBtn.onclick = () => this.switchTab('visual');
+      if (this.el.tabJsonBtn) this.el.tabJsonBtn.onclick = () => this.switchTab('json');
 
       // Master type change
-      this.el.masterType.onchange = () => {
-        const type = this.el.masterType.value;
-        this.el.masterFileField.style.display = (type === 'timer') ? 'none' : 'flex';
-        this.el.masterDurationField.style.display = (type === 'timer') ? 'flex' : 'none';
-      };
+      if (this.el.masterType) {
+        this.el.masterType.onchange = () => {
+          const type = this.el.masterType.value;
+          if (this.el.masterFileField) this.el.masterFileField.style.display = (type === 'timer') ? 'none' : 'flex';
+          if (this.el.masterDurationField) this.el.masterDurationField.style.display = (type === 'timer') ? 'flex' : 'none';
+        };
+      }
 
       // Add Step
-      this.el.addStepBtn.onclick = () => this.addStep();
+      if (this.el.addStepBtn) this.el.addStepBtn.onclick = () => this.addStep();
 
       // Preview / Save / Delete
-      this.el.previewBtn.onclick = () => this.preview();
-      this.el.saveBtn.onclick = () => this.save();
-      this.el.deleteBtn.onclick = () => this.delete();
+      if (this.el.previewBtn) this.el.previewBtn.onclick = () => this.preview();
+      if (this.el.saveBtn) this.el.saveBtn.onclick = () => this.save();
+      if (this.el.deleteBtn) this.el.deleteBtn.onclick = () => this.delete();
 
-      this.setContent(clone);
+      if (typeof this.setContent === 'function') {
+        this.setContent(root);
+      }
     }
 
     async loadFolder(dirPath, existingConfig = null) {
