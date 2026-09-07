@@ -41,6 +41,20 @@
       "label": "Zoomer arrière (-)",
       "params": {}
     },
+    "moveTo": {
+      "label": "Déplacer la vue (moveTo)",
+      "description": "Déplace la caméra vers les coordonnées GPS spécifiées (lat, lon, zoom)",
+      "params": {
+        "lat": { "type": "number", "label": "Latitude", "default": 48.8566 },
+        "lon": { "type": "number", "label": "Longitude", "default": 2.3522 },
+        "zoom": { "type": "number", "label": "Zoom", "default": 13 }
+      }
+    },
+    "whereIam": {
+      "label": "Position actuelle (whereIam)",
+      "description": "Retourne la position centrale actuelle et le zoom {lat, lon, zoom}",
+      "params": {}
+    },
     "setView": {
       "label": "Centrer la carte (sans animation)",
       "params": {

@@ -295,6 +295,43 @@
       this.updateExplorerTransform(true, cleanPathId);
     },
 
+    zoom(params = {}, cleanPathId = null) {
+      const factor = params.factor !== undefined ? Number(params.factor) : (params.scale !== undefined ? Number(params.scale) : undefined);
+      if (factor !== undefined && !isNaN(factor) && factor > 0) {
+        let newScale = Math.min(Math.max(0.1, factor), 10);
+        newScale = Math.round(newScale * 100) / 100;
+        if (newScale === 1) {
+          this.zoomState.translateX = 0;
+          this.zoomState.translateY = 0;
+        }
+        this.zoomState.scale = newScale;
+        this.clampTranslate(cleanPathId);
+        this.updateExplorerTransform(true, cleanPathId);
+        return true;
+      }
+      return false;
+    },
+
+    move(params = {}, cleanPathId = null) {
+      const x = params.x !== undefined ? Number(params.x) : (params.translateX !== undefined ? Number(params.translateX) : undefined);
+      const y = params.y !== undefined ? Number(params.y) : (params.translateY !== undefined ? Number(params.translateY) : undefined);
+      let changed = false;
+      if (x !== undefined && !isNaN(x)) {
+        this.zoomState.translateX = x;
+        changed = true;
+      }
+      if (y !== undefined && !isNaN(y)) {
+        this.zoomState.translateY = y;
+        changed = true;
+      }
+      if (changed) {
+        this.clampTranslate(cleanPathId);
+        this.updateExplorerTransform(true, cleanPathId);
+        return true;
+      }
+      return false;
+    },
+
     startDrag(e, cleanPathId = null) {
       if (this.zoomState.scale <= 1) return;
       if (e.target.closest('button, input, a, .image-floating-toolbar, .webos-window-header')) return;
@@ -882,6 +919,50 @@
       } catch (err) {
         ctx.showLoading(false);
         ctx.showToast('⚠️ Erreur réseau lors de la sauvegarde : ' + err.message, 'error');
+      }
+    },
+
+    handleCommand(command, params = {}, winId = null) {
+      let cleanPathId = null;
+      if (winId && typeof winId === 'string' && winId.startsWith('image-')) {
+        cleanPathId = winId.replace('image-', '');
+      }
+      switch (command) {
+        case 'zoom':
+          return this.zoom(params, cleanPathId);
+        case 'move':
+          return this.move(params, cleanPathId);
+        case 'zoomIn':
+          this.adjustZoom(params.delta || 0.3, cleanPathId);
+          return true;
+        case 'zoomOut':
+          this.adjustZoom(-(params.delta || 0.3), cleanPathId);
+          return true;
+        case 'resetZoom':
+          this.resetZoom(cleanPathId);
+          return true;
+        case 'rotate':
+          this.rotateImage(cleanPathId);
+          return true;
+        case 'next':
+          if (this.currentCtx && typeof this.currentCtx.lightboxNext === 'function') {
+            this.currentCtx.lightboxNext();
+            return true;
+          }
+          return false;
+        case 'prev':
+          if (this.currentCtx && typeof this.currentCtx.lightboxPrev === 'function') {
+            this.currentCtx.lightboxPrev();
+            return true;
+          }
+          return false;
+        case 'showImage':
+          if (params.file) {
+            return this.open(params.file, params, this.currentCtx);
+          }
+          return false;
+        default:
+          return false;
       }
     }
   };

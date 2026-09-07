@@ -247,6 +247,7 @@
     supportsFullscreen: true,
     supportsPip: true,
     cssPath: 'apps/doc-viewer/viewer.css',
+    instances: new Map(),
 
     async open(file, options = {}, ctx = null) {
       const effectiveCtx = (ctx && ctx.state) ? ctx : (
@@ -431,7 +432,23 @@
               });
               window.MenuBarManager.setActiveApp('doc-viewer');
             }
+          },
+          onClose: () => {
+            DocViewerPlugin.instances.delete(winId);
           }
+        });
+
+        DocViewerPlugin.instances.set(winId, {
+          winId,
+          cleanPathId,
+          file,
+          isPdf,
+          isMd,
+          isText,
+          currentPage: 1,
+          toggleEditor,
+          getContainer: () => document.getElementById(`docWinTextBody-${cleanPathId}`) || document.getElementById(`docWinTextContainer-${cleanPathId}`),
+          getPdfEmbed: () => document.getElementById(`docPdfEmbed-${cleanPathId}`) || (win.element ? win.element.querySelector('object, iframe') : null)
         });
 
         // Function to perform file saving
@@ -615,6 +632,186 @@
       effectiveCtx.el.lightboxContent.innerHTML = `<div style="padding:2rem;text-align:center;">${file.name}</div>`;
       effectiveCtx.el.lightbox.classList.add('open');
       return true;
+    },
+
+    getActiveInstance(winId = null) {
+      if (winId && this.instances.has(winId)) return this.instances.get(winId);
+      const values = Array.from(this.instances.values());
+      return values.length > 0 ? values[values.length - 1] : null;
+    },
+
+    scrollTo(params = {}, winId = null) {
+      const inst = this.getActiveInstance(winId);
+      if (!inst) return false;
+
+      const target = params.page != null ? params.page : (params.highlight || params.selector || '1');
+      const pageNum = parseInt(target, 10);
+
+      if (inst.isPdf) {
+        const embed = inst.getPdfEmbed();
+        if (embed && !isNaN(pageNum) && pageNum > 0) {
+          inst.currentPage = pageNum;
+          const baseUrl = inst.file.file_url.split('#')[0];
+          embed.src = `${baseUrl}#page=${pageNum}`;
+          return true;
+        }
+      }
+
+      const container = inst.getContainer();
+      if (container) {
+        if (typeof target === 'string' && (target.startsWith('#') || target.startsWith('.'))) {
+          try {
+            const el = container.querySelector(target);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.style.transition = 'background 0.3s ease';
+              el.style.background = 'rgba(99, 102, 241, 0.25)';
+              setTimeout(() => { el.style.background = ''; }, 2200);
+              return true;
+            }
+          } catch (e) {}
+        }
+
+        if (!isNaN(pageNum) && pageNum > 0) {
+          inst.currentPage = pageNum;
+          const scrollPos = (pageNum - 1) * container.clientHeight * 0.9;
+          container.scrollTo({ top: scrollPos, behavior: 'smooth' });
+          return true;
+        }
+      }
+      return false;
+    },
+
+    searchText(params = {}, winId = null) {
+      const query = params.string || params.query || params.text || '';
+      if (!query) return false;
+      const inst = this.getActiveInstance(winId);
+      if (!inst) return false;
+      const container = inst.getContainer();
+      if (!container) return false;
+
+      container.querySelectorAll('.doc-search-match').forEach(el => {
+        const parent = el.parentNode;
+        if (parent) {
+          parent.replaceChild(document.createTextNode(el.textContent), el);
+          parent.normalize();
+        }
+      });
+
+      const shouldScroll = params.scrollto !== false && params.scrollto !== 'false' && params.scrollTo !== false;
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      let firstMatchSpan = null;
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escaped})`, 'gi');
+
+      while ((node = walker.nextNode())) {
+        const match = regex.exec(node.nodeValue);
+        if (match) {
+          const span = document.createElement('span');
+          span.className = 'doc-search-match';
+          span.style.background = 'rgba(234, 179, 8, 0.55)';
+          span.style.color = '#fff';
+          span.style.borderRadius = '3px';
+          span.style.padding = '0 2px';
+          span.style.boxShadow = '0 0 8px rgba(234, 179, 8, 0.8)';
+          span.style.transition = 'all 0.3s ease';
+
+          const splitText = node.splitText(match.index);
+          splitText.splitText(match[0].length);
+          span.textContent = splitText.nodeValue;
+          splitText.parentNode.replaceChild(span, splitText);
+
+          if (!firstMatchSpan) firstMatchSpan = span;
+          break;
+        }
+      }
+
+      if (firstMatchSpan && shouldScroll) {
+        firstMatchSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+          firstMatchSpan.style.background = 'rgba(99, 102, 241, 0.35)';
+          firstMatchSpan.style.boxShadow = 'none';
+        }, 2500);
+        return true;
+      }
+      return !!firstMatchSpan;
+    },
+
+    nextPage(params = {}, winId = null) {
+      const inst = this.getActiveInstance(winId);
+      if (!inst) return false;
+      if (inst.isPdf) {
+        return this.scrollTo({ page: (inst.currentPage || 1) + 1 }, winId);
+      }
+      const container = inst.getContainer();
+      if (container) {
+        container.scrollBy({ top: container.clientHeight * 0.85, behavior: 'smooth' });
+        inst.currentPage = (inst.currentPage || 1) + 1;
+        return true;
+      }
+      return false;
+    },
+
+    prevPage(params = {}, winId = null) {
+      const inst = this.getActiveInstance(winId);
+      if (!inst) return false;
+      if (inst.isPdf) {
+        return this.scrollTo({ page: Math.max(1, (inst.currentPage || 1) - 1) }, winId);
+      }
+      const container = inst.getContainer();
+      if (container) {
+        container.scrollBy({ top: -container.clientHeight * 0.85, behavior: 'smooth' });
+        inst.currentPage = Math.max(1, (inst.currentPage || 1) - 1);
+        return true;
+      }
+      return false;
+    },
+
+    setTheme(params = {}, winId = null) {
+      const theme = params.theme || 'dark';
+      const inst = this.getActiveInstance(winId);
+      if (!inst) return false;
+      const container = inst.getContainer();
+      if (container) {
+        if (theme === 'light') {
+          container.style.background = '#f8fafc';
+          container.style.color = '#0f172a';
+        } else if (theme === 'sepia') {
+          container.style.background = '#fbf0d9';
+          container.style.color = '#433422';
+        } else {
+          container.style.background = '';
+          container.style.color = '';
+        }
+        return true;
+      }
+      return false;
+    },
+
+    handleCommand(command, params = {}, winId = null) {
+      switch (command) {
+        case 'nextPage':
+          return this.nextPage(params, winId);
+        case 'prevPage':
+          return this.prevPage(params, winId);
+        case 'scrollTo':
+        case 'scroll':
+          return this.scrollTo(params, winId);
+        case 'searchText':
+          return this.searchText(params, winId);
+        case 'setTheme':
+          return this.setTheme(params, winId);
+        case 'toggleEdit': {
+          const inst = this.getActiveInstance(winId);
+          if (inst && typeof inst.toggleEditor === 'function') {
+            inst.toggleEditor();
+            return true;
+          }
+          return false;
+        }
+      }
+      return false;
     }
   };
 

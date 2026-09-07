@@ -274,6 +274,74 @@ assert("AutorunEditorApp implémente showToast(message, type)", autorunAppJs.inc
 const webOsServicesJs = fs.readFileSync(path.join(rootDir, 'system', 'userland', 'services', 'WebOSServices.js'), 'utf8');
 assert("WebOSServices expose la méthode polyfill window.sys.toast.show", webOsServicesJs.includes('show: (msg, typeOrOpts'));
 
+// Test Autorun Studio multi-app controls & parameter persistence
+const autorunEditorJs = fs.readFileSync(path.join(rootDir, 'apps', 'autorun-editor', 'app.js'), 'utf8');
+assert("AutorunEditorApp implémente la méthode i18n t(key, params)", autorunEditorJs.includes('t(key, params)'));
+assert("AutorunEditorApp implémente la méthode escapeHtml(str)", autorunEditorJs.includes('escapeHtml(str)'));
+assert("AutorunEditorApp configure doc-viewer avec sélecteur de fichier docFiles", autorunEditorJs.includes("buildFileOptions(file, docFiles)"));
+assert("AutorunEditorApp configure doc-viewer avec ancre data-step-hl", autorunEditorJs.includes("data-step-hl"));
+assert("AutorunEditorApp configure image-viewer avec sélecteur de fichier imgFiles", autorunEditorJs.includes("buildFileOptions(file, imgFiles)"));
+assert("AutorunEditorApp configure video-player avec sélecteur de fichier vidéo", autorunEditorJs.includes("buildFileOptions(file, videoFiles.length > 0 ? videoFiles : mediaFiles)"));
+assert("AutorunEditorApp configure audio-player avec sélecteur de fichier audio", autorunEditorJs.includes("buildFileOptions(file, audioFiles.length > 0 ? audioFiles : mediaFiles)"));
+assert("AutorunEditorApp configure maps avec coordonnées GPS (lat, lng, zoom)", autorunEditorJs.includes("data-step-lat") && autorunEditorJs.includes("data-step-lng") && autorunEditorJs.includes("data-step-zoom"));
+assert("AutorunEditorApp gère les commandes dynamiques pour control_app (getCommandsForApp)", autorunEditorJs.includes("getCommandsForApp(app)") && autorunEditorJs.includes("step-param-input"));
+assert("AutorunEditorApp synchronise les paramètres d'action dans syncVisualToConfig", autorunEditorJs.includes("stepObj.params.highlight = highlight") && autorunEditorJs.includes("stepObj.params.file = file"));
+
+// -------------------------------------------------------------
+// NOUVEAUX CONTRÔLES MULTIMODAUX & CAPTURE MAPS (2026)
+// -------------------------------------------------------------
+console.log('\n🎮 [7/7] Vérification des Nouveaux Contrôles Multimodaux & Capture Maps...');
+
+// 1. Doc-Viewer
+const docViewerManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'doc-viewer', 'manifest.json'), 'utf8'));
+const docViewerJs = fs.readFileSync(path.join(rootDir, 'apps', 'doc-viewer', 'viewer.js'), 'utf8');
+assert("doc-viewer manifest déclare scrollTo, searchText, nextPage, prevPage", 
+  !!docViewerManifest.commands.scrollTo && !!docViewerManifest.commands.searchText && !!docViewerManifest.commands.nextPage && !!docViewerManifest.commands.prevPage);
+assert("doc-viewer viewer.js implémente scrollTo(params, winId)", docViewerJs.includes('scrollTo(params = {}, winId = null)'));
+assert("doc-viewer viewer.js implémente searchText(params, winId)", docViewerJs.includes('searchText(params = {}, winId = null)'));
+assert("doc-viewer viewer.js implémente nextPage(params, winId)", docViewerJs.includes('nextPage(params = {}, winId = null)'));
+assert("doc-viewer viewer.js implémente prevPage(params, winId)", docViewerJs.includes('prevPage(params = {}, winId = null)'));
+assert("doc-viewer viewer.js implémente setTheme(params, winId)", docViewerJs.includes('setTheme(params = {}, winId = null)'));
+assert("doc-viewer viewer.js implémente handleCommand", docViewerJs.includes('handleCommand(command, params = {}, winId = null)'));
+
+// 2. Maps
+const mapsManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'maps', 'manifest.json'), 'utf8'));
+const mapsJs = fs.readFileSync(path.join(rootDir, 'apps', 'maps', 'maps.js'), 'utf8');
+assert("maps manifest déclare moveTo et whereIam", !!mapsManifest.commands.moveTo && !!mapsManifest.commands.whereIam);
+assert("maps maps.js implémente moveTo(params) dans MapsInstance", mapsJs.includes('moveTo(params = {})'));
+assert("maps maps.js implémente whereIam() dans MapsInstance", mapsJs.includes('whereIam()'));
+assert("maps maps.js implémente whereIam(winId) dans WebOSMapsApp", mapsJs.includes('whereIam(winId = null)'));
+assert("maps maps.js implémente moveTo(params, winId) dans WebOSMapsApp", mapsJs.includes('moveTo(params = {}, winId = null)'));
+assert("maps maps.js implémente handleCommand dans WebOSMapsApp", mapsJs.includes('handleCommand(command, params = {}, winId = null)'));
+
+// 3. Image-Viewer
+const imgViewerManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'image-viewer', 'manifest.json'), 'utf8'));
+const imgViewerJs = fs.readFileSync(path.join(rootDir, 'apps', 'image-viewer', 'viewer.js'), 'utf8');
+assert("image-viewer manifest déclare zoom et move", !!imgViewerManifest.commands.zoom && !!imgViewerManifest.commands.move);
+assert("image-viewer viewer.js implémente zoom(params, cleanPathId)", imgViewerJs.includes('zoom(params = {}, cleanPathId = null)'));
+assert("image-viewer viewer.js implémente move(params, cleanPathId)", imgViewerJs.includes('move(params = {}, cleanPathId = null)'));
+assert("image-viewer viewer.js implémente handleCommand", imgViewerJs.includes('handleCommand(command, params = {}, winId = null)'));
+
+// 4. Video & Audio Player
+const videoManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'video-player', 'manifest.json'), 'utf8'));
+const audioManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'audio-player', 'manifest.json'), 'utf8'));
+assert("video-player manifest déclare seekTo et playbackRate", !!videoManifest.commands.seekTo && !!videoManifest.commands.playbackRate);
+assert("audio-player manifest déclare seekTo et playbackRate", !!audioManifest.commands.seekTo && !!audioManifest.commands.playbackRate);
+
+// 5. AppManager & Autorun Engine
+const appManagerJs = fs.readFileSync(path.join(rootDir, 'system', 'userland', 'core', 'AppManager.js'), 'utf8');
+assert("AppManager dispatchCommand gère whereIam et moveTo pour maps", appManagerJs.includes("command === 'whereIam'") && appManagerJs.includes("command === 'moveTo'"));
+assert("AppManager dispatchCommand gère seekTo et playbackRate pour audio/vidéo", appManagerJs.includes("command === 'seekTo'") && appManagerJs.includes("command === 'playbackRate'"));
+
+// 6. Autorun Studio Capture Maps
+assert("Autorun Studio intègre le bouton 'Capturer depuis Maps'", autorunEditorJs.includes('data-step-capture-map'));
+assert("Autorun Studio implémente captureMapPosition(stepIdx)", autorunEditorJs.includes('captureMapPosition(stepIdx)'));
+assert("Autorun Studio getCommandsForApp expose moveTo et whereIam", autorunEditorJs.includes('moveTo:') && autorunEditorJs.includes('whereIam:'));
+assert("Autorun Studio getCommandsForApp expose scrollTo et searchText", autorunEditorJs.includes('scrollTo:') && autorunEditorJs.includes('searchText:'));
+assert("Autorun Studio getCommandsForApp expose zoom et move pour image", autorunEditorJs.includes('zoom:') && autorunEditorJs.includes('move:'));
+assert("Autorun Studio getCommandsForApp expose seekTo pour video et audio", autorunEditorJs.includes('seekTo:'));
+
+
 console.log('\n============================================================');
 console.log(` 📊 SCORECARD DES TESTS ISO-FONCTIONNELS JS : ${passedChecks}/${totalChecks} PASS`);
 console.log('============================================================');

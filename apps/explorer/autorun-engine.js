@@ -788,11 +788,11 @@
         if (appId === 'maps') {
           const instance = (tracked && tracked.instance) || (window.mapsApp && window.mapsApp.activeInstance);
           const lat = parseFloat(params.lat);
-          const lng = parseFloat(params.lng);
+          const lng = parseFloat(params.lng !== undefined ? params.lng : params.lon);
           const zoom = parseInt(params.zoom, 10) || 14;
 
           if (instance && instance.leafletMap && !isNaN(lat) && !isNaN(lng)) {
-            if (command === 'flyTo' && typeof instance.leafletMap.flyTo === 'function') {
+            if ((command === 'flyTo' || command === 'moveTo') && typeof instance.leafletMap.flyTo === 'function') {
               instance.leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
             } else {
               instance.leafletMap.setView([lat, lng], zoom);

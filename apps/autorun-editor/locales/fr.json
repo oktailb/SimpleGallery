@@ -22,5 +22,7 @@
   "autorun_studio.saved": "Configuration autorun.json enregistrée avec succès",
   "autorun_studio.deleted": "Fichier autorun.json supprimé",
   "autorun_studio.load_error": "Erreur lors du chargement du dossier",
-  "autorun_studio.no_folder_selected": "Sélectionnez un dossier à éditer..."
+  "autorun_studio.no_folder_selected": "Sélectionnez un dossier à éditer...",
+  "autorun.capture_map": "Capturer depuis Maps",
+  "autorun.capture_map_title": "Lancer Maps ou capturer la position GPS et le niveau de zoom actuels"
 }

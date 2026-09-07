@@ -618,14 +618,21 @@ class AppManager {
         // 3. Fallback: app specific global instances (mapsApp, DocViewerApp, ImageViewerPlugin)
         if (appId === 'maps') {
             const mapApp = window.mapsApp;
+            if (command === 'whereIam') {
+                return mapApp ? mapApp.whereIam(winId) : null;
+            }
+            if (mapApp && typeof mapApp.handleCommand === 'function') {
+                const res = mapApp.handleCommand(command, params, winId);
+                if (res !== false) return res;
+            }
             const instance = (mapApp && mapApp.activeInstance);
             if (instance && instance.leafletMap) {
-                if (command === 'flyTo' || command === 'setView') {
+                if (command === 'flyTo' || command === 'setView' || command === 'moveTo') {
                     const lat = parseFloat(params.lat);
-                    const lng = parseFloat(params.lng);
+                    const lng = parseFloat(params.lng !== undefined ? params.lng : params.lon);
                     const zoom = parseInt(params.zoom, 10) || 14;
                     if (!isNaN(lat) && !isNaN(lng)) {
-                        if (command === 'flyTo' && typeof instance.leafletMap.flyTo === 'function') {
+                        if ((command === 'flyTo' || command === 'moveTo') && typeof instance.leafletMap.flyTo === 'function') {
                             instance.leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
                         } else {
                             instance.leafletMap.setView([lat, lng], zoom);
@@ -641,6 +648,11 @@ class AppManager {
                 }
             }
         } else if (appId === 'doc-viewer') {
+            const docViewer = window.DocViewerApp || window.docViewerApp;
+            if (docViewer && typeof docViewer.handleCommand === 'function') {
+                const res = docViewer.handleCommand(command, params, winId);
+                if (res !== false) return res;
+            }
             const highlight = params.highlight || params.selector;
             if (command === 'scroll' && highlight) {
                 const win = winId && wm ? wm.windows.get(winId) : null;
@@ -659,26 +671,42 @@ class AppManager {
                 }
             }
         } else if (appId === 'image-viewer') {
+            const imgApp = window.ImageViewerApp || window.ImageViewerPlugin || window.imageViewerApp;
             if (command === 'showImage' && params.file) {
-                if (window.ImageViewerPlugin && typeof window.ImageViewerPlugin.open === 'function') {
-                    window.ImageViewerPlugin.open(params.file, {});
+                if (imgApp && typeof imgApp.open === 'function') {
+                    imgApp.open(params.file, {});
                     return true;
                 }
-            } else if (window.ImageViewerPlugin && typeof window.ImageViewerPlugin.handleCommand === 'function') {
-                return window.ImageViewerPlugin.handleCommand(command, params, winId);
+            } else if (imgApp && typeof imgApp.handleCommand === 'function') {
+                return imgApp.handleCommand(command, params, winId);
             }
-        } else if (appId === 'video-player') {
-            const videoEl = (winId && document.querySelector(`video[data-win-id="${winId}"]`)) || 
-                            document.querySelector('.webos-window.is-active video') || 
-                            document.querySelector('video');
-            if (videoEl) {
-                if (command === 'play') videoEl.play();
-                else if (command === 'pause') videoEl.pause();
-                else if (command === 'seek' && params.time != null) {
-                    const sec = typeof params.time === 'number' ? params.time : parseFloat(params.time) || 0;
-                    videoEl.currentTime = sec;
+        } else if (appId === 'video-player' || appId === 'audio-player') {
+            const mediaSelector = (appId === 'video-player') ? 'video' : 'audio, video';
+            const mediaEl = (winId && (document.querySelector(`[data-win-id="${winId}"] ${mediaSelector}`) || document.querySelector(`#${winId} ${mediaSelector}`))) || 
+                            document.querySelector(`.webos-window.is-active ${mediaSelector}`) || 
+                            document.querySelector(mediaSelector);
+            if (mediaEl) {
+                if (command === 'play') mediaEl.play();
+                else if (command === 'pause') mediaEl.pause();
+                else if ((command === 'seek' || command === 'seekTo') && params.time != null) {
+                    let sec = 0;
+                    if (typeof params.time === 'number') {
+                        sec = params.time;
+                    } else if (typeof params.time === 'string') {
+                        if (params.time.includes(':')) {
+                            const parts = params.time.split(':').map(Number);
+                            if (parts.length === 2) sec = parts[0] * 60 + parts[1];
+                            else if (parts.length === 3) sec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                        } else {
+                            sec = parseFloat(params.time) || 0;
+                        }
+                    }
+                    mediaEl.currentTime = sec;
                 } else if (command === 'setVolume' && params.volume != null) {
-                    videoEl.volume = Math.max(0, Math.min(1, parseFloat(params.volume) || 1));
+                    mediaEl.volume = Math.max(0, Math.min(1, parseFloat(params.volume) || 1));
+                } else if (command === 'playbackRate' && (params.speed != null || params.rate != null)) {
+                    const rate = parseFloat(params.speed || params.rate) || 1;
+                    mediaEl.playbackRate = Math.max(0.25, Math.min(4, rate));
                 }
                 return true;
             }

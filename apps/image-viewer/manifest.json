@@ -74,6 +74,21 @@
       "label": "Zoomer arrière (-)",
       "params": {}
     },
+    "zoom": {
+      "label": "Définir le zoom",
+      "description": "Ajuste le facteur d'échelle de zoom de l'image (ex: 1.5, 2.0)",
+      "params": {
+        "factor": { "type": "number", "label": "Facteur de zoom", "default": 1.5 }
+      }
+    },
+    "move": {
+      "label": "Déplacer l'image (Pan)",
+      "description": "Déplace l'image agrandie selon les coordonnées x et y",
+      "params": {
+        "x": { "type": "number", "label": "Déplacement X (px)", "default": 50 },
+        "y": { "type": "number", "label": "Déplacement Y (px)", "default": 0 }
+      }
+    },
     "resetZoom": {
       "label": "Réinitialiser le zoom",
       "params": {}

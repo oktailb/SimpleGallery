@@ -27,6 +27,26 @@
       window.AutorunStudio = this;
     }
 
+    t(key, params) {
+      if (window.sys && window.sys.i18n && typeof window.sys.i18n.t === 'function') {
+        return window.sys.i18n.t(key, params);
+      }
+      if (window.I18nEngine && typeof window.I18nEngine.t === 'function') {
+        return window.I18nEngine.t(key, params);
+      }
+      return key;
+    }
+
+    escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     renderShell() {
       const template = document.getElementById('autorunEditorAppTemplate');
       const innerHtml = template && template.innerHTML ? template.innerHTML : '';
@@ -267,47 +287,80 @@
           const title = card.querySelector('[data-step-title]')?.value || '';
           const action = card.querySelector('[data-step-action]')?.value || 'open_app';
           const app = card.querySelector('[data-step-app]')?.value || '';
+          let file = card.querySelector('[data-step-file]')?.value || '';
+          if (file === '[object Object]') file = '';
           const pos = card.querySelector('[data-step-pos]')?.value || 'auto';
-          const file = card.querySelector('[data-step-file]')?.value || '';
           const command = card.querySelector('[data-step-cmd]')?.value || '';
+          const lat = card.querySelector('[data-step-lat]')?.value;
+          const lng = card.querySelector('[data-step-lng]')?.value;
+          const zoom = card.querySelector('[data-step-zoom]')?.value;
+          const highlight = card.querySelector('[data-step-hl]')?.value || '';
+          const message = card.querySelector('[data-step-msg]')?.value || '';
 
-          const step = { time, title, action };
-          if (pos && pos !== 'auto') step.position = pos;
-
-          if (action === 'open_app') {
-            step.app = app;
-            step.params = {};
-            if (file) step.params.file = file;
-            if (pos && pos !== 'auto') step.params.position = pos;
-            if (app === 'maps') {
-              const lat = parseFloat(card.querySelector('[data-step-lat]')?.value);
-              const lng = parseFloat(card.querySelector('[data-step-lng]')?.value);
-              const zoom = parseInt(card.querySelector('[data-step-zoom]')?.value, 10);
-              if (!isNaN(lat)) step.params.lat = lat;
-              if (!isNaN(lng)) step.params.lng = lng;
-              if (!isNaN(zoom)) step.params.zoom = zoom;
-            }
-          } else if (action === 'close_app') {
-            step.app = app;
-          } else if (action === 'control_app') {
-            step.app = app;
-            step.command = command;
-            step.params = {};
-            if (file) step.params.file = file;
-          } else if (action === 'set_doc') {
-            step.action = 'set_doc';
-            if (file) step.file = file;
-            const hl = card.querySelector('[data-step-hl]')?.value;
-            if (hl) step.highlight = hl;
-          } else if (action === 'show_image') {
-            step.action = 'show_image';
-            if (file) step.file = file;
-          } else if (action === 'notify') {
-            step.action = 'notify';
-            step.message = card.querySelector('[data-step-msg]')?.value || title;
+          const stepObj = { time, title, action };
+          if (pos && pos !== 'auto') {
+            stepObj.position = pos;
           }
 
-          timeline.push(step);
+          if (action === 'open_app') {
+            stepObj.app = app;
+            stepObj.params = {};
+            if (file) stepObj.params.file = file;
+            if (highlight) stepObj.params.highlight = highlight;
+            if (pos && pos !== 'auto') stepObj.params.position = pos;
+            if (app === 'maps') {
+              if (lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
+              if (lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
+              if (zoom != null && zoom !== '') stepObj.params.zoom = parseInt(zoom, 10);
+            }
+          } else if (action === 'close_app') {
+            stepObj.app = app;
+          } else if (action === 'control_app') {
+            stepObj.app = app;
+            stepObj.command = command;
+            stepObj.params = {};
+
+            // Collect dynamic parameters if present
+            const paramInputs = card.querySelectorAll('.step-param-input');
+            if (paramInputs && paramInputs.length > 0) {
+              paramInputs.forEach(inp => {
+                const pName = inp.dataset.paramName;
+                if (!pName) return;
+                let pVal = inp.value;
+                if (inp.type === 'number') {
+                  pVal = (pVal !== '' && !isNaN(Number(pVal))) ? parseFloat(pVal) : pVal;
+                }
+                stepObj.params[pName] = pVal;
+              });
+            }
+
+            // Fallbacks for direct inputs
+            if (file && stepObj.params.file == null) stepObj.params.file = file;
+            if (highlight && stepObj.params.highlight == null) stepObj.params.highlight = highlight;
+            if (app === 'maps' && (command === 'flyTo' || command === 'setView' || command === 'moveTo')) {
+              if (stepObj.params.lat == null && lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
+              if (stepObj.params.lng == null && lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
+              if (stepObj.params.lon == null && stepObj.params.lng != null) stepObj.params.lon = stepObj.params.lng;
+              if (stepObj.params.lng == null && stepObj.params.lon != null) stepObj.params.lng = stepObj.params.lon;
+              if (stepObj.params.zoom == null && zoom != null && zoom !== '') stepObj.params.zoom = parseInt(zoom, 10);
+            } else if (app === 'doc-viewer' && (command === 'scroll' || command === 'scrollTo')) {
+              if (stepObj.params.highlight == null && highlight) stepObj.params.highlight = highlight;
+            } else if (app === 'image-viewer' && command === 'showImage') {
+              if (stepObj.params.file == null && file) stepObj.params.file = file;
+            }
+          } else if (action === 'set_doc') {
+            stepObj.action = 'set_doc';
+            if (file) stepObj.file = file;
+            if (highlight) stepObj.highlight = highlight;
+          } else if (action === 'show_image') {
+            stepObj.action = 'show_image';
+            if (file) stepObj.file = file;
+          } else if (action === 'notify') {
+            stepObj.action = 'notify';
+            stepObj.message = message || title;
+          }
+
+          timeline.push(stepObj);
         });
         this.currentConfig.timeline = timeline;
       }
@@ -321,87 +374,511 @@
         this.el.timelineList.innerHTML = `
           <div class="autorun-studio-empty">
             <div class="autorun-studio-empty-icon">⏱️</div>
-            <p>Aucune étape dans la timeline. Cliquez sur "+ Ajouter une étape" pour commencer.</p>
+            <p>${this.escapeHtml(this.t('autorun.empty_timeline'))}</p>
           </div>
         `;
         return;
       }
 
+      const files = this.currentFiles || [];
+      const docFiles = files.filter(f => f.category === 'doc' || (f.name && f.name.match(/\.(md|markdown|txt|pdf|html|htm|rst|asciidoc)$/i)));
+      const imgFiles = files.filter(f => f.category === 'image' || (f.name && f.name.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif)$/i)));
+      const videoFiles = files.filter(f => f.category === 'video' || (f.name && f.name.match(/\.(mp4|webm|mov|mkv|avi|m4v)$/i)));
+      const audioFiles = files.filter(f => f.category === 'audio' || (f.name && f.name.match(/\.(mp3|wav|ogg|flac|aac|m4a|opus|wma)$/i)));
+      const mediaFiles = files.filter(f => f.category === 'video' || f.category === 'audio' || (f.name && f.name.match(/\.(mp4|webm|mov|mkv|avi|mp3|wav|ogg|flac|aac|m4a|opus)$/i)));
+
       const controllableApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAllControllableApps === 'function')
         ? window.sys.appManager.getAllControllableApps()
-        : [{ id: 'maps', name: 'Maps', icon: '🗺️' }, { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' }, { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' }, { id: 'video-player', name: 'Video Player', icon: '🎬' }];
+        : [
+            { id: 'maps', name: 'Maps', icon: '🗺️' },
+            { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
+            { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' },
+            { id: 'video-player', name: 'Video Player', icon: '🎬' },
+            { id: 'audio-player', name: 'Audio Player', icon: '🎵' }
+          ];
+
+      const allApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAllApps === 'function')
+        ? window.sys.appManager.getAllApps(false)
+        : [
+            { id: 'maps', name: 'Maps', icon: '🗺️' },
+            { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' },
+            { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
+            { id: 'video-player', name: 'Video Player', icon: '🎬' },
+            { id: 'audio-player', name: 'Audio Player', icon: '🎵' },
+            { id: 'system-monitor', name: 'System Monitor', icon: '📊' }
+          ];
+
+      const buildFileOptions = (selectedVal, allowedList) => {
+        let cleanVal = selectedVal;
+        if (typeof cleanVal === 'object' && cleanVal !== null) {
+          cleanVal = cleanVal.name || cleanVal.path || '';
+        }
+        if (cleanVal === '[object Object]') cleanVal = '';
+
+        let optHtml = `<option value="">${this.escapeHtml(this.t('autorun.no_file'))}</option>`;
+        const list = (allowedList && allowedList.length > 0) ? allowedList : files;
+        let found = false;
+        list.forEach(f => {
+          if (f.name === cleanVal || f.path === cleanVal) found = true;
+          const isSel = (f.name === cleanVal || f.path === cleanVal) ? 'selected' : '';
+          const icon = f.category === 'video' ? '🎬' : (f.category === 'audio' ? '🎵' : (f.category === 'image' ? '🖼️' : (f.category === 'doc' ? '📄' : '📁')));
+          optHtml += `<option value="${this.escapeHtml(f.name)}" ${isSel}>${icon} ${this.escapeHtml(f.name)}</option>`;
+        });
+        if (cleanVal && !found) {
+          optHtml += `<option value="${this.escapeHtml(cleanVal)}" selected>📄 ${this.escapeHtml(cleanVal)}</option>`;
+        }
+        return optHtml;
+      };
+
+      const getCommandsForApp = (appId) => {
+        if (window.sys && window.sys.appManager && typeof window.sys.appManager.getAppCommands === 'function') {
+          const cmds = window.sys.appManager.getAppCommands(appId);
+          if (cmds && Object.keys(cmds).length > 0) return cmds;
+        }
+        if (appId === 'maps') {
+          return {
+            moveTo: {
+              label: 'Déplacer la vue (moveTo)',
+              params: {
+                lat: { type: 'number', label: this.t('autorun.lat'), default: 48.8566 },
+                lng: { type: 'number', label: this.t('autorun.lng'), default: 2.3522 },
+                zoom: { type: 'number', label: this.t('autorun.zoom'), default: 13 }
+              }
+            },
+            flyTo: {
+              label: this.t('autorun.cmd_flyto'),
+              params: {
+                lat: { type: 'number', label: this.t('autorun.lat'), default: 48.8566 },
+                lng: { type: 'number', label: this.t('autorun.lng'), default: 2.3522 },
+                zoom: { type: 'number', label: this.t('autorun.zoom'), default: 13 }
+              }
+            },
+            setView: {
+              label: 'Centrer la carte (setView)',
+              params: {
+                lat: { type: 'number', label: this.t('autorun.lat'), default: 48.8566 },
+                lng: { type: 'number', label: this.t('autorun.lng'), default: 2.3522 },
+                zoom: { type: 'number', label: this.t('autorun.zoom'), default: 13 }
+              }
+            },
+            whereIam: {
+              label: 'Position actuelle (whereIam)',
+              params: {}
+            },
+            zoomIn: { label: 'Zoomer avant (+)', params: {} },
+            zoomOut: { label: 'Zoomer arrière (-)', params: {} }
+          };
+        }
+        if (appId === 'doc-viewer') {
+          return {
+            scrollTo: {
+              label: 'Défiler vers la page (scrollTo)',
+              params: {
+                page: { type: 'number', label: 'Numéro de page', default: 1 }
+              }
+            },
+            searchText: {
+              label: 'Rechercher texte (searchText)',
+              params: {
+                query: { type: 'text', label: 'Texte à rechercher', placeholder: 'Mot ou phrase...' },
+                scrollTo: {
+                  type: 'select',
+                  label: 'Défiler vers',
+                  options: [
+                    { value: 'true', label: 'Oui' },
+                    { value: 'false', label: 'Non' }
+                  ]
+                }
+              }
+            },
+            nextPage: { label: 'Page suivante', params: {} },
+            prevPage: { label: 'Page précédente', params: {} },
+            scroll: {
+              label: this.t('autorun.cmd_scroll'),
+              params: {
+                highlight: { type: 'text', label: this.t('autorun.highlight'), placeholder: '#chapitre-1' }
+              }
+            },
+            setTheme: {
+              label: 'Changer le thème',
+              params: {
+                theme: {
+                  type: 'select',
+                  label: 'Thème',
+                  options: ['dark', 'light', 'sepia']
+                }
+              }
+            },
+            toggleEdit: { label: 'Basculer mode édition', params: {} }
+          };
+        }
+        if (appId === 'image-viewer') {
+          return {
+            showImage: {
+              label: this.t('autorun.cmd_show_img'),
+              params: {
+                file: { type: 'file', category: 'image', label: this.t('autorun.target_file') }
+              }
+            },
+            zoom: {
+              label: 'Définir le zoom (zoom)',
+              params: {
+                factor: { type: 'number', label: 'Facteur de zoom', default: 1.5, step: 0.1 }
+              }
+            },
+            move: {
+              label: 'Déplacer l\'image (move)',
+              params: {
+                x: { type: 'number', label: 'Déplacement X (px)', default: 50 },
+                y: { type: 'number', label: 'Déplacement Y (px)', default: 0 }
+              }
+            },
+            next: { label: 'Image suivante', params: {} },
+            prev: { label: 'Image précédente', params: {} },
+            rotate: { label: 'Pivoter 90°', params: {} },
+            zoomIn: { label: 'Zoomer avant (+)', params: {} },
+            zoomOut: { label: 'Zoomer arrière (-)', params: {} },
+            resetZoom: { label: 'Réinitialiser zoom', params: {} }
+          };
+        }
+        if (appId === 'video-player') {
+          return {
+            play: { label: 'Lecture', params: {} },
+            pause: { label: 'Pause', params: {} },
+            seekTo: {
+              label: 'Aller à un instant (seekTo)',
+              params: {
+                time: { type: 'time', label: this.t('autorun.step_time'), placeholder: '00:00' }
+              }
+            },
+            seek: {
+              label: 'Aller à un instant',
+              params: {
+                time: { type: 'time', label: this.t('autorun.step_time'), placeholder: '00:00' }
+              }
+            },
+            setVolume: {
+              label: 'Régler volume',
+              params: {
+                volume: { type: 'number', min: 0, max: 1, step: 0.1, label: 'Volume (0.0 - 1.0)', default: 1 }
+              }
+            },
+            playbackRate: {
+              label: 'Vitesse de lecture',
+              params: {
+                speed: { type: 'number', label: 'Vitesse', min: 0.25, max: 4, step: 0.25, default: 1 }
+              }
+            }
+          };
+        }
+        if (appId === 'audio-player') {
+          return {
+            play: { label: 'Lecture', params: {} },
+            pause: { label: 'Pause', params: {} },
+            seekTo: {
+              label: 'Aller à un instant (seekTo)',
+              params: {
+                time: { type: 'time', label: this.t('autorun.step_time'), placeholder: '00:00' }
+              }
+            },
+            seek: {
+              label: 'Aller à un instant',
+              params: {
+                time: { type: 'time', label: this.t('autorun.step_time'), placeholder: '00:00' }
+              }
+            },
+            setVolume: {
+              label: 'Régler volume',
+              params: {
+                volume: { type: 'number', min: 0, max: 1, step: 0.1, label: 'Volume (0.0 - 1.0)', default: 1 }
+              }
+            },
+            playbackRate: {
+              label: 'Vitesse de lecture',
+              params: {
+                speed: { type: 'number', label: 'Vitesse', min: 0.25, max: 4, step: 0.25, default: 1 }
+              }
+            }
+          };
+        }
+        return {};
+      };
 
       let html = '';
       timeline.forEach((step, idx) => {
-        const time = step.time || '00:00';
+        const time = typeof step.time === 'string' ? step.time : '00:00';
         const title = step.title || '';
         const action = step.action || 'open_app';
-        const app = step.app || 'maps';
+        const app = step.app || (action === 'set_doc' ? 'doc-viewer' : (action === 'show_image' ? 'image-viewer' : 'maps'));
+        let file = step.file || (step.params && step.params.file) || '';
+        if (typeof file === 'object' && file !== null) {
+          file = file.path || file.name || '';
+        }
+        if (file === '[object Object]') file = '';
         const pos = step.position || (step.params && step.params.position) || 'auto';
-        const file = step.file || (step.params && step.params.file) || '';
-        const lat = (step.params && step.params.lat != null) ? step.params.lat : '';
-        const lng = (step.params && step.params.lng != null) ? step.params.lng : '';
-        const zoom = (step.params && step.params.zoom != null) ? step.params.zoom : 13;
+        const lat = (step.params && step.params.lat != null) ? step.params.lat : (step.lat != null ? step.lat : '');
+        const lng = (step.params && step.params.lng != null) ? step.params.lng : (step.lng != null ? step.lng : '');
+        const zoom = (step.params && step.params.zoom != null) ? step.params.zoom : (step.zoom != null ? step.zoom : 13);
+        const highlight = step.highlight || (step.params && step.params.highlight) || '';
+        const message = step.message || step.title || '';
 
         html += `
           <div class="autorun-studio-step-card" data-step-index="${idx}">
             <div class="autorun-studio-step-header">
               <div class="autorun-studio-step-header-left">
                 <span class="autorun-studio-step-badge">#${idx + 1}</span>
-                <input type="text" class="autorun-studio-input" data-step-time value="${this.escapeHtml(time)}" style="width: 80px;" placeholder="00:00">
-                <input type="text" class="autorun-studio-input" data-step-title value="${this.escapeHtml(title)}" style="flex: 1;" placeholder="Titre de l'étape...">
+                <input type="text" class="autorun-studio-input" data-step-time value="${this.escapeHtml(time)}" style="width: 80px;" placeholder="00:00" title="${this.escapeHtml(this.t('autorun.step_time'))}">
+                <input type="text" class="autorun-studio-input" data-step-title value="${this.escapeHtml(title)}" style="flex: 1;" placeholder="${this.escapeHtml(this.t('autorun.step_title'))}">
               </div>
               <div class="autorun-studio-step-actions">
-                <button type="button" class="autorun-studio-btn-icon" data-step-up="${idx}" title="Monter">⬆️</button>
-                <button type="button" class="autorun-studio-btn-icon" data-step-down="${idx}" title="Descendre">⬇️</button>
-                <button type="button" class="autorun-studio-btn-icon autorun-studio-btn-delete" data-step-del="${idx}" title="Supprimer">🗑️</button>
+                <button type="button" class="autorun-studio-btn-icon" data-step-up="${idx}" title="${this.escapeHtml(this.t('autorun.move_up'))}">⬆️</button>
+                <button type="button" class="autorun-studio-btn-icon" data-step-down="${idx}" title="${this.escapeHtml(this.t('autorun.move_down'))}">⬇️</button>
+                <button type="button" class="autorun-studio-btn-icon autorun-studio-btn-delete" data-step-del="${idx}" title="${this.escapeHtml(this.t('autorun.delete_step'))}">🗑️</button>
               </div>
             </div>
 
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem;">
-              <div class="autorun-studio-field" style="min-width: 140px;">
-                <label>Action</label>
-                <select class="autorun-studio-select" data-step-action>
-                  <option value="open_app" ${action === 'open_app' ? 'selected' : ''}>🚀 Ouvrir App</option>
-                  <option value="control_app" ${action === 'control_app' ? 'selected' : ''}>🎮 Contrôler App</option>
-                  <option value="close_app" ${action === 'close_app' ? 'selected' : ''}>❌ Fermer App</option>
-                  <option value="set_doc" ${action === 'set_doc' ? 'selected' : ''}>📄 Document</option>
-                  <option value="show_image" ${action === 'show_image' ? 'selected' : ''}>🖼️ Image</option>
-                  <option value="notify" ${action === 'notify' ? 'selected' : ''}>💬 Notification</option>
-                </select>
+            <div class="autorun-studio-step-body">
+              <div class="autorun-studio-fields-row">
+                <div class="autorun-studio-field" style="min-width: 150px;">
+                  <label>${this.escapeHtml(this.t('autorun.step_action'))}</label>
+                  <select class="autorun-studio-select step-action-select" data-step-action data-step-index="${idx}">
+                    <option value="open_app" ${action === 'open_app' ? 'selected' : ''}>🚀 ${this.escapeHtml(this.t('autorun.action_open_app'))}</option>
+                    <option value="control_app" ${action === 'control_app' ? 'selected' : ''}>🎮 ${this.escapeHtml(this.t('autorun.action_control_app'))}</option>
+                    <option value="close_app" ${action === 'close_app' ? 'selected' : ''}>❌ ${this.escapeHtml(this.t('autorun.action_close_app'))}</option>
+                    <option value="set_doc" ${action === 'set_doc' ? 'selected' : ''}>📄 ${this.escapeHtml(this.t('autorun.action_doc'))}</option>
+                    <option value="show_image" ${action === 'show_image' ? 'selected' : ''}>🖼️ ${this.escapeHtml(this.t('autorun.action_image'))}</option>
+                    <option value="notify" ${action === 'notify' ? 'selected' : ''}>💬 ${this.escapeHtml(this.t('autorun.action_notify'))}</option>
+                  </select>
+                </div>
+
+                ${(action === 'open_app' || action === 'control_app' || action === 'close_app') ? `
+                  <div class="autorun-studio-field" style="min-width: 150px;">
+                    <label>${this.escapeHtml(this.t('autorun.target_app'))}</label>
+                    <select class="autorun-studio-select step-app-select" data-step-app data-step-index="${idx}">
+                      ${(() => {
+                        const list = (action === 'control_app' && controllableApps.length > 0) ? controllableApps : allApps;
+                        let opts = '';
+                        list.forEach(a => {
+                          const isSel = (a.id === app) ? 'selected' : '';
+                          const icon = a.icon || '📱';
+                          opts += `<option value="${this.escapeHtml(a.id)}" ${isSel}>${icon} ${this.escapeHtml(a.name || a.id)}</option>`;
+                        });
+                        if (app && !list.some(a => a.id === app)) {
+                          opts += `<option value="${this.escapeHtml(app)}" selected>📱 ${this.escapeHtml(app)}</option>`;
+                        }
+                        return opts;
+                      })()}
+                    </select>
+                  </div>
+                ` : ''}
+
+                ${(action === 'open_app' || action === 'set_doc' || action === 'show_image') ? `
+                  <div class="autorun-studio-field" style="min-width: 140px;">
+                    <label>${this.escapeHtml(this.t('autorun.step_pos'))}</label>
+                    <select class="autorun-studio-select step-pos-select" data-step-pos data-step-index="${idx}">
+                      <option value="auto" ${(!pos || pos === 'auto') ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_auto'))}</option>
+                      <option value="right-half" ${pos === 'right-half' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_right_half'))}</option>
+                      <option value="left-half" ${pos === 'left-half' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_left_half'))}</option>
+                      <option value="top-right" ${pos === 'top-right' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_top_right'))}</option>
+                      <option value="bottom-right" ${pos === 'bottom-right' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_bottom_right'))}</option>
+                      <option value="top-left" ${pos === 'top-left' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_top_left'))}</option>
+                      <option value="bottom-left" ${pos === 'bottom-left' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_bottom_left'))}</option>
+                      <option value="center" ${pos === 'center' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_center'))}</option>
+                      <option value="fullscreen" ${pos === 'fullscreen' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_fullscreen'))}</option>
+                    </select>
+                  </div>
+                ` : ''}
               </div>
 
-              ${(action === 'open_app' || action === 'control_app' || action === 'close_app') ? `
-                <div class="autorun-studio-field" style="min-width: 140px;">
-                  <label>Application</label>
-                  <select class="autorun-studio-select" data-step-app>
-                    ${controllableApps.map(a => `<option value="${this.escapeHtml(a.id)}" ${a.id === app ? 'selected' : ''}>${a.icon || '📱'} ${this.escapeHtml(a.name || a.id)}</option>`).join('')}
-                  </select>
+              <!-- Contextual Fields based on Action & Target App -->
+              ${(action === 'open_app' && app === 'maps') ? `
+                <div class="step-field-group-inline">
+                  <div class="step-mini-col">
+                    <label>${this.escapeHtml(this.t('autorun.lat'))}</label>
+                    <input type="number" step="any" class="autorun-studio-input" data-step-lat value="${this.escapeHtml(lat)}" placeholder="48.8566">
+                  </div>
+                  <div class="step-mini-col">
+                    <label>${this.escapeHtml(this.t('autorun.lng'))}</label>
+                    <input type="number" step="any" class="autorun-studio-input" data-step-lng value="${this.escapeHtml(lng)}" placeholder="2.3522">
+                  </div>
+                  <div class="step-mini-col" style="max-width: 90px;">
+                    <label>${this.escapeHtml(this.t('autorun.zoom'))}</label>
+                    <input type="number" step="1" min="1" max="19" class="autorun-studio-input" data-step-zoom value="${this.escapeHtml(zoom)}" placeholder="13">
+                  </div>
+                  <div class="step-mini-col" style="display:flex;align-items:flex-end;">
+                    <button type="button" class="autorun-studio-btn autorun-capture-map-btn" data-step-capture-map="${idx}" title="${this.escapeHtml(this.t('autorun.capture_map_title'))}" style="padding:6px 12px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.5);border-radius:6px;color:var(--text-main,#f8fafc);cursor:pointer;font-size:0.8rem;white-space:nowrap;">📍 ${this.escapeHtml(this.t('autorun.capture_map'))}</button>
+                  </div>
                 </div>
               ` : ''}
 
-              ${(action === 'open_app' || action === 'set_doc' || action === 'show_image') ? `
-                <div class="autorun-studio-field" style="min-width: 130px;">
-                  <label>Position</label>
-                  <select class="autorun-studio-select" data-step-pos>
-                    <option value="auto" ${pos === 'auto' ? 'selected' : ''}>Auto</option>
-                    <option value="right-half" ${pos === 'right-half' ? 'selected' : ''}>Moitié droite</option>
-                    <option value="left-half" ${pos === 'left-half' ? 'selected' : ''}>Moitié gauche</option>
-                    <option value="top-right" ${pos === 'top-right' ? 'selected' : ''}>Haut droite</option>
-                    <option value="bottom-right" ${pos === 'bottom-right' ? 'selected' : ''}>Bas droite</option>
-                    <option value="center" ${pos === 'center' ? 'selected' : ''}>Centre</option>
-                    <option value="fullscreen" ${pos === 'fullscreen' ? 'selected' : ''}>Plein écran</option>
-                  </select>
+              ${(action === 'set_doc' || (action === 'open_app' && app === 'doc-viewer')) ? `
+                <div class="step-field-group-inline">
+                  <div class="autorun-studio-field" style="flex: 2; min-width: 200px;">
+                    <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
+                    <select class="autorun-studio-select step-file-select" data-step-file>
+                      ${buildFileOptions(file, docFiles)}
+                    </select>
+                  </div>
+                  <div class="autorun-studio-field" style="flex: 1; min-width: 140px;">
+                    <label>${this.escapeHtml(this.t('autorun.highlight'))}</label>
+                    <input type="text" class="autorun-studio-input" data-step-hl value="${this.escapeHtml(highlight)}" placeholder="#chapitre-1">
+                  </div>
                 </div>
               ` : ''}
 
-              ${(app === 'maps' && action === 'open_app') ? `
-                <div style="display: flex; gap: 0.5rem; flex: 1;">
-                  <div class="autorun-studio-field" style="flex: 1;"><label>Lat</label><input type="number" step="any" class="autorun-studio-input" data-step-lat value="${this.escapeHtml(lat)}" placeholder="48.85"></div>
-                  <div class="autorun-studio-field" style="flex: 1;"><label>Lng</label><input type="number" step="any" class="autorun-studio-input" data-step-lng value="${this.escapeHtml(lng)}" placeholder="2.35"></div>
-                  <div class="autorun-studio-field" style="width: 70px;"><label>Zoom</label><input type="number" class="autorun-studio-input" data-step-zoom value="${this.escapeHtml(zoom)}"></div>
+              ${(action === 'show_image' || (action === 'open_app' && app === 'image-viewer')) ? `
+                <div class="step-field-group-inline">
+                  <div class="autorun-studio-field" style="flex: 1; min-width: 220px;">
+                    <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
+                    <select class="autorun-studio-select step-file-select" data-step-file>
+                      ${buildFileOptions(file, imgFiles)}
+                    </select>
+                  </div>
                 </div>
               ` : ''}
+
+              ${(action === 'open_app' && app === 'video-player') ? `
+                <div class="step-field-group-inline">
+                  <div class="autorun-studio-field" style="flex: 1; min-width: 220px;">
+                    <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
+                    <select class="autorun-studio-select step-file-select" data-step-file>
+                      ${buildFileOptions(file, videoFiles.length > 0 ? videoFiles : mediaFiles)}
+                    </select>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${(action === 'open_app' && app === 'audio-player') ? `
+                <div class="step-field-group-inline">
+                  <div class="autorun-studio-field" style="flex: 1; min-width: 220px;">
+                    <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
+                    <select class="autorun-studio-select step-file-select" data-step-file>
+                      ${buildFileOptions(file, audioFiles.length > 0 ? audioFiles : mediaFiles)}
+                    </select>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${(action === 'open_app' && !['maps', 'doc-viewer', 'image-viewer', 'video-player', 'audio-player'].includes(app)) ? `
+                <div class="step-field-group-inline">
+                  <div class="autorun-studio-field" style="flex: 1; min-width: 220px;">
+                    <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
+                    <select class="autorun-studio-select step-file-select" data-step-file>
+                      ${buildFileOptions(file, files)}
+                    </select>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${(action === 'notify') ? `
+                <div class="step-field-group-inline">
+                  <div class="autorun-studio-field" style="flex: 1;">
+                    <label>${this.escapeHtml(this.t('autorun.message'))}</label>
+                    <input type="text" class="autorun-studio-input" data-step-msg value="${this.escapeHtml(message)}" placeholder="Notification...">
+                  </div>
+                </div>
+              ` : ''}
+
+              ${(action === 'control_app') ? (() => {
+                const appCommands = getCommandsForApp(app);
+                const cmdKeys = Object.keys(appCommands);
+                const activeCommand = step.command || (cmdKeys.length > 0 ? cmdKeys[0] : '');
+                const activeCmdDef = appCommands[activeCommand] || {};
+                const paramsDef = activeCmdDef.params || {};
+                const paramKeys = Object.keys(paramsDef);
+
+                let cmdOptions = '';
+                cmdKeys.forEach(ck => {
+                  const def = appCommands[ck];
+                  const label = (def && def.label) ? def.label : ck;
+                  const isSel = (ck === activeCommand) ? 'selected' : '';
+                  cmdOptions += `<option value="${this.escapeHtml(ck)}" ${isSel}>${this.escapeHtml(label)}</option>`;
+                });
+                if (activeCommand && !cmdKeys.includes(activeCommand)) {
+                  cmdOptions += `<option value="${this.escapeHtml(activeCommand)}" selected>${this.escapeHtml(activeCommand)}</option>`;
+                }
+
+                let dynamicParamsHtml = '';
+                if (paramKeys.length > 0) {
+                  let innerFields = '';
+                  paramKeys.forEach(pKey => {
+                    const pDef = paramsDef[pKey] || {};
+                    const pType = pDef.type || 'text';
+                    const pLabel = pDef.label || pKey;
+                    const pVal = (step.params && step.params[pKey] != null)
+                      ? step.params[pKey]
+                      : ((step[pKey] != null) ? step[pKey] : (pDef.default ?? ''));
+
+                    if (pType === 'file') {
+                      const fileCategory = pDef.category;
+                      const fileList = (fileCategory === 'image') ? imgFiles : ((fileCategory === 'doc') ? docFiles : ((fileCategory === 'video' || fileCategory === 'media') ? mediaFiles : files));
+                      innerFields += `
+                        <div class="autorun-studio-field" style="flex: 1; min-width: 200px;">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <select class="autorun-studio-select step-param-input" data-param-name="${this.escapeHtml(pKey)}">
+                            ${buildFileOptions(pVal, fileList)}
+                          </select>
+                        </div>
+                      `;
+                    } else if (pType === 'number') {
+                      innerFields += `
+                        <div class="step-mini-col">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <input type="number" step="${pDef.step || 'any'}" ${pDef.min != null ? `min="${pDef.min}"` : ''} ${pDef.max != null ? `max="${pDef.max}"` : ''} class="autorun-studio-input step-param-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.default ?? '')}">
+                        </div>
+                      `;
+                    } else if (pType === 'time') {
+                      innerFields += `
+                        <div class="autorun-studio-field" style="width: 120px;">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <input type="text" class="autorun-studio-input step-param-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.placeholder || '00:00')}">
+                        </div>
+                      `;
+                    } else if (pType === 'select') {
+                      let sOpts = '';
+                      (pDef.options || []).forEach(opt => {
+                        const v = typeof opt === 'object' ? opt.value : opt;
+                        const l = typeof opt === 'object' ? opt.label : opt;
+                        sOpts += `<option value="${this.escapeHtml(v)}" ${v == pVal ? 'selected' : ''}>${this.escapeHtml(l)}</option>`;
+                      });
+                      innerFields += `
+                        <div class="autorun-studio-field" style="min-width: 140px;">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <select class="autorun-studio-select step-param-input" data-param-name="${this.escapeHtml(pKey)}">
+                            ${sOpts}
+                          </select>
+                        </div>
+                      `;
+                    } else {
+                      innerFields += `
+                        <div class="autorun-studio-field" style="flex: 1; min-width: 180px;">
+                          <label>${this.escapeHtml(pLabel)}</label>
+                          <input type="text" class="autorun-studio-input step-param-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.placeholder || '')}">
+                        </div>
+                      `;
+                    }
+                  });
+
+                  dynamicParamsHtml = `<div class="step-field-group-inline">${innerFields}</div>`;
+                }
+
+                return `
+                  <div class="step-field-group-inline">
+                    <div class="autorun-studio-field" style="flex: 1; min-width: 220px;">
+                      <label>${this.escapeHtml(this.t('autorun.command'))}</label>
+                      <select class="autorun-studio-select step-cmd-select" data-step-cmd data-step-index="${idx}">
+                        ${cmdOptions}
+                      </select>
+                    </div>
+                    ${(app === 'maps') ? `
+                      <div class="step-mini-col" style="display:flex;align-items:flex-end;">
+                        <button type="button" class="autorun-studio-btn autorun-capture-map-btn" data-step-capture-map="${idx}" title="${this.escapeHtml(this.t('autorun.capture_map_title'))}" style="padding:6px 12px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.5);border-radius:6px;color:var(--text-main,#f8fafc);cursor:pointer;font-size:0.8rem;white-space:nowrap;">📍 ${this.escapeHtml(this.t('autorun.capture_map'))}</button>
+                      </div>
+                    ` : ''}
+                  </div>
+                  ${dynamicParamsHtml}
+                `;
+              })() : ''}
             </div>
           </div>
         `;
@@ -410,7 +887,7 @@
       this.el.timelineList.innerHTML = html;
 
       // Bind events on step elements
-      this.el.timelineList.querySelectorAll('[data-step-action], [data-step-app]').forEach(el => {
+      this.el.timelineList.querySelectorAll('[data-step-action], [data-step-app], [data-step-cmd]').forEach(el => {
         el.onchange = () => {
           this.syncVisualToConfig();
           this.renderTimeline();
@@ -426,6 +903,57 @@
       this.el.timelineList.querySelectorAll('[data-step-del]').forEach(btn => {
         btn.onclick = () => this.removeStep(parseInt(btn.dataset.stepDel, 10));
       });
+      this.el.timelineList.querySelectorAll('[data-step-capture-map]').forEach(btn => {
+        btn.onclick = () => this.captureMapPosition(parseInt(btn.dataset.stepCaptureMap, 10));
+      });
+    }
+
+    async captureMapPosition(stepIdx) {
+      let mapInstance = window.mapsApp ? window.mapsApp.activeInstance : null;
+      if (!mapInstance && window.mapsApp && window.mapsApp.instances && window.mapsApp.instances.size > 0) {
+        mapInstance = Array.from(window.mapsApp.instances.values())[0];
+      }
+
+      if (!mapInstance) {
+        if (window.sys && window.sys.appManager) {
+          window.sys.appManager.launchApp('maps', { currentPath: this.currentPath });
+        } else if (window.mapsApp && typeof window.mapsApp.open === 'function') {
+          window.mapsApp.open({ currentPath: this.currentPath });
+        }
+        const toast = (window.sys && window.sys.toast && typeof window.sys.toast.show === 'function')
+          ? window.sys.toast
+          : (window.sys && window.sys.showToast ? { show: window.sys.showToast } : null);
+        if (toast) {
+          toast.show('🗺️ Maps a été ouvert. Positionnez la carte à l\'endroit souhaité, puis recliquez sur "📍 Capturer depuis Maps".', 'info');
+        } else {
+          alert('Maps a été ouvert. Positionnez la carte à l\'endroit souhaité, puis recliquez sur "📍 Capturer depuis Maps".');
+        }
+        return;
+      }
+
+      const pos = (typeof mapInstance.whereIam === 'function') ? mapInstance.whereIam() : null;
+      if (!pos) return;
+
+      this.syncVisualToConfig();
+      if (this.currentConfig && Array.isArray(this.currentConfig.timeline) && this.currentConfig.timeline[stepIdx]) {
+        const step = this.currentConfig.timeline[stepIdx];
+        if (!step.params) step.params = {};
+        step.params.lat = pos.lat;
+        step.params.lng = pos.lng;
+        step.params.lon = pos.lon;
+        step.params.zoom = pos.zoom;
+        step.lat = pos.lat;
+        step.lng = pos.lng;
+        step.zoom = pos.zoom;
+      }
+      this.renderTimeline();
+
+      const toast = (window.sys && window.sys.toast && typeof window.sys.toast.show === 'function')
+        ? window.sys.toast
+        : (window.sys && window.sys.showToast ? { show: window.sys.showToast } : null);
+      if (toast) {
+        toast.show(`📍 Coordonnées capturées : ${pos.lat}, ${pos.lng} (zoom ${pos.zoom})`, 'success');
+      }
     }
 
     addStep() {

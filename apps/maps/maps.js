@@ -284,6 +284,40 @@
       }
     }
 
+    moveTo(params = {}) {
+      if (!this.leafletMap) return false;
+      const lat = params.lat !== undefined ? Number(params.lat) : undefined;
+      const lng = (params.lng !== undefined ? params.lng : params.lon) !== undefined
+        ? Number(params.lng !== undefined ? params.lng : params.lon)
+        : undefined;
+      const currentZoom = typeof this.leafletMap.getZoom === 'function' ? this.leafletMap.getZoom() : 13;
+      const zoom = (params.zoom !== undefined && !isNaN(Number(params.zoom))) ? Number(params.zoom) : currentZoom;
+
+      if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
+        if (params.animate !== false && typeof this.leafletMap.flyTo === 'function') {
+          this.leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
+        } else if (typeof this.leafletMap.setView === 'function') {
+          this.leafletMap.setView([lat, lng], zoom);
+        }
+        return true;
+      }
+      return false;
+    }
+
+    whereIam() {
+      if (!this.leafletMap) return null;
+      const center = typeof this.leafletMap.getCenter === 'function' ? this.leafletMap.getCenter() : null;
+      const zoom = typeof this.leafletMap.getZoom === 'function' ? this.leafletMap.getZoom() : 13;
+      const lat = center ? parseFloat(center.lat.toFixed(6)) : 0;
+      const lng = center ? parseFloat(center.lng.toFixed(6)) : 0;
+      return {
+        lat,
+        lon: lng,
+        lng,
+        zoom
+      };
+    }
+
     renderMapContent() {
       if (!this.leafletMap || !this.markersLayer) return;
 
@@ -723,6 +757,69 @@
       this.instances.set(id, instance);
       this.setActiveInstance(instance);
       return instance;
+    }
+
+    whereIam(winId = null) {
+      let instance = null;
+      if (winId) {
+        const idNum = Number(String(winId).replace('maps-', ''));
+        instance = this.instances.get(idNum);
+      }
+      if (!instance) {
+        instance = this.activeInstance || Array.from(this.instances.values())[0];
+      }
+      return instance ? instance.whereIam() : null;
+    }
+
+    moveTo(params = {}, winId = null) {
+      let instance = null;
+      if (winId) {
+        const idNum = Number(String(winId).replace('maps-', ''));
+        instance = this.instances.get(idNum);
+      }
+      if (!instance) {
+        instance = this.activeInstance || Array.from(this.instances.values())[0];
+      }
+      return instance ? instance.moveTo(params) : false;
+    }
+
+    handleCommand(command, params = {}, winId = null) {
+      let instance = null;
+      if (winId) {
+        const idNum = Number(String(winId).replace('maps-', ''));
+        instance = this.instances.get(idNum);
+      }
+      if (!instance) {
+        instance = this.activeInstance || Array.from(this.instances.values())[0];
+      }
+      if (!instance) return false;
+
+      switch (command) {
+        case 'whereIam':
+          return instance.whereIam();
+        case 'moveTo':
+        case 'flyTo':
+          return instance.moveTo(params);
+        case 'setView':
+          return instance.moveTo({ ...params, animate: false });
+        case 'zoomIn':
+          if (instance.leafletMap && typeof instance.leafletMap.zoomIn === 'function') {
+            instance.leafletMap.zoomIn();
+            return true;
+          }
+          return false;
+        case 'zoomOut':
+          if (instance.leafletMap && typeof instance.leafletMap.zoomOut === 'function') {
+            instance.leafletMap.zoomOut();
+            return true;
+          }
+          return false;
+        case 'recenter':
+          instance.recenterMap();
+          return true;
+        default:
+          return false;
+      }
     }
   }
 

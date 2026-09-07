@@ -22,5 +22,7 @@
   "autorun_studio.saved": "autorun.json configuration saved successfully",
   "autorun_studio.deleted": "autorun.json file deleted",
   "autorun_studio.load_error": "Failed to load directory",
-  "autorun_studio.no_folder_selected": "Select a folder to edit..."
+  "autorun_studio.no_folder_selected": "Select a folder to edit...",
+  "autorun.capture_map": "Capture from Maps",
+  "autorun.capture_map_title": "Launch Maps or capture current GPS position and zoom level"
 }

@@ -39,5 +39,41 @@
   "capabilities": [
     "pip",
     "background-playback"
-  ]
+  ],
+  "commands": {
+    "play": {
+      "label": "Lecture",
+      "params": {}
+    },
+    "pause": {
+      "label": "Pause",
+      "params": {}
+    },
+    "seekTo": {
+      "label": "Aller à un temps précis (seekTo)",
+      "description": "Positionne la lecture audio au temps spécifié (ex: 15 ou 01:30)",
+      "params": {
+        "time": { "type": "time", "label": "Instant (MM:SS ou sec)", "default": "00:00" }
+      }
+    },
+    "seek": {
+      "label": "Aller à un temps précis",
+      "params": {
+        "time": { "type": "time", "label": "Instant (MM:SS ou sec)", "default": "00:00" }
+      }
+    },
+    "setVolume": {
+      "label": "Régler le volume",
+      "params": {
+        "volume": { "type": "number", "min": 0, "max": 1, "step": 0.1, "label": "Volume (0.0 - 1.0)", "default": 1 }
+      }
+    },
+    "playbackRate": {
+      "label": "Vitesse de lecture",
+      "description": "Définit la vitesse de lecture audio (ex: 0.5, 1.0, 1.5, 2.0)",
+      "params": {
+        "speed": { "type": "number", "min": 0.25, "max": 4, "step": 0.25, "label": "Vitesse", "default": 1 }
+      }
+    }
+  }
 }

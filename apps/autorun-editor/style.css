@@ -278,6 +278,46 @@
   color: #fca5a5 !important;
 }
 
+.autorun-studio-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.autorun-studio-fields-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.step-field-group-inline,
+.autorun-studio-field-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.step-mini-col,
+.autorun-studio-mini-col {
+  flex: 1;
+  min-width: 85px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.step-mini-col label,
+.autorun-studio-mini-col label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .autorun-studio-empty {
   padding: 2.5rem 1rem;
   text-align: center;

@@ -22,5 +22,7 @@
   "autorun_studio.saved": "autorun.json の設定が正常に保存されました",
   "autorun_studio.deleted": "autorun.json を削除しました",
   "autorun_studio.load_error": "フォルダの読み込みに失敗しました",
-  "autorun_studio.no_folder_selected": "編集するフォルダを選択してください..."
+  "autorun_studio.no_folder_selected": "編集するフォルダを選択してください...",
+  "autorun.capture_map": "マップから座標を取得",
+  "autorun.capture_map_title": "マップを起動して現在のGPS座標とズームを取得"
 }
