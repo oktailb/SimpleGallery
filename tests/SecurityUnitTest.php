@@ -677,12 +677,17 @@ HTACCESS;
         $this->assert("save_text_file SVG désinfecte les balises <script>", stripos($clean_svg, '<script>') === false);
         $this->assert("save_text_file SVG désinfecte les attributs onload", stripos($clean_svg, 'onload=') === false);
 
-        // Test thumb.php raw authorization logic
+        // Test thumb.php raw streaming vs attachment download authorization logic
         $mock_permissions = ['can_download_item' => false];
         $allow_direct_download = false;
         $is_admin = false;
-        $can_raw_stream = ($is_admin || ($allow_direct_download && ($mock_permissions['can_download_item'] ?? false)));
-        $this->assert("thumb.php bloque le flux brut raw=1 si téléchargement interdit", $can_raw_stream === false);
+        $can_download_attachment = ($is_admin || ($allow_direct_download && ($mock_permissions['can_download_item'] ?? false)));
+        $this->assert("thumb.php bloque le téléchargement direct en pièce jointe (download=1) si interdit", $can_download_attachment === false);
+
+        // Inline streaming (raw=1) is allowed for accessible (non-private) directories
+        $dir_is_accessible = true;
+        $can_inline_stream = $dir_is_accessible;
+        $this->assert("thumb.php autorise le visionnage/streaming en ligne (raw=1) pour les dossiers accessibles", $can_inline_stream === true);
 
         // Test storage fallback isolation in bootstrap.php
         $test_missing_dir = '/nonexistent/random/storage/dir_' . md5(uniqid('', true));

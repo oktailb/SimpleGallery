@@ -85,7 +85,7 @@ function get_full_mime_type(string $ext): string {
     return $mimes[strtolower($ext)] ?? 'application/octet-stream';
 }
 
-function serve_raw_file(string $file_path, string $ext): void {
+function serve_raw_file(string $file_path, string $ext, bool $as_attachment = false): void {
     if (!file_exists($file_path) || !is_readable($file_path)) {
         http_response_code(404);
         die("File not found.");
@@ -99,9 +99,9 @@ function serve_raw_file(string $file_path, string $ext): void {
 
     header('Content-Type: ' . $content_type);
     header('Accept-Ranges: bytes');
-    if (strtolower($ext) === 'pdf') {
-        header('Content-Disposition: inline; filename="' . rawurlencode(basename($file_path)) . '"');
-    }
+    
+    $disposition = $as_attachment ? 'attachment' : 'inline';
+    header('Content-Disposition: ' . $disposition . '; filename="' . rawurlencode(basename($file_path)) . '"');
     if ($is_text_doc) {
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');
@@ -358,8 +358,12 @@ if (!is_dir_accessible(dirname($file_path), $real_base_dir)) {
     exit;
 }
 
-// Direct original raw media streaming (photos, videos, music, documents)
-if (!empty($_GET['raw'])) {
+// Direct original raw media delivery: Inline View/Stream (raw=1) vs Attachment Download (download=1)
+$is_download_req = !empty($_GET['download']) || !empty($_GET['attachment']);
+$is_raw_req = !empty($_GET['raw']);
+
+if ($is_download_req || $is_raw_req) {
+    // Check if direct download (saving as attachment) is permitted
     $can_download = false;
     if (\SimpleGallery\Kernel\Auth\AuthManager::isAdminLoggedIn()) {
         $can_download = true;
@@ -369,13 +373,15 @@ if (!empty($_GET['raw'])) {
         $can_download = ($allow_cfg && $can_perm);
     }
 
-    if (!$can_download) {
+    // Direct download (attachment) explicitly requested: enforce permission
+    if ($is_download_req && !$can_download) {
         http_response_code(403);
         echo "403 Forbidden: Direct download is restricted.";
         exit;
     }
 
-    serve_raw_file($file_path, $ext);
+    // Serve raw media: as attachment if downloading, or inline if streaming/viewing
+    serve_raw_file($file_path, $ext, $is_download_req);
 }
 
 // Setup thumbnail cache directory with fallback to sys_get_temp_dir()

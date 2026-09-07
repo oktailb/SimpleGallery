@@ -83,6 +83,7 @@
 
 
       const isEditableImage = effectiveCtx.state.isAdmin && (file.category === 'image' || !file.category) && file.extension !== 'svg';
+      const canDownloadItem = effectiveCtx.state.isAdmin || (effectiveCtx.state.userRights ? effectiveCtx.state.userRights.can_download_item !== false : true);
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `image-${cleanPathId}`;
 
@@ -110,7 +111,7 @@
           content: `
             <div class="webos-image-window-content" id="imgWinContent-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--window-bg, var(--bg-main, #090a0f));">
               <div class="image-viewer-container" id="imageViewerContainer-${cleanPathId}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:grab;">
-                <img id="imgExplorer-${cleanPathId}" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" style="max-width:100%;max-height:100%;object-fit:contain;user-select:none;transition:transform 0.15s cubic-bezier(0.2,0,0,1);" draggable="false" />
+                <img id="imgExplorer-${cleanPathId}" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" style="max-width:100%;max-height:100%;object-fit:contain;user-select:none;transition:transform 0.15s cubic-bezier(0.2,0,0,1);" draggable="false" ${canDownloadItem ? '' : 'oncontextmenu="return false;"'} />
               </div>
               <div class="image-floating-toolbar" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--menu-bar-bg, var(--bg-card, rgba(15,23,42,0.85)));backdrop-filter:blur(16px);padding:4px 10px;border-radius:9999px;border:1px solid var(--border-color, rgba(255,255,255,0.15));box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:10;">
                 <button type="button" class="image-explorer-btn" id="imgZoomIn-${cleanPathId}" data-i18n-title="lightbox.zoom_in" title="${ctx.escapeHtml(ctx.t('lightbox.zoom_in') || 'Zoom avant (+)')}">➕</button>
@@ -169,7 +170,7 @@
       ctx.el.lightboxTitle.textContent = `Visionneuse d'Image : ${file.name}`;
       ctx.el.lightboxContent.innerHTML = `
         <div class="image-viewer-container" id="imageViewerContainer">
-          <img id="lightboxExplorerImg" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" draggable="false" />
+          <img id="lightboxExplorerImg" src="${file.file_url}" alt="${ctx.escapeHtml(file.name)}" class="explorer-img" draggable="false" ${canDownloadItem ? '' : 'oncontextmenu="return false;"'} />
         </div>
       `;
       this.bindExplorerEvents(ctx);
