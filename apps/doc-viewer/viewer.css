@@ -483,3 +483,12 @@
   background: #ffffff;
 }
 
+/* LaTeX Preview Frame */
+.doc-latex-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--desk-bg, #1e293b);
+}
+
+

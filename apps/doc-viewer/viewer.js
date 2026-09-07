@@ -107,15 +107,10 @@
     if (latexEnginePromise) return latexEnginePromise;
     latexEnginePromise = new Promise((resolve) => {
       if (window.latexjs) return resolve(window.latexjs);
-      const link = document.createElement('link');
-      link.id = 'latexjs-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/latex.js/dist/latex.css';
-      document.head.appendChild(link);
 
       const s = document.createElement('script');
       s.id = 'latexjs-js';
-      s.src = 'https://cdn.jsdelivr.net/npm/latex.js/dist/latex.js';
+      s.src = 'https://cdn.jsdelivr.net/npm/latex.js@0.12.4/dist/latex.min.js';
       s.onload = () => resolve(window.latexjs || null);
       s.onerror = () => resolve(null);
       document.head.appendChild(s);
@@ -555,28 +550,96 @@
             bodyEl.innerHTML = `<iframe class="doc-html-frame" sandbox="allow-scripts allow-same-origin" src="${htmlSrc}" title="${effectiveCtx.escapeHtml(file.name)}"></iframe>`;
             if (htmlToggleBtn) htmlToggleBtn.textContent = '📄 Code Source';
           }
-          // 3. LaTeX Mode (Compiled TeX View via latex.js)
+          // 3. LaTeX Mode (Compiled TeX View via latex.js in High-Fidelity Paper Iframe)
           else if (isTex && !isRawSourceMode) {
             bodyEl.className = 'doc-text-body';
-            bodyEl.style.padding = '';
-            bodyEl.innerHTML = `<div class="doc-latex-render" id="docLatexHost-${cleanPathId}">⏳ Compilation du document LaTeX...</div>`;
+            bodyEl.style.padding = '0';
+            bodyEl.style.overflow = 'hidden';
+            bodyEl.innerHTML = `<div id="docLatexHost-${cleanPathId}" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--desk-bg, #f1f5f9);">
+              <div id="docLatexLoading-${cleanPathId}" style="padding:2.5rem;text-align:center;color:var(--text-muted,#64748b);font-size:0.95rem;">
+                ⏳ Compilation du document LaTeX via LaTeX.js...
+              </div>
+            </div>`;
             if (texToggleBtn) texToggleBtn.textContent = '📄 Code Source TeX';
 
-            const host = document.getElementById(`docLatexHost-${cleanPathId}`);
             const compileTex = (latexjs) => {
+              const host = document.getElementById(`docLatexHost-${cleanPathId}`);
               if (!host) return;
+
               try {
                 if (latexjs && typeof latexjs.parse === 'function') {
                   const generator = new latexjs.HtmlGenerator({ hyphenate: false });
-                  const parsed = latexjs.parse(currentRawText, { generator });
-                  const doc = parsed.htmlDocument();
+                  const parsed = latexjs.parse(currentRawText, { generator: generator });
+                  const baseURL = "https://cdn.jsdelivr.net/npm/latex.js@0.12.4/dist/";
+                  const doc = parsed.htmlDocument(baseURL);
+
+                  // 1. Inject KaTeX CSS
+                  const katexLink = doc.createElement('link');
+                  katexLink.rel = 'stylesheet';
+                  katexLink.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+                  doc.head.appendChild(katexLink);
+
+                  // 2. High-fidelity paper layout preserving LaTeX.js native CSS grid
+                  const customStyle = doc.createElement('style');
+                  customStyle.textContent = `
+                    html {
+                      background-color: #f1f5f9;
+                      margin: 0;
+                      padding: 0;
+                      min-height: 100%;
+                    }
+                    body {
+                      background-color: #ffffff !important;
+                      color: #111827 !important;
+                      max-width: 920px !important;
+                      min-height: 100vh !important;
+                      margin: 2rem auto !important;
+                      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+                      border-radius: 2px !important;
+                      box-sizing: border-box !important;
+                    }
+                    @media (max-width: 960px) {
+                      html { background-color: #ffffff; }
+                      body {
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                      }
+                    }
+                  `;
+                  doc.head.appendChild(customStyle);
+
+                  const frame = document.createElement('iframe');
+                  frame.className = 'doc-latex-frame';
+                  frame.style.width = '100%';
+                  frame.style.height = '100%';
+                  frame.style.border = 'none';
+                  frame.style.background = '#f1f5f9';
+                  frame.title = effectiveCtx.escapeHtml(file.name);
+                  frame.sandbox = 'allow-scripts allow-same-origin';
+
                   host.innerHTML = '';
-                  host.appendChild(doc.body);
+                  host.appendChild(frame);
+                  frame.srcdoc = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
                 } else {
-                  host.innerHTML = renderMarkdownHtml(currentRawText);
+                  host.innerHTML = `<div class="doc-markdown-render" style="padding:2rem;">` + renderMarkdownHtml(currentRawText) + `</div>`;
                 }
               } catch (e) {
-                host.innerHTML = `<div style="color:#ef4444;font-family:monospace;padding:1rem;background:rgba(239,68,68,0.1);border-left:4px solid #ef4444;border-radius:4px;margin-bottom:1.5rem;">⚠️ Erreur de compilation LaTeX : ${effectiveCtx.escapeHtml(e.message)}</div>` + renderMarkdownHtml(currentRawText);
+                console.warn('LaTeX.js parse error:', e);
+                host.innerHTML = `
+                  <div style="padding:2rem;max-width:900px;margin:0 auto;width:100%;box-sizing:border-box;">
+                    <div style="color:#ef4444;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-left:4px solid #ef4444;border-radius:8px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;font-family:sans-serif;">
+                      <div style="font-weight:700;margin-bottom:0.4rem;display:flex;align-items:center;gap:8px;">
+                        <span>⚠️</span> Diagnostic de compilation LaTeX.js
+                      </div>
+                      <div style="font-family:monospace;font-size:0.85rem;color:#fca5a5;word-break:break-word;">${effectiveCtx.escapeHtml(e.message)}</div>
+                      <div style="margin-top:0.8rem;font-size:0.8rem;color:var(--text-muted,#94a3b8);">
+                        Rendu de secours en mode mathématique universel (KaTeX) :
+                      </div>
+                    </div>
+                    <div class="doc-markdown-render">${renderMarkdownHtml(currentRawText)}</div>
+                  </div>`;
               }
             };
 
