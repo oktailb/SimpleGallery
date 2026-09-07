@@ -6,3 +6,6 @@
 /storage/media/*
 .admin_password_hash
 .permissions.json
+apps/ffs-apps
+apps/sim-maintenance/tiles
+apps/sim-maintenance/lib
