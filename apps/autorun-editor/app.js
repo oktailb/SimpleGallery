@@ -510,19 +510,15 @@
         });
 
         if (res && res.success) {
-          if (window.sys && window.sys.toast) {
-            window.sys.toast.show('Configuration autorun.json enregistrée avec succès !', 'success');
-          } else {
-            alert('Enregistré avec succès !');
-          }
+          this.showToast('Configuration autorun.json enregistrée avec succès !', 'success');
           if (window.EventBus) {
             window.EventBus.emit('fs:changed', { action: 'save', dir: this.currentPath });
           }
         } else {
-          alert('Erreur lors de la sauvegarde : ' + ((res && res.error) || 'Erreur inconnue'));
+          this.showToast('Erreur lors de la sauvegarde : ' + ((res && res.error) || 'Erreur inconnue'), 'error');
         }
       } catch (err) {
-        alert('Erreur réseau : ' + err.message);
+        this.showToast('Erreur : ' + err.message, 'error');
       }
     }
 
@@ -539,15 +535,30 @@
           await window.sys.api.post('delete_item', { target: path1 });
           await window.sys.api.post('delete_item', { target: path2 });
         }
-        if (window.sys && window.sys.toast) {
-          window.sys.toast.show('Fichier autorun.json supprimé.', 'info');
-        }
+        this.showToast('Fichier autorun.json supprimé.', 'info');
         if (window.EventBus) {
           window.EventBus.emit('fs:changed', { action: 'delete', dir: this.currentPath });
         }
         this.close();
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        this.showToast('Erreur : ' + e.message, 'error');
+      }
+    }
+
+    showToast(message, type = 'info') {
+      const targetType = (type === 'error' || type === 'success' || type === 'warning' || type === 'info') ? type : 'info';
+      if (this.toast && typeof this.toast[targetType] === 'function') {
+        this.toast[targetType](message);
+      } else if (window.sys && window.sys.toast && typeof window.sys.toast[targetType] === 'function') {
+        window.sys.toast[targetType](message);
+      } else if (window.sys && window.sys.toast && typeof window.sys.toast.show === 'function') {
+        window.sys.toast.show(message, targetType);
+      } else if (window.sys && window.sys.ui && typeof window.sys.ui.showToast === 'function') {
+        window.sys.ui.showToast(message, { type: targetType });
+      } else if (typeof window.showToast === 'function') {
+        window.showToast(message, targetType);
+      } else {
+        alert(message);
       }
     }
 

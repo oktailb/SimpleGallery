@@ -269,6 +269,10 @@ assert("WebOSApp fournit la méthode setContent(content)", webOsAppJs.includes('
 assert("AutorunEditorApp implémente renderShell()", autorunAppJs.includes('renderShell()'));
 assert("AutorunEditorApp implémente render()", autorunAppJs.includes('render()'));
 assert("AutorunEditorApp possède un montage sécurisé dans initUI()", autorunAppJs.includes('this.setContent(root)'));
+assert("AutorunEditorApp implémente showToast(message, type)", autorunAppJs.includes('showToast(message, type = \'info\')'));
+
+const webOsServicesJs = fs.readFileSync(path.join(rootDir, 'system', 'userland', 'services', 'WebOSServices.js'), 'utf8');
+assert("WebOSServices expose la méthode polyfill window.sys.toast.show", webOsServicesJs.includes('show: (msg, typeOrOpts'));
 
 console.log('\n============================================================');
 console.log(` 📊 SCORECARD DES TESTS ISO-FONCTIONNELS JS : ${passedChecks}/${totalChecks} PASS`);

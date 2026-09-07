@@ -219,7 +219,12 @@
     info: (msg, opts) => (window.sys.ui && window.sys.ui.toast ? window.sys.ui.toast.info(msg, opts) : (window.WebOSToolkit ? window.WebOSToolkit.toastInfo(msg, opts) : console.log('[Toast]', msg))),
     success: (msg, opts) => (window.sys.ui && window.sys.ui.toast ? window.sys.ui.toast.success(msg, opts) : (window.WebOSToolkit ? window.WebOSToolkit.toastSuccess(msg, opts) : console.log('[Toast]', msg))),
     warning: (msg, opts) => (window.sys.ui && window.sys.ui.toast ? window.sys.ui.toast.warning(msg, opts) : (window.WebOSToolkit ? window.WebOSToolkit.toastWarning(msg, opts) : console.warn('[Toast]', msg))),
-    error: (msg, opts) => (window.sys.ui && window.sys.ui.toast ? window.sys.ui.toast.error(msg, opts) : (window.WebOSToolkit ? window.WebOSToolkit.toastError(msg, opts) : console.error('[Toast]', msg)))
+    error: (msg, opts) => (window.sys.ui && window.sys.ui.toast ? window.sys.ui.toast.error(msg, opts) : (window.WebOSToolkit ? window.WebOSToolkit.toastError(msg, opts) : console.error('[Toast]', msg))),
+    show: (msg, typeOrOpts = 'info') => {
+      const type = (typeof typeOrOpts === 'string' ? typeOrOpts : (typeOrOpts && typeOrOpts.type)) || 'info';
+      const fn = window.sys.toast[type] || window.sys.toast.info;
+      return fn(msg, typeof typeOrOpts === 'object' ? typeOrOpts : {});
+    }
   };
 
   window.sys.dialog = {
