@@ -36,6 +36,9 @@
     "csv",
     "xml",
     "html",
+    "htm",
+    "tex",
+    "latex",
     "js",
     "css",
     "php",
@@ -44,6 +47,8 @@
     "log",
     "ini",
     "sql",
+    "yaml",
+    "yml",
     "doc",
     "docx",
     "xls",
@@ -60,6 +65,9 @@
   "capabilities": [
     "pdf-embed",
     "text-reader",
+    "markdown-gfm",
+    "html-preview",
+    "latex-render",
     "clipboard-copy",
     "fullscreen"
   ],

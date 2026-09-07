@@ -1,0 +1,20 @@
+{
+  "apps.browser.title": "Navigateur Web",
+  "browser.new_tab": "Nouvel onglet",
+  "browser.close_tab": "Fermer l'onglet",
+  "browser.back": "Précédent",
+  "browser.forward": "Suivant",
+  "browser.reload": "Actualiser",
+  "browser.home": "Accueil",
+  "browser.address_placeholder": "Saisir une adresse web ou rechercher...",
+  "browser.view_source": "Voir le code source",
+  "browser.open_external": "Ouvrir dans le navigateur système",
+  "browser.bookmark_gallery": "Galerie Locale",
+  "browser.bookmark_docs": "Documentation",
+  "browser.bookmark_ddg": "Recherche DuckDuckGo",
+  "browser.bookmark_wiki": "Wikipédia",
+  "browser.welcome_title": "Navigateur WebOS",
+  "browser.welcome_sub": "Naviguez sur le web ou explorez les pages HTML de votre galerie",
+  "browser.quick_links": "Accès Rapide",
+  "browser.local_files": "Fichiers HTML Locaux"
+}

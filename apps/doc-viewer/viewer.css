@@ -317,3 +317,169 @@
 .toastui-editor-contents li.task-list-item {
   list-style-type: none !important;
 }
+
+/* ============================================================
+   Enhanced Markdown GFM, Code Highlighting & Copy Button
+   ============================================================ */
+.md-codeblock-container {
+  position: relative;
+  margin: 1.25rem 0;
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+  background: var(--bg-card, rgba(15, 23, 42, 0.95));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.md-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  font-size: 0.72rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted, #94a3b8);
+  user-select: none;
+}
+
+.md-code-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  color: var(--text-main, #f8fafc);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.md-code-copy-btn:hover {
+  background: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary, #6366f1);
+  color: #ffffff;
+}
+
+.md-codeblock-container pre {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  background: transparent !important;
+}
+
+/* GitHub Callout / Alert Blocks */
+.md-alert {
+  margin: 1.25rem 0;
+  padding: 0.9rem 1.15rem;
+  border-radius: 0 10px 10px 0;
+  border-left: 4px solid var(--accent-primary, #6366f1);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.md-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+
+.md-alert-content {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-main, #e2e8f0);
+}
+
+.md-alert-note {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+.md-alert-note .md-alert-title { color: #60a5fa; }
+
+.md-alert-tip {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+.md-alert-tip .md-alert-title { color: #34d399; }
+
+.md-alert-important {
+  border-left-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+}
+.md-alert-important .md-alert-title { color: #a78bfa; }
+
+.md-alert-warning {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+.md-alert-warning .md-alert-title { color: #fbbf24; }
+
+.md-alert-caution {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+.md-alert-caution .md-alert-title { color: #f87171; }
+
+/* KaTeX Math Blocks */
+.katex-display {
+  margin: 1.25rem 0 !important;
+  padding: 0.85rem !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* LaTeX Document Render Container */
+.doc-latex-render {
+  width: 100%;
+  max-width: 860px;
+  margin: 1.5rem auto;
+  padding: 3rem 3.5rem;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  font-family: "Latin Modern Roman", "Computer Modern", Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  overflow-y: auto;
+}
+
+.doc-latex-render h1, .doc-latex-render h2, .doc-latex-render h3 {
+  font-family: inherit;
+  font-weight: 700;
+  color: #111827;
+}
+
+.doc-latex-render .title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.doc-latex-render .author {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #4b5563;
+  margin-bottom: 2rem;
+}
+
+/* HTML Preview Frame */
+.doc-html-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+}
+

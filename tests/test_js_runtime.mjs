@@ -432,6 +432,86 @@ assert("Autorun Studio getCommandsForApp expose scrollTo et searchText", autorun
 assert("Autorun Studio getCommandsForApp expose zoom et move pour image", autorunEditorJs.includes('zoom:') && autorunEditorJs.includes('move:'));
 assert("Autorun Studio getCommandsForApp expose seekTo pour video et audio", autorunEditorJs.includes('seekTo:'));
 
+// 8. Doc-Viewer Upgrades (GFM, KaTeX, Prism, HTML preview, LaTeX) & WebOS Browser
+console.log("\n🌐 [8/8] Conformité Doc-Viewer Avancé & Navigateur WebOS...");
+const docViewerCss = fs.readFileSync(path.join(rootDir, 'apps', 'doc-viewer', 'viewer.css'), 'utf8');
+
+assert("doc-viewer manifest supporte htm, tex, latex, yaml", ['htm', 'tex', 'latex', 'yaml', 'yml'].every(ext => docViewerManifest.extensions.includes(ext)));
+assert("doc-viewer manifest déclare markdown-gfm, html-preview, latex-render", ['markdown-gfm', 'html-preview', 'latex-render'].every(cap => docViewerManifest.capabilities.includes(cap)));
+assert("doc-viewer viewer.js implémente loadMarkdownEngines", docViewerJs.includes('loadMarkdownEngines'));
+assert("doc-viewer viewer.js implémente loadLatexEngine", docViewerJs.includes('loadLatexEngine'));
+assert("doc-viewer viewer.js implémente fallbackPureJsMarkdown", docViewerJs.includes('fallbackPureJsMarkdown'));
+assert("doc-viewer viewer.js implémente le support TeX/LaTeX et bascule code source", docViewerJs.includes('isTex') && docViewerJs.includes('docTexViewToggleBtn'));
+assert("doc-viewer viewer.js implémente le support HTML preview iframe et bascule", docViewerJs.includes('isHtml') && docViewerJs.includes('docHtmlViewToggleBtn'));
+assert("doc-viewer viewer.css intègre md-codeblock, md-alert, doc-latex-render et doc-html-frame",
+  docViewerCss.includes('.md-codeblock-container') &&
+  docViewerCss.includes('.md-alert') &&
+  docViewerCss.includes('.doc-latex-render') &&
+  docViewerCss.includes('.doc-html-frame')
+);
+
+// Browser standalone app
+const browserManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 'browser', 'manifest.json'), 'utf8'));
+const browserJs = fs.readFileSync(path.join(rootDir, 'apps', 'browser', 'app.js'), 'utf8');
+const browserCss = fs.readFileSync(path.join(rootDir, 'apps', 'browser', 'style.css'), 'utf8');
+
+assert("browser manifest valide avec ID 'browser' et catégorie 'utilities'", browserManifest.id === 'browser' && browserManifest.category === 'utilities');
+assert("browser app.js hérite de WebOSApp", browserJs.includes('extends WebOSApp'));
+assert("browser app.js implémente la navigation multi-onglets (addTab, switchTab, closeTab)",
+  browserJs.includes('addTab(') && browserJs.includes('switchTab(') && browserJs.includes('closeTab(')
+);
+assert("browser app.js implémente normalizeUrl et recherche web", browserJs.includes('normalizeUrl(') && browserJs.includes('duckduckgo.com'));
+assert("browser style.css intègre webos-browser-tabs, browser-omnibar-box et webos-browser-viewport",
+  browserCss.includes('.webos-browser-tabs') && browserCss.includes('.browser-omnibar-box') && browserCss.includes('.webos-browser-viewport')
+);
+
+// Test runtime BrowserApp
+try {
+  const fakeWinBrowser = {
+    document: {
+      createElement: (t) => {
+        const el = {
+          tagName: t.toUpperCase(),
+          className: '',
+          style: {},
+          children: [],
+          dataset: {},
+          appendChild: (c) => { el.children.push(c); return c; },
+          addEventListener: () => {},
+          remove: () => {},
+          querySelector: () => null,
+          querySelectorAll: () => []
+        };
+        return el;
+      },
+      getElementById: () => null,
+      querySelector: () => null,
+      querySelectorAll: () => []
+    },
+    WebOSApp: class {
+      constructor(manifest) { this.manifest = manifest; }
+      t(k) { return k; }
+      escapeHtml(s) { return String(s || ''); }
+    },
+    WindowManager: { createWindow: (w) => w, focusWindow: () => {}, setTitle: () => {} },
+    sys: {
+      appManager: { getAppTitle: () => 'Browser', registerInstance: () => {} },
+      storage: { get: () => null, set: () => {} }
+    }
+  };
+  const browserFunc = new Function('window', browserJs + '\nreturn window.BrowserApp;');
+  const browserInst = browserFunc(fakeWinBrowser);
+  assert("browser exporte window.BrowserApp et window.WebOSBrowserApp", typeof fakeWinBrowser.WebOSBrowserApp === 'function' && typeof browserInst === 'object');
+  assert("browser instancié sans erreur", !!browserInst);
+  const tab1 = browserInst.addTab('https://wikipedia.org');
+  assert("browser addTab crée un onglet", !!tab1 && tab1.url === 'https://wikipedia.org');
+  const norm1 = browserInst.normalizeUrl('google.com');
+  assert("browser normalizeUrl préfixe https://", norm1 === 'https://google.com');
+  const normSearch = browserInst.normalizeUrl('recherche simple');
+  assert("browser normalizeUrl transforme requête en recherche DuckDuckGo", normSearch.includes('duckduckgo.com/?q=recherche'));
+} catch (e) {
+  assert("browser exécution runtime", false, e.stack);
+}
 
 console.log('\n============================================================');
 console.log(` 📊 SCORECARD DES TESTS ISO-FONCTIONNELS JS : ${passedChecks}/${totalChecks} PASS`);

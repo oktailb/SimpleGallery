@@ -1,0 +1,38 @@
+{
+  "id": "browser",
+  "name": "Navigateur Web",
+  "version": "1.0.0",
+  "description": "Navigateur Web multi-onglets moderne avec barre d'adresses intelligente, favoris et passerelle locale",
+  "icon": "🌐",
+  "category": "utilities",
+  "main": "app.js",
+  "css": "style.css",
+  "autostartCapable": false,
+  "window": {
+    "width": 1020,
+    "height": 680,
+    "minWidth": 540,
+    "minHeight": 400,
+    "resizable": true,
+    "maximizable": true
+  },
+  "extensions": [
+    "html",
+    "htm",
+    "url"
+  ],
+  "locales": {
+    "fr": {
+      "title": "Navigateur Web",
+      "description": "Navigateur Web multi-onglets moderne avec barre d'adresses intelligente, favoris et passerelle locale"
+    },
+    "en": {
+      "title": "Web Browser",
+      "description": "Modern multi-tab web browser with smart omnibar, bookmarks, and local gallery integration"
+    },
+    "ja": {
+      "title": "ウェブブラウザ",
+      "description": "スマートアドレスバー、ブックマーク、ローカル統合を備えた最新のマルチタブウェブブラウザ"
+    }
+  }
+}

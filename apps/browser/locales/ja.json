@@ -1,0 +1,20 @@
+{
+  "apps.browser.title": "ウェブブラウザ",
+  "browser.new_tab": "新しいタブ",
+  "browser.close_tab": "タブを閉じる",
+  "browser.back": "戻る",
+  "browser.forward": "進む",
+  "browser.reload": "更新",
+  "browser.home": "ホーム",
+  "browser.address_placeholder": "URLを入力するか検索...",
+  "browser.view_source": "ソースコードを表示",
+  "browser.open_external": "システムブラウザで開く",
+  "browser.bookmark_gallery": "ローカルギャラリー",
+  "browser.bookmark_docs": "ドキュメント",
+  "browser.bookmark_ddg": "DuckDuckGo 検索",
+  "browser.bookmark_wiki": "ウィキペディア",
+  "browser.welcome_title": "WebOS ブラウザ",
+  "browser.welcome_sub": "ウェブを閲覧するか、ギャラリー内のHTMLページを開きます",
+  "browser.quick_links": "クイックアクセス",
+  "browser.local_files": "ローカルHTMLファイル"
+}

@@ -7,6 +7,8 @@
   'use strict';
 
   let toastUiLoadingPromise = null;
+  let markdownEnginesPromise = null;
+  let latexEnginePromise = null;
 
   /**
    * Lazy-loads Toast UI Editor CDN assets on-demand
@@ -18,7 +20,6 @@
     if (toastUiLoadingPromise) return toastUiLoadingPromise;
 
     toastUiLoadingPromise = new Promise((resolve, reject) => {
-      // 1. Inject Toast UI Editor Core & Dark Theme CSS
       if (!document.getElementById('toastui-editor-css')) {
         const link = document.createElement('link');
         link.id = 'toastui-editor-css';
@@ -34,7 +35,6 @@
         document.head.appendChild(linkDark);
       }
 
-      // 2. Inject Toast UI Editor Core JS Bundle
       if (!document.getElementById('toastui-editor-js')) {
         const script = document.createElement('script');
         script.id = 'toastui-editor-js';
@@ -62,42 +62,94 @@
   }
 
   /**
-   * Pure JS Markdown-to-HTML parser for secure, rich client-side rendering
+   * Lazy-loads Marked.js, Prism.js and KaTeX on-demand
    */
-  function renderMarkdownHtml(md) {
+  function loadMarkdownEngines() {
+    if (markdownEnginesPromise) return markdownEnginesPromise;
+    markdownEnginesPromise = new Promise((resolve) => {
+      const loadScript = (id, src) => new Promise((res) => {
+        if (document.getElementById(id)) return res();
+        const s = document.createElement('script');
+        s.id = id;
+        s.src = src;
+        s.onload = () => res();
+        s.onerror = () => res(); // graceful fallback
+        document.head.appendChild(s);
+      });
+
+      const loadLink = (id, href) => {
+        if (document.getElementById(id)) return;
+        const l = document.createElement('link');
+        l.id = id;
+        l.rel = 'stylesheet';
+        l.href = href;
+        document.head.appendChild(l);
+      };
+
+      loadLink('katex-css', 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css');
+      loadLink('prism-theme-css', 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css');
+
+      Promise.all([
+        loadScript('marked-js', 'https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js'),
+        loadScript('katex-js', 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'),
+        loadScript('prism-js', 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js')
+      ]).then(() => {
+        resolve();
+      });
+    });
+    return markdownEnginesPromise;
+  }
+
+  /**
+   * Lazy-loads LaTeX.js on-demand
+   */
+  function loadLatexEngine() {
+    if (latexEnginePromise) return latexEnginePromise;
+    latexEnginePromise = new Promise((resolve) => {
+      if (window.latexjs) return resolve(window.latexjs);
+      const link = document.createElement('link');
+      link.id = 'latexjs-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/latex.js/dist/latex.css';
+      document.head.appendChild(link);
+
+      const s = document.createElement('script');
+      s.id = 'latexjs-js';
+      s.src = 'https://cdn.jsdelivr.net/npm/latex.js/dist/latex.js';
+      s.onload = () => resolve(window.latexjs || null);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+    });
+    return latexEnginePromise;
+  }
+
+  /**
+   * Pure JS Fallback Markdown-to-HTML parser (100% resilient offline)
+   */
+  function fallbackPureJsMarkdown(md) {
     if (!md || typeof md !== 'string') return '';
     let html = md;
 
-    // Escape HTML entities to prevent raw script injections
     html = html
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Code blocks ```lang ... ```
     html = html.replace(/```([\w-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
       const cleanLang = lang ? ` class="language-${lang}"` : '';
       return `<pre class="md-codeblock"><code${cleanLang}>${code.trim()}</code></pre>`;
     });
 
-    // Inline code `code`
     html = html.replace(/`([^`\n]+)`/g, '<code class="md-inline-code">$1</code>');
-
-    // Headers # -> h1..h6
     html = html.replace(/^#{6}\s+(.+)$/gm, '<h6 class="md-h6">$1</h6>');
     html = html.replace(/^#{5}\s+(.+)$/gm, '<h5 class="md-h5">$1</h5>');
     html = html.replace(/^#{4}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>');
     html = html.replace(/^#{3}\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>');
     html = html.replace(/^#{2}\s+(.+)$/gm, '<h2 class="md-h2">$1</h2>');
     html = html.replace(/^#{1}\s+(.+)$/gm, '<h1 class="md-h1">$1</h1>');
-
-    // Horizontal rules (---, ***, ___)
     html = html.replace(/^(\*{3,}|-{3,}|_{3,})$/gm, '<hr class="md-hr">');
-
-    // Blockquotes
     html = html.replace(/^>\s+(.+)$/gm, '<blockquote class="md-blockquote"><p>$1</p></blockquote>');
 
-    // Bold & Italic
     html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
     html = html.replace(/___([^_]+)___/g, '<strong><em>$1</em></strong>');
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -106,7 +158,6 @@
     html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
     html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-    // Images ![alt](url)
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
       const cleanUrl = url.trim();
       if (cleanUrl.startsWith('file://')) {
@@ -115,7 +166,6 @@
       return `<img src="${cleanUrl}" alt="${alt}" class="md-img" />`;
     });
 
-    // Links [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
       const cleanUrl = url.trim();
       if (cleanUrl.startsWith('file://')) {
@@ -124,70 +174,57 @@
       return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="md-link">${text}</a>`;
     });
 
-    // Lists: Unordered, Ordered, and Task Lists grouping
-    const processLists = (text) => {
-      const rawLines = text.split('\n');
-      const processed = [];
-      let activeList = null; // 'ul' | 'ol' | 'task'
+    // Lists
+    const rawLines = html.split('\n');
+    const processed = [];
+    let activeList = null;
 
-      for (let i = 0; i < rawLines.length; i++) {
-        const line = rawLines[i];
-
-        // Task item: - [ ] or - [x]
-        const taskMatch = line.match(/^\s*[-*+]\s+\[([ xX])\]\s+(.+)$/);
-        if (taskMatch) {
-          const checked = taskMatch[1].toLowerCase() === 'x';
-          if (activeList !== 'task') {
-            if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
-            processed.push('<ul class="md-ul md-task-list">');
-            activeList = 'task';
-          }
-          processed.push(`<li class="md-task-item"><input type="checkbox" ${checked ? 'checked ' : ''}disabled /> <span>${taskMatch[2]}</span></li>`);
-          continue;
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
+      const taskMatch = line.match(/^\s*[-*+]\s+\[([ xX])\]\s+(.+)$/);
+      if (taskMatch) {
+        const checked = taskMatch[1].toLowerCase() === 'x';
+        if (activeList !== 'task') {
+          if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+          processed.push('<ul class="md-ul md-task-list">');
+          activeList = 'task';
         }
+        processed.push(`<li class="md-task-item"><input type="checkbox" ${checked ? 'checked ' : ''}disabled /> <span>${taskMatch[2]}</span></li>`);
+        continue;
+      }
 
-        // Unordered item: - item, * item, + item
-        const ulMatch = line.match(/^\s*[-*+]\s+(.+)$/);
-        if (ulMatch) {
-          if (activeList !== 'ul') {
-            if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
-            processed.push('<ul class="md-ul">');
-            activeList = 'ul';
-          }
-          processed.push(`<li class="md-li">${ulMatch[1]}</li>`);
-          continue;
+      const ulMatch = line.match(/^\s*[-*+]\s+(.+)$/);
+      if (ulMatch) {
+        if (activeList !== 'ul') {
+          if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+          processed.push('<ul class="md-ul">');
+          activeList = 'ul';
         }
+        processed.push(`<li class="md-li">${ulMatch[1]}</li>`);
+        continue;
+      }
 
-        // Ordered item: 1. item, 2. item
-        const olMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
-        if (olMatch) {
-          if (activeList !== 'ol') {
-            if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
-            processed.push('<ol class="md-ol">');
-            activeList = 'ol';
-          }
-          processed.push(`<li class="md-oli">${olMatch[2]}</li>`);
-          continue;
+      const olMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
+      if (olMatch) {
+        if (activeList !== 'ol') {
+          if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+          processed.push('<ol class="md-ol">');
+          activeList = 'ol';
         }
-
-        // Regular line
-        if (activeList) {
-          processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
-          activeList = null;
-        }
-        processed.push(line);
+        processed.push(`<li class="md-oli">${olMatch[2]}</li>`);
+        continue;
       }
 
       if (activeList) {
         processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+        activeList = null;
       }
+      processed.push(line);
+    }
+    if (activeList) processed.push(`</${activeList === 'ol' ? 'ol' : 'ul'}>`);
+    html = processed.join('\n');
 
-      return processed.join('\n');
-    };
-
-    html = processLists(html);
-
-    // Tables: | col | col |
+    // Tables
     const lines = html.split('\n');
     let inTable = false;
     let tableHtml = '';
@@ -200,9 +237,7 @@
           inTable = true;
           tableHtml = '<table class="md-table"><tbody>';
         }
-        if (/^\|[\s\-:|]+\|$/.test(line)) {
-          continue;
-        }
+        if (/^\|[\s\-:|]+\|$/.test(line)) continue;
         const cells = line.slice(1, -1).split('|').map(c => c.trim());
         const isHeader = (i > 0 && i + 1 < lines.length && /^\|[\s\-:|]+\|$/.test(lines[i + 1].trim()));
         const tag = isHeader ? 'th' : 'td';
@@ -223,7 +258,6 @@
     }
     html = newLines.join('\n');
 
-    // Paragraphs
     const blocks = html.split(/\n{2,}/);
     html = blocks.map(block => {
       block = block.trim();
@@ -237,11 +271,105 @@
     return html;
   }
 
+  /**
+   * Enhanced Modern Markdown-to-HTML parser with KaTeX, Prism & GitHub Callouts
+   */
+  function renderMarkdownHtml(md) {
+    if (!md || typeof md !== 'string') return '';
+
+    const mathBlocks = [];
+    const mathInlines = [];
+    let processed = md;
+
+    // 1. Extract & Protect Math Blocks: $$...$$
+    processed = processed.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+      const idx = mathBlocks.length;
+      mathBlocks.push(formula.trim());
+      return `@@MATH_BLOCK_${idx}@@`;
+    });
+
+    // 2. Extract & Protect Inline Math: $...$
+    processed = processed.replace(/(^|[^\\])\$([^\$\n]+?)\$/g, (match, prefix, formula) => {
+      const idx = mathInlines.length;
+      mathInlines.push(formula.trim());
+      return `${prefix}@@MATH_INLINE_${idx}@@`;
+    });
+
+    // 3. GitHub Alerts / Callouts: > [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING], > [!CAUTION]
+    const alertIcons = {
+      note: 'ℹ️',
+      tip: '💡',
+      important: '🟣',
+      warning: '⚠️',
+      caution: '🛑'
+    };
+    processed = processed.replace(/^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n((?:^>.*$\n?)*)/gmi, (match, type, content) => {
+      const cleanType = type.toLowerCase();
+      const icon = alertIcons[cleanType] || 'ℹ️';
+      const cleanContent = content.replace(/^>\s?/gm, '').trim();
+      return `\n\n<div class="md-alert md-alert-${cleanType}"><div class="md-alert-title"><span>${icon}</span> <span>${type}</span></div><div class="md-alert-content">${cleanContent}</div></div>\n\n`;
+    });
+
+    let html = '';
+    // Use Marked if available, otherwise pure JS fallback
+    if (window.marked && typeof window.marked.parse === 'function') {
+      try {
+        html = window.marked.parse(processed, { gfm: true, breaks: true });
+      } catch (e) {
+        html = fallbackPureJsMarkdown(processed);
+      }
+    } else {
+      html = fallbackPureJsMarkdown(processed);
+    }
+
+    // 4. Restore and Render Math with KaTeX
+    html = html.replace(/@@MATH_BLOCK_(\d+)@@/g, (match, idx) => {
+      const formula = mathBlocks[Number(idx)];
+      if (window.katex && typeof window.katex.renderToString === 'function') {
+        try {
+          return window.katex.renderToString(formula, { displayMode: true, throwOnError: false });
+        } catch (e) {
+          return `<div class="katex-display"><code>$$${formula}$$</code></div>`;
+        }
+      }
+      return `<div class="katex-display"><code>$$${formula}$$</code></div>`;
+    });
+
+    html = html.replace(/@@MATH_INLINE_(\d+)@@/g, (match, idx) => {
+      const formula = mathInlines[Number(idx)];
+      if (window.katex && typeof window.katex.renderToString === 'function') {
+        try {
+          return window.katex.renderToString(formula, { displayMode: false, throwOnError: false });
+        } catch (e) {
+          return `<code class="md-inline-code">$${formula}$</code>`;
+        }
+      }
+      return `<code class="md-inline-code">$${formula}$</code>`;
+    });
+
+    // 5. Enhance code blocks with Container, Language Header, and Copy Button
+    html = html.replace(/<pre><code(?:\s+class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi, (match, lang, code) => {
+      const displayLang = (lang || 'code').toUpperCase();
+      const codeId = 'code-' + Math.random().toString(36).slice(2, 9);
+      return `
+        <div class="md-codeblock-container">
+          <div class="md-codeblock-header">
+            <span>${displayLang}</span>
+            <button type="button" class="md-code-copy-btn" data-code-id="${codeId}">📋 Copier</button>
+          </div>
+          <pre><code id="${codeId}" class="${lang ? 'language-' + lang : ''}">${code}</code></pre>
+        </div>
+      `;
+    });
+
+    return html;
+  }
+
   const DocViewerPlugin = {
     id: 'generic-doc',
     nameKey: 'viewer.doc',
     categories: ['doc', 'other'],
-    extensions: ['pdf', 'txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'log', 'ini', 'sql', 'yaml', 'yml'],
+    extensions: ['pdf', 'txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'htm', 'tex', 'latex', 'js', 'css', 'php', 'py', 'sh', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'log', 'ini', 'sql', 'yaml', 'yml'],
     mimeTypes: ['application/pdf', 'text/*', 'application/json', 'application/msword', 'application/vnd.openxmlformats-officedocument.*'],
     defaultTarget: 'pip',
     supportsFullscreen: true,
@@ -274,8 +402,10 @@
       const ext = (file.extension || (file.name ? file.name.split('.').pop() : '')).toLowerCase();
       const isPdf = ext === 'pdf';
       const isMd = ['md', 'markdown'].includes(ext);
-      const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
-      const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
+      const isHtml = ['html', 'htm'].includes(ext);
+      const isTex = ['tex', 'latex'].includes(ext);
+      const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'htm', 'tex', 'latex', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
+      const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'htm', 'tex', 'latex', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
       const canEdit = (effectiveCtx.state.isAdmin || window.IS_ADMIN || (effectiveCtx.state.userRights && effectiveCtx.state.userRights.can_upload)) && isEditableText;
 
       // Notification helper
@@ -323,11 +453,13 @@
             <div class="webos-doc-container" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--window-bg, var(--bg-main, #0d1117));color:var(--text-main, #c9d1d9);position:relative;">
               <!-- Reader View Toolbar -->
               <div id="docReaderToolbar-${cleanPathId}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--header-bg, var(--bg-card, rgba(255,255,255,0.03)));border-bottom:1px solid var(--border-color, rgba(255,255,255,0.08));">
-                <span style="font-size:0.85rem;font-weight:600;color:var(--text-main, #f8fafc);">${isMd ? '📖' : '📝'} ${effectiveCtx.escapeHtml(file.name)} (${file.size_formatted})</span>
+                <span style="font-size:0.85rem;font-weight:600;color:var(--text-main, #f8fafc);">${isMd ? '📖' : (isHtml ? '🌐' : (isTex ? '📜' : '📝'))} ${effectiveCtx.escapeHtml(file.name)} (${file.size_formatted})</span>
                 <div style="display:flex;gap:8px;align-items:center;">
                   <button type="button" id="docTextInfoBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.1));color:var(--text-main, #fff);border-radius:8px;" data-i18n-title="lightbox.metadata_btn" title="${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}">ℹ️</button>
                   <button type="button" id="docWinCopyBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.1));color:var(--text-main, #fff);border-radius:8px;">📋 Copier</button>
                   ${isMd ? `<button type="button" id="docMdViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border-radius:8px;">📄 Code Source</button>` : ''}
+                  ${isHtml ? `<button type="button" id="docHtmlViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border-radius:8px;">📄 Code Source</button>` : ''}
+                  ${isTex ? `<button type="button" id="docTexViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border-radius:8px;">📄 Code Source TeX</button>` : ''}
                   ${canEdit ? `<button type="button" id="docEditToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--accent-primary,#6366f1);color:#fff;border-radius:8px;font-weight:600;"><span data-i18n="doc_editor.edit_btn">✏️ Éditer (WYSIWYG)</span></button>` : ''}
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:var(--text-main, #fff);background:var(--bg-card, rgba(255,255,255,0.1));border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
@@ -383,16 +515,85 @@
         const updateReaderDisplay = () => {
           const bodyEl = document.getElementById(`docWinTextBody-${cleanPathId}`);
           const mdToggleBtn = document.getElementById(`docMdViewToggleBtn-${cleanPathId}`);
+          const htmlToggleBtn = document.getElementById(`docHtmlViewToggleBtn-${cleanPathId}`);
+          const texToggleBtn = document.getElementById(`docTexViewToggleBtn-${cleanPathId}`);
           if (!bodyEl) return;
 
+          // 1. Markdown Mode (Rich GFM, Math KaTeX, Prism Highlighting, Copy Buttons)
           if (isMd && !isRawSourceMode) {
             bodyEl.className = 'doc-text-body doc-markdown-render';
+            bodyEl.style.padding = '';
             bodyEl.innerHTML = renderMarkdownHtml(currentRawText);
             if (mdToggleBtn) mdToggleBtn.textContent = '📄 Code Source';
-          } else {
+
+            // Bind code block copy buttons
+            bodyEl.querySelectorAll('.md-code-copy-btn').forEach(btn => {
+              btn.onclick = (e) => {
+                e.stopPropagation();
+                const codeId = btn.dataset.codeId;
+                const codeEl = document.getElementById(codeId);
+                if (codeEl) {
+                  navigator.clipboard.writeText(codeEl.textContent || '').then(() => {
+                    const orig = btn.textContent;
+                    btn.textContent = '✅ Copié !';
+                    setTimeout(() => { btn.textContent = orig; }, 2000);
+                  });
+                }
+              };
+            });
+
+            // Highlight syntax with Prism if loaded
+            if (window.Prism && typeof window.Prism.highlightAllUnder === 'function') {
+              try { window.Prism.highlightAllUnder(bodyEl); } catch (e) {}
+            }
+          }
+          // 2. HTML Mode (Isolated Web Preview)
+          else if (isHtml && !isRawSourceMode) {
+            bodyEl.className = 'doc-text-body';
+            bodyEl.style.padding = '0';
+            const htmlSrc = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+            bodyEl.innerHTML = `<iframe class="doc-html-frame" sandbox="allow-scripts allow-same-origin" src="${htmlSrc}" title="${effectiveCtx.escapeHtml(file.name)}"></iframe>`;
+            if (htmlToggleBtn) htmlToggleBtn.textContent = '📄 Code Source';
+          }
+          // 3. LaTeX Mode (Compiled TeX View via latex.js)
+          else if (isTex && !isRawSourceMode) {
+            bodyEl.className = 'doc-text-body';
+            bodyEl.style.padding = '';
+            bodyEl.innerHTML = `<div class="doc-latex-render" id="docLatexHost-${cleanPathId}">⏳ Compilation du document LaTeX...</div>`;
+            if (texToggleBtn) texToggleBtn.textContent = '📄 Code Source TeX';
+
+            const host = document.getElementById(`docLatexHost-${cleanPathId}`);
+            const compileTex = (latexjs) => {
+              if (!host) return;
+              try {
+                if (latexjs && typeof latexjs.parse === 'function') {
+                  const generator = new latexjs.HtmlGenerator({ hyphenate: false });
+                  const parsed = latexjs.parse(currentRawText, { generator });
+                  const doc = parsed.htmlDocument();
+                  host.innerHTML = '';
+                  host.appendChild(doc.body);
+                } else {
+                  host.innerHTML = renderMarkdownHtml(currentRawText);
+                }
+              } catch (e) {
+                host.innerHTML = `<div style="color:#ef4444;font-family:monospace;padding:1rem;background:rgba(239,68,68,0.1);border-left:4px solid #ef4444;border-radius:4px;margin-bottom:1.5rem;">⚠️ Erreur de compilation LaTeX : ${effectiveCtx.escapeHtml(e.message)}</div>` + renderMarkdownHtml(currentRawText);
+              }
+            };
+
+            if (window.latexjs && typeof window.latexjs.parse === 'function') {
+              compileTex(window.latexjs);
+            } else {
+              loadLatexEngine().then(compileTex);
+            }
+          }
+          // 4. Raw Code / Text Mode
+          else {
             bodyEl.className = 'doc-text-body doc-code-render';
+            bodyEl.style.padding = '';
             bodyEl.textContent = currentRawText;
             if (mdToggleBtn) mdToggleBtn.textContent = '👁️ Rendu Final';
+            if (htmlToggleBtn) htmlToggleBtn.textContent = '🌐 Aperçu Web';
+            if (texToggleBtn) texToggleBtn.textContent = '📜 Rendu LaTeX';
           }
         };
 
@@ -563,6 +764,8 @@
           const closeEditBtn = document.getElementById(`docCloseEditBtn-${cleanPathId}`);
           const saveBtn = document.getElementById(`docSaveBtn-${cleanPathId}`);
           const mdToggleBtn = document.getElementById(`docMdViewToggleBtn-${cleanPathId}`);
+          const htmlToggleBtn = document.getElementById(`docHtmlViewToggleBtn-${cleanPathId}`);
+          const texToggleBtn = document.getElementById(`docTexViewToggleBtn-${cleanPathId}`);
 
           const onInfo = () => { if (window.sys && window.sys.showMetadata) window.sys.showMetadata(file); };
           if (pdfInfo) pdfInfo.onclick = onInfo;
@@ -574,6 +777,18 @@
 
           if (mdToggleBtn) {
             mdToggleBtn.onclick = () => {
+              isRawSourceMode = !isRawSourceMode;
+              updateReaderDisplay();
+            };
+          }
+          if (htmlToggleBtn) {
+            htmlToggleBtn.onclick = () => {
+              isRawSourceMode = !isRawSourceMode;
+              updateReaderDisplay();
+            };
+          }
+          if (texToggleBtn) {
+            texToggleBtn.onclick = () => {
               isRawSourceMode = !isRawSourceMode;
               updateReaderDisplay();
             };
@@ -599,7 +814,7 @@
         };
         window.addEventListener('keydown', keyHandler);
 
-        // Load Text / Markdown Asynchronously
+        // Load Text / Markdown / HTML / LaTeX Asynchronously
         if (isText) {
           try {
             const fetchUrl = file.file_url + (file.file_url.includes('?') ? '&' : '?') + 't=' + Date.now();
@@ -607,6 +822,16 @@
             const text = await res.text();
             currentRawText = text;
             updateReaderDisplay();
+
+            if (isMd) {
+              loadMarkdownEngines().then(() => {
+                if (isMd && !isRawSourceMode) updateReaderDisplay();
+              });
+            } else if (isTex) {
+              loadLatexEngine().then(() => {
+                if (isTex && !isRawSourceMode) updateReaderDisplay();
+              });
+            }
 
             const copyBtn = document.getElementById(`docWinCopyBtn-${cleanPathId}`);
             if (copyBtn) {

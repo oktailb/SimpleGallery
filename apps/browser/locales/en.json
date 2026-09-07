@@ -1,0 +1,20 @@
+{
+  "apps.browser.title": "Web Browser",
+  "browser.new_tab": "New tab",
+  "browser.close_tab": "Close tab",
+  "browser.back": "Back",
+  "browser.forward": "Forward",
+  "browser.reload": "Reload",
+  "browser.home": "Home",
+  "browser.address_placeholder": "Enter a web address or search...",
+  "browser.view_source": "View source code",
+  "browser.open_external": "Open in system browser",
+  "browser.bookmark_gallery": "Local Gallery",
+  "browser.bookmark_docs": "Documentation",
+  "browser.bookmark_ddg": "DuckDuckGo Search",
+  "browser.bookmark_wiki": "Wikipedia",
+  "browser.welcome_title": "WebOS Browser",
+  "browser.welcome_sub": "Surf the web or explore HTML pages in your gallery",
+  "browser.quick_links": "Quick Access",
+  "browser.local_files": "Local HTML Files"
+}
