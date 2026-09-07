@@ -245,35 +245,13 @@
         folderPasswordGroup: document.getElementById('folderPasswordGroup'),
         dotfilePasswordInput: document.getElementById('dotfilePasswordInput'),
         folderDescBanner: document.getElementById('folderDescBanner'),
-        // Multimodal Autorun Banner & Editor
+        // Multimodal Autorun Banner
         autorunBanner: root.querySelector('.explorer-autorun-banner'),
         autorunTitle: root.querySelector('.autorun-title'),
         autorunDescription: root.querySelector('.autorun-description'),
         autorunPlayBtn: root.querySelector('.autorun-play-btn'),
         autorunEditBtn: root.querySelector('.autorun-edit-btn'),
         explorerAutorunBtn: root.querySelector('.explorer-autorun-btn'),
-        autorunEditorModal: root.querySelector('.autorun-editor-modal'),
-        autorunEditorCloseBtn: root.querySelector('.autorun-editor-close-btn'),
-        autorunEditorCancelBtn: root.querySelector('.autorun-editor-cancel-btn'),
-        autorunEditorSaveBtn: root.querySelector('.autorun-editor-save-btn'),
-        autorunEditorDeleteBtn: root.querySelector('.autorun-editor-delete-btn'),
-        autorunEditorPreviewBtn: root.querySelector('.autorun-editor-preview-btn'),
-        autorunEditorForm: root.querySelector('.autorun-editor-form'),
-        autorunTabVisualBtn: root.querySelector('#autorunTabVisualBtn'),
-        autorunTabJsonBtn: root.querySelector('#autorunTabJsonBtn'),
-        autorunVisualTabContent: root.querySelector('#autorunVisualTabContent'),
-        autorunJsonTabContent: root.querySelector('#autorunJsonTabContent'),
-        autorunEditTitle: root.querySelector('.autorun-edit-title'),
-        autorunEditDesc: root.querySelector('.autorun-edit-desc'),
-        autorunEditMasterType: root.querySelector('.autorun-edit-master-type'),
-        autorunEditMasterFile: root.querySelector('.autorun-edit-master-file'),
-        autorunMasterFileGroup: root.querySelector('#autorunMasterFileGroup'),
-        autorunMasterDurationGroup: root.querySelector('#autorunMasterDurationGroup'),
-        autorunEditMasterDuration: root.querySelector('.autorun-edit-master-duration'),
-        autorunEditLayout: root.querySelector('.autorun-edit-layout'),
-        autorunAddStepBtn: root.querySelector('#autorunAddStepBtn'),
-        autorunTimelineList: root.querySelector('#autorunTimelineList'),
-        autorunEditJson: root.querySelector('.autorun-edit-json'),
         // Quick Live Search & View Switcher
         quickSearchInput: root.querySelector('.explorer-quick-search-input'),
         quickSearchClearBtn: root.querySelector('.explorer-quick-search-clear'),
@@ -2444,38 +2422,6 @@
           if (file && window.sys && window.sys.openFile) window.sys.openFile(file);
         };
       }
-
-      // Autorun Editor Modal Form & Visual Builder
-      if (this.el.autorunEditorCloseBtn) {
-        this.el.autorunEditorCloseBtn.onclick = () => this.closeAutorunEditorModal();
-      }
-      if (this.el.autorunEditorCancelBtn) {
-        this.el.autorunEditorCancelBtn.onclick = () => this.closeAutorunEditorModal();
-      }
-      if (this.el.autorunEditorDeleteBtn) {
-        this.el.autorunEditorDeleteBtn.onclick = () => this.deleteAutorunConfig();
-      }
-      if (this.el.autorunTabVisualBtn) {
-        this.el.autorunTabVisualBtn.onclick = () => this.switchAutorunTab('visual');
-      }
-      if (this.el.autorunTabJsonBtn) {
-        this.el.autorunTabJsonBtn.onclick = () => this.switchAutorunTab('json');
-      }
-      if (this.el.autorunAddStepBtn) {
-        this.el.autorunAddStepBtn.onclick = () => this.addAutorunStep();
-      }
-      if (this.el.autorunEditorPreviewBtn) {
-        this.el.autorunEditorPreviewBtn.onclick = () => this.previewCurrentAutorun();
-      }
-      if (this.el.autorunEditMasterType) {
-        this.el.autorunEditMasterType.onchange = () => this.onAutorunMasterTypeChange();
-      }
-      if (this.el.autorunEditorForm) {
-        this.el.autorunEditorForm.onsubmit = (e) => {
-          e.preventDefault();
-          this.saveAutorunConfig();
-        };
-      }
     }
 
     // -------------------------------------------------------------
@@ -2570,760 +2516,78 @@
     openAutorunEditorModal(existingConfig = null) {
       if (window.AutorunStudio && typeof window.AutorunStudio.openFolder === 'function') {
         window.AutorunStudio.openFolder(this.state.currentPath, { config: existingConfig });
+        return;
       }
-      if (!this.el.autorunEditorModal) return;
-
-      const folderName = this.state.currentPath ? this.state.currentPath.split('/').pop() : "Blog Multimodal";
-      const files = this.state.files || [];
-      const defaultVideo = files.find(f => f.category === 'video');
-      const defaultAudio = files.find(f => f.category === 'audio');
-      const defaultDoc = files.find(f => f.category === 'doc' || f.name.match(/\.(md|markdown|txt)$/i));
-      const defaultImg = files.find(f => f.category === 'image');
-
-      // Normalize existing config into version 2.0 multimodal schema
-      let config = existingConfig || (this.state.overrides && this.state.overrides.autorun);
-      if (!config) {
-        config = {
-          version: "2.0",
-          title: folderName,
-          description: "Récit immersif synchronisé avec nos médias et applications WebOS",
-          layout: "split-horizontal",
-          master: {
-            type: defaultVideo ? "video" : (defaultAudio ? "audio" : "timer"),
-            file: defaultVideo ? defaultVideo.name : (defaultAudio ? defaultAudio.name : ""),
-            duration: "120"
-          },
-          timeline: [
-            {
-              time: "00:00",
-              title: "Introduction",
-              action: "open_app",
-              app: "maps",
-              params: { lat: 48.8566, lng: 2.3522, zoom: 12 }
-            },
-            {
-              time: "00:15",
-              title: defaultDoc ? defaultDoc.name : "Carnet de bord",
-              action: "set_doc",
-              file: defaultDoc ? defaultDoc.name : "",
-              highlight: ""
-            },
-            {
-              time: "00:45",
-              title: defaultImg ? defaultImg.name : "Photo du lieu",
-              action: "open_app",
-              app: "image-viewer",
-              params: { file: defaultImg ? defaultImg.name : "" }
-            }
-          ]
-        };
-      } else {
-        // Migration from version 1.0 format if necessary
-        config = JSON.parse(JSON.stringify(config));
-        if (!config.master) {
-          const lead = config.lead_media || config.primary || {};
-          config.master = {
-            type: (lead.app === 'viewer-audio' || (lead.file && lead.file.match(/\.(mp3|wav|ogg|flac)$/i))) ? 'audio' : 'video',
-            file: lead.file || '',
-            duration: config.duration || '120'
-          };
-        } else if (!config.master.file && (config.lead_media || config.primary)) {
-          const lead = config.lead_media || config.primary || {};
-          if (lead.file) config.master.file = lead.file;
-        }
-        if ((!config.timeline || config.timeline.length === 0) && Array.isArray(config.steps) && config.steps.length > 0) {
-          config.timeline = config.steps.map(s => ({
-            time: s.time || "00:00",
-            title: s.title || s.chapter || "",
-            action: s.action || "open_app",
-            app: (s.app === 'viewer-video' ? 'video-player' : (s.app === 'viewer-text' ? 'doc-viewer' : (s.app || (s.action === 'set_doc' ? 'doc-viewer' : (s.action === 'show_image' ? 'image-viewer' : 'video-player'))))),
-            file: s.file || '',
-            params: s.params || (s.file ? { file: s.file } : {})
-          }));
-        }
+      if (window.sys && window.sys.appManager && typeof window.sys.appManager.open === 'function') {
+        window.sys.appManager.open('autorun-editor', { path: this.state.currentPath, config: existingConfig });
+        return;
       }
-
-      this.autorunEditorConfig = config;
-      this.autorunActiveTab = 'visual';
-
-      // Populate meta inputs
-      if (this.el.autorunEditTitle) this.el.autorunEditTitle.value = config.title || '';
-      if (this.el.autorunEditDesc) this.el.autorunEditDesc.value = config.description || '';
-      if (this.el.autorunEditLayout) this.el.autorunEditLayout.value = config.layout || config.window_layout || 'split-horizontal';
-
-      // Populate master media controls
-      const masterType = (config.master && config.master.type) || 'video';
-      if (this.el.autorunEditMasterType) this.el.autorunEditMasterType.value = masterType;
-      if (this.el.autorunEditMasterDuration) this.el.autorunEditMasterDuration.value = (config.master && config.master.duration) || '120';
-      this.populateAutorunMasterFiles(config.master && config.master.file);
-      this.onAutorunMasterTypeChange();
-
-      // Render Visual Timeline
-      this.renderAutorunVisualTimeline();
-
-      // Raw JSON view
-      if (this.el.autorunEditJson) this.el.autorunEditJson.value = JSON.stringify(config, null, 2);
-
-      // Show Delete button if autorun was already saved
-      if (this.el.autorunEditorDeleteBtn) {
-        this.el.autorunEditorDeleteBtn.style.display = (this.state.overrides && this.state.overrides.has_autorun) ? 'inline-block' : 'none';
-      }
-
-      // Default to visual tab
-      this.switchAutorunTab('visual');
-
-      this.el.autorunEditorModal.style.display = 'flex';
     }
 
     closeAutorunEditorModal() {
-      if (this.el.autorunEditorModal) {
-        this.el.autorunEditorModal.style.display = 'none';
-      }
-    }
-
-    populateAutorunMasterFiles(selectedFileName = '') {
-      if (!this.el.autorunEditMasterFile) return;
-      const files = this.state.files || [];
-      const mediaFiles = files.filter(f => f.category === 'video' || f.category === 'audio' || f.name.match(/\.(mp4|webm|mov|mkv|mp3|wav|ogg|flac|m4a)$/i));
-
-      let html = `<option value="">${this.escapeHtml(this.t('autorun.no_file'))}</option>`;
-      let found = false;
-      mediaFiles.forEach(f => {
-        if (f.name === selectedFileName || f.path === selectedFileName) found = true;
-        const isSel = (f.name === selectedFileName || f.path === selectedFileName) ? 'selected' : '';
-        const icon = f.category === 'video' ? '🎬' : '🎵';
-        html += `<option value="${this.escapeHtml(f.name)}" ${isSel}>${icon} ${this.escapeHtml(f.name)}</option>`;
-      });
-      if (selectedFileName && !found) {
-        html += `<option value="${this.escapeHtml(selectedFileName)}" selected>🎬 ${this.escapeHtml(selectedFileName)}</option>`;
-      }
-
-      this.el.autorunEditMasterFile.innerHTML = html;
-    }
-
-    onAutorunMasterTypeChange() {
-      if (!this.el.autorunEditMasterType) return;
-      const type = this.el.autorunEditMasterType.value;
-      if (this.el.autorunMasterFileGroup) {
-        this.el.autorunMasterFileGroup.style.display = (type === 'timer') ? 'none' : 'flex';
-      }
-      if (this.el.autorunMasterDurationGroup) {
-        this.el.autorunMasterDurationGroup.style.display = (type === 'timer') ? 'flex' : 'none';
+      if (this.el && this.el.autorunEditorModal) this.el.autorunEditorModal.style.display = 'none';
+      if (window.AutorunStudio && typeof window.AutorunStudio.close === 'function') {
+        window.AutorunStudio.close();
       }
     }
 
     switchAutorunTab(tabId) {
-      this.autorunActiveTab = tabId;
-      if (tabId === 'visual') {
-        // Sync from JSON to Visual if valid
-        if (this.el.autorunEditJson && this.el.autorunEditJson.value) {
-          try {
-            const parsed = JSON.parse(this.el.autorunEditJson.value);
-            this.autorunEditorConfig = parsed;
-            if (this.el.autorunEditTitle) this.el.autorunEditTitle.value = parsed.title || '';
-            if (this.el.autorunEditDesc) this.el.autorunEditDesc.value = parsed.description || '';
-            if (this.el.autorunEditLayout) this.el.autorunEditLayout.value = parsed.layout || 'split-horizontal';
-            if (this.el.autorunEditMasterType && parsed.master) {
-              this.el.autorunEditMasterType.value = parsed.master.type || 'video';
-              this.onAutorunMasterTypeChange();
-            }
-            if (this.el.autorunEditMasterFile && parsed.master) {
-              this.populateAutorunMasterFiles(parsed.master.file);
-            }
-            this.renderAutorunVisualTimeline();
-          } catch (e) {
-            this.showToast(this.t('autorun.json_invalid', { error: e.message }), 'error');
-            return;
-          }
-        }
-        if (this.el.autorunVisualTabContent) this.el.autorunVisualTabContent.style.display = 'block';
-        if (this.el.autorunJsonTabContent) this.el.autorunJsonTabContent.style.display = 'none';
-        if (this.el.autorunTabVisualBtn) this.el.autorunTabVisualBtn.classList.add('active');
-        if (this.el.autorunTabJsonBtn) this.el.autorunTabJsonBtn.classList.remove('active');
-      } else {
-        // Sync from Visual to JSON
-        this.syncVisualToConfig();
-        if (this.el.autorunEditJson) {
-          this.el.autorunEditJson.value = JSON.stringify(this.autorunEditorConfig, null, 2);
-        }
-        if (this.el.autorunVisualTabContent) this.el.autorunVisualTabContent.style.display = 'none';
-        if (this.el.autorunJsonTabContent) this.el.autorunJsonTabContent.style.display = 'block';
-        if (this.el.autorunTabVisualBtn) this.el.autorunTabVisualBtn.classList.remove('active');
-        if (this.el.autorunTabJsonBtn) this.el.autorunTabJsonBtn.classList.add('active');
+      if (window.AutorunStudio && typeof window.AutorunStudio.switchTab === 'function') {
+        window.AutorunStudio.switchTab(tabId);
       }
     }
 
+    onAutorunMasterTypeChange() {
+      // Delegated to standalone AutorunStudio
+    }
+
     syncVisualToConfig() {
-      if (!this.autorunEditorConfig) this.autorunEditorConfig = {};
-      this.autorunEditorConfig.version = "2.0";
-      if (this.el.autorunEditTitle) this.autorunEditorConfig.title = this.el.autorunEditTitle.value;
-      if (this.el.autorunEditDesc) this.autorunEditorConfig.description = this.el.autorunEditDesc.value;
-      if (this.el.autorunEditLayout) this.autorunEditorConfig.layout = this.el.autorunEditLayout.value;
-
-      this.autorunEditorConfig.master = {
-        type: this.el.autorunEditMasterType ? this.el.autorunEditMasterType.value : 'video',
-        file: this.el.autorunEditMasterFile ? this.el.autorunEditMasterFile.value : '',
-        duration: this.el.autorunEditMasterDuration ? this.el.autorunEditMasterDuration.value : '120'
-      };
-
-      // Read current values from DOM step cards
-      if (this.el.autorunTimelineList) {
-        const cards = this.el.autorunTimelineList.querySelectorAll('.autorun-step-card');
-        const newTimeline = [];
-        cards.forEach((card) => {
-          const time = card.querySelector('.step-time-input')?.value || '00:00';
-          const title = card.querySelector('.step-title-input')?.value || '';
-          const action = card.querySelector('.step-action-select')?.value || 'open_app';
-          const app = card.querySelector('.step-app-select')?.value || '';
-          let file = card.querySelector('.step-file-select')?.value || '';
-          if (file === '[object Object]') file = '';
-          const pos = card.querySelector('.step-pos-select')?.value || 'auto';
-          const command = card.querySelector('.step-cmd-select')?.value || '';
-          const lat = card.querySelector('.step-lat-input')?.value;
-          const lng = card.querySelector('.step-lng-input')?.value;
-          const zoom = card.querySelector('.step-zoom-input')?.value;
-          const highlight = card.querySelector('.step-highlight-input')?.value;
-          const message = card.querySelector('.step-msg-input')?.value;
-
-          const stepObj = { time, title, action };
-          if (pos && pos !== 'auto') {
-            stepObj.position = pos;
-          }
-          if (action === 'open_app') {
-            stepObj.app = app;
-            stepObj.params = {};
-            if (file) stepObj.params.file = file;
-            if (pos && pos !== 'auto') stepObj.params.position = pos;
-            if (app === 'maps') {
-              if (lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
-              if (lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
-              if (zoom != null && zoom !== '') stepObj.params.zoom = parseInt(zoom, 10);
-            }
-          } else if (action === 'close_app') {
-            stepObj.app = app;
-          } else if (action === 'control_app') {
-            stepObj.app = app;
-            stepObj.command = command;
-            stepObj.params = {};
-
-            // Collect dynamic parameters if present
-            const paramInputs = card.querySelectorAll('.step-param-input');
-            if (paramInputs && paramInputs.length > 0) {
-              paramInputs.forEach(inp => {
-                const pName = inp.dataset.paramName;
-                if (!pName) return;
-                let pVal = inp.value;
-                if (inp.type === 'number') {
-                  pVal = (pVal !== '' && !isNaN(Number(pVal))) ? parseFloat(pVal) : pVal;
-                }
-                stepObj.params[pName] = pVal;
-              });
-            }
-
-            // Fallback for legacy / manually placed inputs
-            if (app === 'maps' && (command === 'flyTo' || command === 'setView')) {
-              if (stepObj.params.lat == null && lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
-              if (stepObj.params.lng == null && lng != null && lng !== '') stepObj.params.lng = parseFloat(lng);
-              if (stepObj.params.zoom == null && zoom != null && zoom !== '') stepObj.params.zoom = parseInt(zoom, 10);
-            } else if (app === 'doc-viewer') {
-              if (stepObj.params.highlight == null && highlight) stepObj.params.highlight = highlight;
-            } else if (app === 'image-viewer') {
-              if (stepObj.params.file == null && file) stepObj.params.file = file;
-            }
-          } else if (action === 'set_doc') {
-            stepObj.action = 'set_doc';
-            if (file) stepObj.file = file;
-            if (highlight) stepObj.highlight = highlight;
-          } else if (action === 'show_image') {
-            stepObj.action = 'show_image';
-            if (file) stepObj.file = file;
-          } else if (action === 'notify') {
-            stepObj.action = 'notify';
-            stepObj.message = message || title;
-          }
-
-          newTimeline.push(stepObj);
-        });
-
-        this.autorunEditorConfig.timeline = newTimeline;
+      if (window.AutorunStudio && typeof window.AutorunStudio.syncVisualToConfig === 'function') {
+        window.AutorunStudio.syncVisualToConfig();
       }
     }
 
     renderAutorunVisualTimeline() {
-      if (!this.el.autorunTimelineList) return;
-      const timeline = (this.autorunEditorConfig && Array.isArray(this.autorunEditorConfig.timeline)) 
-        ? this.autorunEditorConfig.timeline 
-        : [];
-
-      if (timeline.length === 0) {
-        this.el.autorunTimelineList.innerHTML = `
-          <div class="autorun-empty-timeline">
-            <div style="font-size:2.5rem;margin-bottom:0.75rem;">⏱️</div>
-            <p>${this.escapeHtml(this.t('autorun.empty_timeline'))}</p>
-          </div>
-        `;
-        return;
+      if (window.AutorunStudio && typeof window.AutorunStudio.renderTimeline === 'function') {
+        window.AutorunStudio.renderTimeline();
       }
-
-      const files = this.state.files || [];
-      const docFiles = files.filter(f => f.category === 'doc' || f.name.match(/\.(md|markdown|txt|pdf)$/i));
-      const imgFiles = files.filter(f => f.category === 'image');
-
-      const controllableApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAllControllableApps === 'function')
-        ? window.sys.appManager.getAllControllableApps()
-        : [
-            { id: 'maps', name: 'Maps', icon: '🗺️' },
-            { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
-            { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' },
-            { id: 'video-player', name: 'Video Player', icon: '🎬' }
-          ];
-
-      const allApps = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAllApps === 'function')
-        ? window.sys.appManager.getAllApps(false)
-        : [
-            { id: 'maps', name: 'Maps', icon: '🗺️' },
-            { id: 'doc-viewer', name: 'Doc Viewer', icon: '📄' },
-            { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
-            { id: 'video-player', name: 'Video Player', icon: '🎬' },
-            { id: 'audio-player', name: 'Audio Player', icon: '🎵' },
-            { id: 'system-monitor', name: 'System Monitor', icon: '📊' }
-          ];
-
-      const buildFileOptions = (selectedVal, allowedList) => {
-        let cleanVal = selectedVal;
-        if (typeof cleanVal === 'object' && cleanVal !== null) {
-          cleanVal = cleanVal.name || cleanVal.path || '';
-        }
-        if (cleanVal === '[object Object]') cleanVal = '';
-
-        let optHtml = `<option value="">${this.escapeHtml(this.t('autorun.no_file'))}</option>`;
-        const list = allowedList.length > 0 ? allowedList : files;
-        let found = false;
-        list.forEach(f => {
-          if (f.name === cleanVal || f.path === cleanVal) found = true;
-          const isSel = (f.name === cleanVal || f.path === cleanVal) ? 'selected' : '';
-          optHtml += `<option value="${this.escapeHtml(f.name)}" ${isSel}>${this.escapeHtml(f.name)}</option>`;
-        });
-        if (cleanVal && !found) {
-          optHtml += `<option value="${this.escapeHtml(cleanVal)}" selected>${this.escapeHtml(cleanVal)}</option>`;
-        }
-        return optHtml;
-      };
-
-      let html = '';
-      timeline.forEach((step, idx) => {
-        const time = typeof step.time === 'string' ? step.time : '00:00';
-        const title = step.title || '';
-        const action = step.action || 'open_app';
-        const app = step.app || (action === 'set_doc' ? 'doc-viewer' : (action === 'show_image' ? 'image-viewer' : 'maps'));
-        let file = step.file || (step.params && step.params.file) || '';
-        if (typeof file === 'object' && file !== null) {
-          file = file.path || file.name || '';
-        }
-        if (file === '[object Object]') file = '';
-        const pos = step.position || (step.params && step.params.position) || 'auto';
-        const command = step.command || (app === 'maps' ? 'flyTo' : 'scroll');
-        const lat = (step.params && step.params.lat != null) ? step.params.lat : (step.lat != null ? step.lat : '');
-        const lng = (step.params && step.params.lng != null) ? step.params.lng : (step.lng != null ? step.lng : '');
-        const zoom = (step.params && step.params.zoom != null) ? step.params.zoom : (step.zoom != null ? step.zoom : 13);
-        const highlight = step.highlight || (step.params && step.params.highlight) || '';
-        const message = step.message || step.title || '';
-
-        html += `
-          <div class="autorun-step-card" data-step-index="${idx}">
-            <div class="step-card-header">
-              <div class="step-header-left">
-                <span class="step-badge-num">#${idx + 1}</span>
-                <div class="step-time-wrapper">
-                  <span class="step-time-icon">⏱️</span>
-                  <input type="text" class="step-time-input" value="${this.escapeHtml(time)}" placeholder="00:00" title="${this.escapeHtml(this.t('autorun.step_time'))}">
-                </div>
-                <input type="text" class="step-title-input" value="${this.escapeHtml(title)}" placeholder="${this.escapeHtml(this.t('autorun.step_title'))}">
-              </div>
-              <div class="step-header-right">
-                <button type="button" class="step-order-btn step-move-up-btn" data-step-index="${idx}" title="${this.escapeHtml(this.t('autorun.move_up'))}">⬆️</button>
-                <button type="button" class="step-order-btn step-move-down-btn" data-step-index="${idx}" title="${this.escapeHtml(this.t('autorun.move_down'))}">⬇️</button>
-                <button type="button" class="step-order-btn step-delete-btn" data-step-index="${idx}" title="${this.escapeHtml(this.t('autorun.delete_step'))}">🗑️</button>
-              </div>
-            </div>
-
-            <div class="step-card-body">
-              <div class="step-field-group">
-                <label>${this.escapeHtml(this.t('autorun.step_action'))}</label>
-                <select class="step-action-select autorun-select" data-step-index="${idx}">
-                  <option value="open_app" ${action === 'open_app' ? 'selected' : ''}>🚀 ${this.escapeHtml(this.t('autorun.action_open_app'))}</option>
-                  <option value="close_app" ${action === 'close_app' ? 'selected' : ''}>❌ ${this.escapeHtml(this.t('autorun.action_close_app'))}</option>
-                  <option value="control_app" ${action === 'control_app' ? 'selected' : ''}>🎮 ${this.escapeHtml(this.t('autorun.action_control_app'))}</option>
-                  <option value="set_doc" ${action === 'set_doc' ? 'selected' : ''}>📄 ${this.escapeHtml(this.t('autorun.action_doc'))}</option>
-                  <option value="show_image" ${action === 'show_image' ? 'selected' : ''}>🖼️ ${this.escapeHtml(this.t('autorun.action_image'))}</option>
-                  <option value="notify" ${action === 'notify' ? 'selected' : ''}>💬 ${this.escapeHtml(this.t('autorun.action_notify'))}</option>
-                </select>
-              </div>
-
-              <!-- Contextual Fields based on action -->
-              ${(action === 'open_app' || action === 'close_app' || action === 'control_app') ? `
-                <div class="step-field-group">
-                  <label>${this.escapeHtml(this.t('autorun.target_app'))}</label>
-                  <select class="step-app-select autorun-select" data-step-index="${idx}">
-                    ${(() => {
-                      const list = (action === 'control_app' && controllableApps.length > 0) ? controllableApps : allApps;
-                      let opts = '';
-                      list.forEach(a => {
-                        const isSel = (a.id === app) ? 'selected' : '';
-                        const icon = a.icon || '📱';
-                        opts += `<option value="${this.escapeHtml(a.id)}" ${isSel}>${icon} ${this.escapeHtml(a.name || a.id)}</option>`;
-                      });
-                      if (app && !list.some(a => a.id === app)) {
-                        opts += `<option value="${this.escapeHtml(app)}" selected>📱 ${this.escapeHtml(app)}</option>`;
-                      }
-                      return opts;
-                    })()}
-                  </select>
-                </div>
-              ` : ''}
-
-              ${(action === 'open_app' || action === 'set_doc' || action === 'show_image') ? `
-                <div class="step-field-group">
-                  <label>${this.escapeHtml(this.t('autorun.step_pos'))}</label>
-                  <select class="step-pos-select autorun-select" data-step-index="${idx}">
-                    <option value="auto" ${(!pos || pos === 'auto') ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_auto'))}</option>
-                    <option value="right-half" ${pos === 'right-half' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_right_half'))}</option>
-                    <option value="left-half" ${pos === 'left-half' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_left_half'))}</option>
-                    <option value="top-right" ${pos === 'top-right' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_top_right'))}</option>
-                    <option value="bottom-right" ${pos === 'bottom-right' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_bottom_right'))}</option>
-                    <option value="top-left" ${pos === 'top-left' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_top_left'))}</option>
-                    <option value="bottom-left" ${pos === 'bottom-left' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_bottom_left'))}</option>
-                    <option value="center" ${pos === 'center' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_center'))}</option>
-                    <option value="fullscreen" ${pos === 'fullscreen' ? 'selected' : ''}>${this.escapeHtml(this.t('autorun.pos_fullscreen'))}</option>
-                  </select>
-                </div>
-              ` : ''}
-
-              ${(action === 'control_app') ? (() => {
-                const appCommands = (window.sys && window.sys.appManager && typeof window.sys.appManager.getAppCommands === 'function')
-                  ? window.sys.appManager.getAppCommands(app)
-                  : {};
-                const cmdKeys = Object.keys(appCommands);
-                const activeCommand = step.command || (cmdKeys.length > 0 ? cmdKeys[0] : '');
-                const activeCmdDef = appCommands[activeCommand] || {};
-                const paramsDef = activeCmdDef.params || {};
-                const paramKeys = Object.keys(paramsDef);
-
-                let cmdOptions = '';
-                cmdKeys.forEach(ck => {
-                  const def = appCommands[ck];
-                  const label = (def && def.label) ? def.label : ck;
-                  const isSel = (ck === activeCommand) ? 'selected' : '';
-                  cmdOptions += `<option value="${this.escapeHtml(ck)}" ${isSel}>${this.escapeHtml(label)}</option>`;
-                });
-                if (activeCommand && !cmdKeys.includes(activeCommand)) {
-                  cmdOptions += `<option value="${this.escapeHtml(activeCommand)}" selected>${this.escapeHtml(activeCommand)}</option>`;
-                }
-
-                let dynamicParamsHtml = '';
-                if (paramKeys.length > 0) {
-                  let innerFields = '';
-                  paramKeys.forEach(pKey => {
-                    const pDef = paramsDef[pKey] || {};
-                    const pType = pDef.type || 'text';
-                    const pLabel = pDef.label || pKey;
-                    const pVal = (step.params && step.params[pKey] != null)
-                      ? step.params[pKey]
-                      : ((step[pKey] != null) ? step[pKey] : (pDef.default ?? ''));
-
-                    if (pType === 'file') {
-                      const fileCategory = pDef.category;
-                      const fileList = (fileCategory === 'image') ? imgFiles : ((fileCategory === 'doc') ? docFiles : files);
-                      innerFields += `
-                        <div class="step-field-group">
-                          <label>${this.escapeHtml(pLabel)}</label>
-                          <select class="step-param-input step-file-select autorun-select" data-param-name="${this.escapeHtml(pKey)}">
-                            ${buildFileOptions(pVal, fileList)}
-                          </select>
-                        </div>
-                      `;
-                    } else if (pType === 'number') {
-                      innerFields += `
-                        <div class="step-mini-col">
-                          <label>${this.escapeHtml(pLabel)}</label>
-                          <input type="number" step="${pDef.step || 'any'}" ${pDef.min != null ? `min="${pDef.min}"` : ''} ${pDef.max != null ? `max="${pDef.max}"` : ''} class="step-param-input autorun-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.default ?? '')}">
-                        </div>
-                      `;
-                    } else if (pType === 'time') {
-                      innerFields += `
-                        <div class="step-field-group">
-                          <label>${this.escapeHtml(pLabel)}</label>
-                          <input type="text" class="step-param-input autorun-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.placeholder || '00:00')}">
-                        </div>
-                      `;
-                    } else if (pType === 'select') {
-                      let sOpts = '';
-                      (pDef.options || []).forEach(opt => {
-                        const v = typeof opt === 'object' ? opt.value : opt;
-                        const l = typeof opt === 'object' ? opt.label : opt;
-                        sOpts += `<option value="${this.escapeHtml(v)}" ${v == pVal ? 'selected' : ''}>${this.escapeHtml(l)}</option>`;
-                      });
-                      innerFields += `
-                        <div class="step-field-group">
-                          <label>${this.escapeHtml(pLabel)}</label>
-                          <select class="step-param-input autorun-select" data-param-name="${this.escapeHtml(pKey)}">
-                            ${sOpts}
-                          </select>
-                        </div>
-                      `;
-                    } else {
-                      innerFields += `
-                        <div class="step-field-group">
-                          <label>${this.escapeHtml(pLabel)}</label>
-                          <input type="text" class="step-param-input autorun-input" data-param-name="${this.escapeHtml(pKey)}" value="${this.escapeHtml(pVal)}" placeholder="${this.escapeHtml(pDef.placeholder || '')}">
-                        </div>
-                      `;
-                    }
-                  });
-
-                  dynamicParamsHtml = `<div class="step-field-group-inline" style="display:flex;flex-wrap:wrap;gap:0.5rem;width:100%;margin-top:0.35rem;">${innerFields}</div>`;
-                }
-
-                return `
-                  <div class="step-field-group">
-                    <label>${this.escapeHtml(this.t('autorun.command'))}</label>
-                    <select class="step-cmd-select autorun-select" data-step-index="${idx}">
-                      ${cmdOptions}
-                    </select>
-                  </div>
-                  ${dynamicParamsHtml}
-                `;
-              })() : ''}
-
-              ${(app === 'maps' && action === 'open_app') ? `
-                <div class="step-field-group-inline">
-                  <div class="step-mini-col">
-                    <label>${this.escapeHtml(this.t('autorun.lat'))}</label>
-                    <input type="number" step="any" class="step-lat-input autorun-input" value="${this.escapeHtml(lat)}" placeholder="48.8566">
-                  </div>
-                  <div class="step-mini-col">
-                    <label>${this.escapeHtml(this.t('autorun.lng'))}</label>
-                    <input type="number" step="any" class="step-lng-input autorun-input" value="${this.escapeHtml(lng)}" placeholder="2.3522">
-                  </div>
-                  <div class="step-mini-col">
-                    <label>${this.escapeHtml(this.t('autorun.zoom'))}</label>
-                    <input type="number" step="1" min="1" max="19" class="step-zoom-input autorun-input" value="${this.escapeHtml(zoom)}" placeholder="13">
-                  </div>
-                </div>
-              ` : ''}
-
-              ${(action === 'set_doc' || (action === 'open_app' && app === 'doc-viewer')) ? `
-                <div class="step-field-group">
-                  <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
-                  <select class="step-file-select autorun-select">
-                    ${buildFileOptions(file, docFiles)}
-                  </select>
-                </div>
-                <div class="step-field-group">
-                  <label>${this.escapeHtml(this.t('autorun.highlight'))}</label>
-                  <input type="text" class="step-highlight-input autorun-input" value="${this.escapeHtml(highlight)}" placeholder="#chapitre-1">
-                </div>
-              ` : ''}
-
-              ${(action === 'show_image' || (action === 'open_app' && app === 'image-viewer')) ? `
-                <div class="step-field-group">
-                  <label>${this.escapeHtml(this.t('autorun.target_file'))}</label>
-                  <select class="step-file-select autorun-select">
-                    ${buildFileOptions(file, imgFiles)}
-                  </select>
-                </div>
-              ` : ''}
-
-              ${(action === 'notify') ? `
-                <div class="step-field-group" style="flex:1;">
-                  <label>${this.escapeHtml(this.t('autorun.message'))}</label>
-                  <input type="text" class="step-msg-input autorun-input" value="${this.escapeHtml(message)}" placeholder="Notification...">
-                </div>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      });
-
-      this.el.autorunTimelineList.innerHTML = html;
-
-      // Bind dynamic actions
-      this.el.autorunTimelineList.querySelectorAll('.step-action-select').forEach(sel => {
-        sel.onchange = () => {
-          this.syncVisualToConfig();
-          this.renderAutorunVisualTimeline();
-        };
-      });
-
-      this.el.autorunTimelineList.querySelectorAll('.step-app-select').forEach(sel => {
-        sel.onchange = () => {
-          this.syncVisualToConfig();
-          this.renderAutorunVisualTimeline();
-        };
-      });
-
-      this.el.autorunTimelineList.querySelectorAll('.step-cmd-select').forEach(sel => {
-        sel.onchange = () => {
-          this.syncVisualToConfig();
-          this.renderAutorunVisualTimeline();
-        };
-      });
-
-      this.el.autorunTimelineList.querySelectorAll('.step-delete-btn').forEach(btn => {
-        btn.onclick = () => {
-          const idx = parseInt(btn.dataset.stepIndex, 10);
-          this.removeAutorunStep(idx);
-        };
-      });
-
-      this.el.autorunTimelineList.querySelectorAll('.step-move-up-btn').forEach(btn => {
-        btn.onclick = () => {
-          const idx = parseInt(btn.dataset.stepIndex, 10);
-          this.moveAutorunStep(idx, -1);
-        };
-      });
-
-      this.el.autorunTimelineList.querySelectorAll('.step-move-down-btn').forEach(btn => {
-        btn.onclick = () => {
-          const idx = parseInt(btn.dataset.stepIndex, 10);
-          this.moveAutorunStep(idx, 1);
-        };
-      });
     }
 
     addAutorunStep() {
-      this.syncVisualToConfig();
-      if (!this.autorunEditorConfig.timeline) this.autorunEditorConfig.timeline = [];
-
-      let nextSec = 0;
-      if (this.autorunEditorConfig.timeline.length > 0) {
-        const lastStep = this.autorunEditorConfig.timeline[this.autorunEditorConfig.timeline.length - 1];
-        const lastParts = String(lastStep.time || '00:00').split(':').map(p => parseFloat(p) || 0);
-        const lastSec = (lastParts.length === 2) ? lastParts[0] * 60 + lastParts[1] : (lastParts[0] || 0);
-        nextSec = lastSec + 15;
+      if (window.AutorunStudio && typeof window.AutorunStudio.addStep === 'function') {
+        window.AutorunStudio.addStep();
       }
-
-      const m = Math.floor(nextSec / 60);
-      const s = nextSec % 60;
-      const timecode = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-
-      this.autorunEditorConfig.timeline.push({
-        time: timecode,
-        title: `Étape ${this.autorunEditorConfig.timeline.length + 1}`,
-        action: "open_app",
-        app: "maps",
-        params: { lat: 48.8566, lng: 2.3522, zoom: 13 }
-      });
-
-      this.renderAutorunVisualTimeline();
-
-      // Scroll to bottom of timeline
-      setTimeout(() => {
-        if (this.el.autorunTimelineList) {
-          const cards = this.el.autorunTimelineList.querySelectorAll('.autorun-step-card');
-          if (cards.length > 0) {
-            cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      }, 50);
     }
 
     removeAutorunStep(index) {
-      this.syncVisualToConfig();
-      if (this.autorunEditorConfig.timeline && this.autorunEditorConfig.timeline[index]) {
-        this.autorunEditorConfig.timeline.splice(index, 1);
-        this.renderAutorunVisualTimeline();
+      if (window.AutorunStudio && typeof window.AutorunStudio.removeStep === 'function') {
+        window.AutorunStudio.removeStep(index);
       }
     }
 
     moveAutorunStep(index, direction) {
-      this.syncVisualToConfig();
-      const list = this.autorunEditorConfig.timeline;
-      if (!list) return;
-      const targetIdx = index + direction;
-      if (targetIdx < 0 || targetIdx >= list.length) return;
-
-      const temp = list[index];
-      list[index] = list[targetIdx];
-      list[targetIdx] = temp;
-      this.renderAutorunVisualTimeline();
+      if (window.AutorunStudio && typeof window.AutorunStudio.moveStep === 'function') {
+        window.AutorunStudio.moveStep(index, direction);
+      }
     }
 
     previewCurrentAutorun() {
-      if (this.autorunActiveTab === 'visual') {
-        this.syncVisualToConfig();
-      } else {
-        try {
-          this.autorunEditorConfig = JSON.parse(this.el.autorunEditJson.value);
-        } catch (e) {
-          this.showToast(this.t('autorun.json_invalid', { error: e.message }), 'error');
-          return;
-        }
+      if (window.AutorunStudio && typeof window.AutorunStudio.preview === 'function') {
+        window.AutorunStudio.preview();
       }
-      this.closeAutorunEditorModal();
-      this.launchAutorun(this.autorunEditorConfig);
     }
 
     async saveAutorunConfig() {
-      let finalConfig = null;
-      const isJsonActive = (this.autorunActiveTab === 'json') || 
-                           (this.el.autorunJsonTabContent && this.el.autorunJsonTabContent.style.display !== 'none');
-      if (!isJsonActive) {
-        this.syncVisualToConfig();
-        finalConfig = this.autorunEditorConfig;
-      } else {
-        if (!this.el.autorunEditJson) return;
-        try {
-          finalConfig = JSON.parse(this.el.autorunEditJson.value);
-        } catch (err) {
-          this.showToast(this.t('autorun.json_invalid', { error: err.message }), 'error');
-          return;
-        }
-      }
-
-      try {
-        const targetFilename = (this.state.overrides && this.state.overrides.autorun_filename) 
-          ? this.state.overrides.autorun_filename 
-          : 'autorun.json';
-        const savePath = (this.state.currentPath ? `${this.state.currentPath}/` : '') + targetFilename;
-        const res = await window.sys.api.post('save_file_content', {
-          path: savePath,
-          file: savePath,
-          content: JSON.stringify(finalConfig, null, 2),
-          csrf_token: this.state.csrfToken || window.CSRF_TOKEN
-        });
-        if (res && res.success) {
-          this.closeAutorunEditorModal();
-          this.showToast(this.t('autorun.saved'), 'success');
-          await this.loadDirectory(this.state.currentPath);
-        } else {
-          this.showToast((res && res.error) || this.t('autorun.save_error'), 'error');
-        }
-      } catch (err) {
-        this.showToast(err.message, 'error');
+      if (window.AutorunStudio && typeof window.AutorunStudio.save === 'function') {
+        return window.AutorunStudio.save();
       }
     }
 
     async deleteAutorunConfig() {
-      if (!confirm(this.t('autorun.delete_confirm'))) return;
-      try {
-        const path1 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + '.autorun.json';
-        const path2 = (this.state.currentPath ? `${this.state.currentPath}/` : '') + 'autorun.json';
-        if (window.sys.api && window.sys.api.fs && typeof window.sys.api.fs.deleteItem === 'function') {
-          await window.sys.api.fs.deleteItem(path1);
-          await window.sys.api.fs.deleteItem(path2);
-        } else {
-          await window.sys.api.post('delete_item', { target: path1 });
-          await window.sys.api.post('delete_item', { target: path2 });
-        }
-        this.closeAutorunEditorModal();
-        this.showToast(this.t('autorun.deleted'), 'info');
-        await this.loadDirectory(this.state.currentPath);
-      } catch (err) {
-        this.showToast(err.message, 'error');
+      if (window.AutorunStudio && typeof window.AutorunStudio.delete === 'function') {
+        return window.AutorunStudio.delete();
       }
     }
-
   }
 
   // -------------------------------------------------------------

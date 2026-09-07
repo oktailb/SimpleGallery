@@ -5,17 +5,16 @@
 ?>
 <template id="autorunEditorAppTemplate">
   <div class="autorun-studio-container">
-    <div class="autorun-studio-header">
-      <div class="autorun-studio-title-zone">
-        <h2>🎬 <span data-i18n="autorun_studio.title"><?php echo htmlspecialchars(__t('autorun_studio.title'), ENT_QUOTES, 'UTF-8'); ?></span></h2>
-        <span class="autorun-studio-folder-badge" data-folder-badge></span>
+    <div class="autorun-studio-toolbar">
+      <div class="autorun-studio-toolbar-left">
+        <span class="autorun-studio-folder-badge" data-folder-badge>📁 (Racine)</span>
       </div>
       <div class="autorun-studio-tabs">
         <button type="button" class="autorun-studio-tab-btn active" data-tab="visual" data-i18n="autorun_studio.tab_visual">
-          <?php echo htmlspecialchars(__t('autorun_studio.tab_visual'), ENT_QUOTES, 'UTF-8'); ?>
+          🎨 <?php echo htmlspecialchars(__t('autorun_studio.tab_visual'), ENT_QUOTES, 'UTF-8'); ?>
         </button>
         <button type="button" class="autorun-studio-tab-btn" data-tab="json" data-i18n="autorun_studio.tab_json">
-          <?php echo htmlspecialchars(__t('autorun_studio.tab_json'), ENT_QUOTES, 'UTF-8'); ?>
+          ⚙️ <?php echo htmlspecialchars(__t('autorun_studio.tab_json'), ENT_QUOTES, 'UTF-8'); ?>
         </button>
       </div>
     </div>

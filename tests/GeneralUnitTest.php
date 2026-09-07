@@ -926,9 +926,10 @@ class GeneralUnitTestSuite {
         $this->assert("template.php contient la recherche rapide .explorer-quick-search-input", strpos($template_php, 'explorer-quick-search-input') !== false);
         $this->assert("template.php contient les boutons de changement de vue .view-mode-btn", strpos($template_php, 'view-mode-btn') !== false);
         $this->assert("template.php contient le tiroir d'inspection .explorer-inspector-drawer", strpos($template_php, 'explorer-inspector-drawer') !== false);
-        $this->assert("template.php contient le modal éditeur autorun .autorun-editor-modal", strpos($template_php, 'autorun-editor-modal') !== false);
+        $autorun_tpl = file_get_contents($this->base_dir . '/apps/autorun-editor/template.php');
+        $this->assert("Autorun Studio template contient #autorunEditorAppTemplate", strpos($autorun_tpl, 'autorunEditorAppTemplate') !== false);
         $this->assert("template.php contient le bouton barre d'outils .explorer-autorun-btn", strpos($template_php, 'explorer-autorun-btn') !== false);
-        $this->assert("template.php contient les onglets de l'éditeur autorun", strpos($template_php, 'autorunTabVisualBtn') !== false);
+        $this->assert("Autorun Studio template contient les onglets visual/json", strpos($autorun_tpl, 'data-tab="visual"') !== false);
 
         // 4. Explorer JavaScript & Multimodal Features
         $explorer_js = file_get_contents($this->base_dir . '/apps/explorer/explorer.js');

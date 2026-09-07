@@ -1,49 +1,56 @@
-/* SimpleGallery - Autorun Studio Stylesheet */
+/**
+ * SimpleGallery 2026 - Autorun Studio Stylesheet (apps/autorun-editor/style.css)
+ * 100% Theme-Adaptive across all WebOS Themes:
+ * - Dark Glassmorphism
+ * - Light Minimal
+ * - Cyberpunk Neon
+ * - Polaroid Classic
+ */
 
 .autorun-studio-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: var(--window-bg, #0f172a);
+  background: var(--window-bg, var(--bg-main, #0f172a));
   color: var(--text-main, #f8fafc);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--sg-font-main, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-.autorun-studio-header {
+/* -------------------------------------------------------------
+ * 1. TOOLBAR & HEADER CONTROLS
+ * ------------------------------------------------------------- */
+.autorun-studio-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background: var(--header-bg, #1e293b);
+  padding: 0.6rem 1rem;
+  background: var(--header-bg, var(--bg-card, rgba(15, 23, 42, 0.9)));
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-  gap: 1rem;
-  flex-shrink: 0;
-}
-
-.autorun-studio-title-zone {
-  display: flex;
-  align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.autorun-studio-title-zone h2 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0;
+.autorun-studio-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .autorun-studio-folder-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--bg-card, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: var(--sg-radius-sm, 6px);
   font-size: 0.8rem;
-  background: rgba(99, 102, 241, 0.2);
-  color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.4);
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
+  font-weight: 600;
+  color: var(--accent-primary, #8b5cf6);
   max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,58 +58,67 @@
 }
 
 .autorun-studio-tabs {
-  display: flex;
-  gap: 0.35rem;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.25rem;
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  padding: 3px;
+  border-radius: var(--sg-radius-md, 10px);
 }
 
 .autorun-studio-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.85rem;
   background: transparent;
   border: none;
+  border-radius: var(--sg-radius-sm, 6px);
   color: var(--text-muted, #94a3b8);
-  padding: 0.35rem 0.85rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.825rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .autorun-studio-tab-btn:hover {
-  color: var(--text-main, #f8fafc);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main, #ffffff);
+  background: var(--border-color-hover, rgba(255, 255, 255, 0.08));
 }
 
 .autorun-studio-tab-btn.active {
-  background: var(--accent, #6366f1);
+  background: var(--accent-primary, #6366f1);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
+/* -------------------------------------------------------------
+ * 2. WORKSPACE BODY & CARDS
+ * ------------------------------------------------------------- */
 .autorun-studio-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .autorun-studio-meta-card {
-  background: var(--bg-card, rgba(30, 41, 59, 0.7));
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-  border-radius: 10px;
+  border-radius: var(--sg-radius-md, 10px);
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  box-shadow: var(--sg-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .autorun-studio-grid-2 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
 }
 
@@ -119,41 +135,52 @@
 }
 
 .autorun-studio-field label {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   color: var(--text-muted, #94a3b8);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
+/* Form inputs, dropdowns & textareas */
 .autorun-studio-input,
 .autorun-studio-select,
 .autorun-studio-textarea {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-card, rgba(0, 0, 0, 0.15));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+  border-radius: var(--sg-radius-sm, 6px);
   color: var(--text-main, #f8fafc);
   padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .autorun-studio-input:focus,
 .autorun-studio-select:focus,
 .autorun-studio-textarea:focus {
-  border-color: var(--accent, #6366f1);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 2px var(--border-color-hover, rgba(99, 102, 241, 0.3));
+}
+
+.autorun-studio-select option {
+  background: var(--bg-main, #0f172a);
+  color: var(--text-main, #f8fafc);
 }
 
 .autorun-studio-textarea {
   min-height: 280px;
-  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+  font-family: var(--sg-font-mono, Consolas, Monaco, monospace);
   font-size: 0.85rem;
   line-height: 1.5;
   resize: vertical;
 }
 
+/* -------------------------------------------------------------
+ * 3. TIMELINE STEPS BUILDER
+ * ------------------------------------------------------------- */
 .autorun-studio-timeline-zone {
   display: flex;
   flex-direction: column;
@@ -166,6 +193,13 @@
   justify-content: space-between;
 }
 
+.autorun-studio-timeline-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+}
+
 .autorun-studio-timeline-list {
   display: flex;
   flex-direction: column;
@@ -173,19 +207,20 @@
 }
 
 .autorun-studio-step-card {
-  background: var(--bg-card, rgba(30, 41, 59, 0.7));
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
+  border-radius: var(--sg-radius-md, 8px);
   padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--sg-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .autorun-studio-step-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-color: var(--border-color-hover, var(--accent-primary, #8b5cf6));
+  box-shadow: var(--sg-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
 }
 
 .autorun-studio-step-header {
@@ -194,7 +229,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
 }
 
 .autorun-studio-step-header-left {
@@ -205,45 +240,67 @@
 }
 
 .autorun-studio-step-badge {
-  background: #312e81;
-  color: #c7d2fe;
+  background: var(--bg-main, rgba(0, 0, 0, 0.2));
+  color: var(--accent-primary, #8b5cf6);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
   font-weight: 700;
   font-size: 0.8rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--sg-radius-sm, 4px);
+  flex-shrink: 0;
 }
 
 .autorun-studio-step-actions {
   display: flex;
   gap: 0.35rem;
+  flex-shrink: 0;
 }
 
 .autorun-studio-btn-icon {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   color: var(--text-main, #f8fafc);
-  padding: 0.3rem 0.5rem;
-  border-radius: 5px;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--sg-radius-sm, 5px);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .autorun-studio-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-color-hover, rgba(255, 255, 255, 0.15));
+  border-color: var(--accent-primary, #8b5cf6);
 }
 
 .autorun-studio-btn-delete:hover {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: #ef4444;
-  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #ef4444 !important;
+  color: #fca5a5 !important;
 }
 
+.autorun-studio-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--text-muted, #94a3b8);
+  background: var(--bg-card, rgba(0, 0, 0, 0.08));
+  border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: var(--sg-radius-md, 8px);
+}
+
+.autorun-studio-empty-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* -------------------------------------------------------------
+ * 4. FOOTER CONTROLS & ACTION BUTTONS
+ * ------------------------------------------------------------- */
 .autorun-studio-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.25rem;
-  background: var(--header-bg, #1e293b);
+  background: var(--header-bg, var(--bg-card, rgba(15, 23, 42, 0.9)));
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   flex-shrink: 0;
   gap: 1rem;
@@ -257,47 +314,64 @@
 }
 
 .autorun-studio-btn-primary {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-primary, #6366f1);
   color: #ffffff;
   border: none;
-  padding: 0.5rem 1.2rem;
-  border-radius: 6px;
+  padding: 0.55rem 1.25rem;
+  border-radius: var(--sg-radius-sm, 6px);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: filter 0.15s ease, transform 0.15s ease;
 }
 
 .autorun-studio-btn-primary:hover {
-  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  filter: brightness(1.12);
+  transform: translateY(-1px);
 }
 
 .autorun-studio-btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #f8fafc);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 0.9rem;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  padding: 0.5rem 1.05rem;
+  border-radius: var(--sg-radius-sm, 6px);
+  font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .autorun-studio-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-color-hover, rgba(255, 255, 255, 0.15));
+  border-color: var(--accent-primary, #8b5cf6);
+  transform: translateY(-1px);
 }
 
 .autorun-studio-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 0.9rem;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 0.5rem 1.05rem;
+  border-radius: var(--sg-radius-sm, 6px);
+  font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .autorun-studio-btn-danger:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
 }

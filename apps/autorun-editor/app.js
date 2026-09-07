@@ -319,8 +319,8 @@
 
       if (timeline.length === 0) {
         this.el.timelineList.innerHTML = `
-          <div style="padding: 2rem; text-align: center; color: var(--text-muted); background: rgba(0,0,0,0.2); border-radius: 8px;">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏱️</div>
+          <div class="autorun-studio-empty">
+            <div class="autorun-studio-empty-icon">⏱️</div>
             <p>Aucune étape dans la timeline. Cliquez sur "+ Ajouter une étape" pour commencer.</p>
           </div>
         `;
@@ -556,13 +556,16 @@
     }
   }
 
+  const autorunStudio = new AutorunEditorApp();
+  window.AutorunStudio = autorunStudio;
+
   // Register in WebOS AppManager
   if (window.sys && window.sys.appManager) {
-    window.sys.appManager.register(new AutorunEditorApp());
+    window.sys.appManager.register(autorunStudio);
   } else {
     window.addEventListener('DOMContentLoaded', () => {
       if (window.sys && window.sys.appManager) {
-        window.sys.appManager.register(new AutorunEditorApp());
+        window.sys.appManager.register(autorunStudio);
       }
     });
   }
