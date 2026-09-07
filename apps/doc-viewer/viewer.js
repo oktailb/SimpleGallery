@@ -455,7 +455,7 @@
                   ${isMd ? `<button type="button" id="docMdViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border-radius:8px;">📄 Code Source</button>` : ''}
                   ${isHtml ? `<button type="button" id="docHtmlViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border-radius:8px;">📄 Code Source</button>` : ''}
                   ${isTex ? `<button type="button" id="docTexViewToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border-radius:8px;">📄 Code Source TeX</button>` : ''}
-                  ${canEdit ? `<button type="button" id="docEditToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--accent-primary,#6366f1);color:#fff;border-radius:8px;font-weight:600;"><span data-i18n="doc_editor.edit_btn">✏️ Éditer (WYSIWYG)</span></button>` : ''}
+                  ${canEdit ? `<button type="button" id="docEditToggleBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;cursor:pointer;border:none;background:var(--accent-primary,#6366f1);color:#fff;border-radius:8px;font-weight:600;"><span data-i18n="doc_editor.edit_btn">✏️ ${effectiveCtx.escapeHtml(effectiveCtx.t('doc_editor.edit_btn'))}</span></button>` : ''}
                   ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;text-decoration:none;color:var(--text-main, #fff);background:var(--bg-card, rgba(255,255,255,0.1));border-radius:8px;"><span data-i18n="lightbox.download">📥 Télécharger</span></a>` : ''}
                 </div>
               </div>
@@ -465,19 +465,52 @@
                 <div id="docWinTextBody-${cleanPathId}" class="doc-text-body ${isMd ? 'doc-markdown-render' : 'doc-code-render'}">Chargement du document...</div>
               </div>
 
-              <!-- WYSIWYG & Markdown Editor View -->
-              <div id="docEditorView-${cleanPathId}" class="doc-editor-container" style="display:none;flex:1;">
+              <!-- WebOS Code & LaTeX Studio / Markdown Editor View -->
+              <div id="docEditorView-${cleanPathId}" class="doc-editor-container" style="display:none;flex:1;flex-direction:column;">
                 <div class="doc-editor-toolbar">
-                  <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                     <span id="docEditorStatusBadge-${cleanPathId}" class="doc-status-badge saved">● Enregistré</span>
-                    <span style="font-size:0.75rem;color:var(--text-muted,#94a3b8);">(Ctrl+S pour sauvegarder)</span>
+                    <span class="doc-editor-badge-lang">${isTex ? '📐 LaTeX' : (isMd ? '📝 Markdown' : (isHtml ? '🌐 HTML' : `📄 ${ext.toUpperCase()}`))}</span>
+                    <span style="font-size:0.75rem;color:var(--text-muted,#94a3b8);">(Ctrl+S pour enregistrer)</span>
                   </div>
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <button type="button" id="docSaveBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 12px;background:#22c55e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">💾 Enregistrer</button>
-                    <button type="button" id="docCloseEditBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;background:var(--bg-card, rgba(255,255,255,0.1));color:var(--text-main, #fff);border:none;border-radius:8px;cursor:pointer;">👁️ Mode Lecture (Rendu)</button>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    ${isMd ? `<button type="button" id="docToggleWysiwygBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 10px;background:var(--bg-card, rgba(255,255,255,0.1));color:var(--text-main, #fff);border:none;border-radius:8px;cursor:pointer;">✨ WYSIWYG</button>` : ''}
+                    <button type="button" id="docSaveBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 14px;background:#22c55e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">💾 Enregistrer</button>
+                    <button type="button" id="docCloseEditBtn-${cleanPathId}" class="app-menu-pill" style="font-size:0.75rem;padding:4px 12px;background:var(--bg-card, rgba(255,255,255,0.12));color:var(--text-main, #fff);border:none;border-radius:8px;cursor:pointer;">👁️ Mode Lecture (Rendu)</button>
                   </div>
                 </div>
-                <div id="docEditorHost-${cleanPathId}" style="flex:1;height:calc(100% - 42px);overflow:hidden;"></div>
+
+                ${isTex ? `
+                <div id="docTexToolbar-${cleanPathId}" class="doc-tex-helper-bar">
+                  <span class="doc-tex-bar-label">Macros LaTeX :</span>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="section" title="\\section{Titre}">\\section</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="subsection" title="\\subsection{Titre}">\\subsection</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="textbf" title="\\textbf{Texte gras}">\\textbf</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="textit" title="\\textit{Texte italique}">\\textit</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="math-block" title="$$ Équation $$">$$...$$</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="math-inline" title="$ Formule $">$...$</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="frac" title="\\frac{num}{den}">\\frac{}{}</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="env-itemize" title="\\begin{itemize} ... \\end{itemize}">\\begin{itemize}</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="env-enumerate" title="\\begin{enumerate} ... \\end{enumerate}">\\begin{enumerate}</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="item" title="\\item Nouvel élément">\\item</button>
+                  <button type="button" class="doc-tex-pill" data-tex-macro="comment" title="% Commentaire">% Com</button>
+                </div>
+                ` : ''}
+
+                <!-- Modern Code & Text Studio Area -->
+                <div id="docCodeStudio-${cleanPathId}" class="doc-code-studio">
+                  <div class="doc-code-editor-layout">
+                    <div id="docCodeGutter-${cleanPathId}" class="doc-code-gutter" aria-hidden="true">1</div>
+                    <textarea id="docCodeTextarea-${cleanPathId}" class="doc-code-textarea" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
+                  </div>
+                  <div id="docCodeStatusBar-${cleanPathId}" class="doc-code-status-bar">
+                    <span id="docCodePos-${cleanPathId}">Ligne 1, Col 1</span>
+                    <span id="docCodeCounts-${cleanPathId}">0 lignes • 0 caractères</span>
+                  </div>
+                </div>
+
+                <!-- Toast UI Container (Fallback WYSIWYG for Markdown only) -->
+                <div id="docEditorHost-${cleanPathId}" style="display:none;flex:1;height:calc(100% - 42px);overflow:hidden;"></div>
               </div>
             </div>
           `;
@@ -660,10 +693,185 @@
           }
         };
 
+        let isWysiwygActive = false;
+        let codeStudioBound = false;
+
+        const setupCodeStudio = (textareaEl, gutterEl, posEl, countsEl, onDirty) => {
+          const updateGutter = () => {
+            if (!gutterEl) return;
+            const lines = textareaEl.value.split('\n');
+            const count = lines.length;
+            let html = '';
+            for (let i = 1; i <= count; i++) {
+              html += `<div>${i}</div>`;
+            }
+            gutterEl.innerHTML = html;
+          };
+
+          const updateStatus = () => {
+            const text = textareaEl.value;
+            const selStart = textareaEl.selectionStart;
+            const linesUpTo = text.substring(0, selStart).split('\n');
+            const lineNum = linesUpTo.length;
+            const colNum = linesUpTo[linesUpTo.length - 1].length + 1;
+            const totalLines = text.split('\n').length;
+            if (posEl) posEl.textContent = `Ligne ${lineNum}, Col ${colNum}`;
+            if (countsEl) countsEl.textContent = `${totalLines} lignes • ${text.length} caractères`;
+          };
+
+          updateGutter();
+          updateStatus();
+
+          if (codeStudioBound) return;
+          codeStudioBound = true;
+
+          textareaEl.addEventListener('scroll', () => {
+            if (gutterEl) gutterEl.scrollTop = textareaEl.scrollTop;
+          });
+
+          textareaEl.addEventListener('input', () => {
+            updateGutter();
+            updateStatus();
+            if (onDirty) onDirty();
+          });
+
+          textareaEl.addEventListener('keyup', updateStatus);
+          textareaEl.addEventListener('click', updateStatus);
+
+          textareaEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              const start = textareaEl.selectionStart;
+              const end = textareaEl.selectionEnd;
+              const val = textareaEl.value;
+              if (start === end) {
+                textareaEl.value = val.substring(0, start) + '  ' + val.substring(end);
+                textareaEl.selectionStart = textareaEl.selectionEnd = start + 2;
+              } else {
+                const before = val.substring(0, start);
+                const sel = val.substring(start, end);
+                const after = val.substring(end);
+                const lines = sel.split('\n');
+                if (e.shiftKey) {
+                  const newLines = lines.map(l => l.startsWith('  ') ? l.slice(2) : (l.startsWith(' ') ? l.slice(1) : l));
+                  textareaEl.value = before + newLines.join('\n') + after;
+                } else {
+                  const newLines = lines.map(l => '  ' + l);
+                  textareaEl.value = before + newLines.join('\n') + after;
+                }
+                textareaEl.selectionStart = start;
+                textareaEl.selectionEnd = start + (textareaEl.value.length - val.length);
+              }
+              updateGutter();
+              updateStatus();
+              if (onDirty) onDirty();
+            } else if (e.key === 'Enter') {
+              const start = textareaEl.selectionStart;
+              const val = textareaEl.value;
+              const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+              const currentLine = val.substring(lineStart, start);
+              const matchIndent = currentLine.match(/^\s+/);
+              if (matchIndent && matchIndent[0]) {
+                e.preventDefault();
+                const indent = matchIndent[0];
+                textareaEl.value = val.substring(0, start) + '\n' + indent + val.substring(start);
+                textareaEl.selectionStart = textareaEl.selectionEnd = start + 1 + indent.length;
+                updateGutter();
+                updateStatus();
+                if (onDirty) onDirty();
+              }
+            }
+          });
+        };
+
+        const insertTexMacro = (type) => {
+          const textarea = document.getElementById(`docCodeTextarea-${cleanPathId}`);
+          if (!textarea) return;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const val = textarea.value;
+          const sel = val.substring(start, end);
+
+          let before = '';
+          let after = '';
+          let defaultInside = '';
+
+          switch (type) {
+            case 'section':
+              before = '\\section{';
+              after = '}';
+              defaultInside = 'Titre';
+              break;
+            case 'subsection':
+              before = '\\subsection{';
+              after = '}';
+              defaultInside = 'Sous-titre';
+              break;
+            case 'textbf':
+              before = '\\textbf{';
+              after = '}';
+              break;
+            case 'textit':
+              before = '\\textit{';
+              after = '}';
+              break;
+            case 'math-block':
+              before = '$$\n  ';
+              after = '\n$$';
+              break;
+            case 'math-inline':
+              before = '$';
+              after = '$';
+              break;
+            case 'frac':
+              before = '\\frac{';
+              after = '}{b}';
+              defaultInside = 'a';
+              break;
+            case 'env-itemize':
+              before = '\\begin{itemize}\n  \\item ';
+              after = '\n\\end{itemize}';
+              break;
+            case 'env-enumerate':
+              before = '\\begin{enumerate}\n  \\item ';
+              after = '\n\\end{enumerate}';
+              break;
+            case 'item':
+              before = '\\item ';
+              after = '';
+              break;
+            case 'comment':
+              before = '% ';
+              after = '';
+              break;
+            default:
+              before = `\\${type}{`;
+              after = '}';
+          }
+
+          const content = sel || defaultInside;
+          const replacement = before + content + after;
+          textarea.value = val.substring(0, start) + replacement + val.substring(end);
+          textarea.selectionStart = start + before.length;
+          textarea.selectionEnd = start + before.length + content.length;
+          textarea.focus();
+          textarea.dispatchEvent(new Event('input'));
+        };
+
         // Function to perform file saving
         const saveDocument = async () => {
-          if (!activeEditorInstance) return;
-          const newContent = activeEditorInstance.getMarkdown();
+          let newContent = '';
+          const textarea = document.getElementById(`docCodeTextarea-${cleanPathId}`);
+          if (isWysiwygActive && activeEditorInstance && typeof activeEditorInstance.getMarkdown === 'function') {
+            newContent = activeEditorInstance.getMarkdown();
+          } else if (textarea) {
+            newContent = textarea.value;
+          } else if (activeEditorInstance && typeof activeEditorInstance.getMarkdown === 'function') {
+            newContent = activeEditorInstance.getMarkdown();
+          } else {
+            newContent = currentRawText;
+          }
+
           const badge = document.getElementById(`docEditorStatusBadge-${cleanPathId}`);
           const saveBtn = document.getElementById(`docSaveBtn-${cleanPathId}`);
 
@@ -703,7 +911,7 @@
           }
         };
 
-        // Function to toggle between Reader and Toast UI WYSIWYG Editor
+        // Function to toggle between Reader and Editor View
         const toggleEditor = async (forceState) => {
           if (!canEdit) return;
           const nextState = (forceState !== undefined) ? forceState : !isEditing;
@@ -712,52 +920,34 @@
           const readerToolbar = document.getElementById(`docReaderToolbar-${cleanPathId}`);
           const textContainer = document.getElementById(`docWinTextContainer-${cleanPathId}`);
           const editorView = document.getElementById(`docEditorView-${cleanPathId}`);
-          const hostEl = document.getElementById(`docEditorHost-${cleanPathId}`);
+          const textarea = document.getElementById(`docCodeTextarea-${cleanPathId}`);
+          const gutterEl = document.getElementById(`docCodeGutter-${cleanPathId}`);
+          const posEl = document.getElementById(`docCodePos-${cleanPathId}`);
+          const countsEl = document.getElementById(`docCodeCounts-${cleanPathId}`);
+          const badge = document.getElementById(`docEditorStatusBadge-${cleanPathId}`);
 
           if (readerToolbar) readerToolbar.style.display = isEditing ? 'none' : 'flex';
           if (textContainer) textContainer.style.display = isEditing ? 'none' : 'flex';
           if (editorView) editorView.style.display = isEditing ? 'flex' : 'none';
 
           if (isEditing) {
-            if (!activeEditorInstance && hostEl) {
-              showNotification('Chargement de l\'éditeur WYSIWYG...', 'info');
-              try {
-                const Editor = await loadToastUiEditor();
-
-                activeEditorInstance = new Editor({
-                  el: hostEl,
-                  height: '100%',
-                  initialEditType: isMd ? 'wysiwyg' : 'markdown',
-                  previewStyle: 'vertical',
-                  initialValue: currentRawText,
-                  theme: 'dark',
-                  usageStatistics: false,
-                  toolbarItems: [
-                    ['heading', 'bold', 'italic', 'strike'],
-                    ['hr', 'quote'],
-                    ['ul', 'ol', 'task', 'indent', 'outdent'],
-                    ['table', 'image', 'link'],
-                    ['code', 'codeblock']
-                  ]
-                });
-
-                activeEditorInstance.on('change', () => {
-                  const badge = document.getElementById(`docEditorStatusBadge-${cleanPathId}`);
-                  if (badge) {
-                    badge.className = 'doc-status-badge dirty';
-                    badge.textContent = '● Non sauvegardé';
-                  }
-                });
-              } catch (err) {
-                console.error('Failed to init Toast UI Editor:', err);
-                showNotification('⚠️ Impossible de charger l\'éditeur : ' + err.message, 'error');
-                toggleEditor(false);
-              }
-            } else if (activeEditorInstance) {
-              activeEditorInstance.setMarkdown(currentRawText);
+            if (textarea) {
+              textarea.value = currentRawText;
+              setupCodeStudio(textarea, gutterEl, posEl, countsEl, () => {
+                if (badge) {
+                  badge.className = 'doc-status-badge dirty';
+                  badge.textContent = '● Non sauvegardé';
+                }
+              });
+              setTimeout(() => { textarea.focus(); }, 50);
             }
           } else {
-            // Returning to reader mode: refresh rendered HTML preview
+            // Returning to reader mode: sync text and refresh rendered preview
+            if (textarea && !isWysiwygActive) {
+              currentRawText = textarea.value;
+            } else if (activeEditorInstance && isWysiwygActive) {
+              currentRawText = activeEditorInstance.getMarkdown();
+            }
             updateReaderDisplay();
           }
         };
@@ -781,7 +971,7 @@
                   <div class="app-menu-left">
                     <span class="app-menu-pill active" style="font-weight:600;">${isMd ? '📖' : '📄'} ${effectiveCtx.escapeHtml(file.name)}</span>
                     <a href="${file.file_url}" target="_blank" class="app-menu-pill" style="text-decoration:none;">↗ ${effectiveCtx.escapeHtml(effectiveCtx.t('viewer.open_new_tab') || 'Nouvel onglet')}</a>
-                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${effectiveCtx.escapeHtml(effectiveCtx.t('doc_editor.edit_btn') || 'Éditer (WYSIWYG)')}</button>` : ''}
+                    ${canEdit ? `<button type="button" class="app-menu-pill" id="menuDocEditBtn" style="background:var(--accent-primary,#6366f1);color:#fff;">✏️ ${effectiveCtx.escapeHtml(effectiveCtx.t('doc_editor.edit_btn'))}</button>` : ''}
                     ${canDownloadItem ? `<a href="${file.file_url}" download="${effectiveCtx.escapeHtml(file.name)}" class="app-menu-pill" style="text-decoration:none;">📥 ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.download') || 'Télécharger')}</a>` : ''}
                     <button type="button" class="app-menu-pill" id="menuDocInfoBtn">ℹ️ ${effectiveCtx.escapeHtml(effectiveCtx.t('lightbox.metadata_btn') || 'Propriétés (I)')}</button>
                   </div>
@@ -854,6 +1044,65 @@
             texToggleBtn.onclick = () => {
               isRawSourceMode = !isRawSourceMode;
               updateReaderDisplay();
+            };
+          }
+
+          const texToolbar = document.getElementById(`docTexToolbar-${cleanPathId}`);
+          if (texToolbar) {
+            texToolbar.querySelectorAll('.doc-tex-pill').forEach(btn => {
+              btn.onclick = () => insertTexMacro(btn.dataset.texMacro);
+            });
+          }
+
+          const wysiwygBtn = document.getElementById(`docToggleWysiwygBtn-${cleanPathId}`);
+          if (wysiwygBtn) {
+            wysiwygBtn.onclick = async () => {
+              isWysiwygActive = !isWysiwygActive;
+              wysiwygBtn.textContent = isWysiwygActive ? '📄 Mode Code' : '✨ WYSIWYG';
+              const codeStudio = document.getElementById(`docCodeStudio-${cleanPathId}`);
+              const hostEl = document.getElementById(`docEditorHost-${cleanPathId}`);
+              const textarea = document.getElementById(`docCodeTextarea-${cleanPathId}`);
+              if (isWysiwygActive) {
+                if (codeStudio) codeStudio.style.display = 'none';
+                if (hostEl) hostEl.style.display = 'block';
+                if (textarea) currentRawText = textarea.value;
+                if (!activeEditorInstance && hostEl) {
+                  showNotification('Chargement de l\'éditeur WYSIWYG...', 'info');
+                  try {
+                    const Editor = await loadToastUiEditor();
+                    activeEditorInstance = new Editor({
+                      el: hostEl,
+                      height: '100%',
+                      initialEditType: 'wysiwyg',
+                      previewStyle: 'tab',
+                      initialValue: currentRawText,
+                      theme: 'dark',
+                      usageStatistics: false
+                    });
+                    activeEditorInstance.on('change', () => {
+                      const badge = document.getElementById(`docEditorStatusBadge-${cleanPathId}`);
+                      if (badge) {
+                        badge.className = 'doc-status-badge dirty';
+                        badge.textContent = '● Non sauvegardé';
+                      }
+                    });
+                  } catch (e) {
+                    console.error('Failed to init Toast UI Editor:', e);
+                    showNotification('⚠️ Erreur éditeur : ' + e.message, 'error');
+                  }
+                } else if (activeEditorInstance) {
+                  activeEditorInstance.setMarkdown(currentRawText);
+                }
+              } else {
+                if (activeEditorInstance) currentRawText = activeEditorInstance.getMarkdown();
+                if (hostEl) hostEl.style.display = 'none';
+                if (codeStudio) codeStudio.style.display = 'flex';
+                if (textarea) {
+                  textarea.value = currentRawText;
+                  textarea.dispatchEvent(new Event('input'));
+                  textarea.focus();
+                }
+              }
             };
           }
         }, 50);
