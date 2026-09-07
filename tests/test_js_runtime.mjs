@@ -297,6 +297,7 @@ const docViewerManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'apps', 
 const docViewerJs = fs.readFileSync(path.join(rootDir, 'apps', 'doc-viewer', 'viewer.js'), 'utf8');
 assert("doc-viewer manifest déclare scrollTo, searchText, nextPage, prevPage", 
   !!docViewerManifest.commands.scrollTo && !!docViewerManifest.commands.searchText && !!docViewerManifest.commands.nextPage && !!docViewerManifest.commands.prevPage);
+assert("doc-viewer viewer.js déclare isPdf = ext === 'pdf'", docViewerJs.includes("const isPdf = ext === 'pdf';"));
 assert("doc-viewer viewer.js implémente scrollTo(params, winId)", docViewerJs.includes('scrollTo(params = {}, winId = null)'));
 assert("doc-viewer viewer.js implémente searchText(params, winId)", docViewerJs.includes('searchText(params = {}, winId = null)'));
 assert("doc-viewer viewer.js implémente nextPage(params, winId)", docViewerJs.includes('nextPage(params = {}, winId = null)'));

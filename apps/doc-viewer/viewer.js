@@ -272,6 +272,7 @@
       const cleanPathId = encodeURIComponent(file.path).replace(/%/g, '_');
       const winId = `doc-${cleanPathId}`;
       const ext = (file.extension || (file.name ? file.name.split('.').pop() : '')).toLowerCase();
+      const isPdf = ext === 'pdf';
       const isMd = ['md', 'markdown'].includes(ext);
       const isText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext);
       const isEditableText = ['txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'css', 'js', 'log', 'ini', 'sql', 'yaml', 'yml'].includes(ext) && !['php', 'phtml', 'phar', 'sh', 'exe'].includes(ext);
