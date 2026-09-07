@@ -54,10 +54,22 @@
       this.initContainer();
       this.initElements();
       this.initWindow(options);
+      this.initManagers();
       this.loadSavedPreferences();
       this.bindEvents();
       this.initMarqueeSelection();
       this.loadDirectory(this.state.currentPath);
+    }
+
+    initManagers() {
+      this.selectionManager = (window.ExplorerSelectionManager) ? new window.ExplorerSelectionManager(this) : null;
+      this.dragDropManager = (window.ExplorerDragDropManager) ? new window.ExplorerDragDropManager(this) : null;
+      this.mapManager = (window.ExplorerMapManager) ? new window.ExplorerMapManager(this) : null;
+      this.modalsManager = (window.ExplorerModalsManager) ? new window.ExplorerModalsManager(this) : null;
+
+      if (this.dragDropManager && typeof this.dragDropManager.init === 'function') {
+        this.dragDropManager.init();
+      }
     }
 
     initContainer() {
@@ -880,107 +892,48 @@
 
     bindMediaCardEvents() {
       if (!this.el.mediaGrid) return;
-      const canMove = this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
+      this.updateSelectionUI();
 
-      this.el.mediaGrid.querySelectorAll('.gps-badge[data-path]').forEach(btn => {
-        btn.onclick = (e) => {
+      if (this.el.mediaGrid._mediaEventsDelegated) return;
+      this.el.mediaGrid._mediaEventsDelegated = true;
+
+      const canMove = () => this.state.isAdmin || (this.state.userRights && this.state.userRights.can_move);
+
+      // 1. Delegated Click Listener
+      this.el.mediaGrid.addEventListener('click', (e) => {
+        // Fast button dispatch
+        const gpsBtn = e.target.closest('.gps-badge[data-path]');
+        if (gpsBtn) {
           e.stopPropagation();
-          this.openMapModal(btn.dataset.path);
-        };
-      });
-
-      this.el.mediaGrid.querySelectorAll('.delete-item-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          this.openDeleteConfirmModal(btn.dataset.path, btn.dataset.name, 'file');
-        };
-      });
-
-      this.el.mediaGrid.querySelectorAll('.favorite-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          this.toggleFavorite(btn.dataset.path);
-        };
-      });
-
-      this.el.mediaGrid.querySelectorAll('.edit-media-comment-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          this.openMediaCommentModal(btn.dataset.filename, btn.dataset.comment);
-        };
-      });
-
-      this.el.mediaGrid.querySelectorAll('[data-index]').forEach(card => {
-        const index = parseInt(card.dataset.index, 10);
-        const file = this.state.filteredFiles[index];
-        if (!file) return;
-
-        if (this.state.selectedPaths.has(file.path)) {
-          card.classList.add('selected');
+          return this.openMapModal(gpsBtn.dataset.path);
         }
 
-        // Drag & Drop Source (Cross-window)
-        if (canMove) {
-          card.ondragstart = (e) => {
-            let pathsToMove = [];
-            if (this.state.selectedPaths.has(file.path)) {
-              pathsToMove = Array.from(this.state.selectedPaths);
-            } else {
-              pathsToMove = [file.path];
-              this.state.selectedPaths.clear();
-              this.state.selectedPaths.add(file.path);
-              this.updateSelectionUI();
-            }
-
-            this.state.draggingPaths = pathsToMove;
-            this.state.draggingItemPath = file.path;
-            window.SG_DRAGGING_PATHS = pathsToMove;
-            window.SG_DRAG_SOURCE_INSTANCE = this.id;
-
-            const fileIcon = window.IconHelper ? window.IconHelper.getFileIcon(file) : '📄';
-            const fileUrl = file.file_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}&raw=1`);
-            const thumbUrl = file.thumb_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}`);
-            const fileData = {
-              type: 'file',
-              path: file.path,
-              name: file.name,
-              category: file.category || '',
-              extension: file.extension || (file.name.split('.').pop() || '').toLowerCase(),
-              thumb_url: thumbUrl,
-              file_url: fileUrl,
-              size_formatted: file.size_formatted || '',
-              icon: fileIcon
-            };
-            window.SG_DRAGGING_ITEM_DATA = fileData;
-
-            e.dataTransfer.setData('text/plain', JSON.stringify(pathsToMove));
-            e.dataTransfer.setData('application/json', JSON.stringify(pathsToMove));
-            e.dataTransfer.setData('application/sg-item', JSON.stringify(fileData));
-            e.dataTransfer.effectAllowed = 'copyMove';
-
-            card.classList.add('is-dragging');
-            document.querySelectorAll('.media-card.selected, .polaroid-card.selected, .grid-card.selected, .list-row.selected').forEach(c => {
-              c.classList.add('is-dragging');
-            });
-          };
-
-          card.ondragend = () => {
-            this.state.draggingPaths = null;
-            this.state.draggingItemPath = null;
-            setTimeout(() => {
-              window.SG_DRAGGING_PATHS = null;
-              window.SG_DRAG_SOURCE_INSTANCE = null;
-              window.SG_DRAGGING_ITEM_DATA = null;
-            }, 300);
-            document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
-            document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-          };
+        const delBtn = e.target.closest('.delete-item-btn');
+        if (delBtn) {
+          e.stopPropagation();
+          return this.openDeleteConfirmModal(delBtn.dataset.path, delBtn.dataset.name, 'file');
         }
 
-        card.onclick = (e) => {
-          if (e.target.closest('button, input, a, .edit-media-comment-btn, .gps-badge, .favorite-btn, .pip-card-btn, .delete-item-btn')) {
-            return;
-          }
+        const favBtn = e.target.closest('.favorite-btn');
+        if (favBtn) {
+          e.stopPropagation();
+          return this.toggleFavorite(favBtn.dataset.path);
+        }
+
+        const commBtn = e.target.closest('.edit-media-comment-btn');
+        if (commBtn) {
+          e.stopPropagation();
+          return this.openMediaCommentModal(commBtn.dataset.filename, commBtn.dataset.comment);
+        }
+
+        // Card Selection & Open
+        const card = e.target.closest('[data-index]');
+        if (card && this.el.mediaGrid.contains(card)) {
+          if (e.target.closest('button, input, a, .pip-card-btn')) return;
+
+          const index = parseInt(card.dataset.index, 10);
+          const file = this.state.filteredFiles[index];
+          if (!file) return;
 
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
@@ -1020,15 +973,85 @@
           }
 
           this.openMedia(file, index);
-        };
+        }
+      });
 
-        card.ondblclick = (e) => {
-          if (e.target.closest('button, input, a, .edit-media-comment-btn, .gps-badge, .favorite-btn, .pip-card-btn, .delete-item-btn')) {
-            return;
+      // 2. Delegated Double Click Listener
+      this.el.mediaGrid.addEventListener('dblclick', (e) => {
+        const card = e.target.closest('[data-index]');
+        if (card && this.el.mediaGrid.contains(card)) {
+          if (e.target.closest('button, input, a, .pip-card-btn')) return;
+          const index = parseInt(card.dataset.index, 10);
+          const file = this.state.filteredFiles[index];
+          if (file) {
+            e.preventDefault();
+            this.openMedia(file, index);
           }
-          e.preventDefault();
-          this.openMedia(file, index);
+        }
+      });
+
+      // 3. Delegated Drag Start Listener
+      this.el.mediaGrid.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('[data-index]');
+        if (!card || !canMove()) return;
+
+        const index = parseInt(card.dataset.index, 10);
+        const file = this.state.filteredFiles[index];
+        if (!file) return;
+
+        let pathsToMove = [];
+        if (this.state.selectedPaths.has(file.path)) {
+          pathsToMove = Array.from(this.state.selectedPaths);
+        } else {
+          pathsToMove = [file.path];
+          this.state.selectedPaths.clear();
+          this.state.selectedPaths.add(file.path);
+          this.updateSelectionUI();
+        }
+
+        this.state.draggingPaths = pathsToMove;
+        this.state.draggingItemPath = file.path;
+        window.SG_DRAGGING_PATHS = pathsToMove;
+        window.SG_DRAG_SOURCE_INSTANCE = this.id;
+
+        const fileIcon = window.IconHelper ? window.IconHelper.getFileIcon(file) : '📄';
+        const fileUrl = file.file_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}&raw=1`);
+        const thumbUrl = file.thumb_url || (`system/endpoints/thumb.php?file=${encodeURIComponent(file.path)}`);
+        const fileData = {
+          type: 'file',
+          path: file.path,
+          name: file.name,
+          category: file.category || '',
+          extension: file.extension || (file.name.split('.').pop() || '').toLowerCase(),
+          thumb_url: thumbUrl,
+          file_url: fileUrl,
+          size_formatted: file.size_formatted || '',
+          icon: fileIcon
         };
+        window.SG_DRAGGING_ITEM_DATA = fileData;
+
+        e.dataTransfer.setData('text/plain', JSON.stringify(pathsToMove));
+        e.dataTransfer.setData('application/json', JSON.stringify(pathsToMove));
+        e.dataTransfer.setData('application/sg-item', JSON.stringify(fileData));
+        e.dataTransfer.effectAllowed = 'copyMove';
+
+        card.classList.add('is-dragging');
+        document.querySelectorAll('.media-card.selected, .polaroid-card.selected, .grid-card.selected, .list-row.selected').forEach(c => {
+          c.classList.add('is-dragging');
+        });
+      });
+
+      // 4. Delegated Drag End Listener
+      this.el.mediaGrid.addEventListener('dragend', () => {
+        this.state.draggingPaths = null;
+        this.state.draggingItemPath = null;
+        setTimeout(() => {
+          window.SG_DRAGGING_PATHS = null;
+          window.SG_DRAG_SOURCE_INSTANCE = null;
+          window.SG_DRAGGING_ITEM_DATA = null;
+        }, 300);
+        document.querySelectorAll('.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+        document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
       });
     }
 
@@ -2545,6 +2568,9 @@
     }
 
     openAutorunEditorModal(existingConfig = null) {
+      if (window.AutorunStudio && typeof window.AutorunStudio.openFolder === 'function') {
+        window.AutorunStudio.openFolder(this.state.currentPath, { config: existingConfig });
+      }
       if (!this.el.autorunEditorModal) return;
 
       const folderName = this.state.currentPath ? this.state.currentPath.split('/').pop() : "Blog Multimodal";

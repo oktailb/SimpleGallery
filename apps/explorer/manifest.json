@@ -24,7 +24,11 @@
     "template": "template.php"
   },
   "scripts": [
-    "autorun-engine.js"
+    "autorun-engine.js",
+    "scripts/explorer-selection.js",
+    "scripts/explorer-dragdrop.js",
+    "scripts/explorer-map.js",
+    "scripts/explorer-modals.js"
   ],
   "capabilities": [
     "multi-views",

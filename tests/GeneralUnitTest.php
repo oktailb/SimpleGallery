@@ -988,6 +988,16 @@ class GeneralUnitTestSuite {
         $this->assert("AppManager implémente getAllControllableApps", strpos($app_manager_js, 'getAllControllableApps') !== false);
         $this->assert("AppManager implémente dispatchCommand", strpos($app_manager_js, 'dispatchCommand') !== false);
         $this->assert("autorun-engine.js délègue à dispatchCommand", strpos($engine_js, 'dispatchCommand') !== false);
+
+        // 8. Standalone Autorun Studio App Discovery & Modular Explorer scripts
+        $this->assert("PluginDiscovery découvre l'app autorun-editor", isset($discovered['autorun-editor']));
+        $this->assert("Autorun Studio déclare app.js", ($discovered['autorun-editor']['js_entry'] ?? '') === 'apps/autorun-editor/app.js');
+        $this->assert("Autorun Studio déclare style.css", ($discovered['autorun-editor']['css_entry'] ?? '') === 'apps/autorun-editor/style.css');
+        $this->assert("Explorer déclare scripts/explorer-selection.js", in_array('apps/explorer/scripts/explorer-selection.js', $discovered['explorer']['scripts'] ?? []));
+        $this->assert("Explorer déclare scripts/explorer-dragdrop.js", in_array('apps/explorer/scripts/explorer-dragdrop.js', $discovered['explorer']['scripts'] ?? []));
+        $this->assert("Explorer déclare scripts/explorer-map.js", in_array('apps/explorer/scripts/explorer-map.js', $discovered['explorer']['scripts'] ?? []));
+        $this->assert("Explorer déclare scripts/explorer-modals.js", in_array('apps/explorer/scripts/explorer-modals.js', $discovered['explorer']['scripts'] ?? []));
+
     }
 }
 

@@ -1,0 +1,33 @@
+{
+  "id": "autorun-editor",
+  "name": "Autorun Studio",
+  "version": "1.0.0",
+  "description": "Studio d'édition et chef d'orchestre de présentations multimédias synchronisées (autorun.json)",
+  "icon": "🎬",
+  "category": "media",
+  "locales": {
+    "fr": {
+      "title": "Autorun Studio",
+      "description": "Studio de création et de synchronisation temporelle de présentations interactives"
+    },
+    "en": {
+      "title": "Autorun Studio",
+      "description": "Interactive multimodal presentation creator and timeline synchronizer"
+    },
+    "ja": {
+      "title": "オートランスタジオ",
+      "description": "マルチモーダルプレゼンテーションとタイムライン同期スタジオ"
+    }
+  },
+  "entry": {
+    "js": "app.js",
+    "css": "style.css",
+    "template": "template.php"
+  },
+  "capabilities": [
+    "timeline-editor",
+    "multimodal-preview",
+    "app-orchestration",
+    "drag-drop-steps"
+  ]
+}
