@@ -16,5 +16,9 @@
   "browser.welcome_title": "Navigateur WebOS",
   "browser.welcome_sub": "Naviguez sur le web ou explorez les pages HTML de votre galerie",
   "browser.quick_links": "Accès Rapide",
-  "browser.local_files": "Fichiers HTML Locaux"
+  "browser.local_files": "Fichiers HTML Locaux",
+  "browser.proxy_mode": "Mode Proxy WebOS",
+  "browser.proxy_active": "Proxifié",
+  "browser.proxy_direct": "Direct",
+  "browser.proxy_tooltip": "Activer/Désactiver le proxy WebOS (contourne les pare-feux et les restrictions iframe)"
 }

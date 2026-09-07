@@ -16,5 +16,9 @@
   "browser.welcome_title": "WebOS ブラウザ",
   "browser.welcome_sub": "ウェブを閲覧するか、ギャラリー内のHTMLページを開きます",
   "browser.quick_links": "クイックアクセス",
-  "browser.local_files": "ローカルHTMLファイル"
+  "browser.local_files": "ローカルHTMLファイル",
+  "browser.proxy_mode": "WebOSプロキシモード",
+  "browser.proxy_active": "プロキシ経由",
+  "browser.proxy_direct": "直接接続",
+  "browser.proxy_tooltip": "WebOSプロキシのオン/オフ（ファイアウォールやiframe制限を回避）"
 }

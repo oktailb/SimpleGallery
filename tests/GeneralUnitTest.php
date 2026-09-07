@@ -999,6 +999,33 @@ class GeneralUnitTestSuite {
         $this->assert("Explorer déclare scripts/explorer-map.js", in_array('apps/explorer/scripts/explorer-map.js', $discovered['explorer']['scripts'] ?? []));
         $this->assert("Explorer déclare scripts/explorer-modals.js", in_array('apps/explorer/scripts/explorer-modals.js', $discovered['explorer']['scripts'] ?? []));
 
+        // 9. WebOS Browser & Proxying (SSRF, X-Frame-Options, Base Injection)
+        $this->assert("PluginDiscovery découvre l'app browser", isset($discovered['browser']));
+        $this->assert("Browser déclare app.js", ($discovered['browser']['js_entry'] ?? '') === 'apps/browser/app.js');
+        $this->assert("Browser déclare style.css", ($discovered['browser']['css_entry'] ?? '') === 'apps/browser/style.css');
+
+        require_once $this->base_dir . '/apps/browser/backend/BrowserProxyAction.php';
+        $router_code = file_get_contents($this->base_dir . '/system/kernel/Actions/ActionRouter.php');
+        $this->assert("ActionRouter déclare l'action browser_proxy", strpos($router_code, 'browser_proxy') !== false);
+        $this->assert("BrowserProxyAction rejette localhost (Anti-SSRF)", !\SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::isSafePublicUrl('http://localhost/'));
+        $this->assert("BrowserProxyAction rejette 127.0.0.1 (Anti-SSRF)", !\SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::isSafePublicUrl('http://127.0.0.1/admin'));
+        $this->assert("BrowserProxyAction rejette IP privée 192.168.1.1 (Anti-SSRF)", !\SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::isSafePublicUrl('http://192.168.1.1/'));
+        $this->assert("BrowserProxyAction accepte URL publique", \SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::isSafePublicUrl('https://fr.wikipedia.org/wiki/Accueil'));
+
+        $proxy_ssrf_res = \SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::handle('browser_proxy', ['url' => 'http://127.0.0.1:8080/test', 'test_mode' => true], []);
+        $this->assert("BrowserProxyAction retourne 403 sur tentative SSRF", ($proxy_ssrf_res['status'] ?? 0) === 403);
+
+        $mock_html = "<html><head><title>Test Page</title></head><body><a href=\"/page2\">Page 2</a></body></html>";
+        $proxy_mock_res = \SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::handle('browser_proxy', [
+            'url' => 'https://example.com/sub/index.html',
+            'mock_body' => $mock_html,
+            'test_mode' => true
+        ], []);
+        $this->assert("BrowserProxyAction retourne 200 sur page mockée", ($proxy_mock_res['status'] ?? 0) === 200);
+        $rewritten = $proxy_mock_res['data']['content'] ?? '';
+        $this->assert("BrowserProxyAction injecte la balise <base href='https://example.com/sub/'>", strpos($rewritten, '<base href="https://example.com/sub/"') !== false);
+        $this->assert("BrowserProxyAction injecte le helper script de navigation", strpos($rewritten, 'webos-browser-proxy-helper') !== false);
+
     }
 }
 

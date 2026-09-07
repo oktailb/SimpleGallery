@@ -33,6 +33,63 @@
       this.activeTabIndex = 0;
       this.tabCounter = 0;
       this.currentFile = null;
+
+      let storedProxy = false;
+      try {
+        if (typeof window.localStorage !== 'undefined') {
+          storedProxy = (window.localStorage.getItem('webos_browser_proxy') === 'true');
+        }
+      } catch (e) {}
+      this.useProxy = storedProxy;
+
+      if (typeof window.addEventListener === 'function') {
+        window.addEventListener('message', (e) => {
+          if (e.data && e.data.type === 'webos-browser-navigated' && e.data.url) {
+            this.onIframeNavigated(e.data.url);
+          }
+        });
+      }
+    }
+
+    getEffectiveIframeUrl(rawUrl) {
+      if (!rawUrl) return '';
+      if (!this.useProxy) return rawUrl;
+
+      // Only proxy external web requests, leave local files direct
+      if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+        return `api.php?action=browser_proxy&url=${encodeURIComponent(rawUrl)}`;
+      }
+      return rawUrl;
+    }
+
+    toggleProxy() {
+      this.useProxy = !this.useProxy;
+      try {
+        if (typeof window.localStorage !== 'undefined') {
+          window.localStorage.setItem('webos_browser_proxy', this.useProxy ? 'true' : 'false');
+        }
+      } catch (e) {}
+
+      const activeTab = this.tabs[this.activeTabIndex];
+      if (activeTab && activeTab.url && (activeTab.url.startsWith('http://') || activeTab.url.startsWith('https://'))) {
+        this.loadUrlInTab(this.activeTabIndex, activeTab.url);
+      } else {
+        this.render();
+      }
+    }
+
+    onIframeNavigated(newUrl) {
+      const activeTab = this.tabs[this.activeTabIndex];
+      if (!activeTab) return;
+      if (newUrl && activeTab.url !== newUrl) {
+        activeTab.url = newUrl;
+        activeTab.title = this.formatUrlTitle(newUrl);
+        if (activeTab.history[activeTab.historyIndex] !== newUrl) {
+          activeTab.history.push(newUrl);
+          activeTab.historyIndex = activeTab.history.length - 1;
+        }
+        this.updateToolbarUI();
+      }
     }
 
     t(key, replacements = {}) {
@@ -177,7 +234,7 @@
       setTimeout(() => {
         const frame = document.getElementById(`browserFrame-${tab.id}`);
         if (frame) {
-          frame.src = url;
+          frame.src = this.getEffectiveIframeUrl(url);
           frame.onload = () => {
             tab.isLoading = false;
             try {
@@ -329,7 +386,7 @@
         } else {
           framesHtml += `
             <div id="browserTabContent-${tab.id}" class="browser-frame-container ${isActive ? 'active' : ''}">
-              <iframe id="browserFrame-${tab.id}" class="browser-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="${this.escapeHtml(tab.url)}" title="${this.escapeHtml(tab.title)}"></iframe>
+              <iframe id="browserFrame-${tab.id}" class="browser-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="${this.escapeHtml(this.getEffectiveIframeUrl(tab.url))}" title="${this.escapeHtml(tab.title)}"></iframe>
             </div>
           `;
         }
@@ -350,9 +407,15 @@
             <button type="button" class="browser-nav-btn" id="browserReloadBtn" title="${this.escapeHtml(this.t('browser.reload'))}">🔄</button>
             <button type="button" class="browser-nav-btn" id="browserHomeBtn" title="${this.escapeHtml(this.t('browser.home'))}">🏠</button>
 
+            <!-- Proxy Toggle Button -->
+            <button type="button" class="browser-proxy-btn ${this.useProxy ? 'active' : ''}" id="browserProxyBtn" title="${this.escapeHtml(this.t('browser.proxy_tooltip'))}">
+              <span class="browser-proxy-icon">🛡️</span>
+              <span class="browser-proxy-text">${this.escapeHtml(this.useProxy ? this.t('browser.proxy_active') : this.t('browser.proxy_direct'))}</span>
+            </button>
+
             <!-- Omnibar Address Bar -->
-            <div class="browser-omnibar-box">
-              <span class="browser-protocol-icon">${isHttps ? '🔒' : (activeTab.url ? '📄' : '🔍')}</span>
+            <div class="browser-omnibar-box ${this.useProxy ? 'proxified' : ''}">
+              <span class="browser-protocol-icon">${this.useProxy ? '🛡️' : (isHttps ? '🔒' : (activeTab.url ? '📄' : '🔍'))}</span>
               <input type="text" class="browser-url-input" id="browserOmnibarInput" value="${this.escapeHtml(activeTab.url)}" placeholder="${this.escapeHtml(this.t('browser.address_placeholder'))}" />
             </div>
 
@@ -407,6 +470,7 @@
       const forwardBtn = root.querySelector('#browserForwardBtn');
       const reloadBtn = root.querySelector('#browserReloadBtn');
       const homeBtn = root.querySelector('#browserHomeBtn');
+      const proxyBtn = root.querySelector('#browserProxyBtn');
       const viewSourceBtn = root.querySelector('#browserViewSourceBtn');
       const externalBtn = root.querySelector('#browserExternalBtn');
 
@@ -414,6 +478,7 @@
       if (forwardBtn) forwardBtn.onclick = () => this.goForward();
       if (reloadBtn) reloadBtn.onclick = () => this.reload();
       if (homeBtn) homeBtn.onclick = () => this.goHome();
+      if (proxyBtn) proxyBtn.onclick = () => this.toggleProxy();
       if (viewSourceBtn) viewSourceBtn.onclick = () => this.viewSource();
       if (externalBtn) externalBtn.onclick = () => this.openExternal();
 
@@ -462,6 +527,23 @@
       const forwardBtn = document.getElementById('browserForwardBtn');
       if (backBtn) backBtn.disabled = activeTab.historyIndex <= 0;
       if (forwardBtn) forwardBtn.disabled = activeTab.historyIndex >= activeTab.history.length - 1;
+
+      const proxyBtn = document.getElementById('browserProxyBtn');
+      if (proxyBtn) {
+        proxyBtn.className = `browser-proxy-btn ${this.useProxy ? 'active' : ''}`;
+        const pText = proxyBtn.querySelector('.browser-proxy-text');
+        if (pText) pText.textContent = this.useProxy ? this.t('browser.proxy_active') : this.t('browser.proxy_direct');
+      }
+
+      const omnibarBox = document.querySelector('.browser-omnibar-box');
+      if (omnibarBox) {
+        if (this.useProxy) omnibarBox.classList.add('proxified');
+        else omnibarBox.classList.remove('proxified');
+        const protoIcon = omnibarBox.querySelector('.browser-protocol-icon');
+        if (protoIcon) {
+          protoIcon.textContent = this.useProxy ? '🛡️' : (activeTab.url.startsWith('https://') ? '🔒' : (activeTab.url ? '📄' : '🔍'));
+        }
+      }
 
       const pbar = document.getElementById('browserProgressBar');
       if (pbar) {

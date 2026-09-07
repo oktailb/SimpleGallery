@@ -461,8 +461,9 @@ assert("browser app.js implémente la navigation multi-onglets (addTab, switchTa
   browserJs.includes('addTab(') && browserJs.includes('switchTab(') && browserJs.includes('closeTab(')
 );
 assert("browser app.js implémente normalizeUrl et recherche web", browserJs.includes('normalizeUrl(') && browserJs.includes('duckduckgo.com'));
-assert("browser style.css intègre webos-browser-tabs, browser-omnibar-box et webos-browser-viewport",
-  browserCss.includes('.webos-browser-tabs') && browserCss.includes('.browser-omnibar-box') && browserCss.includes('.webos-browser-viewport')
+assert("browser app.js implémente getEffectiveIframeUrl et toggleProxy", browserJs.includes('getEffectiveIframeUrl(') && browserJs.includes('toggleProxy('));
+assert("browser style.css intègre browser-proxy-btn et browser-omnibar-box.proxified",
+  browserCss.includes('.browser-proxy-btn') && browserCss.includes('.browser-omnibar-box.proxified')
 );
 
 // Test runtime BrowserApp
@@ -509,6 +510,15 @@ try {
   assert("browser normalizeUrl préfixe https://", norm1 === 'https://google.com');
   const normSearch = browserInst.normalizeUrl('recherche simple');
   assert("browser normalizeUrl transforme requête en recherche DuckDuckGo", normSearch.includes('duckduckgo.com/?q=recherche'));
+  
+  // Test proxy mode routing
+  browserInst.useProxy = false;
+  assert("browser getEffectiveIframeUrl en mode direct renvoie l'URL directe", browserInst.getEffectiveIframeUrl('https://example.com') === 'https://example.com');
+  browserInst.useProxy = true;
+  assert("browser getEffectiveIframeUrl en mode proxy route vers api.php?action=browser_proxy", browserInst.getEffectiveIframeUrl('https://example.com').includes('api.php?action=browser_proxy&url='));
+  assert("browser getEffectiveIframeUrl laisse les fichiers locaux directs même en mode proxy", browserInst.getEffectiveIframeUrl('storage/test.html') === 'storage/test.html');
+  browserInst.toggleProxy();
+  assert("browser toggleProxy bascule l'état useProxy", browserInst.useProxy === false);
 } catch (e) {
   assert("browser exécution runtime", false, e.stack);
 }

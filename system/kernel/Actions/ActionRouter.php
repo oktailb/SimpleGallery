@@ -108,7 +108,10 @@ class ActionRouter {
         'tribune_file_get'        => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
         'totoz_proxy'             => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
         'totoz_search'            => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
-        'url_preview'             => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class
+        'url_preview'             => \SimpleGallery\Apps\Tribune\Backend\TribuneActions::class,
+
+        // Browser Proxification
+        'browser_proxy'           => \SimpleGallery\Apps\Browser\Backend\BrowserProxyAction::class
     ];
 
     /**
@@ -129,6 +132,13 @@ class ActionRouter {
             $tribune_file = dirname(dirname(dirname(__DIR__))) . '/apps/tribune/backend/TribuneActions.php';
             if (file_exists($tribune_file)) {
                 require_once $tribune_file;
+            }
+        }
+
+        if ($action === 'browser_proxy') {
+            $browser_file = dirname(dirname(dirname(__DIR__))) . '/apps/browser/backend/BrowserProxyAction.php';
+            if (file_exists($browser_file)) {
+                require_once $browser_file;
             }
         }
 

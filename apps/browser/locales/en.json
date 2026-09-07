@@ -16,5 +16,9 @@
   "browser.welcome_title": "WebOS Browser",
   "browser.welcome_sub": "Surf the web or explore HTML pages in your gallery",
   "browser.quick_links": "Quick Access",
-  "browser.local_files": "Local HTML Files"
+  "browser.local_files": "Local HTML Files",
+  "browser.proxy_mode": "WebOS Proxy Mode",
+  "browser.proxy_active": "Proxified",
+  "browser.proxy_direct": "Direct",
+  "browser.proxy_tooltip": "Toggle WebOS proxy (bypasses firewalls and iframe restrictions)"
 }

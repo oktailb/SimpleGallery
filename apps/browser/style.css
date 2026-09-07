@@ -146,6 +146,43 @@
   cursor: default;
 }
 
+/* Proxy Toggle Button */
+.browser-proxy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  background: var(--bg-card, rgba(255, 255, 255, 0.06));
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.browser-proxy-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #f8fafc);
+  transform: translateY(-1px);
+}
+
+.browser-proxy-btn.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #34d399;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.browser-proxy-btn.active .browser-proxy-icon {
+  filter: drop-shadow(0 0 4px #34d399);
+}
+
 /* Omnibar Box */
 .browser-omnibar-box {
   flex: 1;
@@ -159,10 +196,20 @@
   min-width: 140px;
 }
 
+.browser-omnibar-box.proxified {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
+}
+
 .browser-omnibar-box:focus-within {
   border-color: var(--accent-primary, #6366f1);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   background: var(--bg-card, rgba(0, 0, 0, 0.4));
+}
+
+.browser-omnibar-box.proxified:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
 }
 
 .browser-protocol-icon {
