@@ -1,19 +1,21 @@
 # SimpleGallery WebOS 🚀
 
-**SimpleGallery** est une galerie multimédia et un **environnement WebOS moderne, ultra-rapide et modulaire** conçu en **PHP 7.4+ / PHP 8+ et JavaScript Vanilla pur** (zéro framework lourd, zéro dépendance complexe).
+**SimpleGallery** est à la fois une galerie multimédia plug-and-play ultra-rapide et un **environnement WebOS moderne et modulaire** conçu en **PHP 7.4+ / PHP 8+ et JavaScript Vanilla pur** (zéro framework lourd, zéro dépendance complexe, zéro base de données obligatoire).
 
-Le principe fondamental d'origine (2005) reste intact : **pour publier de nouveaux médias (photos, vidéos, musique, documents, archives), il suffit simplement de les déposer dans n'importe quel dossier sur le serveur.**
+Le principe fondamental d'origine reste intact : **pour publier de nouveaux médias (photos, vidéos, musique, documents, archives), il suffit simplement de les déposer dans n'importe quel dossier sur le serveur.**
 
 ---
 
-## 🌟 Vue d'Ensemble & Fonctionnalités Utilisateur
+![Aperçu SimpleGallery WebOS](screenshot.webp)
+
+## 🌟 Fonctionnalités Principales
 
 ### 🖥️ 1. Environnement de Bureau WebOS (Style macOS / Modern Desktop)
-- **Gestionnaire de Fenêtres Multi-Tâches (`WindowManager`)** : Déplacez, redimensionnez, maximisez, minimisez dans le dock et empilez librement vos fenêtres d'applications avec gestion fluide du `z-index`.
-- **Barre Supérieure Contextuelle (`MenuBarManager`)** : Menu d'application dynamique (façon macOS) adapté à l'application active au premier plan, horloge système en direct, indicateurs de statut et sélecteur de langue instantané.
-- **Dock & Barre des Tâches** : Accès rapide aux applications épinglées, restauration de fenêtres réduites et indicateurs de processus actifs.
-- **Raccourcis de Bureau & Grille Personnalisable** : Raccourcis configurables, drag-and-drop, choix du fond d'écran et des thèmes.
-- **Internationalisation Complète (i18n)** : Interface et jeux traduits en **Français (FR)**, **Anglais (EN)** et **Japonais (JA)** avec **basculement réactif en temps réel** (aucun rechargement de page nécessaire).
+- **Gestionnaire de Fenêtres Multi-Tâches (`WindowManager`)** : Déplacez, redimensionnez, maximisez, réduisez dans le dock et empilez vos fenêtres avec gestion fluide du `z-index`.
+- **Barre Supérieure Contextuelle (`MenuBarManager`)** : Menu dynamique adapté à l'application active au premier plan, horloge système, statut et sélecteur de langue instantané.
+- **Dock & Barre des Tâches** : Accès rapide aux applications favorites, restauration de fenêtres et indicateurs de processus actifs.
+- **Raccourcis & Personnalisation du Bureau** : Choix du fond d'écran (dégradés, motifs, images personnalisées), disposition en grille et thèmes dynamiques.
+- **Internationalisation Complète (i18n)** : Interface traduite en **Français (FR)**, **Anglais (EN)** et **Japonais (JA)** avec **basculement réactif en temps réel** sans rechargement de page.
 
 ---
 
@@ -21,17 +23,16 @@ Le principe fondamental d'origine (2005) reste intact : **pour publier de nouvea
 
 | Application | Icône | Description & Capacités |
 |---|:---:|---|
-| **Explorateur de Fichiers** | 📁 | Navigation arborescente double volet, fil d'Ariane, tri, recherche en direct, sélection multiple, téléversement par glisser-déposer, création de dossiers, gestion des permissions, modes d'affichage **Polaroid 600**, **Grille Moderne**, **Liste** et **Compact**. |
-| **Visionneuse d'Images** | 🖼️ | Moteur interactif de zoom profond (*Deep Zoom* jusqu'à 10x), déplacement à la souris (*Pan/Drag*), rotation 90°, filtres colorimétriques (luminosité, contraste, saturation, sépia, inversion, flou) et panneau d'inspection des métadonnées EXIF. |
-| **Lecteur Vidéo HTML5** | 🎬 | Lecteur vidéo complet avec gestion des pistes de sous-titres (`.vtt`, `.srt`), sélection de la vitesse de lecture (0.25x à 2x), mode cinéma, *Picture-in-Picture* (PiP) et capture d'écran instantanée. |
-| **Lecteur Audio & Musique** | 🎵 | Lecteur musical avec analyseur de spectre / onde sonore dynamique en temps réel (*Canvas Visualizer*), lecture des pochettes et tags ID3, listes de lecture, lecture aléatoire et répétition. |
-| **Lecteur & Éditeur de Documents** | 📄 | **PDF** (rendu vectoriel PDF.js avec miniatures et pagination), **Markdown** (visionneuse et éditeur scindé en direct avec rendu de listes, tableaux, formules et mise en forme riche), **Éditeur de Code Source** (coloration syntaxique Prism.js pour 50+ langages, numérotation des lignes, thèmes sombre/clair et sauvegarde directe sur le serveur). |
+| **Explorateur de Fichiers** | 📁 | Navigation double volet, fil d'Ariane, tri, recherche en direct, sélection multiple, téléversement par glisser-déposer, modes **Polaroid 600**, **Grille Moderne**, **Liste** et **Compact**. |
+| **Visionneuse d'Images** | 🖼️ | Moteur de zoom profond (*Deep Zoom* jusqu'à 10x), déplacement panoramique (*Pan*), rotation 90°, filtres colorimétriques et panneau d'inspection des métadonnées EXIF. |
+| **Lecteur Vidéo HTML5** | 🎬 | Lecteur vidéo complet avec gestion des sous-titres (`.vtt`, `.srt`), vitesse de lecture (0.25x à 2x), mode cinéma, *Picture-in-Picture* (PiP) et capture instantanée. |
+| **Lecteur Audio & Musique** | 🎵 | Lecteur musical avec analyseur de spectre / onde sonore dynamique en temps réel (*Canvas Visualizer*), pochettes et tags ID3, listes de lecture et lecture aléatoire. |
+| **Lecteur & Éditeur de Documents** | 📄 | **PDF** (rendu vectoriel PDF.js avec pagination), **Markdown** (visionneuse et éditeur scindé en direct), **Éditeur de Code Source** (coloration syntaxique Prism.js pour 50+ langages). |
 | **Gestionnaire d'Archives** | 📦 | Exploration directe du contenu des archives ZIP, extraction de fichiers et création d'archives à la volée. |
-| **Cartes & Géolocalisation** | 🗺️ | Carte interactive du monde (Leaflet / OpenStreetMap) avec regroupement automatique par clusters (*Clustering*) des photos géotaggées par GPS EXIF et traçage d'itinéraires. |
-| **Jeu des 8 Dames** | 👑 | Puzzle classique des N-Dames (échiquier de 4x4 à 12x12), solveur procédural complet par backtracking, explorateur interactif de solutions, rayons de menace dynamiques, indices et démo automatique. |
-| **Foot Pong Arcade** | ⚽ | Jeu d'arcade rétro physique 1v1 avec raquettes inclinables à la souris, rebonds balistiques, système de particules, niveaux de difficulté IA (Facile, Moyen, Pro, Légende) et chronomètre de match. |
-| **Tours de Hanoï** | 🗼 | Casse-tête mathématique (3 à 8 disques), glisser-déposer et placement au clic, calcul du minimum optimal d'étapes ($2^n - 1$), solveur récursif pas-à-pas animé et indices intelligents. |
-| **Tuyaux & Réseau Connecté** | 🔧 | Puzzle procédural de connexion de réseau (*Netwalk*), simulation de fluide dynamique, prévention des fuites, mode boucle cyclique circulaire (**Tore**) et solveur automatique. |
+| **Cartes & Géolocalisation** | 🗺️ | Carte interactive du monde (Leaflet / OpenStreetMap) avec regroupement automatique par clusters (*Clustering*) des photos géotaggées par GPS EXIF. |
+| **Tribune Libre** | 💬 | Espace de discussion communautaire en direct avec support des raccourcis clavier, téléversement de médias temporaires et flux temps réel. |
+| **Moniteur Système** | 📊 | Supervision en temps réel des ressources serveur, mémoire PHP, espace disque, caches et diagnostics de stockage. |
+| **Suite de Jeux Rétro** | 🎮 | **8 Dames** (solveur procédural par backtracking), **Foot Pong** (physique rétro 1v1 avec IA), **Tours de Hanoï** (solveur animé), **Netwalk** (connexion de réseau), **Konquest** et **JDR**. |
 
 ---
 
@@ -39,7 +40,7 @@ Le principe fondamental d'origine (2005) reste intact : **pour publier de nouvea
 
 ### Prérequis
 - **PHP 7.4+** ou **PHP 8.0+** (extensions recommandées : `gd`, `exif`, `fileinfo`, `zip`).
-- Optionnel : **FFmpeg** installé sur la machine hôte pour la génération automatique des vignettes d'affiches vidéo.
+- Optionnel : **FFmpeg** pour l'extraction automatique des miniatures de vidéos.
 
 ### 1. Démarrage Local Immédiat
 Lancez simplement le script de démarrage local inclus :
@@ -53,46 +54,46 @@ Ouvrez ensuite `http://localhost:8080` dans votre navigateur.
 
 ---
 
-### 2. Déploiement sur Serveur Web (Apache, Nginx, LiteSpeed, Caddy)
-1. Téléversez l'ensemble des fichiers du projet dans la racine de votre hébergement web (`public_html` ou `/var/www/html/SimpleGallery`).
+### 2. Déploiement sur Serveur Web (Apache, Nginx, Caddy)
+1. Déposez l'ensemble des fichiers du projet dans la racine de votre hébergement web (`public_html` ou `/var/www/html/SimpleGallery`).
 2. Accordez les permissions d'écriture nécessaires au serveur web :
    ```bash
    chown -R www-data:www-data /var/www/html/SimpleGallery
    chmod -R 775 /var/www/html/SimpleGallery
    ```
-3. Initialisez le mot de passe d'administration via la ligne de commande :
+3. Initialisez le mot de passe d'administration en ligne de commande :
    ```bash
    php bin/set_admin_password.php "VotreMotDePasseSecret"
    ```
-4. Déposez vos dossiers de photos et médias : ils sont immédiatement détectés et prêts à être explorés !
+4. Déposez vos dossiers de photos et médias dans `storage/media/` : ils sont immédiatement détectés !
 
 ---
 
-## 🔐 Mode Administration & Sécurité
+## 🔐 Mode Administration, Sécurité & Droits d'Accès
 
-- **Authentification Robuste** : Mot de passe haché par algorithme BCRYPT stocké de manière sécurisée dans `config.php`.
-- **Protection CSRF Globale** : Toutes les requêtes d'écriture, téléversement et modifications exigent un jeton de session anti-CSRF valide.
-- **Isolation du Système de Fichiers** : Filtrage strict contre le *Directory Traversal* (`../`).
-- **Gestion des Fichiers en Mode Admin** :
-  - Cliquez sur **🔑 Admin** dans la barre supérieure pour vous connecter.
-  - Éditez les métadonnées, titres, bannières descriptives et légendes directement depuis l'interface web.
-  - Déverrouillez la création de dossiers, le renommage, le déplacement, la suppression et le téléversement de fichiers par glisser-déposer.
+- **Authentification Robuste** : Mot de passe haché par algorithme BCRYPT stocké de manière sécurisée.
+- **Protection CSRF Globale** : Toutes les requêtes d'écriture et modifications exigent un jeton de session anti-CSRF valide.
+- **Isolation du Système de Fichiers (VFS)** : Filtrage strict contre le *Directory Traversal* (`../`).
+- **Visionnage en Ligne vs Téléchargement Direct** :
+  - **Visionnage en ligne (`raw=1`)** : Les médias des dossiers publics sont librement consultables et diffusés en mode `inline` dans les lecteurs et visionneuses.
+  - **Téléchargement de fichier (`download=1`)** : Les options de téléchargement direct peuvent être restreintes via `can_download_item` dans `config/security.php` pour empêcher le téléchargement direct ou l'extraction brute de fichiers par les visiteurs.
+  - **Protection Clic Droit** : L'interface désactive le menu contextuel sur les images et active `controlsList="nodownload"` sur les vidéos lorsque le téléchargement direct est restreint.
 
 ---
 
-## 📂 Configuration par Fichiers Cachés (*Dotfiles Unix*)
+## 📂 Configuration par Fichiers Cachés (*Dotfiles*)
 
-SimpleGallery vous permet de personnaliser individuellement n'importe quel sous-dossier sans base de données, simplement en y plaçant des fichiers texte cachés :
+Personnalisez n'importe quel dossier sans base de données en y déposant simplement des fichiers texte :
 
-| Fichier | Rôle & Fonctionnalité | Exemple Rapide |
+| Fichier | Rôle & Fonctionnalité | Exemple |
 |---|---|---|
-| **`.title`** | Surcharge le nom d'affichage du dossier (en-tête, fil d'Ariane, grille). | `Vacances d'Été 2026 🏖️` |
-| **`.desc`** / **`.description`** | Affiche une bannière descriptive élégante en haut du dossier. | `Album souvenir de notre voyage en Espagne.` |
-| **`.comment`** | Associe des légendes personnalisées aux médias du dossier (`fichier.jpg = Légende`). | `photo1.jpg = Plage au coucher du soleil` |
-| **`.bg`** | Définit une image locale ou une couleur/dégradé CSS en fond d'écran. | `#0f172a` ou `fond.jpg` |
-| **`.theme`** | Applique un thème visuel dédié à ce répertoire (`polaroid-classic`, `dark-glass`, `light-minimal`, `cyberpunk`). | `dark-glass` |
-| **`.private`** | Masque le dossier aux visiteurs publics (visible uniquement pour l'Admin). | *Fichier vide ou "private"* |
-| **`.password`** | Protège l'accès au dossier par un mot de passe dédié. | *Hash BCRYPT* |
+| **`.title`** | Surcharge le nom d'affichage du dossier. | `Vacances d'Été 🏖️` |
+| **`.desc`** | Affiche une bannière descriptive élégante en en-tête. | `Souvenirs de notre voyage.` |
+| **`.comment`** | Associe des légendes personnalisées aux médias (`photo.jpg = Légende`). | `p1.jpg = Plage au coucher du soleil` |
+| **`.bg`** | Définit une image ou une couleur CSS en fond d'écran du dossier. | `#0f172a` ou `fond.jpg` |
+| **`.theme`** | Applique un thème dédié au répertoire (`polaroid-classic`, `dark-glass`, etc.). | `dark-glass` |
+| **`.private`** | Masque le dossier aux visiteurs publics (accessible uniquement à l'Admin). | *Fichier vide* |
+| **`.password`** | Protège l'accès au dossier par mot de passe. | *Hash BCRYPT* |
 
 ---
 
@@ -101,21 +102,36 @@ SimpleGallery vous permet de personnaliser individuellement n'importe quel sous-
 | Raccourci | Action |
 |---|---|
 | `<Flèche Gauche>` / `<Flèche Droite>` | Élément précédent / suivant |
-| `+` ou `=` / `-` ou `_` | Zoom avant / arrière |
+| `+` ou `=` / `-` ou `_` | Zoom avant / arrière dans la visionneuse |
 | `Glisser Souris` (*Drag*) | Déplacer l'image agrandie (*Pan*) |
 | `Double Clic` | Alterne entre zoom normal (1x) et zoom centré (2.5x) |
 | `R` | Rotation de l'image de 90° |
 | `0` | Réinitialiser le zoom (100%) |
-| `F` | Basculer en mode Plein Écran (*Fullscreen*) |
-| `Échap` | Fermer la visionneuse active |
+| `F` | Basculer en plein écran |
+| `I` | Ouvrir le panneau des propriétés / métadonnées EXIF |
+| `Échap` | Fermer la visionneuse ou la fenêtre active |
 
 ---
 
-## 🛠️ Architecture Interne & Guide Développeur
+## 🧪 Tests Unitaires & Validation
 
-Pour comprendre le fonctionnement interne du système, l'architecture du Kernel, le cycle de vie des fenêtres, le bus d'événements IPC, le système de localisation dynamique ou pour **créer vos propres applications modulaires**, consultez la documentation technique complète :
+Pour lancer la suite de tests complète (sécurité, VFS, modules, templates, découverte de plugins) :
 
-👉 **[Consulter DOCUMENTATION.md](DOCUMENTATION.md)**
+```bash
+php tests/run_tests.php
+```
+
+---
+
+## 🛠️ Documentation Technique Complète
+
+Pour aller plus loin dans la personnalisation et le développement :
+
+- 🏗️ **[Architecture Système](docs/architecture.md)** : Fonctionnement du Kernel PHP, VFS, Gateway et structure.
+- 🛠️ **[Guide Développeur d'Applications](docs/apps-guide.md)** : Créer une application WebOS en 5 minutes avec `WebOSApp`.
+- 🔐 **[Sécurité & Permissions](docs/security.md)** : Modèle de sécurité, politiques d'accès et streaming inline.
+- 🔒 **[Modules Métier & Dépôts Privés](docs/private-extensions.md)** : Intégrer des applications propriétaires ou confidentielles sans modifier le code source public.
+- 📖 **[Portail de Documentation](DOCUMENTATION.md)** : Vue d'ensemble et référence technique.
 
 ---
 

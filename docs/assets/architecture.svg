@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="appGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="userlandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="kernelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="storageGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="620" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Title -->
+  <text x="480" y="42" fill="#f8fafc" font-size="20" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    Architecture Modulaire — SimpleGallery WebOS
+  </text>
+  <text x="480" y="64" fill="#94a3b8" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    Découplage strict Micro-Kernel (PHP 7.4+/8.x) &amp; Espace Utilisateur Multi-tâches (Vanilla JS)
+  </text>
+
+  <!-- 1. APPLICATION LAYER -->
+  <g transform="translate(30, 85)" filter="url(#shadow)">
+    <rect width="900" height="105" rx="10" fill="#1e1e2e" stroke="#312e81" stroke-width="1.5" />
+    <rect width="900" height="26" rx="10" fill="url(#appGrad)" />
+    <rect y="16" width="900" height="10" fill="url(#appGrad)" />
+    <text x="16" y="18" fill="#ffffff" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+      1. COUCHE APPLICATIONS MODULAIRES (apps/&lt;id&gt;/)
+    </text>
+
+    <!-- App Badges -->
+    <g transform="translate(20, 38)">
+      <rect x="0" y="0" width="125" height="52" rx="6" fill="#2d2d3f" stroke="#4338ca" stroke-width="1"/>
+      <text x="62" y="24" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">📁 Explorateur</text>
+      <text x="62" y="40" fill="#a5b4fc" font-size="9" text-anchor="middle" font-family="sans-serif">Polaroid / Liste / VFS</text>
+
+      <rect x="145" y="0" width="125" height="52" rx="6" fill="#2d2d3f" stroke="#4338ca" stroke-width="1"/>
+      <text x="207" y="24" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">🖼️ Image Viewer</text>
+      <text x="207" y="40" fill="#a5b4fc" font-size="9" text-anchor="middle" font-family="sans-serif">DeepZoom / EXIF / Pan</text>
+
+      <rect x="290" y="0" width="125" height="52" rx="6" fill="#2d2d3f" stroke="#4338ca" stroke-width="1"/>
+      <text x="352" y="24" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">🎬 Lecteur Vidéo</text>
+      <text x="352" y="40" fill="#a5b4fc" font-size="9" text-anchor="middle" font-family="sans-serif">HTML5 / Subtitles / PiP</text>
+
+      <rect x="435" y="0" width="125" height="52" rx="6" fill="#2d2d3f" stroke="#4338ca" stroke-width="1"/>
+      <text x="497" y="24" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">🎵 Lecteur Audio</text>
+      <text x="497" y="40" fill="#a5b4fc" font-size="9" text-anchor="middle" font-family="sans-serif">Spectre Canvas / ID3</text>
+
+      <rect x="580" y="0" width="125" height="52" rx="6" fill="#2d2d3f" stroke="#4338ca" stroke-width="1"/>
+      <text x="642" y="24" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">💬 Tribune Libre</text>
+      <text x="642" y="40" fill="#a5b4fc" font-size="9" text-anchor="middle" font-family="sans-serif">SSE / Chat en direct</text>
+
+      <rect x="725" y="0" width="135" height="52" rx="6" fill="#3b2d54" stroke="#7c3aed" stroke-dasharray="4" stroke-width="1.5"/>
+      <text x="792" y="24" fill="#f3e8ff" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">🔒 Packs Privés</text>
+      <text x="792" y="40" fill="#d8b4fe" font-size="9" text-anchor="middle" font-family="sans-serif">Dépôts git isolés</text>
+    </g>
+  </g>
+
+  <!-- Connection line Apps -> Userland -->
+  <path d="M 480 190 L 480 205" stroke="#6366f1" stroke-width="2" stroke-dasharray="4" />
+
+  <!-- 2. USERLAND LAYER -->
+  <g transform="translate(30, 205)" filter="url(#shadow)">
+    <rect width="900" height="110" rx="10" fill="#111c2e" stroke="#0369a1" stroke-width="1.5" />
+    <rect width="900" height="26" rx="10" fill="url(#userlandGrad)" />
+    <rect y="16" width="900" height="10" fill="url(#userlandGrad)" />
+    <text x="16" y="18" fill="#ffffff" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+      2. COUCHE USERLAND DESKTOP (system/userland/ — JavaScript Vanilla)
+    </text>
+
+    <!-- Userland Services -->
+    <g transform="translate(20, 38)">
+      <rect x="0" y="0" width="130" height="56" rx="6" fill="#1a2b42" stroke="#0284c7" stroke-width="1"/>
+      <text x="65" y="24" fill="#e0f2fe" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">WindowManager</text>
+      <text x="65" y="42" fill="#7dd3fc" font-size="9" text-anchor="middle" font-family="sans-serif">Dock / Z-Index / Drag</text>
+
+      <rect x="145" y="0" width="130" height="56" rx="6" fill="#1a2b42" stroke="#0284c7" stroke-width="1"/>
+      <text x="210" y="24" fill="#e0f2fe" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">MenuBarManager</text>
+      <text x="210" y="42" fill="#7dd3fc" font-size="9" text-anchor="middle" font-family="sans-serif">Menus contextuels macOS</text>
+
+      <rect x="290" y="0" width="130" height="56" rx="6" fill="#1a2b42" stroke="#0284c7" stroke-width="1"/>
+      <text x="355" y="24" fill="#e0f2fe" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">EventBus (IPC)</text>
+      <text x="355" y="42" fill="#7dd3fc" font-size="9" text-anchor="middle" font-family="sans-serif">Bus d'événements global</text>
+
+      <rect x="435" y="0" width="130" height="56" rx="6" fill="#1a2b42" stroke="#0284c7" stroke-width="1"/>
+      <text x="500" y="24" fill="#e0f2fe" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">I18nEngine</text>
+      <text x="500" y="42" fill="#7dd3fc" font-size="9" text-anchor="middle" font-family="sans-serif">Bascule FR/EN/JA à chaud</text>
+
+      <rect x="580" y="0" width="130" height="56" rx="6" fill="#1a2b42" stroke="#0284c7" stroke-width="1"/>
+      <text x="645" y="24" fill="#e0f2fe" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">WebOSApp (Base)</text>
+      <text x="645" y="42" fill="#7dd3fc" font-size="9" text-anchor="middle" font-family="sans-serif">Lifecycle &amp; Tabs</text>
+
+      <rect x="725" y="0" width="135" height="56" rx="6" fill="#1a2b42" stroke="#0284c7" stroke-width="1"/>
+      <text x="792" y="24" fill="#e0f2fe" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">SyscallClient</text>
+      <text x="792" y="42" fill="#7dd3fc" font-size="9" text-anchor="middle" font-family="sans-serif">Token CSRF &amp; REST</text>
+    </g>
+  </g>
+
+  <!-- Connection line Userland -> Kernel -->
+  <path d="M 480 315 L 480 330" stroke="#0284c7" stroke-width="2" stroke-dasharray="4" />
+
+  <!-- 3. KERNEL LAYER -->
+  <g transform="translate(30, 330)" filter="url(#shadow)">
+    <rect width="900" height="110" rx="10" fill="#241b10" stroke="#b45309" stroke-width="1.5" />
+    <rect width="900" height="26" rx="10" fill="url(#kernelGrad)" />
+    <rect y="16" width="900" height="10" fill="url(#kernelGrad)" />
+    <text x="16" y="18" fill="#ffffff" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+      3. COUCHE KERNEL &amp; GATEWAY (system/kernel/ — PHP 7.4+ / 8.x)
+    </text>
+
+    <!-- Kernel Services -->
+    <g transform="translate(20, 38)">
+      <rect x="0" y="0" width="160" height="56" rx="6" fill="#382613" stroke="#d97706" stroke-width="1"/>
+      <text x="80" y="24" fill="#fef3c7" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">ActionRouter &amp; Gateway</text>
+      <text x="80" y="42" fill="#fde68a" font-size="9" text-anchor="middle" font-family="sans-serif">api.php / Dispatcher REST</text>
+
+      <rect x="175" y="0" width="160" height="56" rx="6" fill="#382613" stroke="#d97706" stroke-width="1"/>
+      <text x="255" y="24" fill="#fef3c7" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">PluginDiscovery</text>
+      <text x="255" y="42" fill="#fde68a" font-size="9" text-anchor="middle" font-family="sans-serif">Scan apps/ &amp; manifest.json</text>
+
+      <rect x="350" y="0" width="160" height="56" rx="6" fill="#382613" stroke="#d97706" stroke-width="1"/>
+      <text x="430" y="24" fill="#fef3c7" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">VFS &amp; PathValidator</text>
+      <text x="430" y="42" fill="#fde68a" font-size="9" text-anchor="middle" font-family="sans-serif">Sandboxing realpath (Anti-Traversal)</text>
+
+      <rect x="525" y="0" width="160" height="56" rx="6" fill="#382613" stroke="#d97706" stroke-width="1"/>
+      <text x="605" y="24" fill="#fef3c7" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">ThumbEngine &amp; Media</text>
+      <text x="605" y="42" fill="#fde68a" font-size="9" text-anchor="middle" font-family="sans-serif">thumb.php (GD / FFmpeg / Exif)</text>
+
+      <rect x="700" y="0" width="160" height="56" rx="6" fill="#382613" stroke="#d97706" stroke-width="1"/>
+      <text x="780" y="24" fill="#fef3c7" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">SecurityManager</text>
+      <text x="780" y="42" fill="#fde68a" font-size="9" text-anchor="middle" font-family="sans-serif">CSRF, SSRF, BCRYPT, SVG Clean</text>
+    </g>
+  </g>
+
+  <!-- Connection line Kernel -> Storage -->
+  <path d="M 480 440 L 480 455" stroke="#b45309" stroke-width="2" stroke-dasharray="4" />
+
+  <!-- 4. STORAGE LAYER -->
+  <g transform="translate(30, 455)" filter="url(#shadow)">
+    <rect width="900" height="135" rx="10" fill="#0f291e" stroke="#047857" stroke-width="1.5" />
+    <rect width="900" height="26" rx="10" fill="url(#storageGrad)" />
+    <rect y="16" width="900" height="10" fill="url(#storageGrad)" />
+    <text x="16" y="18" fill="#ffffff" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+      4. PERSISTANCE &amp; SÉPARATION DES RESPONSABILITÉS
+    </text>
+
+    <!-- Two Pillars: config vs storage -->
+    <g transform="translate(20, 36)">
+      <!-- config/ -->
+      <rect x="0" y="0" width="415" height="85" rx="6" fill="#14382a" stroke="#10b981" stroke-width="1"/>
+      <text x="15" y="22" fill="#a7f3d0" font-size="12" font-weight="700" font-family="sans-serif">⚙️ config/ — Configuration Statique Système</text>
+      <text x="15" y="42" fill="#ecfdf5" font-size="10" font-family="sans-serif">• Géré par l'Administrateur / Fichiers PHP &amp; JSON</text>
+      <text x="15" y="58" fill="#6ee7b7" font-size="10" font-family="monospace">config.php, security.php, themes.php, desktop.json</text>
+      <text x="15" y="74" fill="#a7f3d0" font-size="9" font-style="italic" font-family="sans-serif">⚠️ Les applications n'écrivent JAMAIS ici</text>
+
+      <!-- storage/ -->
+      <rect x="445" y="0" width="415" height="85" rx="6" fill="#14382a" stroke="#10b981" stroke-width="1"/>
+      <text x="460" y="22" fill="#a7f3d0" font-size="12" font-weight="700" font-family="sans-serif">💾 storage/ — Données Applicatives Dynamiques</text>
+      <text x="460" y="42" fill="#ecfdf5" font-size="10" font-family="sans-serif">• Géré par le Runtime et les Applications au vol</text>
+      <text x="460" y="58" fill="#6ee7b7" font-size="10" font-family="monospace">storage/media/, storage/.thumbnails/, storage/session/</text>
+      <text x="460" y="74" fill="#a7f3d0" font-size="9" font-style="italic" font-family="sans-serif">✓ Données modifiables, caches et préférences utilisateur</text>
+    </g>
+  </g>
+</svg>

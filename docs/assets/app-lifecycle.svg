@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    <linearGradient id="stepGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="stepGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+    <linearGradient id="stepGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="stepGrad4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="stepGrad5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f87171" />
+      <stop offset="100%" stop-color="#dc2626" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <rect width="940" height="480" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Title -->
+  <text x="470" y="38" fill="#f8fafc" font-size="18" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    Cycle de Vie d'une Application — WebOSApp (window.sys.App)
+  </text>
+  <text x="470" y="58" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    Enregistrement, montage de fenêtre, bus d'événements et nettoyage automatique
+  </text>
+
+  <!-- Step 1: Discovery & Registration -->
+  <g transform="translate(30, 90)" filter="url(#shadow)">
+    <rect width="160" height="340" rx="10" fill="#111827" stroke="#0284c7" stroke-width="1.5"/>
+    <rect width="160" height="32" rx="10" fill="url(#stepGrad1)"/>
+    <rect y="16" width="160" height="16" fill="url(#stepGrad1)"/>
+    <text x="80" y="21" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">1. Découverte &amp; Enreg.</text>
+
+    <text x="14" y="60" fill="#7dd3fc" font-size="10" font-weight="700" font-family="sans-serif">PluginDiscovery.php</text>
+    <text x="14" y="76" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Scanne apps/&lt;id&gt;/</text>
+    <text x="14" y="92" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Charge manifest.json</text>
+    <text x="14" y="108" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Injection CSS / JS</text>
+
+    <path d="M 14 130 L 146 130" stroke="#1e293b" stroke-width="1"/>
+
+    <text x="14" y="155" fill="#7dd3fc" font-size="10" font-weight="700" font-family="sans-serif">AppManager.js</text>
+    <text x="14" y="171" fill="#cbd5e1" font-size="9" font-family="sans-serif">• register(new App())</text>
+    <text x="14" y="187" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Ajout au Menu Pomme</text>
+    <text x="14" y="203" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Icône sur le Dock</text>
+    <text x="14" y="219" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Commandes distantes</text>
+
+    <rect x="14" y="295" width="132" height="24" rx="4" fill="#0c4a6e"/>
+    <text x="80" y="311" fill="#38bdf8" font-size="9" font-weight="700" text-anchor="middle" font-family="sans-serif">Une seule fois</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 190 260 L 215 260" stroke="#38bdf8" stroke-width="2"/>
+
+  <!-- Step 2: Instantiation & onInit -->
+  <g transform="translate(215, 90)" filter="url(#shadow)">
+    <rect width="160" height="340" rx="10" fill="#111827" stroke="#4f46e5" stroke-width="1.5"/>
+    <rect width="160" height="32" rx="10" fill="url(#stepGrad2)"/>
+    <rect y="16" width="160" height="16" fill="url(#stepGrad2)"/>
+    <text x="80" y="21" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">2. Initialisation</text>
+
+    <text x="14" y="60" fill="#a5b4fc" font-size="10" font-weight="700" font-family="sans-serif">constructor()</text>
+    <text x="14" y="76" fill="#cbd5e1" font-size="9" font-family="sans-serif">• super(options)</text>
+    <text x="14" y="92" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Définit dimensions</text>
+    <text x="14" y="108" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Déclare les onglets</text>
+    <text x="14" y="124" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Initialise state {}</text>
+
+    <path d="M 14 140 L 146 140" stroke="#1e293b" stroke-width="1"/>
+
+    <text x="14" y="165" fill="#a5b4fc" font-size="10" font-weight="700" font-family="sans-serif">onInit()</text>
+    <text x="14" y="181" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Appelé avant 1er open</text>
+    <text x="14" y="197" fill="#cbd5e1" font-size="9" font-family="sans-serif">• this.subscribe()</text>
+    <text x="14" y="213" fill="#cbd5e1" font-size="9" font-family="sans-serif">• SyscallClient bind</text>
+
+    <rect x="14" y="295" width="132" height="24" rx="4" fill="#312e81"/>
+    <text x="80" y="311" fill="#c7d2fe" font-size="9" font-weight="700" text-anchor="middle" font-family="sans-serif">Pré-ouverture</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 375 260 L 400 260" stroke="#818cf8" stroke-width="2"/>
+
+  <!-- Step 3: Open & Rendering -->
+  <g transform="translate(400, 90)" filter="url(#shadow)">
+    <rect width="160" height="340" rx="10" fill="#111827" stroke="#059669" stroke-width="1.5"/>
+    <rect width="160" height="32" rx="10" fill="url(#stepGrad3)"/>
+    <rect y="16" width="160" height="16" fill="url(#stepGrad3)"/>
+    <text x="80" y="21" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">3. Ouverture &amp; UI</text>
+
+    <text x="14" y="60" fill="#6ee7b7" font-size="10" font-weight="700" font-family="sans-serif">onOpen()</text>
+    <text x="14" y="76" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Création fenêtre WM</text>
+    <text x="14" y="92" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Register MenuBar</text>
+    <text x="14" y="108" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Chargement API REST</text>
+
+    <path d="M 14 130 L 146 130" stroke="#1e293b" stroke-width="1"/>
+
+    <text x="14" y="155" fill="#6ee7b7" font-size="10" font-weight="700" font-family="sans-serif">renderTab() / DOM</text>
+    <text x="14" y="171" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Rendu HTML dynamique</text>
+    <text x="14" y="187" fill="#cbd5e1" font-size="9" font-family="sans-serif">• bindEvents()</text>
+    <text x="14" y="203" fill="#cbd5e1" font-size="9" font-family="sans-serif">• UI Toolkit cards/forms</text>
+    <text x="14" y="219" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Toast confirmation</text>
+
+    <rect x="14" y="295" width="132" height="24" rx="4" fill="#064e3b"/>
+    <text x="80" y="311" fill="#6ee7b7" font-size="9" font-weight="700" text-anchor="middle" font-family="sans-serif">Fenêtre Active</text>
+  </g>
+
+  <!-- Arrow 3 -> 4 -->
+  <path d="M 560 260 L 585 260" stroke="#34d399" stroke-width="2"/>
+
+  <!-- Step 4: Runtime & Live Events -->
+  <g transform="translate(585, 90)" filter="url(#shadow)">
+    <rect width="160" height="340" rx="10" fill="#111827" stroke="#d97706" stroke-width="1.5"/>
+    <rect width="160" height="32" rx="10" fill="url(#stepGrad4)"/>
+    <rect y="16" width="160" height="16" fill="url(#stepGrad4)"/>
+    <text x="80" y="21" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">4. Runtime &amp; Sync</text>
+
+    <text x="14" y="60" fill="#fde68a" font-size="10" font-weight="700" font-family="sans-serif">Événements IPC</text>
+    <text x="14" y="76" fill="#cbd5e1" font-size="9" font-family="sans-serif">• EventBus.emit()</text>
+    <text x="14" y="92" fill="#cbd5e1" font-size="9" font-family="sans-serif">• locale:changed (i18n)</text>
+    <text x="14" y="108" fill="#cbd5e1" font-size="9" font-family="sans-serif">• theme:changed</text>
+
+    <path d="M 14 130 L 146 130" stroke="#1e293b" stroke-width="1"/>
+
+    <text x="14" y="155" fill="#fde68a" font-size="10" font-weight="700" font-family="sans-serif">Autorun Remote</text>
+    <text x="14" y="171" fill="#cbd5e1" font-size="9" font-family="sans-serif">• dispatchCommand()</text>
+    <text x="14" y="187" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Pilotage multimodal</text>
+    <text x="14" y="203" fill="#cbd5e1" font-size="9" font-family="sans-serif">• this.storage.set()</text>
+
+    <rect x="14" y="295" width="132" height="24" rx="4" fill="#451a03"/>
+    <text x="80" y="311" fill="#fcd34d" font-size="9" font-weight="700" text-anchor="middle" font-family="sans-serif">Interaction</text>
+  </g>
+
+  <!-- Arrow 4 -> 5 -->
+  <path d="M 745 260 L 770 260" stroke="#fbbf24" stroke-width="2"/>
+
+  <!-- Step 5: Close & Teardown -->
+  <g transform="translate(770, 90)" filter="url(#shadow)">
+    <rect width="140" height="340" rx="10" fill="#111827" stroke="#dc2626" stroke-width="1.5"/>
+    <rect width="140" height="32" rx="10" fill="url(#stepGrad5)"/>
+    <rect y="16" width="140" height="16" fill="url(#stepGrad5)"/>
+    <text x="70" y="21" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">5. Fermeture</text>
+
+    <text x="14" y="60" fill="#fca5a5" font-size="10" font-weight="700" font-family="sans-serif">onClose()</text>
+    <text x="14" y="76" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Retrait Menus</text>
+    <text x="14" y="92" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Stop timers/audio</text>
+
+    <path d="M 14 120 L 126 120" stroke="#1e293b" stroke-width="1"/>
+
+    <text x="14" y="145" fill="#fca5a5" font-size="10" font-weight="700" font-family="sans-serif">Auto-Cleanup</text>
+    <text x="14" y="161" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Unsubscribe auto</text>
+    <text x="14" y="177" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Libération DOM</text>
+    <text x="14" y="193" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Zéro fuite mémoire</text>
+
+    <rect x="14" y="295" width="112" height="24" rx="4" fill="#450a0a"/>
+    <text x="70" y="311" fill="#f87171" font-size="9" font-weight="700" text-anchor="middle" font-family="sans-serif">Détruit</text>
+  </g>
+</svg>

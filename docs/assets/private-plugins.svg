@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e1a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="pubGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="privGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#7e22ce" />
+    </linearGradient>
+    <linearGradient id="localGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <rect width="940" height="480" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Title -->
+  <text x="470" y="38" fill="#f8fafc" font-size="18" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    Modèle d'Intégration des Packs &amp; Dépôts Privés
+  </text>
+  <text x="470" y="58" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    Isolation stricte du code métier confidentiel &amp; synchronisation transparente du WebOS public
+  </text>
+
+  <!-- GitHub Public Remote -->
+  <g transform="translate(40, 95)" filter="url(#shadow)">
+    <rect width="380" height="150" rx="10" fill="#0f172a" stroke="#0284c7" stroke-width="1.5"/>
+    <rect width="380" height="28" rx="10" fill="url(#pubGrad)"/>
+    <rect y="16" width="380" height="12" fill="url(#pubGrad)"/>
+    <text x="190" y="19" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">🌐 DÉPÔT PUBLIC GITHUB (SimpleGallery)</text>
+
+    <text x="16" y="52" fill="#bae6fd" font-size="10" font-weight="700" font-family="sans-serif">✓ 100% Open Source / Zéro Secret Métier</text>
+    <text x="16" y="70" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Micro-Kernel PHP, VFS, Gateway api.php</text>
+    <text x="16" y="86" fill="#cbd5e1" font-size="9" font-family="sans-serif">• WindowManager &amp; Userland Desktop Vanilla JS</text>
+    <text x="16" y="102" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Applications publiques (Explorer, ImageViewer, Games...)</text>
+
+    <rect x="16" y="116" width="348" height="22" rx="4" fill="#0c4a6e"/>
+    <text x="190" y="131" fill="#38bdf8" font-size="9" font-family="monospace" text-anchor="middle">.gitignore protège : apps/ffs-apps/, apps/sim-*/</text>
+  </g>
+
+  <!-- GitHub Private Remote -->
+  <g transform="translate(520, 95)" filter="url(#shadow)">
+    <rect width="380" height="150" rx="10" fill="#1e102e" stroke="#7e22ce" stroke-width="1.5"/>
+    <rect width="380" height="28" rx="10" fill="url(#privGrad)"/>
+    <rect y="16" width="380" height="12" fill="url(#privGrad)"/>
+    <text x="190" y="19" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">🔒 DÉPÔT PRIVÉ GITHUB (Packs Métier / Simu)</text>
+
+    <text x="16" y="52" fill="#e9d5ff" font-size="10" font-weight="700" font-family="sans-serif">✓ 100% Confidentiel &amp; Isolé</text>
+    <text x="16" y="70" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Applications FFS, télémétrie UDP, logbook d'opérations</text>
+    <text x="16" y="86" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Identifiants DB locaux, certificats &amp; daemons</text>
+    <text x="16" y="102" fill="#cbd5e1" font-size="9" font-family="sans-serif">• Traductions locales privées (apps/&lt;pack&gt;/locales/)</text>
+
+    <rect x="16" y="116" width="348" height="22" rx="4" fill="#3b0764"/>
+    <text x="190" y="131" fill="#c084fc" font-size="9" font-family="monospace" text-anchor="middle">manifest.json : "enabled_by_default": false</text>
+  </g>
+
+  <!-- Downward Arrows -->
+  <path d="M 230 245 L 230 285" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4"/>
+  <path d="M 710 245 L 710 285" stroke="#a855f7" stroke-width="2" stroke-dasharray="4"/>
+  <text x="230" y="270" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="middle" font-family="sans-serif">git clone</text>
+  <text x="710" y="270" fill="#a855f7" font-size="10" font-weight="700" text-anchor="middle" font-family="sans-serif">git submodule / clone</text>
+
+  <!-- Local Host System -->
+  <g transform="translate(40, 285)" filter="url(#shadow)">
+    <rect width="860" height="165" rx="10" fill="#0b2416" stroke="#059669" stroke-width="1.5"/>
+    <rect width="860" height="28" rx="10" fill="url(#localGrad)"/>
+    <rect y="16" width="860" height="12" fill="url(#localGrad)"/>
+    <text x="430" y="19" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle" font-family="sans-serif">
+      💻 SERVEUR LOCAL OU POSTE D'EXPLOITATION (Arborescence Unique)
+    </text>
+
+    <!-- Local Path Tree -->
+    <g transform="translate(20, 42)">
+      <rect x="0" y="0" width="380" height="95" rx="6" fill="#133d26" stroke="#10b981" stroke-width="1"/>
+      <text x="14" y="20" fill="#a7f3d0" font-size="11" font-weight="700" font-family="monospace">SimpleGallery/ (WebOS Racine)</text>
+      <text x="14" y="38" fill="#ecfdf5" font-size="9" font-family="sans-serif">├── system/ &amp; config/ &amp; index.php</text>
+      <text x="14" y="54" fill="#ecfdf5" font-size="9" font-family="sans-serif">├── apps/explorer/, image-viewer/, games/...</text>
+      <text x="14" y="70" fill="#6ee7b7" font-size="9" font-family="sans-serif">└── apps/ffs-apps/ (Dossier ignoré par git public)</text>
+      <text x="14" y="86" fill="#fde68a" font-size="8" font-family="sans-serif">→ git pull met à jour le WebOS sans aucun conflit !</text>
+
+      <rect x="420" y="0" width="400" height="95" rx="6" fill="#133d26" stroke="#10b981" stroke-width="1"/>
+      <text x="434" y="20" fill="#a7f3d0" font-size="11" font-weight="700" font-family="sans-serif">⚡ Découverte Automatique au Boot</text>
+      <text x="434" y="38" fill="#ecfdf5" font-size="9" font-family="sans-serif">1. PluginDiscovery scanne apps/ et apps/ffs-apps/*</text>
+      <text x="434" y="54" fill="#ecfdf5" font-size="9" font-family="sans-serif">2. L'app privée est désactivée par défaut si configuré</text>
+      <text x="434" y="70" fill="#ecfdf5" font-size="9" font-family="sans-serif">3. L'Admin l'active à la demande dans les Paramètres</text>
+      <text x="434" y="86" fill="#6ee7b7" font-size="8" font-family="sans-serif">✓ Zéro modification de code, intégration 100% transparente.</text>
+    </g>
+  </g>
+</svg>
