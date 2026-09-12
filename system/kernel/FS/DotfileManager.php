@@ -216,7 +216,7 @@ class DotfileManager {
         $f_plain = $dir_path . '/autorun.json';
         $f_dot   = $dir_path . '/.autorun.json';
         if (file_exists($f_plain) && file_exists($f_dot)) {
-            $autorun_file = (filemtime($f_dot) >= filemtime($f_plain)) ? $f_dot : $f_plain;
+            $autorun_file = (filemtime($f_plain) >= filemtime($f_dot)) ? $f_plain : $f_dot;
         } elseif (file_exists($f_plain)) {
             $autorun_file = $f_plain;
         } elseif (file_exists($f_dot)) {

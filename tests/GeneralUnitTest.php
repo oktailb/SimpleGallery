@@ -920,6 +920,16 @@ class GeneralUnitTestSuite {
         $this->assert("DotfileManager extrait le titre de l'autorun", ($overrides['autorun']['title'] ?? '') === 'Mon VLog Test');
         $this->assert("DotfileManager extrait les étapes de l'autorun", count($overrides['autorun']['steps'] ?? []) === 2);
 
+        // Test cohabitation autorun.json & .autorun.json (autorun.json prioritaire si mtime >=)
+        $dot_autorun = $sample_autorun;
+        $dot_autorun['title'] = 'Ancien Dotfile';
+        file_put_contents($test_autorun_folder . '/.autorun.json', json_encode($dot_autorun));
+        touch($test_autorun_folder . '/autorun.json', time());
+        touch($test_autorun_folder . '/.autorun.json', time());
+        $overrides_cohab = \SimpleGallery\Kernel\FS\DotfileManager::loadFolderOverrides($test_autorun_folder, $this->test_dir);
+        $this->assert("DotfileManager privilégie autorun.json par rapport à .autorun.json", ($overrides_cohab['autorun']['title'] ?? '') === 'Mon VLog Test');
+        @unlink($test_autorun_folder . '/.autorun.json');
+
         // 3. Explorer template UI components
         $template_php = file_get_contents($this->base_dir . '/apps/explorer/template.php');
         $this->assert("template.php contient la bannière autorun .explorer-autorun-banner", strpos($template_php, 'explorer-autorun-banner') !== false);

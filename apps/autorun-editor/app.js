@@ -117,12 +117,39 @@
       if (this.el.tabVisualBtn) this.el.tabVisualBtn.onclick = () => this.switchTab('visual');
       if (this.el.tabJsonBtn) this.el.tabJsonBtn.onclick = () => this.switchTab('json');
 
+      // Live JSON input listener
+      if (this.el.rawJson) {
+        this.el.rawJson.oninput = () => {
+          try {
+            this.currentConfig = JSON.parse(this.el.rawJson.value);
+          } catch (e) {
+            // While typing, invalid JSON is expected; do not break
+          }
+        };
+      }
+
+      // Live visual metadata change listeners
+      const onVisualMetaChange = () => {
+        if (this.activeTab === 'visual') {
+          this.syncVisualToConfig();
+          if (this.el.rawJson) {
+            this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
+          }
+        }
+      };
+      if (this.el.metaTitle) this.el.metaTitle.oninput = onVisualMetaChange;
+      if (this.el.metaLayout) this.el.metaLayout.onchange = onVisualMetaChange;
+      if (this.el.metaDesc) this.el.metaDesc.oninput = onVisualMetaChange;
+      if (this.el.masterFile) this.el.masterFile.onchange = onVisualMetaChange;
+      if (this.el.masterDuration) this.el.masterDuration.oninput = onVisualMetaChange;
+
       // Master type change
       if (this.el.masterType) {
         this.el.masterType.onchange = () => {
           const type = this.el.masterType.value;
           if (this.el.masterFileField) this.el.masterFileField.style.display = (type === 'timer') ? 'none' : 'flex';
           if (this.el.masterDurationField) this.el.masterDurationField.style.display = (type === 'timer') ? 'flex' : 'none';
+          onVisualMetaChange();
         };
       }
 
@@ -150,9 +177,12 @@
         const json = await window.sys.api.get('get_gallery', { dir: cleanPath, _t: Date.now() });
         this.currentFiles = (json && json.files) || [];
 
-        let config = existingConfig;
-        if (!config && json && json.overrides && json.overrides.autorun) {
+        // 1. Prefer fresh config from server overrides if present
+        let config = null;
+        if (json && json.overrides && json.overrides.autorun) {
           config = json.overrides.autorun;
+        } else if (existingConfig) {
+          config = existingConfig;
         }
 
         const folderName = cleanPath ? cleanPath.split('/').pop() : 'Présentation WebOS';
@@ -176,20 +206,30 @@
           };
         } else {
           config = JSON.parse(JSON.stringify(config));
-          if (!config.master) {
+
+          // Normalize window_layout -> layout
+          if (!config.layout && config.window_layout) {
+            config.layout = config.window_layout;
+          }
+
+          // Normalize master from lead_media if master is missing or empty
+          if (!config.master || (!config.master.file && config.lead_media && config.lead_media.file)) {
             config.master = {
               type: (config.lead_media && config.lead_media.app === 'viewer-audio') ? 'audio' : 'video',
-              file: (config.lead_media && config.lead_media.file) || '',
-              duration: config.duration || '120'
+              file: (config.lead_media && config.lead_media.file) || (config.master && config.master.file) || '',
+              duration: config.duration || (config.master && config.master.duration) || '120'
             };
           }
-          if ((!config.timeline || config.timeline.length === 0) && Array.isArray(config.steps) && config.steps.length > 0) {
+
+          // Normalize timeline from steps if timeline is empty or missing, or if timeline has only a blank dummy step
+          const hasTimelineSteps = Array.isArray(config.timeline) && config.timeline.length > 0 && config.timeline.some(t => t.file || t.app || t.action);
+          if (!hasTimelineSteps && Array.isArray(config.steps) && config.steps.length > 0) {
             config.timeline = config.steps.map(s => ({
               time: s.time || '00:00',
               title: s.title || s.chapter || '',
               action: s.action || 'open_app',
               app: (s.app === 'viewer-video' ? 'video-player' : (s.app === 'viewer-text' ? 'doc-viewer' : (s.app || 'video-player'))),
-              file: s.file || '',
+              file: s.file || (s.params && s.params.file) || '',
               params: s.params || (s.file ? { file: s.file } : {})
             }));
           }
@@ -199,6 +239,14 @@
         this.populateMeta();
         this.populateMasterFiles(config.master ? config.master.file : '');
         this.renderTimeline();
+
+        // Immediately synchronize the raw JSON textarea so the JSON tab is never desynchronized
+        if (this.el.rawJson) {
+          this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
+        }
+
+        // Reset to active tab or visual tab
+        this.switchTab(this.activeTab || 'visual');
 
         if (this.el.deleteBtn) {
           this.el.deleteBtn.style.display = (json && json.overrides && json.overrides.has_autorun) ? 'inline-block' : 'none';
@@ -211,7 +259,7 @@
     populateMeta() {
       if (!this.currentConfig) return;
       if (this.el.metaTitle) this.el.metaTitle.value = this.currentConfig.title || '';
-      if (this.el.metaLayout) this.el.metaLayout.value = this.currentConfig.layout || 'split-horizontal';
+      if (this.el.metaLayout) this.el.metaLayout.value = this.currentConfig.layout || this.currentConfig.window_layout || 'split-horizontal';
       if (this.el.metaDesc) this.el.metaDesc.value = this.currentConfig.description || '';
 
       const mType = (this.currentConfig.master && this.currentConfig.master.type) || 'video';
@@ -242,27 +290,29 @@
       if (tabId === 'visual') {
         if (this.el.rawJson && this.el.rawJson.value) {
           try {
-            this.currentConfig = JSON.parse(this.el.rawJson.value);
+            const parsed = JSON.parse(this.el.rawJson.value);
+            this.currentConfig = parsed;
             this.populateMeta();
+            this.populateMasterFiles(parsed.master ? parsed.master.file : '');
             this.renderTimeline();
           } catch (e) {
             alert('JSON Invalide : ' + e.message);
             return;
           }
         }
-        this.el.visualView.style.display = 'block';
-        this.el.jsonView.style.display = 'none';
-        this.el.tabVisualBtn.classList.add('active');
-        this.el.tabJsonBtn.classList.remove('active');
+        if (this.el.visualView) this.el.visualView.style.display = 'block';
+        if (this.el.jsonView) this.el.jsonView.style.display = 'none';
+        if (this.el.tabVisualBtn) this.el.tabVisualBtn.classList.add('active');
+        if (this.el.tabJsonBtn) this.el.tabJsonBtn.classList.remove('active');
       } else {
         this.syncVisualToConfig();
         if (this.el.rawJson) {
           this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
         }
-        this.el.visualView.style.display = 'none';
-        this.el.jsonView.style.display = 'block';
-        this.el.tabVisualBtn.classList.remove('active');
-        this.el.tabJsonBtn.classList.add('active');
+        if (this.el.visualView) this.el.visualView.style.display = 'none';
+        if (this.el.jsonView) this.el.jsonView.style.display = 'block';
+        if (this.el.tabVisualBtn) this.el.tabVisualBtn.classList.remove('active');
+        if (this.el.tabJsonBtn) this.el.tabJsonBtn.classList.add('active');
       }
     }
 
@@ -270,7 +320,10 @@
       if (!this.currentConfig) this.currentConfig = {};
       this.currentConfig.version = '2.0';
       if (this.el.metaTitle) this.currentConfig.title = this.el.metaTitle.value;
-      if (this.el.metaLayout) this.currentConfig.layout = this.el.metaLayout.value;
+      if (this.el.metaLayout) {
+        this.currentConfig.layout = this.el.metaLayout.value;
+        if (this.currentConfig.window_layout) this.currentConfig.window_layout = this.el.metaLayout.value;
+      }
       if (this.el.metaDesc) this.currentConfig.description = this.el.metaDesc.value;
 
       this.currentConfig.master = {
@@ -305,7 +358,10 @@
           if (action === 'open_app') {
             stepObj.app = app;
             stepObj.params = {};
-            if (file) stepObj.params.file = file;
+            if (file) {
+              stepObj.file = file;
+              stepObj.params.file = file;
+            }
             if (highlight) stepObj.params.highlight = highlight;
             if (pos && pos !== 'auto') stepObj.params.position = pos;
             if (app === 'maps') {
@@ -335,7 +391,10 @@
             }
 
             // Fallbacks for direct inputs
-            if (file && stepObj.params.file == null) stepObj.params.file = file;
+            if (file) {
+              if (stepObj.params.file == null) stepObj.params.file = file;
+              stepObj.file = file;
+            }
             if (highlight && stepObj.params.highlight == null) stepObj.params.highlight = highlight;
             if (app === 'maps' && (command === 'flyTo' || command === 'setView' || command === 'moveTo')) {
               if (stepObj.params.lat == null && lat != null && lat !== '') stepObj.params.lat = parseFloat(lat);
@@ -350,11 +409,17 @@
             }
           } else if (action === 'set_doc') {
             stepObj.action = 'set_doc';
-            if (file) stepObj.file = file;
+            if (file) {
+              stepObj.file = file;
+              stepObj.params = { file };
+            }
             if (highlight) stepObj.highlight = highlight;
           } else if (action === 'show_image') {
             stepObj.action = 'show_image';
-            if (file) stepObj.file = file;
+            if (file) {
+              stepObj.file = file;
+              stepObj.params = { file };
+            }
           } else if (action === 'notify') {
             stepObj.action = 'notify';
             stepObj.message = message || title;
@@ -381,9 +446,17 @@
       }
 
       const files = this.currentFiles || [];
-      const docFiles = files.filter(f => f.category === 'doc' || (f.name && f.name.match(/\.(md|markdown|txt|pdf|html|htm|rst|asciidoc)$/i)));
-      const imgFiles = files.filter(f => f.category === 'image' || (f.name && f.name.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif)$/i)));
-      const videoFiles = files.filter(f => f.category === 'video' || (f.name && f.name.match(/\.(mp4|webm|mov|mkv|avi|m4v)$/i)));
+      let docExts = ['pdf', 'txt', 'md', 'markdown', 'json', 'csv', 'xml', 'html', 'htm', 'tex', 'latex', 'js', 'css', 'php', 'py', 'sh', 'log', 'ini', 'sql', 'yaml', 'yml', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'rst', 'asciidoc'];
+      if (window.sys && window.sys.appManager && typeof window.sys.appManager.getAppManifest === 'function') {
+        const m = window.sys.appManager.getAppManifest('doc-viewer');
+        if (m && Array.isArray(m.extensions)) docExts = m.extensions;
+      } else if (window.SG_DISCOVERED_APPS && window.SG_DISCOVERED_APPS['doc-viewer'] && Array.isArray(window.SG_DISCOVERED_APPS['doc-viewer'].extensions)) {
+        docExts = window.SG_DISCOVERED_APPS['doc-viewer'].extensions;
+      }
+      const docRegex = new RegExp(`\\.(${docExts.join('|')})$`, 'i');
+      const docFiles = files.filter(f => f.category === 'doc' || (f.name && f.name.match(docRegex)));
+      const imgFiles = files.filter(f => f.category === 'image' || (f.name && f.name.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif|heic|heif|tiff)$/i)));
+      const videoFiles = files.filter(f => f.category === 'video' || (f.name && f.name.match(/\.(mp4|webm|mov|mkv|avi|m4v|ogv)$/i)));
       const audioFiles = files.filter(f => f.category === 'audio' || (f.name && f.name.match(/\.(mp3|wav|ogg|flac|aac|m4a|opus|wma)$/i)));
       const mediaFiles = files.filter(f => f.category === 'video' || f.category === 'audio' || (f.name && f.name.match(/\.(mp4|webm|mov|mkv|avi|mp3|wav|ogg|flac|aac|m4a|opus)$/i)));
 
@@ -891,7 +964,18 @@
         el.onchange = () => {
           this.syncVisualToConfig();
           this.renderTimeline();
+          if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
         };
+      });
+
+      // Bind live inputs on all remaining step inputs and selects
+      this.el.timelineList.querySelectorAll('input:not([data-step-action]):not([data-step-app]):not([data-step-cmd]), select:not([data-step-action]):not([data-step-app]):not([data-step-cmd])').forEach(el => {
+        const onStepChange = () => {
+          this.syncVisualToConfig();
+          if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
+        };
+        el.oninput = onStepChange;
+        el.onchange = onStepChange;
       });
 
       this.el.timelineList.querySelectorAll('[data-step-up]').forEach(btn => {
@@ -947,6 +1031,7 @@
         step.zoom = pos.zoom;
       }
       this.renderTimeline();
+      if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
 
       const toast = (window.sys && window.sys.toast && typeof window.sys.toast.show === 'function')
         ? window.sys.toast
@@ -973,6 +1058,7 @@
         params: { lat: 48.8566, lng: 2.3522, zoom: 13 }
       });
       this.renderTimeline();
+      if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
     }
 
     removeStep(index) {
@@ -980,6 +1066,7 @@
       if (this.currentConfig.timeline && this.currentConfig.timeline[index]) {
         this.currentConfig.timeline.splice(index, 1);
         this.renderTimeline();
+        if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
       }
     }
 
@@ -993,6 +1080,7 @@
       list[index] = list[target];
       list[target] = tmp;
       this.renderTimeline();
+      if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
     }
 
     preview() {
@@ -1038,6 +1126,7 @@
         });
 
         if (res && res.success) {
+          if (this.el.rawJson) this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2);
           this.showToast('Configuration autorun.json enregistrée avec succès !', 'success');
           if (window.EventBus) {
             window.EventBus.emit('fs:changed', { action: 'save', dir: this.currentPath });

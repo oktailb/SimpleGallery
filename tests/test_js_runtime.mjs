@@ -286,6 +286,9 @@ assert("AutorunEditorApp configure audio-player avec sélecteur de fichier audio
 assert("AutorunEditorApp configure maps avec coordonnées GPS (lat, lng, zoom)", autorunEditorJs.includes("data-step-lat") && autorunEditorJs.includes("data-step-lng") && autorunEditorJs.includes("data-step-zoom"));
 assert("AutorunEditorApp gère les commandes dynamiques pour control_app (getCommandsForApp)", autorunEditorJs.includes("getCommandsForApp(app)") && autorunEditorJs.includes("step-param-input"));
 assert("AutorunEditorApp synchronise les paramètres d'action dans syncVisualToConfig", autorunEditorJs.includes("stepObj.params.highlight = highlight") && autorunEditorJs.includes("stepObj.params.file = file"));
+assert("AutorunEditorApp inclut les formats étendus (pdf, txt, md, json, csv, code) dans docFiles", autorunEditorJs.includes("docExts =") && autorunEditorJs.includes("docRegex"));
+assert("AutorunEditorApp initialise rawJson dans loadFolder", autorunEditorJs.includes("this.el.rawJson.value = JSON.stringify(this.currentConfig, null, 2)"));
+assert("AutorunEditorApp synchronise les inputs étape vers rawJson", autorunEditorJs.includes("onStepChange") && autorunEditorJs.includes("this.el.rawJson.value = JSON.stringify"));
 
 // -------------------------------------------------------------
 // NOUVEAUX CONTRÔLES MULTIMODAUX & CAPTURE MAPS (2026)

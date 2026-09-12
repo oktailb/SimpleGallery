@@ -471,7 +471,7 @@
             this.el.autorunEditBtn.style.display = canEdit ? 'inline-flex' : 'none';
             this.el.autorunEditBtn.onclick = (e) => {
               e.preventDefault();
-              this.openAutorunEditorModal(ar);
+              this.openAutorunEditorModal();
             };
           }
           this.el.autorunBanner.style.display = 'block';
@@ -485,8 +485,7 @@
         this.el.explorerAutorunBtn.style.display = canEdit ? 'inline-flex' : 'none';
         this.el.explorerAutorunBtn.onclick = (e) => {
           e.preventDefault();
-          const ar = (overrides && overrides.autorun) || null;
-          this.openAutorunEditorModal(ar);
+          this.openAutorunEditorModal();
         };
       }
 
