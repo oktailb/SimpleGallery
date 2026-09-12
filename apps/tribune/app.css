@@ -9,6 +9,7 @@
   color: var(--text-main, #f8fafc);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 /* Header & Board Selector */
@@ -369,6 +370,130 @@
   .tribune-side-panel.collapsed {
     transform: translateX(100%);
     display: none;
+  }
+
+  /* 📱 Mobile Post Layout: 2 Lines (L1: clock, login, colon, badges; L2: message) */
+  .tribune-post-row {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 3px;
+    column-gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .tribune-post-row .tribune-login-container {
+    width: auto;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .tribune-post-row .tribune-login {
+    max-width: none;
+  }
+
+  .tribune-post-row .tribune-message {
+    flex-basis: 100%;
+    width: 100%;
+    padding-left: 2px;
+    margin-top: 1px;
+    line-height: 1.45;
+  }
+
+  .tribune-post-row .troll-badge {
+    margin-left: auto;
+  }
+
+  /* Responsive bottom control row */
+  .tribune-input-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tribune-login-input {
+    width: 90px;
+    font-size: 0.82rem;
+    padding: 6px 8px;
+  }
+
+  .tribune-message-input {
+    flex: 1;
+    min-width: 130px;
+    font-size: 0.88rem;
+    padding: 6px 10px;
+  }
+
+  .tribune-upload-btn,
+  .tribune-schedule-btn {
+    padding: 0 8px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+
+  .tribune-send-btn {
+    padding: 6px 12px;
+    height: 32px;
+  }
+
+  .schedule-popover {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: calc(100% - 16px);
+    bottom: 60px;
+  }
+}
+
+/* Container Query support for narrow WebOS Windows (<600px) */
+@container (max-width: 600px) {
+  .tribune-post-row {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 3px;
+    column-gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .tribune-post-row .tribune-login-container {
+    width: auto;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .tribune-post-row .tribune-login {
+    max-width: none;
+  }
+
+  .tribune-post-row .tribune-message {
+    flex-basis: 100%;
+    width: 100%;
+    padding-left: 2px;
+    margin-top: 1px;
+    line-height: 1.45;
+  }
+
+  .tribune-post-row .troll-badge {
+    margin-left: auto;
+  }
+
+  .tribune-input-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tribune-login-input {
+    width: 90px;
+  }
+
+  .tribune-message-input {
+    min-width: 130px;
+  }
+
+  .schedule-popover {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: calc(100% - 16px);
+    bottom: 60px;
   }
 }
 
@@ -1167,6 +1292,27 @@
   align-items: center;
   justify-content: space-between;
   color: #c084fc;
+}
+
+.schedule-msg-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-main, #f8fafc);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  resize: vertical;
+  min-height: 48px;
+  font-family: inherit;
+}
+
+.schedule-msg-input:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
 }
 
 .schedule-datetime-input {
