@@ -526,6 +526,77 @@ try {
   assert("browser exécution runtime", false, e.stack);
 }
 
+// -------------------------------------------------------------
+// 9. Vérification des Fonctionnalités Tribune (Layout Mobile & Envoi Programmé)
+// -------------------------------------------------------------
+console.log('\n🦆 [9/9] Vérification Tribune Libre (Layout Mobile 2 Lignes & Envois Programmés)...');
+
+const tribuneCssPath = path.join(appsDir, 'tribune', 'app.css');
+const tribuneJsPath = path.join(appsDir, 'tribune', 'app.js');
+const tribuneCss = fs.readFileSync(tribuneCssPath, 'utf8');
+const tribuneJs = fs.readFileSync(tribuneJsPath, 'utf8');
+
+// Test Mobile CSS Layout
+assert("Tribune CSS déclare le conteneur avec container-type inline-size", tribuneCss.includes('container-type: inline-size'));
+assert("Tribune CSS déclare la media query mobile @media (max-width: 768px)", tribuneCss.includes('@media (max-width: 768px)'));
+assert("Tribune CSS mobile applique flex-wrap: wrap sur .tribune-post-row", tribuneCss.includes('.tribune-post-row') && tribuneCss.includes('flex-wrap: wrap'));
+assert("Tribune CSS mobile alloue 100% de largeur pour .tribune-message (Ligne 2)", tribuneCss.includes('flex-basis: 100%') && tribuneCss.includes('width: 100%'));
+assert("Tribune CSS mobile réinitialise .tribune-login-container à width: auto (Ligne 1)", tribuneCss.includes('.tribune-login-container') && tribuneCss.includes('width: auto'));
+assert("Tribune CSS intègre le support des Container Queries (@container (max-width: 600px))", tribuneCss.includes('@container (max-width: 600px)'));
+assert("Tribune CSS stylise le champ textarea .schedule-msg-input", tribuneCss.includes('.schedule-msg-input'));
+
+// Test Tribune JS Scheduling Logic
+assert("Tribune JS intègre le champ textarea #tribuneScheduleMsgInput dans le popover", tribuneJs.includes('id="tribuneScheduleMsgInput"'));
+assert("Tribune JS utilise step=\"60\" sur #tribuneScheduleDatetime", tribuneJs.includes('id="tribuneScheduleDatetime" step="60"'));
+assert("Tribune JS synchronise le texte du message entre la barre et le popover", tribuneJs.includes('scheduleMsgInput.addEventListener(\'input\''));
+assert("Tribune JS envoie tribune_schedule_post via this.api.post", tribuneJs.includes("this.api.post('tribune_schedule_post'"));
+assert("Tribune JS gère la fermeture au clic en dehors (#tribuneSchedulePopover)", tribuneJs.includes('!e.target.closest(\'#tribuneSchedulePopover\')'));
+assert("Tribune JS rafraîchit le feed quand un message programmé est publié", tribuneJs.includes('this.lastScheduledCount > count'));
+
+// Test Date Parsing & Formatting Functions
+const fakeLocalStorage = {
+  store: {},
+  getItem(k) { return this.store[k] || null; },
+  setItem(k, v) { this.store[k] = String(v); },
+  removeItem(k) { delete this.store[k]; }
+};
+global.localStorage = fakeLocalStorage;
+
+const fakeDoc = {
+  addEventListener: () => {},
+  getElementById: () => null,
+  querySelector: () => null,
+  querySelectorAll: () => []
+};
+global.document = fakeDoc;
+
+const fakeWinTribune = {
+  navigator: { userAgent: 'NodeTest' },
+  localStorage: fakeLocalStorage,
+  document: fakeDoc,
+  addEventListener: () => {},
+  sys: {
+    api: {
+      forApp: () => ({ get: async () => ({}), post: async () => ({}), url: () => '' })
+    },
+    i18n: { t: (k) => k }
+  }
+};
+const tribuneFunc = new Function('window', 'localStorage', 'document', tribuneJs + '\nreturn window.tribuneApp;');
+const tribuneInst = tribuneFunc(fakeWinTribune, fakeLocalStorage, fakeDoc);
+
+assert("Tribune instancié avec succès", !!tribuneInst);
+const testDate = new Date(2026, 8, 13, 15, 45, 0); // 13 sept 2026 15:45
+const formattedIso = tribuneInst.formatLocalIsoString(testDate);
+assert("formatLocalIsoString produit YYYY-MM-DDTHH:mm valide", formattedIso === '2026-09-13T15:45');
+
+const parsedDate = tribuneInst.parseLocalDateTime('2026-09-13T15:45');
+assert("parseLocalDateTime analyse avec succès une chaîne datetime YYYY-MM-DDTHH:mm", !!parsedDate && parsedDate.getFullYear() === 2026 && parsedDate.getMonth() === 8 && parsedDate.getDate() === 13 && parsedDate.getHours() === 15 && parsedDate.getMinutes() === 45);
+
+const parsedDateSec = tribuneInst.parseLocalDateTime('2026-09-13T15:45:30');
+assert("parseLocalDateTime supporte les secondes optionnelles", !!parsedDateSec && parsedDateSec.getSeconds() === 30);
+
+
 console.log('\n============================================================');
 console.log(` 📊 SCORECARD DES TESTS ISO-FONCTIONNELS JS : ${passedChecks}/${totalChecks} PASS`);
 console.log('============================================================');

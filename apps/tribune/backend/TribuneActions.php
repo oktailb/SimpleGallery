@@ -329,9 +329,9 @@ class TribuneActions {
                             'id'        => $max_id + 1,
                             'time'      => date('YmdHis', $post_time),
                             'clock'     => date('H:i:s', $post_time),
-                            'login'     => $post['login'] ?? 'Anonyme',
-                            'info'      => $post['info'] ?? 'SimpleGallery Scheduled',
-                            'message'   => $post['message'] ?? '',
+                            'login'     => htmlspecialchars($post['login'] ?? 'Anonyme', ENT_QUOTES, 'UTF-8'),
+                            'info'      => htmlspecialchars($post['info'] ?? 'SimpleGallery Scheduled', ENT_QUOTES, 'UTF-8'),
+                            'message'   => htmlspecialchars($post['message'] ?? '', ENT_QUOTES, 'UTF-8'),
                             'is_admin'  => !empty($post['is_admin']),
                             'board'     => 'local'
                         ];
@@ -341,6 +341,7 @@ class TribuneActions {
                             $messages = array_slice($messages, -300);
                         }
                         @file_put_contents($storage_file, json_encode($messages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                        @touch($storage_file);
                     } else {
                         if (!empty($post['target_url'])) {
                             $headers = [

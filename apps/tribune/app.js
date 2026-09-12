@@ -242,7 +242,7 @@
       this.pollInterval = setInterval(() => {
         if (!this.container) return;
         this.refreshScheduledList();
-        const bKeys = Object.keys(this.boards).filter(k => k !== 'local' || !this.sseSource);
+        const bKeys = Object.keys(this.boards).filter(k => k !== 'local' || !this.sseConnected);
         Promise.allSettled(bKeys.map(bKey => this.fetchPosts(bKey, true, false)));
       }, 10000);
     }
@@ -252,6 +252,7 @@
 
       try {
         this.sseSource = new EventSource(this.api.url('tribune_stream'));
+        this.sseSource.onopen = () => { this.sseConnected = true; };
         this.sseSource.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
@@ -264,7 +265,7 @@
             }
           } catch (e) { }
         };
-        this.sseSource.onerror = () => { };
+        this.sseSource.onerror = () => { this.sseConnected = false; };
       } catch (e) { }
     }
 
@@ -285,8 +286,7 @@
       const day = pad(d.getDate());
       const hours = pad(d.getHours());
       const minutes = pad(d.getMinutes());
-      const seconds = pad(d.getSeconds());
-      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     parseLocalDateTime(val) {
@@ -298,12 +298,15 @@
       }
       const [dPart, tPart] = parts;
       const [year, month, day] = dPart.split('-').map(Number);
-      const [hours, minutes, seconds] = tPart.split(':').map(Number);
+      const timeParts = tPart.split(':').map(Number);
+      const hours = timeParts[0] || 0;
+      const minutes = timeParts[1] || 0;
+      const seconds = timeParts[2] || 0;
       if (!year || !month || !day) {
         const d = new Date(val);
         return isNaN(d.getTime()) ? null : d;
       }
-      return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+      return new Date(year, month - 1, day, hours, minutes, seconds);
     }
 
     updateScheduleTimezonePreview() {
@@ -355,6 +358,12 @@
             badge.textContent = count;
             badge.style.display = count > 0 ? 'inline-block' : 'none';
           }
+
+          if (this.lastScheduledCount !== undefined && this.lastScheduledCount > count) {
+            // A scheduled message matured and was posted! Refresh board feed immediately
+            this.fetchPosts(this.currentBoard, false, false);
+          }
+          this.lastScheduledCount = count;
 
           if (listView && listView.style.display !== 'none') {
             if (count === 0) {
@@ -749,7 +758,8 @@
                 <span>⏰ ${this.t('tribune.schedule_title')}</span>
                 <button type="button" id="schedulePopoverClose" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1rem;">✖</button>
               </div>
-              <input type="datetime-local" class="schedule-datetime-input" id="tribuneScheduleDatetime" step="1" />
+              <textarea class="schedule-msg-input" id="tribuneScheduleMsgInput" placeholder="${this.t('tribune.post_placeholder')}" rows="2"></textarea>
+              <input type="datetime-local" class="schedule-datetime-input" id="tribuneScheduleDatetime" step="60" />
               <div class="schedule-tz-box" id="tribuneScheduleTzBox">
                 <div class="schedule-tz-row">
                   <span>🏠 ${this.t('tribune.your_time')} :</span>
@@ -1058,12 +1068,14 @@
       const schedulePopover = this.container.querySelector('#tribuneSchedulePopover');
       const scheduleCloseBtn = this.container.querySelector('#schedulePopoverClose');
       const scheduleDatetime = this.container.querySelector('#tribuneScheduleDatetime');
+      const scheduleMsgInput = this.container.querySelector('#tribuneScheduleMsgInput');
       const scheduleConfirmBtn = this.container.querySelector('#tribuneScheduleConfirmBtn');
       const scheduleListBtn = this.container.querySelector('#tribuneScheduleListBtn');
       const scheduleListView = this.container.querySelector('#tribuneScheduleListView');
 
       if (scheduleBtn && schedulePopover) {
-        scheduleBtn.addEventListener('click', () => {
+        scheduleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const isVisible = schedulePopover.style.display !== 'none';
           schedulePopover.style.display = isVisible ? 'none' : 'block';
 
@@ -1073,6 +1085,10 @@
             if (scheduleDatetime) {
               scheduleDatetime.value = this.formatLocalIsoString(now);
             }
+            if (scheduleMsgInput && msgInput) {
+              scheduleMsgInput.value = msgInput.value;
+              scheduleMsgInput.focus();
+            }
             this.updateScheduleTimezonePreview();
             this.refreshScheduledList();
           }
@@ -1080,8 +1096,21 @@
       }
 
       if (scheduleCloseBtn && schedulePopover) {
-        scheduleCloseBtn.addEventListener('click', () => {
+        scheduleCloseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
           schedulePopover.style.display = 'none';
+        });
+      }
+
+      // Synchronize message input between bottom bar and schedule popover
+      if (scheduleMsgInput && msgInput) {
+        scheduleMsgInput.addEventListener('input', () => {
+          msgInput.value = scheduleMsgInput.value;
+        });
+        msgInput.addEventListener('input', () => {
+          if (schedulePopover && schedulePopover.style.display !== 'none') {
+            scheduleMsgInput.value = msgInput.value;
+          }
         });
       }
 
@@ -1090,12 +1119,14 @@
         scheduleDatetime.addEventListener('change', () => this.updateScheduleTimezonePreview());
       }
 
-      if (scheduleConfirmBtn && scheduleDatetime && msgInput) {
-        scheduleConfirmBtn.addEventListener('click', async () => {
-          const msg = msgInput.value.trim();
+      if (scheduleConfirmBtn && scheduleDatetime) {
+        scheduleConfirmBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const msg = (scheduleMsgInput ? scheduleMsgInput.value : (msgInput ? msgInput.value : '')).trim();
           if (!msg) {
             alert(this.t('tribune.schedule_empty_msg'));
-            msgInput.focus();
+            if (scheduleMsgInput) scheduleMsgInput.focus();
+            else if (msgInput) msgInput.focus();
             return;
           }
 
@@ -1114,31 +1145,35 @@
 
           const login = this.userLogin || (loginInput ? loginInput.value.trim() : 'Coincoin');
           const boardCfg = this.boards[this.currentBoard] || {};
+          const auth = this.boardAuth[this.currentBoard] || {};
 
-          const formData = new FormData();
-          formData.append('action', 'tribune_schedule_post');
-          formData.append('message', msg);
-          formData.append('login', login);
-          formData.append('info', 'SimpleGallery Client');
-          formData.append('board', this.currentBoard);
-          formData.append('scheduled_at', unixTs);
+          const payload = {
+            message: msg,
+            login: login,
+            info: 'SimpleGallery Client',
+            board: this.currentBoard,
+            scheduled_at: unixTs
+          };
 
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.SG_CSRF_TOKEN || window.CSRF_TOKEN || '';
-          if (csrfToken) formData.append('csrf_token', csrfToken);
-
-          if (this.currentBoard !== 'local' && boardCfg.url) {
-            formData.append('target_url', boardCfg.url);
-            if (boardCfg.post_field) formData.append('post_field', boardCfg.post_field);
-            if (boardCfg.cookie) formData.append('cookie', boardCfg.cookie);
-            if (boardCfg.user_agent) formData.append('user_agent', boardCfg.user_agent);
+          if (this.currentBoard !== 'local') {
+            payload.target_url = boardCfg.post_url || boardCfg.url || '';
+            payload.post_field = boardCfg.post_param || boardCfg.post_field || 'message';
+            payload.cookie = auth.cookie || '';
+            payload.user_agent = auth.user_agent || '';
           }
 
           try {
-            const data = await this.api.upload('tribune_schedule_post', formData);
+            const data = await this.api.post('tribune_schedule_post', payload);
             if (data && data.success) {
-              msgInput.value = '';
+              if (msgInput) msgInput.value = '';
+              if (scheduleMsgInput) scheduleMsgInput.value = '';
               schedulePopover.style.display = 'none';
               this.refreshScheduledList();
+              if (window.sys && window.sys.toast && typeof window.sys.toast.success === 'function') {
+                window.sys.toast.success(this.t('tribune.schedule_success'));
+              } else {
+                alert(this.t('tribune.schedule_success'));
+              }
             } else {
               alert(data.error || this.t('tribune.schedule_error'));
             }
@@ -1149,7 +1184,8 @@
       }
 
       if (scheduleListBtn && scheduleListView) {
-        scheduleListBtn.addEventListener('click', () => {
+        scheduleListBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const isVis = scheduleListView.style.display !== 'none';
           scheduleListView.style.display = isVis ? 'none' : 'block';
           if (!isVis) {
@@ -1210,6 +1246,11 @@
         this.container.addEventListener('click', (e) => {
           if (!e.target.closest('#totozPopover') && !e.target.closest('#tribuneMsgInput')) {
             this.hideTotozPopover();
+          }
+          if (schedulePopover && schedulePopover.style.display !== 'none') {
+            if (!e.target.closest('#tribuneSchedulePopover') && !e.target.closest('#tribuneScheduleBtn')) {
+              schedulePopover.style.display = 'none';
+            }
           }
         });
       }
